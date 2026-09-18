@@ -20,6 +20,18 @@ export default function Header() {
     setMobileMenuOpen(false);
   }, [location.pathname]);
 
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileMenuOpen]);
+
   const handleQuickExit = () => {
     window.location.replace("https://www.google.com");
   };
@@ -151,20 +163,29 @@ export default function Header() {
             </div>
 
             <nav className="flex flex-col space-y-3">
-              <Link to="/" className="font-display text-2xl font-bold text-slate-900 py-1">
+              <Link 
+                to="/" 
+                onClick={() => setMobileMenuOpen(false)}
+                className="font-display text-2xl font-bold text-slate-900 py-1"
+              >
                 Home
               </Link>
               {navItems.map((item) => (
                 <Link
                   key={item.to}
                   to={item.to}
+                  onClick={() => setMobileMenuOpen(false)}
                   className="font-display text-2xl font-bold text-slate-800 hover:text-[#692976] py-1 flex items-center justify-between"
                 >
                   <span>{item.label}</span>
                   <ArrowUpRight className="w-5 h-5 text-slate-400" />
                 </Link>
               ))}
-              <Link to="/contact" className="font-display text-2xl font-bold text-slate-800 hover:text-[#692976] py-1 flex items-center justify-between">
+              <Link 
+                to="/contact" 
+                onClick={() => setMobileMenuOpen(false)}
+                className="font-display text-2xl font-bold text-slate-800 hover:text-[#692976] py-1 flex items-center justify-between"
+              >
                 <span>Contact & Visit</span>
                 <ArrowUpRight className="w-5 h-5 text-slate-400" />
               </Link>
