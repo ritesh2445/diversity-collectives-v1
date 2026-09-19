@@ -438,27 +438,27 @@ a:focus-visible, button:focus-visible {
 }
 
 /* ==========================================================================
-   PFLAG-STYLE MULTI-COLOR CONCENTRIC RAINBOW (180° TO 0°) ANIMATION
+   PFLAG-STYLE MULTI-COLOR 180° TO 0° WELCOME ANIMATION (100% GPU COMPOSITED)
    ========================================================================== */
 
-@keyframes rainbowArcSweep {
+@keyframes rainbowFanSweep {
   0% {
-    stroke-dashoffset: var(--arc-len, 2400);
+    transform: rotate(-180deg);
     opacity: 0;
   }
-  12% {
+  15% {
     opacity: 1;
   }
-  50% {
-    stroke-dashoffset: 0;
+  42% {
+    transform: rotate(0deg);
     opacity: 1;
   }
-  72% {
-    stroke-dashoffset: 0;
+  74% {
+    transform: rotate(0deg);
     opacity: 1;
   }
   100% {
-    stroke-dashoffset: calc(-1 * var(--arc-len, 2400));
+    transform: rotate(180deg);
     opacity: 0;
   }
 }
@@ -466,15 +466,12 @@ a:focus-visible, button:focus-visible {
 @keyframes welcomeCurtainFadeOut {
   0% {
     opacity: 1;
-    transform: scale(1);
   }
-  72% {
+  75% {
     opacity: 1;
-    transform: scale(1);
   }
   100% {
     opacity: 0;
-    transform: scale(1.03);
     pointer-events: none;
   }
 }
@@ -482,7 +479,7 @@ a:focus-visible, button:focus-visible {
 @keyframes welcomeCenterPop {
   0% {
     opacity: 0;
-    transform: translate3d(0, 24px, 0) scale(0.92);
+    transform: translate3d(0, 20px, 0) scale(0.92);
   }
   24% {
     opacity: 1;
@@ -494,87 +491,51 @@ a:focus-visible, button:focus-visible {
   }
   100% {
     opacity: 0;
-    transform: translate3d(0, -18px, 0) scale(1.05);
-  }
-}
-
-.animate-rainbow-sweep {
-  animation: rainbowArcSweep 2.2s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
-  will-change: stroke-dashoffset, opacity;
-  transform: translateZ(0);
-}
-
-.animate-curtain-fade {
-  animation: welcomeCurtainFadeOut 2.3s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
-  will-change: opacity, transform;
-}
-
-.animate-welcome-pop {
-  animation: welcomeCenterPop 2.2s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
-  will-change: transform, opacity;
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-}
-
-@keyframes rainbowFanSweep {
-  0% {
-    transform: translate3d(0, 0, 0) rotateZ(-180deg);
-    opacity: 0.9;
-  }
-  36% {
-    transform: translate3d(0, 0, 0) rotateZ(0deg);
-    opacity: 1;
-  }
-  68% {
-    transform: translate3d(0, 0, 0) rotateZ(0deg);
-    opacity: 1;
-  }
-  100% {
-    transform: translate3d(0, 0, 0) rotateZ(180deg);
-    opacity: 0;
+    transform: translate3d(0, -16px, 0) scale(1.05);
   }
 }
 
 .animate-fan-sweep {
-  animation: rainbowFanSweep 2.2s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+  animation: rainbowFanSweep 2.4s cubic-bezier(0.2, 0.85, 0.3, 1) forwards;
   will-change: transform, opacity;
-  transform-origin: 50% 100%;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  transform-style: preserve-3d;
+  transform-origin: 800px 900px;
 }
 
-.rainbow-conic-fan {
-  background: conic-gradient(
-    from 270deg at 50% 100%,
-    #5A1E65 0deg 20deg,
-    #7C3AED 20deg 40deg,
-    #2563EB 40deg 60deg,
-    #0284C7 60deg 80deg,
-    #0D9488 80deg 100deg,
-    #10B981 100deg 120deg,
-    #FBBF24 120deg 140deg,
-    #F97316 140deg 160deg,
-    #E11D48 160deg 180deg,
-    transparent 180deg 360deg
-  );
+.animate-curtain-fade {
+  animation: welcomeCurtainFadeOut 2.5s cubic-bezier(0.2, 0.85, 0.3, 1) forwards;
+  will-change: opacity;
 }
 
-.rainbow-conic-glow {
-  background: conic-gradient(
-    from 270deg at 50% 100%,
-    rgba(90, 30, 101, 0.6) 0deg,
-    rgba(124, 58, 237, 0.6) 25deg,
-    rgba(37, 99, 235, 0.6) 50deg,
-    rgba(2, 132, 199, 0.6) 75deg,
-    rgba(13, 148, 136, 0.6) 95deg,
-    rgba(16, 185, 129, 0.6) 115deg,
-    rgba(251, 191, 36, 0.6) 135deg,
-    rgba(249, 115, 22, 0.6) 155deg,
-    rgba(225, 29, 72, 0.6) 180deg,
-    transparent 180deg 360deg
-  );
+.animate-welcome-pop {
+  animation: welcomeCenterPop 2.4s cubic-bezier(0.2, 0.85, 0.3, 1) forwards;
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
+
+@keyframes slideUp {
+  from {
+    transform: translate3d(0, 100%, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-slideUp {
+  animation: slideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease forwards;
 }
 
 

@@ -1,6 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, ArrowUpRight, Heart, LifeBuoy, Phone, Shield } from 'lucide-react';
+import { 
+  Menu, 
+  X, 
+  ArrowUpRight, 
+  Heart, 
+  LifeBuoy, 
+  Phone, 
+  Shield, 
+  Home, 
+  Info, 
+  Sparkles, 
+  Users, 
+  Calendar, 
+  Compass, 
+  HeartHandshake, 
+  MapPin,
+  ChevronRight
+} from 'lucide-react';
 import { orgInfo } from '../data/dcvcData';
 
 export default function Header() {
@@ -10,16 +27,18 @@ export default function Header() {
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
+      setScrolled(window.scrollY > 15);
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Close mobile drawer upon route change
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [location.pathname]);
 
+  // Lock body scrolling when mobile drawer is open
   useEffect(() => {
     if (mobileMenuOpen) {
       document.body.style.overflow = 'hidden';
@@ -39,30 +58,34 @@ export default function Header() {
   };
 
   const navItems = [
-    { label: "About", to: "/about" },
-    { label: "Programs", to: "/programs" },
-    { label: "Community", to: "/community" },
-    { label: "Events", to: "/events" },
-    { label: "Resources", to: "/resources" },
-    { label: "Get Involved", to: "/get-involved" }
+    { label: "About", to: "/about", icon: Info, desc: "Mission, history & 10-year leadership" },
+    { label: "Programs", to: "/programs", icon: Sparkles, desc: "Free HIV/STI testing & youth groups" },
+    { label: "Community", to: "/community", icon: Users, desc: "Affirming peer circles & gatherings" },
+    { label: "Events", to: "/events", icon: Calendar, desc: "Pride prom, galas & workshops" },
+    { label: "Resources", to: "/resources", icon: Compass, desc: "Crisis lines & regional mutual aid" },
+    { label: "Get Involved", to: "/get-involved", icon: HeartHandshake, desc: "Volunteer & community support" }
   ];
 
   return (
     <>
+      {/* Primary Sticky Header Bar */}
       <header 
-        className={`sticky top-0 left-0 right-0 z-50 transition-all duration-300 bg-white/80 backdrop-blur-xl ${
-          scrolled ? 'border-b border-slate-200/80 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.04)] py-2.5' : 'border-b border-slate-100/80 py-3.5'
+        className={`sticky top-0 left-0 right-0 z-50 transition-all duration-200 bg-white/95 backdrop-blur-md ${
+          scrolled 
+            ? 'border-b border-slate-200 shadow-sm py-2 sm:py-2.5' 
+            : 'border-b border-slate-100 py-2.5 sm:py-3.5'
         }`}
       >
         <div className="container-clean">
           <div className="flex items-center justify-between gap-2 sm:gap-6">
             
+            {/* Logo & Brand Identity */}
             <Link 
               to="/" 
-              className="flex items-center gap-2.5 sm:gap-4.5 group focus:outline-none flex-shrink-0 min-w-0"
+              className="flex items-center gap-2 sm:gap-3.5 group focus:outline-none flex-shrink-0 min-w-0"
               aria-label="Diversity Collective Ventura County"
             >
-              <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-xl sm:rounded-2xl overflow-hidden shadow-xs border-2 border-purple-100/80 bg-white flex-shrink-0 flex items-center justify-center p-1 group-hover:scale-105 group-hover:border-[#5A1E65] transition-all duration-200">
+              <div className="w-10 h-10 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-xl overflow-hidden shadow-xs border-2 border-purple-100 bg-white flex-shrink-0 flex items-center justify-center p-1 group-hover:scale-105 group-hover:border-[#5A1E65] transition-all duration-200">
                 <img 
                   src="/images/logo-square.png" 
                   alt="Diversity Collective Ventura County Official Logo" 
@@ -70,14 +93,14 @@ export default function Header() {
                 />
               </div>
               <div className="flex flex-col justify-center min-w-0">
-                <span className="font-display font-extrabold text-base sm:text-2xl md:text-[1.65rem] tracking-tight leading-tight text-slate-900 group-hover:text-[#5A1E65] transition-colors truncate">
+                <span className="font-display font-extrabold text-sm sm:text-xl md:text-2xl tracking-tight leading-tight text-slate-950 group-hover:text-[#5A1E65] transition-colors truncate">
                   Diversity Collective
                 </span>
-                <div className="flex items-center gap-1.5 sm:gap-2 mt-0.5">
-                  <span className="text-[10px] sm:text-sm font-bold tracking-[0.16em] sm:tracking-[0.18em] text-[#5A1E65] uppercase">
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="text-[10px] sm:text-xs font-bold tracking-[0.14em] sm:tracking-[0.18em] text-[#5A1E65] uppercase">
                     Ventura County
                   </span>
-                  <span className="hidden xl:inline-flex text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-[#5A1E65] border border-purple-200/60 leading-none">
+                  <span className="hidden xl:inline-flex text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-purple-50 text-[#5A1E65] border border-purple-200 leading-none">
                     501(c)(3)
                   </span>
                 </div>
@@ -93,10 +116,10 @@ export default function Header() {
                   <Link
                     key={item.to}
                     to={item.to}
-                    className={`px-3.5 py-2 text-sm font-medium rounded-full transition-colors ${
+                    className={`px-3.5 py-2 text-sm font-semibold rounded-full transition-colors ${
                       isActive 
-                        ? 'text-[#692976] bg-purple-50 font-semibold' 
-                        : 'text-slate-640 hover:text-[#692976] hover:bg-slate-50'
+                        ? 'text-[#5A1E65] bg-purple-50 font-bold' 
+                        : 'text-slate-600 hover:text-[#5A1E65] hover:bg-slate-50'
                     }`}
                   >
                     {item.label}
@@ -107,10 +130,10 @@ export default function Header() {
 
             {/* Right CTAs */}
             <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
-              {/* Discreet Quick Exit */}
+              {/* Discreet Quick Exit (Tablet & Desktop) */}
               <button
                 onClick={handleQuickExit}
-                className="btn-exit-clean hidden sm:inline-flex"
+                className="btn-exit-clean hidden md:inline-flex"
                 title="Quickly exit to Google for your privacy"
               >
                 <Shield className="w-3 h-3" />
@@ -120,9 +143,9 @@ export default function Header() {
               {/* Get Support */}
               <Link
                 to="/programs"
-                className="hidden xl:inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-slate-700 hover:text-[#692976] border border-slate-200 hover:border-slate-300 rounded-full transition-colors"
+                className="hidden xl:inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-slate-700 hover:text-[#5A1E65] border border-slate-200 hover:border-slate-300 rounded-full transition-colors"
               >
-                <LifeBuoy className="w-3.5 h-3.5 text-[#692976]" />
+                <LifeBuoy className="w-3.5 h-3.5 text-[#5A1E65]" />
                 <span>Get Support</span>
               </Link>
 
@@ -131,20 +154,20 @@ export default function Header() {
                 href={orgInfo.donationUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn-primary py-1.5 sm:py-2 px-3 sm:px-5 text-xs font-semibold tracking-wide inline-flex items-center gap-1.5 shadow-xs flex-shrink-0"
+                className="btn-primary py-1.5 sm:py-2 px-3 sm:px-5 text-xs font-bold tracking-wide inline-flex items-center gap-1.5 shadow-xs flex-shrink-0"
               >
                 <Heart className="w-3.5 h-3.5 fill-current" />
                 <span>Donate</span>
               </a>
 
-              {/* Mobile Menu Toggle */}
+              {/* Mobile Menu Toggle Button (Strict 44x44px Touch Target) */}
               <button
                 type="button"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="lg:hidden p-2 text-slate-700 hover:text-slate-900 focus:outline-none rounded-lg"
-                aria-label={mobileMenuOpen ? "Close Menu" : "Open Navigation Menu"}
+                onClick={() => setMobileMenuOpen(true)}
+                className="lg:hidden w-10 h-10 flex items-center justify-center text-slate-800 hover:text-slate-950 focus:outline-none rounded-xl bg-slate-100 hover:bg-slate-200 active:scale-95 transition-all"
+                aria-label="Open Navigation Menu"
               >
-                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                <Menu className="w-5 h-5" />
               </button>
             </div>
 
@@ -152,58 +175,146 @@ export default function Header() {
         </div>
       </header>
 
-      {/* Mobile Navigation Drawer */}
+      {/* Full-Screen Mobile Navigation Drawer (Layered at z-[100]) */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-40 bg-white pt-24 pb-12 px-6 flex flex-col justify-between overflow-y-auto lg:hidden">
-          <div className="space-y-6">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-              <span className="badge-clean">NAVIGATION</span>
-              <button onClick={handleQuickExit} className="btn-exit-clean">
-                <Shield className="w-3 h-3" />
-                <span>Quick Exit</span>
-              </button>
-            </div>
+        <div className="fixed inset-0 z-[100] bg-slate-950/60 backdrop-blur-sm lg:hidden flex flex-col justify-end animate-fadeIn">
+          
+          <div className="bg-white w-full h-[95vh] rounded-t-3xl shadow-2xl flex flex-col overflow-hidden animate-slideUp">
+            
+            {/* Drawer Header Bar */}
+            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl overflow-hidden border border-purple-200 bg-white p-0.5 shadow-2xs flex-shrink-0">
+                  <img 
+                    src="/images/logo-square.png" 
+                    alt="DCVC Emblem" 
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <div>
+                  <span className="font-display font-extrabold text-sm text-slate-950 block leading-tight">
+                    Diversity Collective
+                  </span>
+                  <span className="text-[10px] font-bold text-[#5A1E65] uppercase tracking-wider block">
+                    Ventura County Sanctuary
+                  </span>
+                </div>
+              </div>
 
-            <nav className="flex flex-col space-y-3">
-              <Link to="/" className="font-display text-2xl font-bold text-slate-900 py-1">
-                Home
-              </Link>
-              {navItems.map((item) => (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  className="font-display text-2xl font-bold text-slate-800 hover:text-[#692976] py-1 flex items-center justify-between"
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleQuickExit}
+                  className="px-2.5 py-1 text-[11px] font-bold text-slate-600 hover:text-slate-950 rounded-full border border-slate-200 bg-white inline-flex items-center gap-1"
                 >
-                  <span>{item.label}</span>
-                  <ArrowUpRight className="w-5 h-5 text-slate-400" />
-                </Link>
-              ))}
-              <Link to="/contact" className="font-display text-2xl font-bold text-slate-800 hover:text-[#692976] py-1 flex items-center justify-between">
-                <span>Contact & Visit</span>
-                <ArrowUpRight className="w-5 h-5 text-slate-400" />
-              </Link>
-            </nav>
-          </div>
-
-          <div className="pt-8 border-t border-slate-100 space-y-4">
-            <a
-              href={orgInfo.donationUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-primary w-full text-center"
-            >
-              Make a Donation
-            </a>
-            <div className="text-xs text-slate-500 pt-2 space-y-1 text-center">
-              <p className="font-semibold text-slate-700">Community Resource Center</p>
-              <p>2471 Portola Road, Suite 100, Ventura, CA</p>
-              <p className="text-[#692976] font-semibold">{orgInfo.phone}</p>
+                  <Shield className="w-3 h-3" />
+                  <span>Exit</span>
+                </button>
+                <button
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-9 h-9 rounded-xl bg-slate-200/80 hover:bg-slate-300 text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
+                  aria-label="Close Navigation Menu"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
+
+            {/* Scrollable Navigation List */}
+            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-2 divide-y divide-slate-100">
+              
+              <Link 
+                to="/" 
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-purple-50/60 transition-colors group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-purple-100/80 text-[#5A1E65] flex items-center justify-center flex-shrink-0">
+                    <Home className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-slate-900 group-hover:text-[#5A1E65] text-sm block">Home</span>
+                    <span className="text-[11px] text-slate-500">Sanctuary homepage & announcements</span>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+
+              {navItems.map((item) => {
+                const ItemIcon = item.icon;
+                const isActive = location.pathname === item.to || 
+                  (item.to !== '/' && location.pathname.startsWith(item.to));
+                return (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center justify-between py-2.5 px-3 rounded-xl transition-colors group ${
+                      isActive ? 'bg-purple-50' : 'hover:bg-purple-50/60'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                        isActive ? 'bg-[#5A1E65] text-white' : 'bg-slate-100 text-slate-700 group-hover:bg-purple-100 group-hover:text-[#5A1E65]'
+                      }`}>
+                        <ItemIcon className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className={`font-bold text-sm block ${
+                          isActive ? 'text-[#5A1E65]' : 'text-slate-900 group-hover:text-[#5A1E65]'
+                        }`}>
+                          {item.label}
+                        </span>
+                        <span className="text-[11px] text-slate-500">{item.desc}</span>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                  </Link>
+                );
+              })}
+
+              <Link 
+                to="/contact" 
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-purple-50/60 transition-colors group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-teal-100 text-teal-800 flex items-center justify-center flex-shrink-0">
+                    <MapPin className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-slate-900 group-hover:text-teal-800 text-sm block">Contact & Directions</span>
+                    <span className="text-[11px] text-slate-500">2471 Portola Road, Suite 100, Ventura</span>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+
+            </div>
+
+            {/* Bottom Mobile Action Drawer Footer */}
+            <div className="p-5 border-t border-slate-200 bg-slate-50/90 flex flex-col gap-2.5">
+              <a
+                href={orgInfo.donationUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-primary w-full py-3 text-center text-xs font-bold uppercase tracking-wider shadow-sm flex items-center justify-center gap-2"
+              >
+                <Heart className="w-4 h-4 fill-current" />
+                <span>Make a Tax-Deductible Donation</span>
+              </a>
+
+              <a
+                href={`tel:${orgInfo.phone.replace(/[^0-9]/g, '')}`}
+                className="w-full py-2.5 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-800 text-xs font-bold flex items-center justify-center gap-2 transition-colors"
+              >
+                <Phone className="w-3.5 h-3.5 text-[#5A1E65]" />
+                <span>Call Sanctuary: {orgInfo.phone}</span>
+              </a>
+            </div>
+
           </div>
         </div>
       )}
     </>
   );
 }
-
-
