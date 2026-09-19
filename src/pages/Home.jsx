@@ -203,13 +203,13 @@ export default function Home() {
         <div className="container-clean relative z-10 flex flex-col gap-10">
           
           {/* Top Live Sanctuary & Crisis Alert Ribbon */}
-          <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3 text-xs">
-            <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl sm:rounded-full bg-white/90 border border-purple-200/80 backdrop-blur-md font-semibold text-[#5A1E65] shadow-xs max-w-full">
+          <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white/90 border border-purple-200/80 backdrop-blur-md font-semibold text-[#5A1E65] shadow-xs">
               <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
               </span>
-              <span className="text-[11px] sm:text-xs leading-snug">Sanctuary Open Today · Mon–Fri 1–5 PM · Free HIV/STI Screenings</span>
+              <span>Sanctuary Open Today · Mon–Fri 1:00 PM – 5:00 PM · Free HIV/STI Screenings</span>
             </div>
 
             <div className="hidden sm:inline-flex items-center gap-2 text-slate-500 bg-slate-50/80 px-3.5 py-1.5 rounded-full border border-slate-200 text-xs font-medium">
@@ -219,17 +219,17 @@ export default function Home() {
           </div>
 
           {/* Main Hero Split: Editorial Headline + Multi-Layer Showcase */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
             
             {/* Left Column: Bold Headline & Interactive Portals */}
-            <div className="lg:col-span-7 flex flex-col gap-5 sm:gap-6">
+            <div className="lg:col-span-7 flex flex-col gap-6">
               
-              <div className="flex flex-col gap-3">
-                <span className="glass-pill text-[11px] sm:text-xs font-bold text-[#5A1E65] py-1 px-3 sm:px-3.5 bg-purple-50/90 border-purple-200/80 w-fit">
-                  ESTABLISHED 2014 · VENTURA COUNTY 501(C)(3)
+              <div className="flex flex-col gap-3.5">
+                <span className="glass-pill text-xs font-bold text-[#5A1E65] py-1 px-3.5 bg-purple-50/90 border-purple-200/80">
+                  ESTABLISHED 2014 · VENTURA COUNTY 501(C)(3) NONPROFIT
                 </span>
 
-                <h1 className="font-display text-3xl xs:text-4xl sm:text-6xl md:text-7xl xl:text-[5rem] font-extrabold tracking-tight text-slate-950 leading-[1.08]">
+                <h1 className="font-display text-3xl sm:text-5xl md:text-7xl xl:text-[5rem] font-extrabold tracking-tight text-slate-950 leading-[1.08] sm:leading-[1.05]">
                   You Are <span className="font-serif italic font-normal text-[#5A1E65] relative inline-block">
                     Always Welcome
                     <svg className="absolute -bottom-1 left-0 w-full h-2.5 text-[#5A1E65]/35" viewBox="0 0 100 10" preserveAspectRatio="none">
@@ -238,30 +238,30 @@ export default function Home() {
                   </span> Here.
                 </h1>
 
-                <p className="text-sm sm:text-lg md:text-xl text-slate-600 leading-relaxed max-w-2xl pt-0.5">
+                <p className="text-sm sm:text-lg md:text-xl text-slate-600 leading-relaxed max-w-2xl pt-1">
                   Diversity Collective is Ventura County's premier cultural sanctuary and clinical wellness home — delivering free rapid health testing, youth peer programs, mutual aid, and intersectional advocacy across all 10 county cities.
                 </p>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 sm:gap-3.5 pt-1">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-1">
                 <Link 
                   to="/programs" 
-                  className="btn-primary group shadow-md hover:shadow-lg text-sm py-3.5 px-8 text-center justify-center"
+                  className="btn-primary group shadow-md hover:shadow-lg text-sm py-3 sm:py-3.5 px-6 sm:px-8 text-center justify-center"
                 >
                   <span>Explore Free Programs</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
                 <Link 
                   to="/contact" 
-                  className="btn-secondary group backdrop-blur-md bg-white/90 text-sm py-3.5 px-8 border-slate-300 text-center justify-center"
+                  className="btn-secondary group backdrop-blur-md bg-white/90 text-sm py-3 sm:py-3.5 px-6 sm:px-8 border-slate-300 text-center justify-center"
                 >
                   <MapPin className="w-4 h-4 text-purple-700 group-hover:scale-110 transition-transform" />
                   <span>Visit Sanctuary</span>
                 </Link>
                 <a
                   href={`tel:${orgInfo.phone.replace(/[^0-9]/g, '')}`}
-                  className="inline-flex items-center justify-center gap-2 text-xs font-bold text-slate-700 hover:text-slate-950 px-4 py-2.5 bg-slate-50 hover:bg-slate-100 rounded-full border border-slate-200 transition-colors"
+                  className="inline-flex items-center justify-center gap-2 text-xs font-bold text-slate-700 hover:text-slate-950 px-4 py-2.5 bg-slate-50 hover:bg-slate-100 rounded-full border border-slate-200 transition-colors self-start sm:self-auto"
                 >
                   <Phone className="w-3.5 h-3.5 text-slate-500" />
                   <span>{orgInfo.phone}</span>
@@ -269,11 +269,11 @@ export default function Home() {
               </div>
 
               {/* Interactive "What Brings You In Today?" Quick Pathfinder */}
-              <div className="mt-4 p-4 sm:p-5 rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200/90 shadow-sm flex flex-col gap-3">
-                <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-1">
+              <div className="mt-4 p-5 rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200/90 shadow-sm flex flex-col gap-3">
+                <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                    <Sparkles className="w-3.5 h-3.5 text-[#5A1E65] flex-shrink-0" />
-                    <span>What brings you in today?</span>
+                    <Sparkles className="w-3.5 h-3.5 text-[#5A1E65]" />
+                    <span>Instant Sanctuary Navigator — What brings you in today?</span>
                   </span>
                   <span className="text-[11px] text-slate-400">100% Confidential</span>
                 </div>
@@ -281,99 +281,99 @@ export default function Home() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   <button
                     onClick={() => setHeroService('testing')}
-                    className={`p-2 sm:p-2.5 rounded-xl text-left transition-all border text-xs font-semibold cursor-pointer ${
+                    className={`p-2.5 rounded-xl text-left transition-all border text-xs font-semibold cursor-pointer ${
                       heroService === 'testing'
                         ? 'bg-purple-50 border-[#5A1E65] text-[#5A1E65] shadow-xs'
                         : 'bg-slate-50/70 border-slate-200 text-slate-700 hover:bg-slate-100'
                     }`}
                   >
-                    <div className="font-bold flex items-center gap-1 text-[11px] xs:text-xs">
+                    <div className="font-bold flex items-center gap-1.5">
                       <span>🩺</span> Rapid Testing
                     </div>
-                    <span className="text-[10px] text-slate-500 block font-normal truncate">Diversity SHINES</span>
+                    <span className="text-[10px] text-slate-500 block font-normal">Diversity SHINES</span>
                   </button>
 
                   <button
                     onClick={() => setHeroService('youth')}
-                    className={`p-2 sm:p-2.5 rounded-xl text-left transition-all border text-xs font-semibold cursor-pointer ${
+                    className={`p-2.5 rounded-xl text-left transition-all border text-xs font-semibold cursor-pointer ${
                       heroService === 'youth'
                         ? 'bg-purple-50 border-[#5A1E65] text-[#5A1E65] shadow-xs'
                         : 'bg-slate-50/70 border-slate-200 text-slate-700 hover:bg-slate-100'
                     }`}
                   >
-                    <div className="font-bold flex items-center gap-1 text-[11px] xs:text-xs">
+                    <div className="font-bold flex items-center gap-1.5">
                       <span>🌈</span> Youth (13–23)
                     </div>
-                    <span className="text-[10px] text-slate-500 block font-normal truncate">Rainbow Umbrella</span>
+                    <span className="text-[10px] text-slate-500 block font-normal">Rainbow Umbrella</span>
                   </button>
 
                   <button
                     onClick={() => setHeroService('center')}
-                    className={`p-2 sm:p-2.5 rounded-xl text-left transition-all border text-xs font-semibold cursor-pointer ${
+                    className={`p-2.5 rounded-xl text-left transition-all border text-xs font-semibold cursor-pointer ${
                       heroService === 'center'
                         ? 'bg-purple-50 border-[#5A1E65] text-[#5A1E65] shadow-xs'
                         : 'bg-slate-50/70 border-slate-200 text-slate-700 hover:bg-slate-100'
                     }`}
                   >
-                    <div className="font-bold flex items-center gap-1 text-[11px] xs:text-xs">
+                    <div className="font-bold flex items-center gap-1.5">
                       <span>🏠</span> Drop-In Hub
                     </div>
-                    <span className="text-[10px] text-slate-500 block font-normal truncate">Library & Lounge</span>
+                    <span className="text-[10px] text-slate-500 block font-normal">Library & Lounge</span>
                   </button>
 
                   <button
                     onClick={() => setHeroService('donate')}
-                    className={`p-2 sm:p-2.5 rounded-xl text-left transition-all border text-xs font-semibold cursor-pointer ${
+                    className={`p-2.5 rounded-xl text-left transition-all border text-xs font-semibold cursor-pointer ${
                       heroService === 'donate'
                         ? 'bg-purple-50 border-[#5A1E65] text-[#5A1E65] shadow-xs'
                         : 'bg-slate-50/70 border-slate-200 text-slate-700 hover:bg-slate-100'
                     }`}
                   >
-                    <div className="font-bold flex items-center gap-1 text-[11px] xs:text-xs">
+                    <div className="font-bold flex items-center gap-1.5">
                       <span>💖</span> Give or Join
                     </div>
-                    <span className="text-[10px] text-slate-500 block font-normal truncate">501(c)(3) Support</span>
+                    <span className="text-[10px] text-slate-500 block font-normal">501(c)(3) Support</span>
                   </button>
                 </div>
 
                 {/* Dynamic Pathfinder Detail Card */}
-                <div className="pt-2 border-t border-slate-100 text-xs">
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
                   {heroService === 'testing' && (
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 w-full">
+                    <div className="flex items-center justify-between w-full">
                       <span className="text-slate-600">
-                        <strong>Diversity SHINES:</strong> Free rapid HIV & Hepatitis C testing with immediate results. Walk-ins Mon–Fri 1–5 PM.
+                        <strong>Diversity SHINES:</strong> Free, confidential rapid HIV & Hepatitis C testing with immediate results. Walk-ins Mon–Fri 1–5 PM.
                       </span>
-                      <Link to="/programs" className="text-[#5A1E65] font-bold hover:underline flex-shrink-0">
+                      <Link to="/programs" className="text-[#5A1E65] font-bold hover:underline ml-3 flex-shrink-0">
                         View Testing Hours →
                       </Link>
                     </div>
                   )}
                   {heroService === 'youth' && (
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 w-full">
+                    <div className="flex items-center justify-between w-full">
                       <span className="text-slate-600">
                         <strong>Rainbow Umbrella:</strong> Affirming peer circles for youth ages 13–23 every Friday from 5:30 PM to 7:30 PM.
                       </span>
-                      <Link to="/programs" className="text-[#5A1E65] font-bold hover:underline flex-shrink-0">
+                      <Link to="/programs" className="text-[#5A1E65] font-bold hover:underline ml-3 flex-shrink-0">
                         Youth Info →
                       </Link>
                     </div>
                   )}
                   {heroService === 'center' && (
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 w-full">
+                    <div className="flex items-center justify-between w-full">
                       <span className="text-slate-600">
-                        <strong>Community Resource Center:</strong> 2471 Portola Rd, Suite 100, Ventura. Free computer lab and lending library.
+                        <strong>Community Resource Center:</strong> 2471 Portola Rd, Suite 100, Ventura. Free computer lab, queer lending library, and coffee.
                       </span>
-                      <Link to="/contact" className="text-[#5A1E65] font-bold hover:underline flex-shrink-0">
+                      <Link to="/contact" className="text-[#5A1E65] font-bold hover:underline ml-3 flex-shrink-0">
                         Directions →
                       </Link>
                     </div>
                   )}
                   {heroService === 'donate' && (
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 w-full">
+                    <div className="flex items-center justify-between w-full">
                       <span className="text-slate-600">
-                        <strong>Community Philanthropy:</strong> Your gift funds free youth meals, safe spaces, and vital screenings.
+                        <strong>Community Philanthropy:</strong> Your tax-deductible gift directly funds free youth meals, safe spaces, and vital screenings.
                       </span>
-                      <a href="#giving" className="text-[#5A1E65] font-bold hover:underline flex-shrink-0">
+                      <a href="#giving" className="text-[#5A1E65] font-bold hover:underline ml-3 flex-shrink-0">
                         Donate Now →
                       </a>
                     </div>
@@ -1006,10 +1006,10 @@ export default function Home() {
             </p>
 
             {/* Frequency Switcher */}
-            <div className="flex items-center p-1 sm:p-1.5 rounded-full bg-slate-200/80 border border-slate-300/80 shadow-inner mt-2 max-w-full">
+            <div className="inline-flex items-center p-1.5 rounded-full bg-slate-200/80 border border-slate-300/80 shadow-inner mt-2">
               <button
                 onClick={() => setDonationFreq('once')}
-                className={`py-1.5 px-3 sm:py-2 sm:px-6 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                className={`py-2 px-6 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer ${
                   donationFreq === 'once'
                     ? 'bg-white text-slate-900 shadow-md scale-102'
                     : 'text-slate-600 hover:text-slate-900'
@@ -1019,14 +1019,14 @@ export default function Home() {
               </button>
               <button
                 onClick={() => setDonationFreq('monthly')}
-                className={`py-1.5 px-3 sm:py-2 sm:px-6 rounded-full text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer ${
+                className={`py-2 px-6 rounded-full text-xs sm:text-sm font-bold transition-all flex items-center gap-2 cursor-pointer ${
                   donationFreq === 'monthly'
                     ? 'bg-[#5A1E65] text-white shadow-md scale-102'
                     : 'text-slate-600 hover:text-[#5A1E65]'
                 }`}
               >
                 <span>Monthly Sustainer</span>
-                <span className={`text-[9px] sm:text-[10px] uppercase font-bold px-1.5 sm:px-2 py-0.5 rounded-full ${
+                <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${
                   donationFreq === 'monthly' ? 'bg-amber-400 text-slate-950' : 'bg-purple-100 text-[#5A1E65]'
                 }`}>
                   ★ Most Needed

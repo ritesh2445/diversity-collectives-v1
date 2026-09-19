@@ -17,7 +17,6 @@ export default function CardSpotlight({
 
   const handleMouseMove = useCallback((e) => {
     if (!divRef.current) return;
-    if (window.matchMedia('(pointer: coarse)').matches) return;
     const rect = divRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -34,7 +33,6 @@ export default function CardSpotlight({
   }, [tilt, maxTilt]);
 
   const handleMouseEnter = () => {
-    if (window.matchMedia('(pointer: coarse)').matches) return;
     setIsHovered(true);
   };
 

@@ -3,11 +3,8 @@ import Lenis from 'lenis';
 
 export default function SmoothScroll({ children }) {
   useEffect(() => {
-    // Respect user's motion preferences or touch devices
-    if (
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
-      window.matchMedia('(pointer: coarse)').matches
-    ) {
+    // Respect user's motion preferences
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       return;
     }
 
