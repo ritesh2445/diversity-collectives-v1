@@ -438,52 +438,76 @@ a:focus-visible, button:focus-visible {
 }
 
 /* ==========================================================================
-   PFLAG-STYLE STAGGERED MULTI-COLOR REVEAL ANIMATION (100% GPU COMPOSITED)
+   PFLAG-STYLE MULTI-COLOR 180° TO 0° WELCOME ANIMATION (100% GPU COMPOSITED)
    ========================================================================== */
 
-@keyframes ribbonCurtainReveal {
+@keyframes rainbowFanSweep {
   0% {
-    transform: translate3d(0, 101%, 0);
+    transform: rotate(-180deg);
+    opacity: 0;
   }
-  24% {
-    transform: translate3d(0, 0, 0);
+  15% {
+    opacity: 1;
   }
-  68% {
-    transform: translate3d(0, 0, 0);
+  42% {
+    transform: rotate(0deg);
+    opacity: 1;
+  }
+  74% {
+    transform: rotate(0deg);
+    opacity: 1;
   }
   100% {
-    transform: translate3d(0, -101%, 0);
+    transform: rotate(180deg);
+    opacity: 0;
+  }
+}
+
+@keyframes welcomeCurtainFadeOut {
+  0% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    pointer-events: none;
   }
 }
 
 @keyframes welcomeCenterPop {
   0% {
     opacity: 0;
-    transform: translate3d(0, 24px, 0) scale(0.92);
+    transform: translate3d(0, 20px, 0) scale(0.92);
   }
   24% {
     opacity: 1;
     transform: translate3d(0, 0, 0) scale(1);
   }
-  68% {
+  74% {
     opacity: 1;
     transform: translate3d(0, 0, 0) scale(1);
   }
   100% {
     opacity: 0;
-    transform: translate3d(0, -28px, 0) scale(1.06);
+    transform: translate3d(0, -16px, 0) scale(1.05);
   }
 }
 
-.animate-ribbon-reveal {
-  animation: ribbonCurtainReveal 2.2s cubic-bezier(0.77, 0, 0.175, 1) forwards;
-  will-change: transform;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
+.animate-fan-sweep {
+  animation: rainbowFanSweep 2.4s cubic-bezier(0.2, 0.85, 0.3, 1) forwards;
+  will-change: transform, opacity;
+  transform-origin: 800px 900px;
+}
+
+.animate-curtain-fade {
+  animation: welcomeCurtainFadeOut 2.5s cubic-bezier(0.2, 0.85, 0.3, 1) forwards;
+  will-change: opacity;
 }
 
 .animate-welcome-pop {
-  animation: welcomeCenterPop 2.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: welcomeCenterPop 2.4s cubic-bezier(0.2, 0.85, 0.3, 1) forwards;
   will-change: transform, opacity;
   transform: translateZ(0);
 }

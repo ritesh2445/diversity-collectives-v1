@@ -387,81 +387,82 @@ export default function Home() {
             {/* Right Column: Multi-Layer 3D Editorial Visual Collage */}
             <div className="lg:col-span-5 relative perspective-1000 preserve-3d">
               
-              {/* Primary Visual Frame with Interactive 3D Tilt */}
-              <CardSpotlight 
-                className="glass-card rounded-3xl overflow-hidden shadow-2xl border-2 border-white/95 relative group"
-                tilt={true}
-                maxTilt={8}
-                scale={1.02}
-                glare={true}
-              >
-                <div className="relative overflow-hidden aspect-[4/3] group">
-                  <img 
-                    src="/images/community-gathering.jpg" 
-                    alt="Diversity Collective Ventura County community members gathering"
-                    className="w-full h-full object-cover group-hover:scale-106 transition-transform duration-700 ease-out"
-                    onError={(e) => {
-                      e.target.src = "/images/hero-community.jpg";
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-950/15 to-transparent" />
-                  
-                  {/* Floating In-Frame Physical Location Tag with 3D Depth */}
-                  <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between text-white text-xs translate-z-20">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-amber-300 flex-shrink-0 animate-bounce" />
-                      <span className="font-semibold text-white drop-shadow-md">2471 Portola Road, Suite 100, Ventura</span>
+              {/* Primary Visual Frame with Interactive 3D Card */}
+              <div className="relative group/card rounded-3xl transition-transform duration-300 ease-out hover:-translate-y-1.5">
+                <CardSpotlight 
+                  className="glass-card rounded-3xl overflow-hidden shadow-2xl border-2 border-white/95 relative"
+                  tilt={false}
+                  scale={1}
+                  glare={false}
+                >
+                  <div className="relative overflow-hidden aspect-[4/3] group">
+                    <img 
+                      src="/images/community-gathering.jpg" 
+                      alt="Diversity Collective Ventura County community members gathering"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                      onError={(e) => {
+                        e.target.src = "/images/hero-community.jpg";
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-950/15 to-transparent pointer-events-none" />
+                    
+                    {/* Floating In-Frame Physical Location Tag */}
+                    <div className="absolute bottom-4 left-4 right-4 flex flex-wrap items-center justify-between gap-2 text-white text-xs pointer-events-none">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-amber-300 flex-shrink-0" />
+                        <span className="font-semibold text-white drop-shadow-md">2471 Portola Road, Suite 100, Ventura</span>
+                      </div>
+                      <span className="text-emerald-300 drop-shadow-md font-bold text-[11px] bg-emerald-950/80 px-2.5 py-1 rounded-full border border-emerald-400/50 shadow-sm">
+                        Open Today
+                      </span>
                     </div>
-                    <span className="text-emerald-300 drop-shadow-md font-bold text-[11px] bg-emerald-950/80 px-2.5 py-1 rounded-full border border-emerald-400/50 shadow-sm">
-                      Open Today
-                    </span>
+                  </div>
+
+                  {/* Bottom Bar with Prominent DCVC Emblem */}
+                  <div className="p-4 bg-white/95 backdrop-blur-md border-t border-slate-100 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-white p-1 border-2 border-purple-100 shadow-sm flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+                        <img 
+                          src="/images/logo-square.png" 
+                          alt="Diversity Collective Emblem" 
+                          className="w-full h-full object-contain" 
+                        />
+                      </div>
+                      <div>
+                        <span className="font-bold text-slate-900 text-sm block leading-tight">Community Resource Center</span>
+                        <span className="text-xs text-slate-500 font-medium">Physical safe harbor & clinical navigation</span>
+                      </div>
+                    </div>
+                    <Link 
+                      to="/about"
+                      className="text-xs font-extrabold text-[#5A1E65] hover:text-purple-700 hover:underline inline-flex items-center gap-1 group/link"
+                    >
+                      <span>About Us</span>
+                      <ArrowUpRight className="w-3.5 h-3.5 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-transform" />
+                    </Link>
+                  </div>
+                </CardSpotlight>
+
+                {/* Floating Credential Badge 1 (Top Left) - Locked within screen bounds, pointer-events-none to eliminate flicker */}
+                <div className="hidden sm:flex absolute -top-4 left-2 sm:-top-5 sm:left-4 glass-card p-3 rounded-2xl shadow-xl border-2 border-white/95 items-center gap-2.5 z-30 bg-white/95 backdrop-blur-md animate-float-slow glow-amethyst pointer-events-none select-none max-w-[85vw]">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-100 to-purple-50 text-[#5A1E65] flex items-center justify-center font-bold text-sm shadow-xs border border-purple-300/80 flex-shrink-0">
+                    <Star className="w-4.5 h-4.5 fill-[#5A1E65] text-[#5A1E65]" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-black text-slate-950 leading-tight">10+ Years of Sanctuary</span>
+                    <span className="text-[11px] text-[#5A1E65] font-bold">Serving Ventura County Since 2014</span>
                   </div>
                 </div>
 
-                {/* Bottom Bar with Prominent DCVC Emblem in 3D Depth */}
-                <div className="p-4 bg-white/95 backdrop-blur-md border-t border-slate-100 flex items-center justify-between translate-z-10">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-white p-1 border-2 border-purple-100 shadow-sm flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
-                      <img 
-                        src="/images/logo-square.png" 
-                        alt="Diversity Collective Emblem" 
-                        className="w-full h-full object-contain" 
-                      />
-                    </div>
-                    <div>
-                      <span className="font-bold text-slate-900 text-sm block leading-tight">Community Resource Center</span>
-                      <span className="text-xs text-slate-500 font-medium">Physical safe harbor & clinical navigation</span>
-                    </div>
+                {/* Floating Credential Badge 2 (Bottom Right) - Anchored inside screen container, pointer-events-none to eliminate flicker */}
+                <div className="hidden sm:flex absolute -bottom-4 right-2 sm:-bottom-5 sm:right-4 glass-card p-3 rounded-2xl shadow-xl border-2 border-white/95 items-center gap-2.5 z-30 bg-white/95 backdrop-blur-md animate-float-reverse glow-teal pointer-events-none select-none max-w-[85vw]">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-100 to-teal-50 text-emerald-800 flex items-center justify-center font-bold text-sm shadow-xs border border-emerald-300/80 flex-shrink-0">
+                    <ShieldCheck className="w-4.5 h-4.5 text-emerald-700" />
                   </div>
-                  <Link 
-                    to="/about"
-                    className="text-xs font-extrabold text-[#5A1E65] hover:text-purple-700 hover:underline inline-flex items-center gap-1 group/link"
-                  >
-                    <span>About Us</span>
-                    <ArrowUpRight className="w-3.5 h-3.5 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-transform" />
-                  </Link>
-                </div>
-              </CardSpotlight>
-
-              {/* Floating Credential Badge 1 (Top Left) in 3D Z-Space */}
-              <div className="hidden sm:flex absolute -top-6 -left-6 glass-card p-3.5 rounded-2xl shadow-2xl border-2 border-white/95 items-center gap-3 z-30 bg-white/95 backdrop-blur-md animate-float-slow glow-amethyst translate-z-40">
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-purple-100 to-purple-50 text-[#5A1E65] flex items-center justify-center font-bold text-sm shadow-xs border border-purple-300/80">
-                  <Star className="w-5 h-5 fill-[#5A1E65] text-[#5A1E65]" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xs font-black text-slate-950 leading-tight">10+ Years of Sanctuary</span>
-                  <span className="text-[11px] text-[#5A1E65] font-bold">Serving Ventura County Since 2014</span>
-                </div>
-              </div>
-
-              {/* Floating Credential Badge 2 (Bottom Right) in 3D Z-Space */}
-              <div className="hidden sm:flex absolute -bottom-5 -right-5 glass-card p-3.5 rounded-2xl shadow-2xl border-2 border-white/95 items-center gap-3 z-30 bg-white/95 backdrop-blur-md animate-float-reverse glow-teal translate-z-40">
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-100 to-teal-50 text-emerald-800 flex items-center justify-center font-bold text-sm shadow-xs border border-emerald-300/80">
-                  <ShieldCheck className="w-5 h-5 text-emerald-700" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xs font-black text-slate-950 leading-tight">100% Free & Confidential</span>
-                  <span className="text-[11px] text-emerald-800 font-bold">Zero Insurance or Fees Required</span>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-black text-slate-950 leading-tight">100% Free & Confidential</span>
+                    <span className="text-[11px] text-emerald-800 font-bold">Zero Insurance or Fees Required</span>
+                  </div>
                 </div>
               </div>
 
