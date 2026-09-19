@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 
 export default function CardSpotlight({ 
   children, 
@@ -14,9 +14,18 @@ export default function CardSpotlight({
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [rotation, setRotation] = useState({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState(false);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
+
+  useEffect(() => {
+    setIsTouchDevice(
+      window.matchMedia('(hover: none)').matches || 
+      'ontouchstart' in window || 
+      navigator.maxTouchPoints > 0
+    );
+  }, []);
 
   const handleMouseMove = useCallback((e) => {
-    if (!divRef.current) return;
+    if (isTouchDevice || !divRef.current) return;
     const rect = divRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -30,20 +39,22 @@ export default function CardSpotlight({
       const rotY = ((x - centerX) / centerX) * maxTilt;
       setRotation({ x: rotX, y: rotY });
     }
-  }, [tilt, maxTilt]);
+  }, [tilt, maxTilt, isTouchDevice]);
 
   const handleMouseEnter = () => {
+    if (isTouchDevice) return;
     setIsHovered(true);
   };
 
   const handleMouseLeave = () => {
+    if (isTouchDevice) return;
     setIsHovered(false);
     setRotation({ x: 0, y: 0 });
   };
 
-  const transformStyle = isHovered && tilt
+  const transformStyle = (!isTouchDevice && isHovered && tilt)
     ? `perspective(1000px) rotateX(${rotation.x.toFixed(2)}deg) rotateY(${rotation.y.toFixed(2)}deg) scale3d(${scale}, ${scale}, ${scale})`
-    : 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+    : 'none';
 
   return (
     <div
@@ -53,25 +64,27 @@ export default function CardSpotlight({
       onMouseLeave={handleMouseLeave}
       style={{
         transform: transformStyle,
-        transformStyle: 'preserve-3d',
-        transition: isHovered 
+        transformStyle: isTouchDevice ? 'flat' : 'preserve-3d',
+        transition: (!isTouchDevice && isHovered)
           ? 'transform 0.12s cubic-bezier(0.2, 0.8, 0.4, 1), box-shadow 0.25s ease' 
-          : 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s ease',
+          : 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease',
       }}
-      className={`relative overflow-hidden ${isHovered ? 'shadow-2xl' : ''} ${className}`}
+      className={`relative overflow-hidden ${(!isTouchDevice && isHovered) ? 'shadow-2xl' : ''} ${className}`}
     >
-      {/* Specular 3D Radial Glow */}
-      <div
-        className="pointer-events-none absolute -inset-px transition-opacity duration-300 z-0"
-        style={{
-          opacity: isHovered ? 1 : 0,
-          background: `radial-gradient(550px circle at ${position.x}px ${position.y}px, ${spotlightColor}, transparent 65%)`,
-        }}
-        aria-hidden="true"
-      />
+      {/* Specular 3D Radial Glow (Desktop Only) */}
+      {!isTouchDevice && (
+        <div
+          className="pointer-events-none absolute -inset-px transition-opacity duration-300 z-0"
+          style={{
+            opacity: isHovered ? 1 : 0,
+            background: `radial-gradient(550px circle at ${position.x}px ${position.y}px, ${spotlightColor}, transparent 65%)`,
+          }}
+          aria-hidden="true"
+        />
+      )}
 
-      {/* Dynamic Interactive Specular Sheen */}
-      {glare && (
+      {/* Dynamic Interactive Specular Sheen (Desktop Only) */}
+      {!isTouchDevice && glare && (
         <div
           className="pointer-events-none absolute inset-0 z-20 transition-opacity duration-300 mix-blend-overlay"
           style={{
@@ -82,8 +95,11 @@ export default function CardSpotlight({
         />
       )}
 
-      {/* Content in 3D Space */}
-      <div className={`relative z-10 w-full h-full ${contentClassName}`} style={{ transform: 'translateZ(10px)' }}>
+      {/* Content */}
+      <div 
+        className={`relative z-10 w-full h-full ${contentClassName}`} 
+        style={{ transform: isTouchDevice ? 'none' : 'translateZ(10px)' }}
+      >
         {children}
       </div>
     </div>

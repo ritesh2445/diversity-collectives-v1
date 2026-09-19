@@ -339,41 +339,41 @@ export default function Home() {
                 {/* Dynamic Pathfinder Detail Card */}
                 <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
                   {heroService === 'testing' && (
-                    <div className="flex items-center justify-between w-full">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 w-full">
                       <span className="text-slate-600">
                         <strong>Diversity SHINES:</strong> Free, confidential rapid HIV & Hepatitis C testing with immediate results. Walk-ins Mon–Fri 1–5 PM.
                       </span>
-                      <Link to="/programs" className="text-[#5A1E65] font-bold hover:underline ml-3 flex-shrink-0">
+                      <Link to="/programs" className="text-[#5A1E65] font-bold hover:underline sm:ml-3 flex-shrink-0">
                         View Testing Hours →
                       </Link>
                     </div>
                   )}
                   {heroService === 'youth' && (
-                    <div className="flex items-center justify-between w-full">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 w-full">
                       <span className="text-slate-600">
                         <strong>Rainbow Umbrella:</strong> Affirming peer circles for youth ages 13–23 every Friday from 5:30 PM to 7:30 PM.
                       </span>
-                      <Link to="/programs" className="text-[#5A1E65] font-bold hover:underline ml-3 flex-shrink-0">
+                      <Link to="/programs" className="text-[#5A1E65] font-bold hover:underline sm:ml-3 flex-shrink-0">
                         Youth Info →
                       </Link>
                     </div>
                   )}
                   {heroService === 'center' && (
-                    <div className="flex items-center justify-between w-full">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 w-full">
                       <span className="text-slate-600">
                         <strong>Community Resource Center:</strong> 2471 Portola Rd, Suite 100, Ventura. Free computer lab, queer lending library, and coffee.
                       </span>
-                      <Link to="/contact" className="text-[#5A1E65] font-bold hover:underline ml-3 flex-shrink-0">
+                      <Link to="/contact" className="text-[#5A1E65] font-bold hover:underline sm:ml-3 flex-shrink-0">
                         Directions →
                       </Link>
                     </div>
                   )}
                   {heroService === 'donate' && (
-                    <div className="flex items-center justify-between w-full">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 w-full">
                       <span className="text-slate-600">
                         <strong>Community Philanthropy:</strong> Your tax-deductible gift directly funds free youth meals, safe spaces, and vital screenings.
                       </span>
-                      <a href="#giving" className="text-[#5A1E65] font-bold hover:underline ml-3 flex-shrink-0">
+                      <a href="#giving" className="text-[#5A1E65] font-bold hover:underline sm:ml-3 flex-shrink-0">
                         Donate Now →
                       </a>
                     </div>

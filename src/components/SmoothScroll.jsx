@@ -8,14 +8,25 @@ export default function SmoothScroll({ children }) {
       return;
     }
 
+    // Never hijack touch scrolling on mobile or tablet devices.
+    // iOS and Android have native 120Hz hardware-accelerated momentum scrolling.
+    const isTouchOrMobile = 
+      'ontouchstart' in window || 
+      navigator.maxTouchPoints > 0 || 
+      window.innerWidth < 1024;
+
+    if (isTouchOrMobile) {
+      return;
+    }
+
     const lenis = new Lenis({
-      duration: 1.1,
+      duration: 1.0,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       orientation: 'vertical',
       gestureOrientation: 'vertical',
       smoothWheel: true,
       wheelMultiplier: 1,
-      touchMultiplier: 1.5,
+      touchMultiplier: 0,
     });
 
     window.lenis = lenis;
