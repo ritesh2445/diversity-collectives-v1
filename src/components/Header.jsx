@@ -76,16 +76,16 @@ export default function Header() {
             : 'border-b border-slate-100 py-2.5 sm:py-3.5'
         }`}
       >
-        <div className="container-clean">
-          <div className="flex items-center justify-between gap-2 sm:gap-6">
+        <div className="container-clean px-2.5 sm:px-6">
+          <div className="flex items-center justify-between gap-1.5 sm:gap-6 min-w-0">
             
             {/* Logo & Brand Identity */}
             <Link 
               to="/" 
-              className="flex items-center gap-2 sm:gap-3.5 group focus:outline-none flex-shrink-0 min-w-0"
+              className="flex items-center gap-1.5 sm:gap-3.5 group focus:outline-none min-w-0 flex-shrink"
               aria-label="Diversity Collective Ventura County"
             >
-              <div className="w-10 h-10 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-xl overflow-hidden shadow-xs border-2 border-purple-100 bg-white flex-shrink-0 flex items-center justify-center p-1 group-hover:scale-105 group-hover:border-[#5A1E65] transition-all duration-200">
+              <div className="w-8 h-8 xs:w-10 xs:h-10 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-xl overflow-hidden shadow-xs border-2 border-purple-100 bg-white flex-shrink-0 flex items-center justify-center p-0.5 sm:p-1 group-hover:scale-105 group-hover:border-[#5A1E65] transition-all duration-200">
                 <img 
                   src="/images/logo-square.png" 
                   alt="Diversity Collective Ventura County Official Logo" 
@@ -93,11 +93,11 @@ export default function Header() {
                 />
               </div>
               <div className="flex flex-col justify-center min-w-0">
-                <span className="font-display font-extrabold text-sm sm:text-xl md:text-2xl tracking-tight leading-tight text-slate-950 group-hover:text-[#5A1E65] transition-colors truncate">
+                <span className="font-display font-extrabold text-xs xs:text-sm sm:text-xl md:text-2xl tracking-tight leading-tight text-slate-950 group-hover:text-[#5A1E65] transition-colors truncate">
                   Diversity Collective
                 </span>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="text-[10px] sm:text-xs font-bold tracking-[0.14em] sm:tracking-[0.18em] text-[#5A1E65] uppercase">
+                <div className="flex items-center gap-1 sm:gap-1.5 mt-0.5">
+                  <span className="text-[9px] xs:text-[10px] sm:text-xs font-bold tracking-[0.08em] sm:tracking-[0.18em] text-[#5A1E65] uppercase truncate">
                     Ventura County
                   </span>
                   <span className="hidden xl:inline-flex text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-purple-50 text-[#5A1E65] border border-purple-200 leading-none">
@@ -154,7 +154,7 @@ export default function Header() {
                 href={orgInfo.donationUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn-primary py-1.5 sm:py-2 px-3 sm:px-5 text-xs font-bold tracking-wide inline-flex items-center gap-1.5 shadow-xs flex-shrink-0"
+                className="btn-primary py-1.5 sm:py-2 px-2.5 xs:px-3 sm:px-5 text-[11px] sm:text-xs font-bold tracking-wide inline-flex items-center gap-1 sm:gap-1.5 shadow-xs flex-shrink-0"
               >
                 <Heart className="w-3.5 h-3.5 fill-current" />
                 <span>Donate</span>
@@ -164,10 +164,10 @@ export default function Header() {
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(true)}
-                className="lg:hidden w-10 h-10 flex items-center justify-center text-slate-800 hover:text-slate-950 focus:outline-none rounded-xl bg-slate-100 hover:bg-slate-200 active:scale-95 transition-all"
+                className="lg:hidden w-8 h-8 xs:w-9 xs:h-9 sm:w-10 sm:h-10 flex items-center justify-center text-slate-800 hover:text-slate-950 focus:outline-none rounded-xl bg-slate-100 hover:bg-slate-200 active:scale-95 transition-all flex-shrink-0"
                 aria-label="Open Navigation Menu"
               >
-                <Menu className="w-5 h-5" />
+                <Menu className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             </div>
 

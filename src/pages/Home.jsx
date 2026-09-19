@@ -442,28 +442,6 @@ export default function Home() {
                     </Link>
                   </div>
                 </CardSpotlight>
-
-                {/* Floating Credential Badge 1 (Top Left) - Locked within screen bounds, pointer-events-none to eliminate flicker */}
-                <div className="hidden sm:flex absolute -top-4 left-2 sm:-top-5 sm:left-4 glass-card p-3 rounded-2xl shadow-xl border-2 border-white/95 items-center gap-2.5 z-30 bg-white/95 backdrop-blur-md animate-float-slow glow-amethyst pointer-events-none select-none max-w-[85vw]">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-100 to-purple-50 text-[#5A1E65] flex items-center justify-center font-bold text-sm shadow-xs border border-purple-300/80 flex-shrink-0">
-                    <Star className="w-4.5 h-4.5 fill-[#5A1E65] text-[#5A1E65]" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-xs font-black text-slate-950 leading-tight">10+ Years of Sanctuary</span>
-                    <span className="text-[11px] text-[#5A1E65] font-bold">Serving Ventura County Since 2014</span>
-                  </div>
-                </div>
-
-                {/* Floating Credential Badge 2 (Bottom Right) - Anchored inside screen container, pointer-events-none to eliminate flicker */}
-                <div className="hidden sm:flex absolute -bottom-4 right-2 sm:-bottom-5 sm:right-4 glass-card p-3 rounded-2xl shadow-xl border-2 border-white/95 items-center gap-2.5 z-30 bg-white/95 backdrop-blur-md animate-float-reverse glow-teal pointer-events-none select-none max-w-[85vw]">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-100 to-teal-50 text-emerald-800 flex items-center justify-center font-bold text-sm shadow-xs border border-emerald-300/80 flex-shrink-0">
-                    <ShieldCheck className="w-4.5 h-4.5 text-emerald-700" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-xs font-black text-slate-950 leading-tight">100% Free & Confidential</span>
-                    <span className="text-[11px] text-emerald-800 font-bold">Zero Insurance or Fees Required</span>
-                  </div>
-                </div>
               </div>
 
             </div>
@@ -1134,7 +1112,7 @@ export default function Home() {
               </div>
 
               {/* Right Column: High-Impact Visual Real-World Preview in 3D Atmosphere */}
-              <div className="lg:col-span-5 p-8 sm:p-10 bg-gradient-to-br from-slate-950 via-[#33083F] to-slate-950 text-white flex flex-col justify-between gap-8 relative overflow-hidden preserve-3d">
+              <div className="lg:col-span-5 p-5 xs:p-6 sm:p-10 bg-gradient-to-br from-slate-950 via-[#33083F] to-slate-950 text-white flex flex-col justify-between gap-6 sm:gap-8 relative overflow-hidden preserve-3d">
                 
                 {/* Specular Violet Ambient Aura */}
                 <div 
@@ -1158,15 +1136,15 @@ export default function Home() {
 
                   <div className="flex flex-col gap-1.5">
                     <span className="text-xs text-purple-200 uppercase font-bold tracking-wider">Your Community Gift:</span>
-                    <div className="font-display text-4xl sm:text-5xl font-black text-white flex items-baseline gap-2">
+                    <div className="font-display text-3xl sm:text-5xl font-black text-white flex items-baseline gap-2">
                       <span className="text-amber-300">${customDonation ? customDonation : selectedDonationTier}</span>
                       {donationFreq === 'monthly' && <span className="text-sm font-semibold text-purple-200">/ month</span>}
                     </div>
                   </div>
 
-                  <div className="p-5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex flex-col gap-2 shadow-inner">
+                  <div className="p-4 sm:p-5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex flex-col gap-2 shadow-inner">
                     <span className="text-xs font-black text-amber-300 flex items-center gap-1.5">
-                      <Star className="w-3.5 h-3.5 fill-amber-300" />
+                      <Star className="w-3.5 h-3.5 fill-amber-300 flex-shrink-0" />
                       <span>{customDonation ? 'Custom Community Sustainer Gift' : activeTierObj.title}</span>
                     </span>
                     <p className="text-xs sm:text-sm text-slate-100 leading-relaxed font-serif italic">
@@ -1194,20 +1172,20 @@ export default function Home() {
                 </div>
 
                 {/* Master Action Button with Amber Glow */}
-                <div className="flex flex-col gap-3 relative z-10">
+                <div className="flex flex-col gap-3 relative z-10 w-full">
                   <a
                     href={orgInfo.donationUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={triggerMilestoneConfetti}
-                    className="w-full py-4 px-8 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-400 text-slate-950 font-black text-sm sm:text-base tracking-wide flex items-center justify-center gap-2 shadow-[0_10px_30px_-5px_rgba(245,158,11,0.45)] hover:shadow-[0_16px_40px_-5px_rgba(245,158,11,0.6)] hover:scale-102 transition-all cursor-pointer"
+                    className="w-full py-3.5 sm:py-4 px-4 sm:px-8 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-400 text-slate-950 font-black text-xs sm:text-base tracking-wide flex items-center justify-center gap-2 shadow-[0_10px_30px_-5px_rgba(245,158,11,0.45)] hover:shadow-[0_16px_40px_-5px_rgba(245,158,11,0.6)] hover:scale-102 transition-all cursor-pointer text-center"
                   >
-                    <Heart className="w-4 h-4 fill-current text-rose-700 animate-bounce" />
+                    <Heart className="w-4 h-4 fill-current text-rose-700 animate-bounce flex-shrink-0" />
                     <span>Complete ${customDonation ? customDonation : selectedDonationTier} Gift Online</span>
-                    <ArrowUpRight className="w-4 h-4" />
+                    <ArrowUpRight className="w-4 h-4 flex-shrink-0" />
                   </a>
-                  <p className="text-[11px] text-center text-slate-300 flex items-center justify-center gap-1.5 font-medium">
-                    <Lock className="w-3.5 h-3.5 text-slate-400" />
+                  <p className="text-[10px] xs:text-[11px] text-center text-slate-300 flex items-center justify-center gap-1.5 font-medium flex-wrap">
+                    <Lock className="w-3 h-3 text-slate-400 flex-shrink-0" />
                     <span>Secure redirect to Official Diversity Collective Donor Portal</span>
                   </p>
                 </div>
