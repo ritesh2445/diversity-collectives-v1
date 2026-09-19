@@ -53,7 +53,8 @@ export default function Home() {
       sub: "Defending rights and providing safe harbor in Ventura County since 2014.",
       icon: Award,
       colorClass: "gradient-text-amethyst",
-      borderClass: "border-purple-200/90 hover:border-[#5A1E65]",
+      cardTheme: "card-vibrant-purple",
+      borderClass: "border-purple-300 hover:border-[#5A1E65]",
       glowClass: "glow-amethyst",
       iconBg: "bg-purple-100 text-[#5A1E65]"
     },
@@ -63,7 +64,8 @@ export default function Home() {
       sub: "Free, confidential HIV/STI testing and care navigation through Diversity SHINES.",
       icon: Activity,
       colorClass: "gradient-text-coastal",
-      borderClass: "border-teal-200/90 hover:border-teal-500",
+      cardTheme: "card-vibrant-teal",
+      borderClass: "border-teal-300 hover:border-teal-600",
       glowClass: "glow-teal",
       iconBg: "bg-teal-100 text-teal-800"
     },
@@ -73,7 +75,8 @@ export default function Home() {
       sub: "Safe peer circles, Pride Prom, and mentorship through Rainbow Umbrella.",
       icon: Users,
       colorClass: "gradient-text-sunset",
-      borderClass: "border-amber-200/90 hover:border-amber-500",
+      cardTheme: "card-vibrant-amber",
+      borderClass: "border-amber-300 hover:border-amber-600",
       glowClass: "glow-amber",
       iconBg: "bg-amber-100 text-amber-800"
     },
@@ -83,7 +86,8 @@ export default function Home() {
       sub: "No insurance or fees required. Complete privacy and affirming care for all.",
       icon: ShieldCheck,
       colorClass: "gradient-text-indigo",
-      borderClass: "border-indigo-200/90 hover:border-indigo-500",
+      cardTheme: "card-vibrant-indigo",
+      borderClass: "border-indigo-300 hover:border-indigo-600",
       glowClass: "glow-indigo",
       iconBg: "bg-indigo-100 text-indigo-800"
     }
@@ -179,24 +183,28 @@ export default function Home() {
   };
 
   return (
-    <div className="bg-white text-slate-800">
+    <div className="bg-transparent text-slate-800">
 
       {/* ====================================================================
           HERO: HIGH-IMPACT EDITORIAL FLAGSHIP WITH INTERACTIVE DISCOVERY & CIVIC LOGOS
           ==================================================================== */}
-      <section className="pt-8 md:pt-12 pb-14 md:pb-18 border-b border-slate-100 bg-gradient-to-b from-purple-50/40 via-slate-50/30 to-white relative overflow-hidden">
+      <section className="pt-8 md:pt-12 pb-14 md:pb-18 border-b border-purple-200/70 bg-gradient-to-b from-purple-200/50 via-rose-100/30 via-amber-100/30 to-purple-100/40 relative overflow-hidden">
         
-        {/* Ambient Specular Gradient Orbs */}
+        {/* Ambient Vibrant Aurora Light Fields */}
         <div 
-          className="absolute -top-32 right-10 w-[32rem] h-[32rem] rounded-full bg-purple-200/25 blur-3xl pointer-events-none animate-pulse duration-1000" 
+          className="absolute -top-28 right-5 w-[36rem] h-[36rem] rounded-full aura-orb-violet blur-3xl pointer-events-none" 
           aria-hidden="true" 
         />
         <div 
-          className="absolute top-1/2 -left-32 w-[28rem] h-[28rem] rounded-full bg-amber-100/30 blur-3xl pointer-events-none" 
+          className="absolute top-1/4 -left-28 w-[32rem] h-[32rem] rounded-full aura-orb-rose blur-3xl pointer-events-none" 
           aria-hidden="true" 
         />
         <div 
-          className="absolute -bottom-24 right-1/3 w-80 h-80 rounded-full bg-emerald-100/25 blur-3xl pointer-events-none" 
+          className="absolute -bottom-20 right-1/4 w-[30rem] h-[30rem] rounded-full aura-orb-teal blur-3xl pointer-events-none" 
+          aria-hidden="true" 
+        />
+        <div 
+          className="absolute top-12 left-1/3 w-[26rem] h-[26rem] rounded-full aura-orb-amber blur-3xl pointer-events-none" 
           aria-hidden="true" 
         />
 
@@ -204,7 +212,7 @@ export default function Home() {
           
           {/* Top Live Sanctuary & Crisis Alert Ribbon */}
           <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
-            <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white/90 border border-purple-200/80 backdrop-blur-md font-semibold text-[#5A1E65] shadow-xs">
+            <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white/95 border border-purple-200/90 backdrop-blur-md font-bold text-[#5A1E65] shadow-xs hover:border-purple-400 transition-colors">
               <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
@@ -212,9 +220,9 @@ export default function Home() {
               <span>Sanctuary Open Today · Mon–Fri 1:00 PM – 5:00 PM · Free HIV/STI Screenings</span>
             </div>
 
-            <div className="hidden sm:inline-flex items-center gap-2 text-slate-500 bg-slate-50/80 px-3.5 py-1.5 rounded-full border border-slate-200 text-xs font-medium">
+            <div className="hidden sm:inline-flex items-center gap-2 text-slate-700 bg-white/90 px-4 py-1.5 rounded-full border border-purple-200/70 text-xs font-semibold shadow-2xs">
               <Phone className="w-3.5 h-3.5 text-purple-700" />
-              <span>Helpline: <strong>(805) 644-5428</strong> · 24/7 Crisis: <strong>Dial 988</strong></span>
+              <span>Helpline: <strong className="text-purple-900">(805) 644-5428</strong> · 24/7 Crisis: <strong className="text-rose-700">Dial 988</strong></span>
             </div>
           </div>
 
@@ -225,20 +233,20 @@ export default function Home() {
             <div className="lg:col-span-7 flex flex-col gap-6">
               
               <div className="flex flex-col gap-3.5">
-                <span className="glass-pill text-xs font-bold text-[#5A1E65] py-1 px-3.5 bg-purple-50/90 border-purple-200/80">
+                <span className="glass-pill text-xs font-bold text-[#5A1E65] py-1 px-3.5 bg-purple-50/95 border-purple-200/90 shadow-2xs">
                   ESTABLISHED 2014 · VENTURA COUNTY 501(C)(3) NONPROFIT
                 </span>
 
-                <h1 className="font-display text-3xl sm:text-5xl md:text-7xl xl:text-[5rem] font-extrabold tracking-tight text-slate-950 leading-[1.08] sm:leading-[1.05]">
-                  You Are <span className="font-serif italic font-normal text-[#5A1E65] relative inline-block">
+                <h1 className="font-display text-3xl sm:text-5xl md:text-7xl xl:text-[5.25rem] font-black tracking-tight text-slate-950 leading-[1.08] sm:leading-[1.04]">
+                  You Are <span className="font-serif italic font-normal bg-gradient-to-r from-[#5A1E65] via-purple-700 via-rose-600 to-amber-500 bg-clip-text text-transparent relative inline-block">
                     Always Welcome
-                    <svg className="absolute -bottom-1 left-0 w-full h-2.5 text-[#5A1E65]/35" viewBox="0 0 100 10" preserveAspectRatio="none">
+                    <svg className="absolute -bottom-1 left-0 w-full h-2.5 text-rose-500/50" viewBox="0 0 100 10" preserveAspectRatio="none">
                       <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="3" fill="transparent" />
                     </svg>
                   </span> Here.
                 </h1>
 
-                <p className="text-sm sm:text-lg md:text-xl text-slate-600 leading-relaxed max-w-2xl pt-1">
+                <p className="text-sm sm:text-lg md:text-xl text-slate-600 leading-relaxed max-w-2xl pt-1 font-medium">
                   Diversity Collective is Ventura County's premier cultural sanctuary and clinical wellness home — delivering free rapid health testing, youth peer programs, mutual aid, and intersectional advocacy across all 10 county cities.
                 </p>
               </div>
@@ -247,133 +255,133 @@ export default function Home() {
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-1">
                 <Link 
                   to="/programs" 
-                  className="btn-primary group shadow-md hover:shadow-lg text-sm py-3 sm:py-3.5 px-6 sm:px-8 text-center justify-center"
+                  className="btn-primary group shadow-md hover:shadow-xl text-sm py-3 sm:py-3.5 px-6 sm:px-8 text-center justify-center"
                 >
                   <span>Explore Free Programs</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
                 <Link 
                   to="/contact" 
-                  className="btn-secondary group backdrop-blur-md bg-white/90 text-sm py-3 sm:py-3.5 px-6 sm:px-8 border-slate-300 text-center justify-center"
+                  className="btn-secondary group backdrop-blur-md bg-white/95 text-sm py-3 sm:py-3.5 px-6 sm:px-8 text-center justify-center"
                 >
                   <MapPin className="w-4 h-4 text-purple-700 group-hover:scale-110 transition-transform" />
                   <span>Visit Sanctuary</span>
                 </Link>
                 <a
                   href={`tel:${orgInfo.phone.replace(/[^0-9]/g, '')}`}
-                  className="inline-flex items-center justify-center gap-2 text-xs font-bold text-slate-700 hover:text-slate-950 px-4 py-2.5 bg-slate-50 hover:bg-slate-100 rounded-full border border-slate-200 transition-colors self-start sm:self-auto"
+                  className="inline-flex items-center justify-center gap-2 text-xs font-bold text-slate-700 hover:text-purple-900 px-4 py-2.5 bg-white/90 hover:bg-purple-50 rounded-full border border-purple-200/80 transition-all self-start sm:self-auto shadow-2xs"
                 >
-                  <Phone className="w-3.5 h-3.5 text-slate-500" />
+                  <Phone className="w-3.5 h-3.5 text-purple-600" />
                   <span>{orgInfo.phone}</span>
                 </a>
               </div>
 
-              {/* Interactive "What Brings You In Today?" Quick Pathfinder */}
-              <div className="mt-4 p-5 rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200/90 shadow-sm flex flex-col gap-3">
+              {/* Interactive "What Brings You In Today?" Quick Pathfinder with Multi-Color Themes */}
+              <div className="mt-4 p-5 sm:p-6 rounded-2xl bg-white/95 backdrop-blur-md border-2 border-purple-100 shadow-lg shadow-purple-500/5 flex flex-col gap-3.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                    <Sparkles className="w-3.5 h-3.5 text-[#5A1E65]" />
+                  <span className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-amber-500 animate-pulse" />
                     <span>Instant Sanctuary Navigator — What brings you in today?</span>
                   </span>
-                  <span className="text-[11px] text-slate-400">100% Confidential</span>
+                  <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">100% Confidential</span>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                   <button
                     onClick={() => setHeroService('testing')}
-                    className={`p-2.5 rounded-xl text-left transition-all border text-xs font-semibold cursor-pointer ${
+                    className={`p-3 rounded-xl text-left transition-all border-2 text-xs font-semibold cursor-pointer interactive-card-3d ${
                       heroService === 'testing'
-                        ? 'bg-purple-50 border-[#5A1E65] text-[#5A1E65] shadow-xs'
-                        : 'bg-slate-50/70 border-slate-200 text-slate-700 hover:bg-slate-100'
+                        ? 'bg-gradient-to-br from-teal-50 to-emerald-50 border-teal-500 text-teal-950 shadow-md shadow-teal-500/20 ring-2 ring-teal-400/40'
+                        : 'bg-white border-slate-200/90 text-slate-700 hover:border-teal-300 hover:bg-teal-50/40'
                     }`}
                   >
-                    <div className="font-bold flex items-center gap-1.5">
+                    <div className="font-extrabold flex items-center gap-1.5 text-teal-700">
                       <span>🩺</span> Rapid Testing
                     </div>
-                    <span className="text-[10px] text-slate-500 block font-normal">Diversity SHINES</span>
+                    <span className="text-[10px] text-slate-500 block font-medium mt-0.5">Diversity SHINES</span>
                   </button>
 
                   <button
                     onClick={() => setHeroService('youth')}
-                    className={`p-2.5 rounded-xl text-left transition-all border text-xs font-semibold cursor-pointer ${
+                    className={`p-3 rounded-xl text-left transition-all border-2 text-xs font-semibold cursor-pointer interactive-card-3d ${
                       heroService === 'youth'
-                        ? 'bg-purple-50 border-[#5A1E65] text-[#5A1E65] shadow-xs'
-                        : 'bg-slate-50/70 border-slate-200 text-slate-700 hover:bg-slate-100'
+                        ? 'bg-gradient-to-br from-amber-50 to-orange-50 border-amber-500 text-amber-950 shadow-md shadow-amber-500/20 ring-2 ring-amber-400/40'
+                        : 'bg-white border-slate-200/90 text-slate-700 hover:border-amber-300 hover:bg-amber-50/40'
                     }`}
                   >
-                    <div className="font-bold flex items-center gap-1.5">
+                    <div className="font-extrabold flex items-center gap-1.5 text-amber-700">
                       <span>🌈</span> Youth (13–23)
                     </div>
-                    <span className="text-[10px] text-slate-500 block font-normal">Rainbow Umbrella</span>
+                    <span className="text-[10px] text-slate-500 block font-medium mt-0.5">Rainbow Umbrella</span>
                   </button>
 
                   <button
                     onClick={() => setHeroService('center')}
-                    className={`p-2.5 rounded-xl text-left transition-all border text-xs font-semibold cursor-pointer ${
+                    className={`p-3 rounded-xl text-left transition-all border-2 text-xs font-semibold cursor-pointer interactive-card-3d ${
                       heroService === 'center'
-                        ? 'bg-purple-50 border-[#5A1E65] text-[#5A1E65] shadow-xs'
-                        : 'bg-slate-50/70 border-slate-200 text-slate-700 hover:bg-slate-100'
+                        ? 'bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-600 text-purple-950 shadow-md shadow-purple-500/20 ring-2 ring-purple-400/40'
+                        : 'bg-white border-slate-200/90 text-slate-700 hover:border-purple-300 hover:bg-purple-50/40'
                     }`}
                   >
-                    <div className="font-bold flex items-center gap-1.5">
+                    <div className="font-extrabold flex items-center gap-1.5 text-purple-700">
                       <span>🏠</span> Drop-In Hub
                     </div>
-                    <span className="text-[10px] text-slate-500 block font-normal">Library & Lounge</span>
+                    <span className="text-[10px] text-slate-500 block font-medium mt-0.5">Library & Lounge</span>
                   </button>
 
                   <button
                     onClick={() => setHeroService('donate')}
-                    className={`p-2.5 rounded-xl text-left transition-all border text-xs font-semibold cursor-pointer ${
+                    className={`p-3 rounded-xl text-left transition-all border-2 text-xs font-semibold cursor-pointer interactive-card-3d ${
                       heroService === 'donate'
-                        ? 'bg-purple-50 border-[#5A1E65] text-[#5A1E65] shadow-xs'
-                        : 'bg-slate-50/70 border-slate-200 text-slate-700 hover:bg-slate-100'
+                        ? 'bg-gradient-to-br from-rose-50 to-pink-50 border-rose-500 text-rose-950 shadow-md shadow-rose-500/20 ring-2 ring-rose-400/40'
+                        : 'bg-white border-slate-200/90 text-slate-700 hover:border-rose-300 hover:bg-rose-50/40'
                     }`}
                   >
-                    <div className="font-bold flex items-center gap-1.5">
+                    <div className="font-extrabold flex items-center gap-1.5 text-rose-700">
                       <span>💖</span> Give or Join
                     </div>
-                    <span className="text-[10px] text-slate-500 block font-normal">501(c)(3) Support</span>
+                    <span className="text-[10px] text-slate-500 block font-medium mt-0.5">501(c)(3) Support</span>
                   </button>
                 </div>
 
                 {/* Dynamic Pathfinder Detail Card */}
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                <div className="pt-2 border-t border-purple-100 flex items-center justify-between text-xs">
                   {heroService === 'testing' && (
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 w-full">
-                      <span className="text-slate-600">
-                        <strong>Diversity SHINES:</strong> Free, confidential rapid HIV & Hepatitis C testing with immediate results. Walk-ins Mon–Fri 1–5 PM.
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 w-full p-2.5 rounded-xl bg-teal-50/60 border border-teal-200/70">
+                      <span className="text-teal-900 font-medium">
+                        <strong className="text-teal-950 font-bold">Diversity SHINES:</strong> Free, confidential rapid HIV & Hepatitis C testing with immediate results. Walk-ins Mon–Fri 1–5 PM.
                       </span>
-                      <Link to="/programs" className="text-[#5A1E65] font-bold hover:underline sm:ml-3 flex-shrink-0">
+                      <Link to="/programs" className="text-teal-700 font-extrabold hover:underline sm:ml-3 flex-shrink-0">
                         View Testing Hours →
                       </Link>
                     </div>
                   )}
                   {heroService === 'youth' && (
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 w-full">
-                      <span className="text-slate-600">
-                        <strong>Rainbow Umbrella:</strong> Affirming peer circles for youth ages 13–23 every Friday from 5:30 PM to 7:30 PM.
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 w-full p-2.5 rounded-xl bg-amber-50/60 border border-amber-200/70">
+                      <span className="text-amber-900 font-medium">
+                        <strong className="text-amber-950 font-bold">Rainbow Umbrella:</strong> Affirming peer circles for youth ages 13–23 every Friday from 5:30 PM to 7:30 PM.
                       </span>
-                      <Link to="/programs" className="text-[#5A1E65] font-bold hover:underline sm:ml-3 flex-shrink-0">
+                      <Link to="/programs" className="text-amber-700 font-extrabold hover:underline sm:ml-3 flex-shrink-0">
                         Youth Info →
                       </Link>
                     </div>
                   )}
                   {heroService === 'center' && (
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 w-full">
-                      <span className="text-slate-600">
-                        <strong>Community Resource Center:</strong> 2471 Portola Rd, Suite 100, Ventura. Free computer lab, queer lending library, and coffee.
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 w-full p-2.5 rounded-xl bg-purple-50/60 border border-purple-200/70">
+                      <span className="text-purple-900 font-medium">
+                        <strong className="text-purple-950 font-bold">Community Resource Center:</strong> 2471 Portola Rd, Suite 100, Ventura. Free computer lab, queer lending library, and coffee.
                       </span>
-                      <Link to="/contact" className="text-[#5A1E65] font-bold hover:underline sm:ml-3 flex-shrink-0">
+                      <Link to="/contact" className="text-purple-700 font-extrabold hover:underline sm:ml-3 flex-shrink-0">
                         Directions →
                       </Link>
                     </div>
                   )}
                   {heroService === 'donate' && (
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 w-full">
-                      <span className="text-slate-600">
-                        <strong>Community Philanthropy:</strong> Your tax-deductible gift directly funds free youth meals, safe spaces, and vital screenings.
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 w-full p-2.5 rounded-xl bg-rose-50/60 border border-rose-200/70">
+                      <span className="text-rose-900 font-medium">
+                        <strong className="text-rose-950 font-bold">Community Philanthropy:</strong> Your tax-deductible gift directly funds free youth meals, safe spaces, and vital screenings.
                       </span>
-                      <a href="#giving" className="text-[#5A1E65] font-bold hover:underline sm:ml-3 flex-shrink-0">
+                      <a href="#giving" className="text-rose-700 font-extrabold hover:underline sm:ml-3 flex-shrink-0">
                         Donate Now →
                       </a>
                     </div>
@@ -389,8 +397,14 @@ export default function Home() {
               
               {/* Primary Visual Frame with Interactive 3D Card */}
               <div className="relative group/card rounded-3xl transition-transform duration-300 ease-out hover:-translate-y-1.5">
+                {/* Specular Multi-Color Ambient Aura Backlight */}
+                <div 
+                  className="absolute -inset-2 bg-gradient-to-r from-purple-600 via-rose-500 via-amber-400 to-teal-500 rounded-3xl blur-2xl opacity-35 group-hover/card:opacity-60 transition-all duration-500 pointer-events-none" 
+                  aria-hidden="true" 
+                />
+
                 <CardSpotlight 
-                  className="glass-card rounded-3xl overflow-hidden shadow-2xl border-2 border-white/95 relative"
+                  className="glass-card rounded-3xl overflow-hidden shadow-2xl border-2 border-purple-200/90 relative"
                   tilt={false}
                   scale={1}
                   glare={false}
@@ -604,7 +618,7 @@ export default function Home() {
       {/* ====================================================================
           IMPACT NUMBERS: ANIMATED COUNT-UP WITH GLASS SPOTLIGHT
           ==================================================================== */}
-      <section className="py-14 md:py-20 bg-slate-50/50 border-b border-slate-100">
+      <section className="py-14 md:py-20 bg-gradient-to-b from-purple-100/40 via-teal-100/30 to-amber-100/30 border-b border-purple-200/60 relative overflow-hidden">
         <div className="container-clean">
           
           <div className="max-w-2xl mb-10 flex flex-col gap-3">
@@ -625,7 +639,7 @@ export default function Home() {
               return (
                 <CardSpotlight 
                   key={stat.label}
-                  className={`glass-card p-6 md:p-8 border-2 ${stat.borderClass} ${stat.glowClass} interactive-card-3d relative overflow-hidden`}
+                  className={`${stat.cardTheme} p-6 md:p-8 ${stat.glowClass} interactive-card-3d relative overflow-hidden`}
                   tilt={true}
                   maxTilt={8}
                   glare={true}
@@ -667,7 +681,7 @@ export default function Home() {
       {/* ====================================================================
           PROGRAMS DIRECTORY: COLLISION-PROOF EXPANDABLE CARDS
           ==================================================================== */}
-      <section className="py-14 md:py-20 bg-slate-50/50 border-b border-slate-100">
+      <section className="py-14 md:py-20 bg-gradient-to-b from-amber-100/30 via-rose-100/30 to-purple-100/40 border-b border-purple-200/60 relative overflow-hidden">
         <div className="container-clean">
           
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
@@ -684,16 +698,16 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Clean Category Tabs */}
+          {/* Clean Category Tabs with Vibrant Active Gradients */}
           <div className="flex flex-wrap items-center gap-2.5 my-6">
             {programCategories.map(cat => (
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`px-4 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+                className={`px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer ${
                   selectedCategory === cat.id
-                    ? 'bg-slate-900 text-white shadow-sm'
-                    : 'glass-pill hover:bg-slate-100 hover:text-slate-900'
+                    ? 'bg-gradient-to-r from-[#5A1E65] via-purple-700 to-indigo-600 text-white shadow-md shadow-purple-500/25 scale-[1.03]'
+                    : 'bg-white text-slate-700 border border-slate-200 hover:border-purple-300 hover:bg-purple-50/60 shadow-2xs'
                 }`}
               >
                 {cat.label}
@@ -706,16 +720,30 @@ export default function Home() {
             {filteredPrograms.map((program) => {
               const isPeekOpen = expandedProgram === program.slug;
               
-              // Dynamic jewel-toned badge colors
-              let audienceBadgeColor = "text-purple-700 bg-purple-50 border-purple-200/80";
-              if (program.slug === 'little-unicorns') audienceBadgeColor = "text-amber-700 bg-amber-50 border-amber-200/80";
-              if (program.slug === 'diversity-shines') audienceBadgeColor = "text-teal-700 bg-teal-50 border-teal-200/80";
-              if (program.slug === 'community-resource-center') audienceBadgeColor = "text-indigo-700 bg-indigo-50 border-indigo-200/80";
+              // Dynamic jewel-toned card themes & badge colors
+              let cardTheme = "card-vibrant-purple";
+              let audienceBadgeColor = "text-purple-900 bg-purple-100 border-purple-300";
+              if (program.slug === 'little-unicorns') {
+                cardTheme = "card-vibrant-rose";
+                audienceBadgeColor = "text-rose-900 bg-rose-100 border-rose-300";
+              }
+              if (program.slug === 'diversity-shines') {
+                cardTheme = "card-vibrant-teal";
+                audienceBadgeColor = "text-teal-900 bg-teal-100 border-teal-300";
+              }
+              if (program.slug === 'rainbow-umbrella') {
+                cardTheme = "card-vibrant-amber";
+                audienceBadgeColor = "text-amber-900 bg-amber-100 border-amber-300";
+              }
+              if (program.slug === 'community-resource-center') {
+                cardTheme = "card-vibrant-indigo";
+                audienceBadgeColor = "text-indigo-900 bg-indigo-100 border-indigo-300";
+              }
 
               return (
                 <CardSpotlight 
                   key={program.slug}
-                  className="glass-card overflow-hidden flex flex-col justify-between interactive-card-3d border-2 border-slate-200/80 hover:border-[#5A1E65]/60 shadow-sm hover:shadow-2xl"
+                  className={`${cardTheme} overflow-hidden flex flex-col justify-between interactive-card-3d shadow-md hover:shadow-2xl`}
                   tilt={true}
                   maxTilt={6}
                   scale={1.02}
@@ -806,7 +834,7 @@ export default function Home() {
       {/* ====================================================================
           RESOURCE CENTER SANCTUARY: CALM 2-COLUMN ARCHITECTURE
           ==================================================================== */}
-      <section className="py-14 md:py-20 bg-white border-b border-slate-100">
+      <section className="py-14 md:py-20 bg-gradient-to-b from-purple-100/40 via-indigo-100/30 to-teal-100/30 border-b border-purple-200/60 relative overflow-hidden">
         <div className="container-clean">
           
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
@@ -938,7 +966,7 @@ export default function Home() {
       {/* ====================================================================
           INTERACTIVE MODULE: VENTURA COUNTY REGIONAL HUB EXPLORER
           ==================================================================== */}
-      <section className="py-14 md:py-20 bg-slate-50/50 border-b border-slate-100">
+      <section className="py-14 md:py-20 bg-gradient-to-b from-teal-100/30 via-purple-100/40 to-amber-100/30 border-b border-purple-200/60 relative overflow-hidden">
         <div className="container-clean">
           <div className="max-w-2xl mx-auto text-center mb-10 flex flex-col items-center gap-3">
             <span className="glass-pill">
@@ -959,7 +987,7 @@ export default function Home() {
       {/* ====================================================================
           HIGHLY EYE-CATCHING & BEAUTIFUL GIVING STUDIO (Addressing User Feedback)
           ==================================================================== */}
-      <section id="giving" className="py-16 md:py-24 bg-gradient-to-b from-white via-slate-50/50 to-purple-50/30 border-b border-slate-100 relative overflow-hidden">
+      <section id="giving" className="py-16 md:py-24 bg-gradient-to-b from-amber-100/30 via-purple-100/50 to-purple-950/25 border-b border-purple-200/60 relative overflow-hidden">
         
         {/* Ambient Specular Backdrops */}
         <div 
@@ -1201,7 +1229,7 @@ export default function Home() {
       {/* ====================================================================
           UPCOMING EVENTS: BALANCED ROWS WITH GLASS CARDS
           ==================================================================== */}
-      <section className="py-14 md:py-20 bg-slate-50/50 border-b border-slate-100">
+      <section className="py-14 md:py-20 bg-gradient-to-b from-purple-100/40 via-rose-100/30 to-amber-100/30 border-b border-purple-200/60 relative overflow-hidden">
         <div className="container-clean">
           
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
@@ -1222,16 +1250,16 @@ export default function Home() {
             </Link>
           </div>
 
-          {/* Filter Pills */}
+          {/* Filter Pills with Vibrant Active State */}
           <div className="flex flex-wrap items-center gap-2.5 my-6">
             {eventCategories.map(cat => (
               <button
                 key={cat.id}
                 onClick={() => setSelectedEventCategory(cat.id)}
-                className={`px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                className={`px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
                   selectedEventCategory === cat.id
-                    ? 'bg-slate-900 text-white shadow-sm'
-                    : 'glass-pill hover:bg-slate-100'
+                    ? 'bg-gradient-to-r from-[#5A1E65] to-purple-700 text-white shadow-md shadow-purple-500/20 scale-[1.03]'
+                    : 'bg-white text-slate-700 border border-slate-200 hover:border-purple-300 hover:bg-purple-50/60 shadow-2xs'
                 }`}
               >
                 {cat.label}
@@ -1243,17 +1271,23 @@ export default function Home() {
           <div className="flex flex-col gap-4 perspective-1000">
             {filteredEvents.slice(0, 4).map((evt, idx) => {
               const dateGradients = [
-                'from-purple-950 via-purple-900 to-indigo-950 text-white',
-                'from-amber-600 via-amber-500 to-amber-700 text-white',
-                'from-emerald-700 via-teal-700 to-emerald-800 text-white',
-                'from-slate-900 via-slate-800 to-purple-950 text-white'
+                'from-purple-800 via-[#5A1E65] to-indigo-900 text-white shadow-purple-500/25',
+                'from-amber-500 via-orange-500 to-rose-600 text-white shadow-amber-500/25',
+                'from-emerald-600 via-teal-600 to-cyan-700 text-white shadow-teal-500/25',
+                'from-rose-600 via-pink-600 to-purple-800 text-white shadow-rose-500/25'
               ];
+
+              let catBadge = "text-purple-800 bg-purple-100/70 border-purple-200";
+              if (evt.category?.toLowerCase().includes('youth')) catBadge = "text-amber-800 bg-amber-100/70 border-amber-200";
+              if (evt.category?.toLowerCase().includes('health')) catBadge = "text-teal-800 bg-teal-100/70 border-teal-200";
+              if (evt.category?.toLowerCase().includes('pride') || evt.category?.toLowerCase().includes('gala')) catBadge = "text-rose-800 bg-rose-100/70 border-rose-200";
+
               return (
                 <CardSpotlight
                   key={evt.id}
-                  className="glass-card p-5 sm:p-6 md:p-7 border-2 border-slate-200/80 hover:border-purple-300/90 interactive-card-3d"
+                  className="card-vibrant-purple p-5 sm:p-6 md:p-7 interactive-card-3d shadow-sm hover:shadow-xl"
                   tilt={true}
-                  maxTilt={5}
+                  maxTilt={4}
                   glare={true}
                 >
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
@@ -1267,7 +1301,7 @@ export default function Home() {
 
                     <div className="md:col-span-7 flex flex-col gap-1.5">
                       <div className="flex items-center gap-2.5">
-                        <span className="text-[10px] font-bold text-slate-700 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
+                        <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${catBadge}`}>
                           {evt.category}
                         </span>
                         <span className="text-xs text-slate-500 flex items-center gap-1 font-medium">
@@ -1304,7 +1338,7 @@ export default function Home() {
       {/* ====================================================================
           TESTIMONIALS & COMMUNITY VOICES: 3D EDITORIAL GRID
           ==================================================================== */}
-      <section className="py-14 md:py-20 bg-white border-b border-slate-100">
+      <section className="py-14 md:py-20 bg-gradient-to-b from-amber-100/30 via-purple-100/40 to-indigo-100/35 border-b border-purple-200/60 relative overflow-hidden">
         <div className="container-clean">
           
           <div className="max-w-2xl mx-auto text-center mb-10 flex flex-col items-center gap-3">
@@ -1321,19 +1355,19 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 perspective-1000">
             <CardSpotlight 
-              className="glass-card p-6 md:p-8 flex flex-col justify-between gap-5 border-2 border-purple-200/70 hover:border-[#5A1E65] interactive-card-3d glow-amethyst"
+              className="card-vibrant-purple p-6 md:p-8 flex flex-col justify-between gap-5 interactive-card-3d glow-amethyst"
               tilt={true}
               maxTilt={6}
               glare={true}
             >
               <div className="flex items-center justify-between">
                 <span className="text-4xl font-serif text-[#5A1E65] leading-none">“</span>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-200">Youth Voice</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-purple-900 bg-purple-100 px-2.5 py-0.5 rounded-full border border-purple-300">Youth Voice</span>
               </div>
               <p className="font-serif italic text-sm md:text-base text-slate-800 leading-relaxed">
                 "Rainbow Umbrella gave our teenager the first space where they felt completely accepted and understood. It changed our family's life."
               </p>
-              <div className="pt-3 border-t border-slate-100 flex items-center gap-3">
+              <div className="pt-3 border-t border-purple-100 flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-600 to-indigo-700 text-white font-black text-xs flex items-center justify-center shadow-xs">
                   YP
                 </div>
@@ -1345,19 +1379,19 @@ export default function Home() {
             </CardSpotlight>
 
             <CardSpotlight 
-              className="glass-card p-6 md:p-8 flex flex-col justify-between gap-5 border-2 border-amber-200/70 hover:border-amber-500 interactive-card-3d glow-amber"
+              className="card-vibrant-amber p-6 md:p-8 flex flex-col justify-between gap-5 interactive-card-3d glow-amber"
               tilt={true}
               maxTilt={6}
               glare={true}
             >
               <div className="flex items-center justify-between">
                 <span className="text-4xl font-serif text-amber-600 leading-none">“</span>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">Parent Voice</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-900 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-300">Parent Voice</span>
               </div>
               <p className="font-serif italic text-sm md:text-base text-slate-800 leading-relaxed">
                 "Having a physical Community Resource Center right here in Portola Road gives our families a trusted place to find healthcare navigation, peer support, and affirming community."
               </p>
-              <div className="pt-3 border-t border-slate-100 flex items-center gap-3">
+              <div className="pt-3 border-t border-amber-100 flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500 to-rose-600 text-white font-black text-xs flex items-center justify-center shadow-xs">
                   PO
                 </div>
@@ -1369,14 +1403,14 @@ export default function Home() {
             </CardSpotlight>
 
             <CardSpotlight 
-              className="glass-card p-6 md:p-8 flex flex-col justify-between gap-5 border-2 border-emerald-200/70 hover:border-emerald-500 interactive-card-3d glow-teal"
+              className="card-vibrant-teal p-6 md:p-8 flex flex-col justify-between gap-5 interactive-card-3d glow-teal"
               tilt={true}
               maxTilt={6}
               glare={true}
             >
               <div className="flex items-center justify-between">
-                <span className="text-4xl font-serif text-emerald-700 leading-none">“</span>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">Volunteer Voice</span>
+                <span className="text-4xl font-serif text-teal-700 leading-none">“</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-teal-900 bg-teal-100 px-2.5 py-0.5 rounded-full border border-teal-300">Volunteer Voice</span>
               </div>
               <p className="font-serif italic text-sm md:text-base text-slate-800 leading-relaxed">
                 "Diversity Collective is the cultural backbone of LGBTQ+ Ventura County. From Pride to harm reduction, they show up for our community 365 days a year."

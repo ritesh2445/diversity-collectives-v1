@@ -5,14 +5,26 @@ import { orgInfo, sponsorsList } from '../data/dcvcData';
 
 export default function Footer() {
   return (
-    <footer className="bg-slate-950 text-slate-300 pt-20 md:pt-28 pb-16 border-t border-slate-800 relative">
-      <div className="container-clean">
+    <>
+      <div className="h-1 pride-rainbow-bar w-full" aria-hidden="true" />
+      <footer className="bg-slate-950 text-slate-300 pt-20 md:pt-28 pb-16 border-t border-slate-800 relative overflow-hidden">
+        {/* Ambient Specular Auras */}
+        <div 
+          className="absolute -top-24 left-1/4 w-96 h-96 rounded-full aura-orb-violet blur-3xl pointer-events-none" 
+          aria-hidden="true" 
+        />
+        <div 
+          className="absolute -bottom-24 right-1/4 w-96 h-96 rounded-full aura-orb-rose blur-3xl pointer-events-none" 
+          aria-hidden="true" 
+        />
+
+        <div className="container-clean relative z-10">
         
         {/* Top Editorial Row: Supported By */}
         <div className="pb-16 border-b border-slate-800">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
             <div className="flex flex-col gap-2 max-w-md">
-              <span className="text-xs font-bold text-slate-400 tracking-wider uppercase">
+              <span className="text-xs font-bold text-amber-400 tracking-wider uppercase">
                 COMMUNITY ALLIANCES & PARTNERS
               </span>
               <p className="text-sm text-slate-400 leading-relaxed">
@@ -60,12 +72,12 @@ export default function Footer() {
           {/* Col 1: Typographic Branding */}
           <div className="lg:col-span-6 flex flex-col justify-between gap-8">
             <div className="flex flex-col gap-4">
-              <span className="text-xs font-bold text-slate-400 tracking-wider uppercase">
+              <span className="text-xs font-bold text-purple-400 tracking-wider uppercase">
                 ESTABLISHED 2014 · VENTURA COUNTY
               </span>
               <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white leading-tight">
                 Diversity Collective <br className="hidden sm:block" />
-                <span className="font-serif italic font-normal text-slate-400">Ventura County</span>
+                <span className="font-serif italic font-normal bg-gradient-to-r from-purple-400 via-rose-400 to-amber-300 bg-clip-text text-transparent">Ventura County</span>
               </h2>
               <p className="text-sm md:text-base text-slate-400 max-w-lg leading-relaxed pt-1">
                 {orgInfo.mission} A safe, vibrant, and affirming cultural sanctuary for every intersecting LGBTQ+ identity across our coastal and inland communities.
@@ -77,9 +89,9 @@ export default function Footer() {
                 href={orgInfo.donationUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn-primary py-2.5 px-6 text-xs font-bold tracking-wider inline-flex items-center gap-2"
+                className="btn-primary py-2.5 px-6 text-xs font-bold tracking-wider inline-flex items-center gap-2 shadow-lg shadow-purple-900/40"
               >
-                <Heart className="w-3.5 h-3.5 fill-current" />
+                <Heart className="w-3.5 h-3.5 fill-current text-rose-300" />
                 <span>Support Our Mission</span>
               </a>
               <Link
@@ -250,5 +262,6 @@ export default function Footer() {
 
       </div>
     </footer>
+    </>
   );
 }

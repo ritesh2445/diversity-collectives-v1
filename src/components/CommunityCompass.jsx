@@ -231,26 +231,34 @@ export default function CommunityCompass() {
             {personas.map((p) => {
               const isSelected = activePersona === p.id;
               const IconComponent = p.icon;
+              
+              const activeThemeBg = {
+                youth: 'bg-gradient-to-br from-[#4A1553] via-purple-900 to-indigo-950 border-purple-400 shadow-purple-900/40',
+                family: 'bg-gradient-to-br from-[#7C2D12] via-amber-900 to-rose-950 border-amber-400 shadow-amber-900/40',
+                health: 'bg-gradient-to-br from-[#064E3B] via-teal-900 to-emerald-950 border-emerald-400 shadow-teal-900/40',
+                ally: 'bg-gradient-to-br from-[#1E1B4B] via-indigo-900 to-purple-950 border-indigo-400 shadow-indigo-900/40'
+              };
+
               return (
                 <button
                   key={p.id}
                   onClick={() => handlePersonaChange(p.id)}
                   className={`p-4 rounded-2xl text-left transition-all cursor-pointer border-2 interactive-card-3d relative overflow-hidden group ${
                     isSelected
-                      ? `bg-slate-950 text-white ${p.activeBorder} ${p.glow} shadow-xl scale-[1.02]`
-                      : 'bg-white text-slate-800 border-slate-200/80 hover:border-purple-300 hover:bg-purple-50/30'
+                      ? `${activeThemeBg[p.id] || 'bg-slate-950'} text-white shadow-xl scale-[1.03]`
+                      : 'bg-white text-slate-800 border-slate-200 hover:border-purple-300 hover:bg-purple-50/40 shadow-xs'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
                       isSelected 
-                        ? 'bg-white/20 text-purple-200' 
-                        : 'bg-slate-100 text-slate-500 group-hover:bg-purple-100 group-hover:text-purple-700'
+                        ? 'bg-white/20 text-white' 
+                        : 'bg-purple-50 text-purple-700 group-hover:bg-purple-100'
                     }`}>
                       {p.badge}
                     </span>
                     <IconComponent className={`w-4 h-4 ${
-                      isSelected ? 'text-amber-300' : 'text-slate-400 group-hover:text-[#5A1E65]'
+                      isSelected ? 'text-amber-300' : 'text-purple-600 group-hover:scale-110 transition-transform'
                     }`} />
                   </div>
                   <span className="text-sm font-bold block leading-snug">
@@ -277,8 +285,8 @@ export default function CommunityCompass() {
                   onClick={() => setActiveNeed(need.id)}
                   className={`px-4 py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer border-2 interactive-card-3d ${
                     isSelected
-                      ? 'bg-[#5A1E65] text-white border-[#5A1E65] shadow-lg shadow-purple-900/20 scale-[1.03]'
-                      : 'bg-white text-slate-700 border-slate-200 hover:border-purple-300 hover:bg-slate-50'
+                      ? 'bg-gradient-to-r from-[#5A1E65] via-purple-700 to-indigo-600 text-white border-purple-400 shadow-lg shadow-purple-900/25 scale-[1.03]'
+                      : 'bg-white text-slate-700 border-slate-200 hover:border-purple-300 hover:bg-purple-50/60 shadow-2xs'
                   }`}
                 >
                   {need.label}

@@ -68,12 +68,15 @@ export default function Header() {
 
   return (
     <>
+      {/* Pride Rainbow Accent Ribbon */}
+      <div className="h-1 pride-rainbow-bar w-full" aria-hidden="true" />
+
       {/* Primary Sticky Header Bar */}
       <header 
-        className={`sticky top-0 left-0 right-0 z-50 transition-all duration-200 bg-white/95 backdrop-blur-md ${
+        className={`sticky top-0 left-0 right-0 z-50 transition-all duration-200 bg-[#FAF5FF]/90 backdrop-blur-md ${
           scrolled 
-            ? 'border-b border-slate-200 shadow-sm py-2 sm:py-2.5' 
-            : 'border-b border-slate-100 py-2.5 sm:py-3.5'
+            ? 'border-b border-purple-200/90 shadow-sm py-2 sm:py-2.5' 
+            : 'border-b border-purple-200/60 py-2.5 sm:py-3.5'
         }`}
       >
         <div className="container-clean px-2.5 sm:px-6">
@@ -85,7 +88,7 @@ export default function Header() {
               className="flex items-center gap-1.5 sm:gap-3.5 group focus:outline-none min-w-0 flex-shrink"
               aria-label="Diversity Collective Ventura County"
             >
-              <div className="w-8 h-8 xs:w-10 xs:h-10 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-xl overflow-hidden shadow-xs border-2 border-purple-100 bg-white flex-shrink-0 flex items-center justify-center p-0.5 sm:p-1 group-hover:scale-105 group-hover:border-[#5A1E65] transition-all duration-200">
+              <div className="w-8 h-8 xs:w-10 xs:h-10 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-xl overflow-hidden shadow-xs border-2 border-purple-200 bg-white flex-shrink-0 flex items-center justify-center p-0.5 sm:p-1 group-hover:scale-105 group-hover:border-[#5A1E65] transition-all duration-200">
                 <img 
                   src="/images/logo-square.png" 
                   alt="Diversity Collective Ventura County Official Logo" 
@@ -100,7 +103,7 @@ export default function Header() {
                   <span className="text-[9px] xs:text-[10px] sm:text-xs font-bold tracking-[0.08em] sm:tracking-[0.18em] text-[#5A1E65] uppercase truncate">
                     Ventura County
                   </span>
-                  <span className="hidden xl:inline-flex text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-purple-50 text-[#5A1E65] border border-purple-200 leading-none">
+                  <span className="hidden xl:inline-flex text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-purple-100/70 text-[#5A1E65] border border-purple-300/80 leading-none">
                     501(c)(3)
                   </span>
                 </div>
@@ -116,10 +119,10 @@ export default function Header() {
                   <Link
                     key={item.to}
                     to={item.to}
-                    className={`px-3.5 py-2 text-sm font-semibold rounded-full transition-colors ${
+                    className={`px-3.5 py-2 text-sm font-semibold rounded-full transition-all ${
                       isActive 
-                        ? 'text-[#5A1E65] bg-purple-50 font-bold' 
-                        : 'text-slate-600 hover:text-[#5A1E65] hover:bg-slate-50'
+                        ? 'text-white bg-gradient-to-r from-[#5A1E65] to-purple-700 shadow-md shadow-purple-500/20 font-bold' 
+                        : 'text-slate-700 hover:text-[#5A1E65] hover:bg-purple-50/80'
                     }`}
                   >
                     {item.label}
@@ -143,7 +146,7 @@ export default function Header() {
               {/* Get Support */}
               <Link
                 to="/programs"
-                className="hidden xl:inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-slate-700 hover:text-[#5A1E65] border border-slate-200 hover:border-slate-300 rounded-full transition-colors"
+                className="hidden xl:inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-slate-700 hover:text-[#5A1E65] border border-slate-200 hover:border-purple-300 rounded-full transition-colors bg-white shadow-2xs"
               >
                 <LifeBuoy className="w-3.5 h-3.5 text-[#5A1E65]" />
                 <span>Get Support</span>
@@ -154,9 +157,9 @@ export default function Header() {
                 href={orgInfo.donationUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn-primary py-1.5 sm:py-2 px-2.5 xs:px-3 sm:px-5 text-[11px] sm:text-xs font-bold tracking-wide inline-flex items-center gap-1 sm:gap-1.5 shadow-xs flex-shrink-0"
+                className="btn-primary py-1.5 sm:py-2 px-2.5 xs:px-3.5 sm:px-5 text-[11px] sm:text-xs font-bold tracking-wide inline-flex items-center gap-1 sm:gap-1.5 shadow-md hover:shadow-purple-500/35 flex-shrink-0"
               >
-                <Heart className="w-3.5 h-3.5 fill-current" />
+                <Heart className="w-3.5 h-3.5 fill-current text-rose-300" />
                 <span>Donate</span>
               </a>
 
