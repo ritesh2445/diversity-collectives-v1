@@ -6,6 +6,16 @@ export default function WelcomeCurtain() {
   const [key, setKey] = useState(0);
 
   useEffect(() => {
+    const isPaused = typeof window !== 'undefined' && (
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
+      document.documentElement.getAttribute('data-a11y-pause-animations') === 'true'
+    );
+
+    if (isPaused) {
+      setAnimating(false);
+      return;
+    }
+
     setAnimating(true);
 
     const timer = setTimeout(() => {

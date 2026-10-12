@@ -1,0 +1,362 @@
+/* ==========================================================================
+   DIVERSITY COLLECTIVE VENTURA COUNTY — RECITE ME ACCESSIBILITY CSS
+   Exact match for Recite Me assistive companion toolbar, typography,
+   color wheels, reading masks, plain-text mode, and margin widths.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Page Layout Shift when Recite Me Ribbon is Open
+   -------------------------------------------------------------------------- */
+html[data-recite-toolbar-open="true"] {
+  scroll-padding-top: 72px;
+}
+html[data-recite-toolbar-open="true"] body {
+  padding-top: 68px !important;
+}
+
+/* --------------------------------------------------------------------------
+   2. Font Scaling & Recite Me Font Families (Aa)
+   -------------------------------------------------------------------------- */
+html[data-a11y-font-size="100"] { font-size: 16px; }
+html[data-a11y-font-size="110"] { font-size: 17.6px; }
+html[data-a11y-font-size="125"] { font-size: 20px; }
+html[data-a11y-font-size="150"] { font-size: 24px; }
+html[data-a11y-font-size="175"] { font-size: 28px; }
+html[data-a11y-font-size="200"] { font-size: 32px; }
+
+/* OpenDyslexic / Dyslexia-Optimized Stack */
+html[data-a11y-font-family="opendyslexic"] body,
+html[data-a11y-font-family="opendyslexic"] p,
+html[data-a11y-font-family="opendyslexic"] h1,
+html[data-a11y-font-family="opendyslexic"] h2,
+html[data-a11y-font-family="opendyslexic"] h3,
+html[data-a11y-font-family="opendyslexic"] h4,
+html[data-a11y-font-family="opendyslexic"] a,
+html[data-a11y-font-family="opendyslexic"] span,
+html[data-a11y-font-family="opendyslexic"] button {
+  font-family: 'OpenDyslexic', 'Comic Sans MS', sans-serif !important;
+  letter-spacing: 0.04em !important;
+  word-spacing: 0.08em !important;
+}
+
+/* Atkinson Hyperlegible Stack */
+html[data-a11y-font-family="atkinson"] body,
+html[data-a11y-font-family="atkinson"] p,
+html[data-a11y-font-family="atkinson"] h1,
+html[data-a11y-font-family="atkinson"] h2,
+html[data-a11y-font-family="atkinson"] h3,
+html[data-a11y-font-family="atkinson"] a,
+html[data-a11y-font-family="atkinson"] span {
+  font-family: 'Atkinson Hyperlegible', 'Trebuchet MS', Verdana, sans-serif !important;
+}
+
+/* Arial */
+html[data-a11y-font-family="arial"] body,
+html[data-a11y-font-family="arial"] p,
+html[data-a11y-font-family="arial"] h1,
+html[data-a11y-font-family="arial"] h2,
+html[data-a11y-font-family="arial"] a {
+  font-family: Arial, Helvetica, sans-serif !important;
+}
+
+/* Comic Sans (Proven dyslexic aid with distinct letterforms) */
+html[data-a11y-font-family="comicsans"] body,
+html[data-a11y-font-family="comicsans"] p,
+html[data-a11y-font-family="comicsans"] h1,
+html[data-a11y-font-family="comicsans"] h2,
+html[data-a11y-font-family="comicsans"] a {
+  font-family: 'Comic Sans MS', cursive, sans-serif !important;
+}
+
+/* Verdana (Widely spaced high legibility humanist grotesque) */
+html[data-a11y-font-family="verdana"] body,
+html[data-a11y-font-family="verdana"] p,
+html[data-a11y-font-family="verdana"] h1,
+html[data-a11y-font-family="verdana"] h2,
+html[data-a11y-font-family="verdana"] a {
+  font-family: Verdana, Geneva, Tahoma, sans-serif !important;
+}
+
+/* --------------------------------------------------------------------------
+   3. Spacing & Text Alignment
+   -------------------------------------------------------------------------- */
+html[data-a11y-line-height="1.5"] body, html[data-a11y-line-height="1.5"] p { line-height: 1.5 !important; }
+html[data-a11y-line-height="1.8"] body, html[data-a11y-line-height="1.8"] p { line-height: 1.8 !important; }
+html[data-a11y-line-height="2.0"] body, html[data-a11y-line-height="2.0"] p { line-height: 2.0 !important; }
+
+html[data-a11y-letter-spacing="0.12em"] body, html[data-a11y-letter-spacing="0.12em"] p { letter-spacing: 0.12em !important; }
+html[data-a11y-letter-spacing="0.16em"] body, html[data-a11y-letter-spacing="0.16em"] p { letter-spacing: 0.16em !important; }
+html[data-a11y-letter-spacing="0.2em"] body, html[data-a11y-letter-spacing="0.2em"] p { letter-spacing: 0.2em !important; }
+
+html[data-a11y-word-spacing="0.16em"] body, html[data-a11y-word-spacing="0.16em"] p { word-spacing: 0.16em !important; }
+html[data-a11y-word-spacing="0.24em"] body, html[data-a11y-word-spacing="0.24em"] p { word-spacing: 0.24em !important; }
+html[data-a11y-word-spacing="0.32em"] body, html[data-a11y-word-spacing="0.32em"] p { word-spacing: 0.32em !important; }
+
+html[data-a11y-text-align="left"] body, html[data-a11y-text-align="left"] p { text-align: left !important; }
+html[data-a11y-text-align="center"] body, html[data-a11y-text-align="center"] p { text-align: center !important; }
+html[data-a11y-text-align="right"] body, html[data-a11y-text-align="right"] p { text-align: right !important; }
+html[data-a11y-text-align="justify"] body, html[data-a11y-text-align="justify"] p { text-align: justify !important; }
+
+/* --------------------------------------------------------------------------
+   4. Recite Me Color Wheels & Themes (Colour Theme Button)
+   -------------------------------------------------------------------------- */
+
+/* Theme: Yellow on Black */
+html[data-a11y-theme="yellow-on-black"] body,
+html[data-a11y-theme="yellow-on-black"] #root,
+html[data-a11y-theme="yellow-on-black"] main,
+html[data-a11y-theme="yellow-on-black"] .bg-white,
+html[data-a11y-theme="yellow-on-black"] .bg-slate-50,
+html[data-a11y-theme="yellow-on-black"] .bg-purple-50 {
+  background-color: #000000 !important;
+  background-image: none !important;
+  color: #FFFF00 !important;
+  border-color: #FFFF00 !important;
+}
+html[data-a11y-theme="yellow-on-black"] h1,
+html[data-a11y-theme="yellow-on-black"] h2,
+html[data-a11y-theme="yellow-on-black"] h3,
+html[data-a11y-theme="yellow-on-black"] p,
+html[data-a11y-theme="yellow-on-black"] span {
+  color: #FFFF00 !important;
+}
+html[data-a11y-theme="yellow-on-black"] a {
+  color: #00FFFF !important;
+  text-decoration: underline !important;
+}
+
+/* Theme: Black on Yellow */
+html[data-a11y-theme="black-on-yellow"] body,
+html[data-a11y-theme="black-on-yellow"] #root,
+html[data-a11y-theme="black-on-yellow"] main,
+html[data-a11y-theme="black-on-yellow"] .bg-white,
+html[data-a11y-theme="black-on-yellow"] .bg-slate-50,
+html[data-a11y-theme="black-on-yellow"] .bg-purple-50 {
+  background-color: #FFFF99 !important;
+  background-image: none !important;
+  color: #000000 !important;
+  border-color: #000000 !important;
+}
+html[data-a11y-theme="black-on-yellow"] h1,
+html[data-a11y-theme="black-on-yellow"] h2,
+html[data-a11y-theme="black-on-yellow"] h3,
+html[data-a11y-theme="black-on-yellow"] p,
+html[data-a11y-theme="black-on-yellow"] span {
+  color: #000000 !important;
+}
+html[data-a11y-theme="black-on-yellow"] a {
+  color: #0000EE !important;
+  text-decoration: underline !important;
+}
+
+/* Theme: White on Blue (Classic Recite Me Navy) */
+html[data-a11y-theme="white-on-blue"] body,
+html[data-a11y-theme="white-on-blue"] #root,
+html[data-a11y-theme="white-on-blue"] main,
+html[data-a11y-theme="white-on-blue"] .bg-white,
+html[data-a11y-theme="white-on-blue"] .bg-slate-50,
+html[data-a11y-theme="white-on-blue"] .bg-purple-50 {
+  background-color: #002244 !important;
+  background-image: none !important;
+  color: #FFFFFF !important;
+  border-color: #38BDF8 !important;
+}
+html[data-a11y-theme="white-on-blue"] h1,
+html[data-a11y-theme="white-on-blue"] h2,
+html[data-a11y-theme="white-on-blue"] h3,
+html[data-a11y-theme="white-on-blue"] p,
+html[data-a11y-theme="white-on-blue"] span {
+  color: #FFFFFF !important;
+}
+html[data-a11y-theme="white-on-blue"] a {
+  color: #FDE047 !important;
+  text-decoration: underline !important;
+}
+
+/* Theme: Black on Peach */
+html[data-a11y-theme="black-on-peach"] body,
+html[data-a11y-theme="black-on-peach"] #root,
+html[data-a11y-theme="black-on-peach"] main,
+html[data-a11y-theme="black-on-peach"] .bg-white,
+html[data-a11y-theme="black-on-peach"] .bg-slate-50 {
+  background-color: #FDE8E1 !important;
+  background-image: none !important;
+  color: #111827 !important;
+}
+html[data-a11y-theme="black-on-peach"] h1,
+html[data-a11y-theme="black-on-peach"] h2,
+html[data-a11y-theme="black-on-peach"] p {
+  color: #111827 !important;
+}
+
+/* Inverted */
+html[data-a11y-theme="inverted"] #root {
+  filter: invert(100%) hue-rotate(180deg) !important;
+}
+html[data-a11y-theme="inverted"] img,
+html[data-a11y-theme="inverted"] video {
+  filter: invert(100%) hue-rotate(180deg) !important;
+}
+
+/* Monochrome */
+html[data-a11y-theme="monochrome"] #root {
+  filter: grayscale(100%) contrast(110%) !important;
+}
+
+/* Custom Palette */
+html[data-a11y-theme="custom"] body,
+html[data-a11y-theme="custom"] #root,
+html[data-a11y-theme="custom"] main,
+html[data-a11y-theme="custom"] .bg-white,
+html[data-a11y-theme="custom"] p,
+html[data-a11y-theme="custom"] h1,
+html[data-a11y-theme="custom"] h2,
+html[data-a11y-theme="custom"] h3,
+html[data-a11y-theme="custom"] span {
+  background-color: var(--recite-custom-bg) !important;
+  color: var(--recite-custom-text) !important;
+  background-image: none !important;
+}
+html[data-a11y-theme="custom"] a {
+  color: var(--recite-custom-link) !important;
+}
+
+/* --------------------------------------------------------------------------
+   5. Recite Me Plain Text Mode (Strips graphics & styling)
+   -------------------------------------------------------------------------- */
+html[data-a11y-plain-text="true"] img,
+html[data-a11y-plain-text="true"] svg:not(.recite-ui-icon),
+html[data-a11y-plain-text="true"] video,
+html[data-a11y-plain-text="true"] [class*="gradient"],
+html[data-a11y-plain-text="true"] [class*="aura-orb"],
+html[data-a11y-plain-text="true"] [class*="blur-"] {
+  display: none !important;
+}
+html[data-a11y-plain-text="true"] body {
+  background: #FFFFFF !important;
+  background-image: none !important;
+  color: #111827 !important;
+  max-width: 860px !important;
+  margin: 0 auto !important;
+  padding: 1.5rem !important;
+  font-family: Georgia, serif !important;
+}
+html[data-a11y-plain-text="true"] .card,
+html[data-a11y-plain-text="true"] .shadow-xl,
+html[data-a11y-plain-text="true"] .shadow-2xl {
+  box-shadow: none !important;
+  border: 1px solid #D1D5DB !important;
+}
+
+/* --------------------------------------------------------------------------
+   6. Recite Me Margins (Narrow vs Wide)
+   -------------------------------------------------------------------------- */
+html[data-a11y-margins="narrow"] main,
+html[data-a11y-margins="narrow"] .container-clean {
+  max-width: 760px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+html[data-a11y-margins="wide"] main,
+html[data-a11y-margins="wide"] .container-clean {
+  max-width: 1920px !important;
+}
+
+/* --------------------------------------------------------------------------
+   7. Recite Me Reading Ruler, Screen Mask, & Magnifier
+   -------------------------------------------------------------------------- */
+.recite-reading-ruler {
+  position: fixed;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background-color: #38BDF8;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.9), 0 2px 4px rgba(0,0,0,0.5);
+  pointer-events: none;
+  z-index: 99998;
+  transform: translateY(-50%);
+  transition: top 0.03s linear;
+}
+
+.recite-screen-mask-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 99997;
+}
+.recite-screen-mask-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  background-color: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(1.5px);
+}
+.recite-screen-mask-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(1.5px);
+}
+
+.recite-cursor-highlight-ring {
+  position: fixed;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 3px solid #F59E0B;
+  background: rgba(245, 158, 11, 0.22);
+  pointer-events: none;
+  z-index: 99996;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.7);
+}
+
+/* Active Audio Paragraph Highlight */
+.recite-reading-active-paragraph {
+  background-color: #FEF08A !important;
+  color: #000000 !important;
+  outline: 3px solid #EAB308 !important;
+  outline-offset: 3px !important;
+  border-radius: 4px !important;
+  transition: background-color 0.2s ease !important;
+}
+
+/* Cursor Options */
+html[data-a11y-cursor="large-black"],
+html[data-a11y-cursor="large-black"] * {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 24 24' fill='%23000000' stroke='%23ffffff' stroke-width='1.5'%3E%3Cpath d='M3 3l7 18 3-7 7-3L3 3z'/%3E%3C/svg%3E"), auto !important;
+}
+
+html[data-a11y-cursor="large-white"],
+html[data-a11y-cursor="large-white"] * {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 24 24' fill='%23ffffff' stroke='%23000000' stroke-width='1.5'%3E%3Cpath d='M3 3l7 18 3-7 7-3L3 3z'/%3E%3C/svg%3E"), auto !important;
+}
+
+/* Pause Animations */
+html[data-a11y-pause-animations="true"] *,
+html[data-a11y-pause-animations="true"] *::before,
+html[data-a11y-pause-animations="true"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  animation-play-state: paused !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* --------------------------------------------------------------------------
+   8. Complete Isolation for the Accessibility Companion Ribbon
+   -------------------------------------------------------------------------- */
+.recite-toolbar-isolated,
+.a11y-toolbar-isolated {
+  filter: none !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+  letter-spacing: normal !important;
+  word-spacing: normal !important;
+  text-align: left !important;
+  text-decoration: none !important;
+}

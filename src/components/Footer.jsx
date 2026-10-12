@@ -7,7 +7,7 @@ export default function Footer() {
   return (
     <>
       <div className="h-1 pride-rainbow-bar w-full" aria-hidden="true" />
-      <footer className="bg-slate-950 text-slate-300 pt-20 md:pt-28 pb-16 border-t border-slate-800 relative overflow-hidden">
+      <footer id="main-footer" className="bg-slate-950 text-slate-300 pt-20 md:pt-28 pb-16 border-t border-slate-800 relative overflow-hidden">
         {/* Ambient Specular Auras */}
         <div 
           className="absolute -top-24 left-1/4 w-96 h-96 rounded-full aura-orb-violet blur-3xl pointer-events-none" 
@@ -228,15 +228,13 @@ export default function Footer() {
               <span>🌈 Replay Welcome</span>
             </button>
             <span>·</span>
-            <a 
-              href="https://www.diversitycollectivevc.org/accessibility-statement/" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="hover:text-slate-300 transition-colors flex items-center gap-1"
+            <Link 
+              to="/accessibility" 
+              className="hover:text-amber-300 transition-colors flex items-center gap-1 font-semibold text-slate-300"
             >
-              <ShieldCheck className="w-3.5 h-3.5 text-slate-400" />
-              Accessibility (WCAG 2.1 AA)
-            </a>
+              <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+              Accessibility (WCAG 2.2 AA)
+            </Link>
             <span>·</span>
             <a 
               href="https://www.diversitycollectivevc.org/privacy-policy/" 

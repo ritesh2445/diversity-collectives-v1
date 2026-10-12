@@ -1,15 +1,18 @@
 import { useEffect } from 'react';
 import Lenis from 'lenis';
+import { a11yStore } from '../accessibility/a11yStore';
 
 export default function SmoothScroll({ children }) {
   useEffect(() => {
-    // Respect user's motion preferences
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const isPaused = a11yStore.getState().pauseAnimations;
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Respect user's motion preferences and pause animations setting
+    if (isPaused || prefersReducedMotion) {
       return;
     }
 
     // Never hijack touch scrolling on mobile or tablet devices.
-    // iOS and Android have native 120Hz hardware-accelerated momentum scrolling.
     const isTouchOrMobile = 
       'ontouchstart' in window || 
       navigator.maxTouchPoints > 0 || 
@@ -39,7 +42,16 @@ export default function SmoothScroll({ children }) {
 
     rafId = requestAnimationFrame(raf);
 
+    const unsubscribe = a11yStore.subscribe((settings) => {
+      if (settings.pauseAnimations) {
+        lenis.stop();
+      } else {
+        lenis.start();
+      }
+    });
+
     return () => {
+      unsubscribe();
       cancelAnimationFrame(rafId);
       lenis.destroy();
       delete window.lenis;

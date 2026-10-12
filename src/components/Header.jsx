@@ -16,9 +16,11 @@ import {
   Compass, 
   HeartHandshake, 
   MapPin,
-  ChevronRight
+  ChevronRight,
+  Accessibility
 } from 'lucide-react';
 import { orgInfo } from '../data/dcvcData';
+import { a11yStore } from '../accessibility/a11yStore';
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
@@ -73,6 +75,7 @@ export default function Header() {
 
       {/* Primary Sticky Header Bar */}
       <header 
+        id="main-header"
         className={`sticky top-0 left-0 right-0 z-50 transition-all duration-200 bg-[#FAF5FF]/90 backdrop-blur-md ${
           scrolled 
             ? 'border-b border-purple-200/90 shadow-sm py-2 sm:py-2.5' 
@@ -111,7 +114,7 @@ export default function Header() {
             </Link>
 
             {/* Desktop Center Navigation */}
-            <nav className="hidden lg:flex items-center gap-1 xl:gap-2" aria-label="Main Navigation">
+            <nav id="main-navigation" className="hidden lg:flex items-center gap-1 xl:gap-2" aria-label="Main Navigation">
               {navItems.map((item) => {
                 const isActive = location.pathname === item.to || 
                   (item.to !== '/' && location.pathname.startsWith(item.to));
@@ -133,6 +136,18 @@ export default function Header() {
 
             {/* Right CTAs */}
             <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
+              {/* Recite Me Accessibility Button */}
+              <button
+                type="button"
+                onClick={() => a11yStore.toggleToolbar()}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-800 hover:text-[#5A1E65] border border-amber-300 hover:border-amber-400 bg-amber-50 hover:bg-amber-100/80 rounded-full transition-colors shadow-2xs cursor-pointer"
+                title="Launch Recite Me Accessibility & Audio Toolbar (Alt + A)"
+                aria-label="Launch Accessibility & Audio Tools"
+              >
+                <Accessibility className="w-3.5 h-3.5 text-[#5A1E65]" />
+                <span className="hidden xs:inline">Accessibility</span>
+              </button>
+
               {/* Discreet Quick Exit (Tablet & Desktop) */}
               <button
                 onClick={handleQuickExit}
@@ -167,7 +182,9 @@ export default function Header() {
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(true)}
-                className="lg:hidden w-8 h-8 xs:w-9 xs:h-9 sm:w-10 sm:h-10 flex items-center justify-center text-slate-800 hover:text-slate-950 focus:outline-none rounded-xl bg-slate-100 hover:bg-slate-200 active:scale-95 transition-all flex-shrink-0"
+                aria-expanded={mobileMenuOpen}
+                aria-controls="mobile-nav-drawer"
+                className="lg:hidden w-8 h-8 xs:w-9 xs:h-9 sm:w-10 sm:h-10 flex items-center justify-center text-slate-800 hover:text-slate-950 focus:outline-none rounded-xl bg-slate-100 hover:bg-slate-200 active:scale-95 transition-all flex-shrink-0 cursor-pointer"
                 aria-label="Open Navigation Menu"
               >
                 <Menu className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -180,7 +197,7 @@ export default function Header() {
 
       {/* Full-Screen Mobile Navigation Drawer (Layered at z-[100]) */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-[100] bg-slate-950/60 backdrop-blur-sm lg:hidden flex flex-col justify-end animate-fadeIn">
+        <div id="mobile-nav-drawer" role="dialog" aria-modal="true" aria-label="Mobile Navigation" className="fixed inset-0 z-[100] bg-slate-950/60 backdrop-blur-sm lg:hidden flex flex-col justify-end animate-fadeIn">
           
           <div className="bg-white w-full h-[95vh] rounded-t-3xl shadow-2xl flex flex-col overflow-hidden animate-slideUp">
             
