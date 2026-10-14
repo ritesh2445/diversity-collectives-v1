@@ -14,6 +14,7 @@ import {
   ChevronDown,
   ChevronUp,
   Sparkles,
+  Users,
   Award,
   Check,
   Lock,
