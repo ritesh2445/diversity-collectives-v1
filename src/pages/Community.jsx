@@ -6,12 +6,10 @@ import {
   Mail, 
   ArrowUpRight, 
   ArrowRight, 
-  Users, 
   Sparkles,
-  Calendar,
-  CheckCircle2
+  Calendar
 } from 'lucide-react';
-import { communityGroups, orgInfo } from '../data/dcvcData';
+import { communityGroups } from '../data/dcvcData';
 import CardSpotlight from '../components/CardSpotlight';
 
 export default function Community() {
@@ -33,7 +31,7 @@ export default function Community() {
     : communityGroups.filter(g => g.category === selectedFilter);
 
   return (
-    <div className="pt-8 md:pt-14 pb-20 bg-white text-slate-800">
+    <div className="pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
       
       {/* Header */}
       <section className="container-clean pb-14 border-b border-slate-100 relative overflow-hidden">

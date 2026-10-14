@@ -4,14 +4,11 @@ import {
   Compass, 
   ArrowRight, 
   Sparkles, 
-  CheckCircle2, 
   Clock, 
   MapPin, 
   HeartHandshake,
-  Heart,
   ShieldCheck,
-  Users,
-  Star
+  Users
 } from 'lucide-react';
 import CardSpotlight from './CardSpotlight';
 

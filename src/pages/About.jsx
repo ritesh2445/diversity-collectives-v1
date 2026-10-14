@@ -3,22 +3,17 @@ import { Link } from 'react-router-dom';
 import { 
   ArrowRight, 
   ArrowUpRight, 
-  ShieldCheck, 
-  Heart, 
   Award, 
-  Users, 
-  CheckCircle2,
   Sparkles,
   Target,
-  Eye,
-  Compass
+  Eye
 } from 'lucide-react';
 import { orgInfo, boardMembers, sponsorsList } from '../data/dcvcData';
 import CardSpotlight from '../components/CardSpotlight';
 
 export default function About() {
   return (
-    <div className="pt-8 md:pt-14 pb-20 bg-white text-slate-800">
+    <div className="pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
       
       {/* Editorial Flagship Header with 3D Depth */}
       <section className="container-clean pb-16 border-b border-slate-100 relative overflow-hidden">

@@ -44,7 +44,7 @@ export default function App() {
         <ScrollToTop />
         <ScrollProgress />
         
-        <div className="bg-white text-slate-900 min-h-screen flex flex-col font-sans selection:bg-[#5A1E65] selection:text-white">
+        <div className="bg-transparent text-slate-900 min-h-screen flex flex-col font-sans selection:bg-[#5A1E65] selection:text-white">
           <Header />
         
           <main id="main-content" tabIndex="-1" className="editorial-main-content flex-grow focus:outline-none">

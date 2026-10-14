@@ -10,27 +10,21 @@ import {
   Heart, 
   ShieldCheck, 
   Calendar,
-  LifeBuoy,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
   Sparkles,
-  Compass,
-  Users,
-  Shield,
   Award,
   Check,
   Lock,
   Gift,
-  HeartHandshake,
   Star,
   Activity
 } from 'lucide-react';
 import { 
   orgInfo, 
   programsList, 
-  liveEvents,
-  sponsorsList 
+  liveEvents 
 } from '../data/dcvcData';
 import AnimatedCounter from '../components/AnimatedCounter';
 import CardSpotlight from '../components/CardSpotlight';
@@ -168,7 +162,7 @@ export default function Home() {
         colors: ['#5A1E65', '#B45309', '#0F172A', '#FAF5FF', '#38BDF8'],
         disableForReducedMotion: true
       });
-    } catch (err) {
+    } catch {
       // Graceful fallback
     }
   };

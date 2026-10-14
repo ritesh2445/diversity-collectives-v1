@@ -2,16 +2,13 @@ import React, { useState } from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
-  Clock, 
   MapPin, 
   Mail, 
-  Calendar as CalendarIcon, 
   Ticket, 
   ArrowUpRight, 
   Share2, 
   ShieldCheck,
-  Check,
-  Heart
+  Check
 } from 'lucide-react';
 import { liveEvents, orgInfo } from '../data/dcvcData';
 import CardSpotlight from '../components/CardSpotlight';
@@ -34,7 +31,7 @@ export default function EventDetail() {
   };
 
   return (
-    <div className="pt-8 md:pt-14 pb-20 bg-white text-slate-800">
+    <div className="pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
       
       {/* Back button */}
       <div className="container-clean mb-6 flex items-center justify-between">

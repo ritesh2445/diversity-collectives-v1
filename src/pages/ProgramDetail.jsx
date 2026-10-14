@@ -10,9 +10,7 @@ import {
   ArrowUpRight, 
   CheckCircle2, 
   ShieldCheck, 
-  Heart,
-  Sparkles,
-  Calendar
+  Heart
 } from 'lucide-react';
 import { programsList, orgInfo } from '../data/dcvcData';
 import CardSpotlight from '../components/CardSpotlight';
@@ -26,7 +24,7 @@ export default function ProgramDetail() {
   }
 
   return (
-    <div className="pt-8 md:pt-14 pb-20 bg-white text-slate-800">
+    <div className="pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
       
       {/* Top Breadcrumb Navigation */}
       <section className="container-clean pb-6">

@@ -44,7 +44,7 @@ export default function Resources() {
   }).filter(Boolean);
 
   return (
-    <div className="pt-8 md:pt-14 pb-20 bg-white text-slate-800">
+    <div className="pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
       
       {/* Editorial Header */}
       <section className="container-clean pb-14 border-b border-slate-100 relative overflow-hidden">

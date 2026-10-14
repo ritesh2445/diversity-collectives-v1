@@ -2,16 +2,14 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Search, 
-  Calendar as CalendarIcon, 
   Clock, 
   MapPin, 
   ArrowRight, 
   ArrowUpRight, 
-  Filter, 
   Sparkles,
   Ticket
 } from 'lucide-react';
-import { liveEvents, annualSignatureEvents, orgInfo } from '../data/dcvcData';
+import { liveEvents, annualSignatureEvents } from '../data/dcvcData';
 import CardSpotlight from '../components/CardSpotlight';
 
 export default function Events() {
@@ -29,7 +27,7 @@ export default function Events() {
   });
 
   return (
-    <div className="pt-8 md:pt-14 pb-20 bg-white text-slate-800">
+    <div className="pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
       
       {/* Header */}
       <section className="container-clean pb-14 border-b border-slate-100 relative overflow-hidden">

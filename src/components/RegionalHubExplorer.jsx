@@ -6,10 +6,7 @@ import {
   Clock, 
   ShieldCheck, 
   Heart,
-  Navigation,
-  Sparkles,
-  Building2,
-  Users
+  Sparkles
 } from 'lucide-react';
 import { orgInfo } from '../data/dcvcData';
 import CardSpotlight from './CardSpotlight';

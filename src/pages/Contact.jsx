@@ -7,9 +7,7 @@ import {
   ArrowUpRight, 
   Send, 
   CheckCircle2, 
-  LifeBuoy, 
-  AlertCircle,
-  Sparkles
+  LifeBuoy
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { orgInfo } from '../data/dcvcData';
@@ -35,13 +33,13 @@ export default function Contact() {
         origin: { y: 0.6 },
         colors: ['#5A1E65', '#10B981', '#F59E0B', '#38BDF8']
       });
-    } catch (err) {
+    } catch {
       // Graceful fallback
     }
   };
 
   return (
-    <div className="pt-8 md:pt-14 pb-20 bg-white text-slate-800">
+    <div className="pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
       
       {/* Header */}
       <section className="container-clean pb-14 border-b border-slate-100 relative overflow-hidden">

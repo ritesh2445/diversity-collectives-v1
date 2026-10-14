@@ -2,8 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { Sparkles, Heart, X } from 'lucide-react';
 
 export default function WelcomeCurtain() {
-  const [animating, setAnimating] = useState(true);
+  const [animating, setAnimating] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      return !sessionStorage.getItem('dcvc_welcome_seen');
+    } catch {
+      return true;
+    }
+  });
   const [key, setKey] = useState(0);
+
+  const handleDismiss = () => {
+    setAnimating(false);
+    try {
+      sessionStorage.setItem('dcvc_welcome_seen', 'true');
+    } catch {
+      // Graceful fallback
+    }
+  };
 
   useEffect(() => {
     const isPaused = typeof window !== 'undefined' && (
@@ -16,17 +32,21 @@ export default function WelcomeCurtain() {
       return;
     }
 
+    if (!animating && key === 0) {
+      return;
+    }
+
     setAnimating(true);
 
     const timer = setTimeout(() => {
-      setAnimating(false);
+      handleDismiss();
     }, 2500);
 
     const handleReplay = () => {
       setKey(prev => prev + 1);
       setAnimating(true);
       setTimeout(() => {
-        setAnimating(false);
+        handleDismiss();
       }, 2500);
     };
 
@@ -131,7 +151,7 @@ export default function WelcomeCurtain() {
       {/* Top Skip Button */}
       <div className="absolute top-4 sm:top-6 right-4 sm:right-6 z-50 pointer-events-auto">
         <button
-          onClick={() => setAnimating(false)}
+          onClick={handleDismiss}
           className="px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full bg-black/75 text-white border border-white/25 text-[11px] sm:text-xs font-bold tracking-wider uppercase transition-colors hover:bg-black flex items-center gap-1.5 shadow-xl cursor-pointer"
         >
           <span>Skip</span>

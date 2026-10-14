@@ -360,3 +360,50 @@ html[data-a11y-pause-animations="true"] *::after {
   text-align: left !important;
   text-decoration: none !important;
 }
+
+/* --------------------------------------------------------------------------
+   9. WCAG 2.4.1 Accessible Skip Navigation Links
+   -------------------------------------------------------------------------- */
+.a11y-skip-nav {
+  position: fixed;
+  top: -9999px;
+  left: 1.5rem;
+  z-index: 999999;
+  padding: 0.75rem 1.25rem;
+  background-color: #5A1E65;
+  color: #FFFFFF !important;
+  font-family: var(--font-sans, -apple-system, sans-serif);
+  font-weight: 800;
+  font-size: 0.875rem;
+  line-height: 1;
+  text-decoration: none;
+  border-radius: 9999px;
+  border: 2px solid #FBBF24;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 0 15px rgba(251, 191, 36, 0.4);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+}
+
+.a11y-skip-nav:focus {
+  top: 1rem;
+  opacity: 1;
+  pointer-events: auto;
+  outline: 3px solid #FBBF24;
+  outline-offset: 3px;
+}
+
+/* Position successive focused skip links side-by-side */
+.a11y-skip-nav.skip-link-nav:focus {
+  left: 18rem;
+}
+
+.a11y-skip-nav.skip-link-footer:focus {
+  left: 31rem;
+}
+
+/* Adjust sticky header position when accessibility companion ribbon is open */
+html[data-recite-toolbar-open="true"] header#main-header {
+  top: 48px;
+}
+
