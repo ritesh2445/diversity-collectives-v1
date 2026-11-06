@@ -18,3 +18,4 @@ export default function TraditionalAccessibilityIcon({ className = 'w-4 h-4', ..
     </svg>
   );
 }
+
