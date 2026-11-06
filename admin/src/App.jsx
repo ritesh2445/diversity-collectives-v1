@@ -491,7 +491,7 @@ export default function AdminApp() {
     { id: 'analytics', label: 'Donation Analytics', icon: TrendingUp, badge: '$54.3k' },
     { id: 'appreciation', label: 'Appreciation Cards & Custom', icon: Heart, badge: 'Studio' },
     { id: 'designer', label: 'Page Builder Studio', icon: Palette, badge: 'Drag & Drop' },
-    { id: 'themes', label: 'Campaign Dispatcher', icon: Sparkles, badge: '18 Themes' },
+    { id: 'themes', label: 'Hero Switcher & Themes', icon: Sparkles, badge: 'Design 1 / 2' },
     { id: 'directory', label: 'Directory Moderation', icon: Building2 },
     { id: 'inquiries', label: 'Inquiries & Triage', icon: Mail },
     { id: 'users', label: 'Staff & RBAC', icon: Users },
@@ -1583,25 +1583,70 @@ export default function AdminApp() {
               <div>
                 <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-amber-500" />
-                  <span>1-Click Hero Theme & US Festival Dispatcher</span>
+                  <span>Hero Design Switcher & Festival Dispatcher</span>
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Activate special seasonal festival overlays (Pride Month, Transgender Visibility, Spirit Day, World AIDS Day) or switch between editorial layout frameworks with instantaneous synchronization.
+                  Switch instantly between Design 1 (Flagship Aurora Ribbon) and Design 2 (Civic Sanctuary & 3D Spotlight), or activate seasonal festival themes (Pride Month, Transgender Visibility, World AIDS Day) with real-time public site synchronization.
                 </p>
               </div>
 
               <div className="p-3 rounded-xl bg-purple-50 border border-purple-200 flex items-center gap-3">
                 <span className="text-xs font-bold text-slate-700">Currently Active:</span>
                 <span className="px-3 py-1 rounded-full bg-[#5A1E65] text-white text-xs font-black uppercase tracking-wider">
-                  {currentThemeId}
+                  {currentThemeId === 'spotlight' || currentThemeId === 'default' ? 'Design 2 (Spotlight)' : currentThemeId === 'aurora' ? 'Design 1 (Aurora)' : currentThemeId}
                 </span>
+              </div>
+            </div>
+
+            {/* Quick 1-Click Toggle: Design 1 vs Design 2 */}
+            <div className="bg-gradient-to-r from-purple-50 via-white to-teal-50 rounded-2xl p-6 border-2 border-purple-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full bg-purple-900 text-amber-300 font-black text-[10px] uppercase tracking-wider">
+                    Instant Switch
+                  </span>
+                  <h3 className="text-base font-extrabold text-slate-900">
+                    Switch Primary Homepage Hero Design
+                  </h3>
+                </div>
+                <p className="text-xs text-slate-600">
+                  Select either hero variant below. Changes apply instantly across all visitor sessions.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleApplyTheme('aurora')}
+                  className={`px-5 py-3 rounded-xl font-extrabold text-xs transition-all flex items-center gap-2 cursor-pointer ${
+                    currentThemeId === 'aurora'
+                      ? 'bg-gradient-to-r from-[#5A1E65] to-purple-800 text-white shadow-md ring-2 ring-purple-600 scale-[1.02]'
+                      : 'bg-white text-slate-800 border-2 border-slate-200 hover:border-purple-300 hover:bg-purple-50/50'
+                  }`}
+                >
+                  <Check className={`w-4 h-4 text-emerald-400 ${currentThemeId === 'aurora' ? 'inline' : 'hidden'}`} />
+                  <span>Design 1: Aurora Ribbon</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleApplyTheme('spotlight')}
+                  className={`px-5 py-3 rounded-xl font-extrabold text-xs transition-all flex items-center gap-2 cursor-pointer ${
+                    currentThemeId === 'spotlight' || currentThemeId === 'default'
+                      ? 'bg-gradient-to-r from-teal-800 to-emerald-700 text-white shadow-md ring-2 ring-teal-600 scale-[1.02]'
+                      : 'bg-white text-slate-800 border-2 border-slate-200 hover:border-teal-300 hover:bg-teal-50/50'
+                  }`}
+                >
+                  <Check className={`w-4 h-4 text-emerald-400 ${currentThemeId === 'spotlight' || currentThemeId === 'default' ? 'inline' : 'hidden'}`} />
+                  <span>Design 2: Civic Spotlight & Pathfinder</span>
+                </button>
               </div>
             </div>
 
             {/* Themes Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {HERO_THEMES.map((theme) => {
-                const isActive = theme.id === currentThemeId;
+              {HERO_THEMES.filter(t => t.id !== 'default').map((theme) => {
+                const isActive = theme.id === currentThemeId || (theme.id === 'spotlight' && currentThemeId === 'default');
                 return (
                   <div 
                     key={theme.id}

@@ -5,29 +5,40 @@
 
 export const HERO_THEMES = [
   // ==========================================
-  // CORE LAYOUT DESIGNS (Option #1 is Default)
+  // CORE HERO DESIGNS (Admin Switchable)
   // ==========================================
   {
-    id: 'default',
+    id: 'aurora',
     number: '01',
-    name: 'Classic DCVC Flagship (Default)',
+    name: 'Design 1: Flagship Aurora Ribbon (Default)',
     category: 'layout',
-    badge: 'Original Default Flagship',
+    badge: 'Design 1 · Active Default',
     badgeColor: 'bg-purple-100 text-[#5A1E65] border-purple-300',
-    description: 'The beloved original DCVC flagship layout featuring the interactive 3D Card Spotlight, physical sanctuary location badge, and "What Brings You In Today?" smart pathfinder.',
-    palette: ['#5A1E65', '#B45309', '#0F172A', '#FAF5FF', '#38BDF8'],
-    bestFor: 'Everyday comprehensive sanctuary presence & maximum feature completeness'
+    description: 'Vivid multi-color aurora atmosphere, Fraunces humanist serif, animated liquid-flow "Always", 3 stacked high-contrast action pills, authentic volunteers photography, and flowing Pride aurora waves.',
+    palette: ['#FAF7F2', '#5A1E65', '#E11D48', '#F59E0B', '#06B6D4'],
+    bestFor: 'Everyday high-visibility sanctuary presence with rich gradients & flowing Pride ribbons'
   },
   {
-    id: 'aurora',
+    id: 'spotlight',
     number: '02',
-    name: 'Immersive Aurora Billboard',
+    name: 'Design 2: Civic Sanctuary & 3D Spotlight Pathfinder',
     category: 'layout',
-    badge: 'Warm Editorial Luxury',
-    badgeColor: 'bg-amber-100 text-amber-900 border-amber-300',
-    description: 'Warm alabaster cream canvas (#FAF8F5) with soft sweeping aurora ribbons, Fraunces humanist serif, and authentic community photography.',
-    palette: ['#FAF8F5', '#5A1E65', '#E11D48', '#F59E0B', '#06B6D4'],
-    bestFor: 'High-fashion editorial elegance and organic community warmth'
+    badge: 'Design 2 · Civic Pathfinder',
+    badgeColor: 'bg-teal-100 text-teal-900 border-teal-300',
+    description: 'Civic sanctuary presence from official mockup: Dual helpline command bar, eyebrow pill, "You Are Always Welcome Here" with sunset serif underline, 3 CTA buttons, 4-tab Instant Sanctuary Navigator, and interactive 3D Card Spotlight with Portola Rd safe harbor emblem.',
+    palette: ['#5A1E65', '#B45309', '#0F172A', '#FAF5FF', '#38BDF8'],
+    bestFor: 'Immediate community service triage, direct helpline access, and interactive 3D safe harbor showcase'
+  },
+  {
+    id: 'default',
+    number: '02B',
+    name: 'Design 2 (Legacy Alias: default)',
+    category: 'layout',
+    badge: 'Design 2 Alias',
+    badgeColor: 'bg-slate-100 text-slate-800 border-slate-300',
+    description: 'Legacy alias mapping directly to Design 2 (Civic Sanctuary & 3D Spotlight Pathfinder).',
+    palette: ['#5A1E65', '#B45309', '#0F172A', '#FAF5FF', '#38BDF8'],
+    bestFor: 'System compatibility'
   },
   {
     id: 'portal',
@@ -241,26 +252,28 @@ export const HERO_THEMES = [
 const STORAGE_KEY = 'dcvc_active_hero_theme';
 
 export function getActiveHeroTheme() {
-  if (typeof window === 'undefined') return 'default';
+  if (typeof window === 'undefined') return 'aurora';
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved === 'default') return 'spotlight';
     if (saved && HERO_THEMES.some(t => t.id === saved)) {
       return saved;
     }
   } catch {
     // Ignore storage errors
   }
-  return 'default';
+  return 'aurora';
 }
 
 export function setActiveHeroTheme(themeId) {
   if (typeof window === 'undefined') return;
   try {
-    const theme = HERO_THEMES.find(t => t.id === themeId);
+    const normalizedId = themeId === 'default' ? 'spotlight' : themeId;
+    const theme = HERO_THEMES.find(t => t.id === normalizedId || t.id === themeId);
     if (theme) {
-      localStorage.setItem(STORAGE_KEY, themeId);
+      localStorage.setItem(STORAGE_KEY, normalizedId);
       window.dispatchEvent(new CustomEvent('dcvc-hero-theme-changed', { 
-        detail: { themeId, theme } 
+        detail: { themeId: normalizedId, theme } 
       }));
     }
   } catch (err) {
