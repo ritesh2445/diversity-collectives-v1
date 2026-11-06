@@ -1,0 +1,21 @@
+{
+  "name": "dcvc-sanity-studio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Isolated Sanity Studio for Diversity Collective Ventura County (deployed separately to studio.diversitycollective.org)",
+  "main": "package.json",
+  "scripts": {
+    "dev": "sanity dev",
+    "start": "sanity start",
+    "build": "sanity build dist",
+    "deploy": "sanity deploy"
+  },
+  "dependencies": {
+    "sanity": "^3.40.0",
+    "styled-components": "^6.1.8"
+  },
+  "devDependencies": {
+    "@sanity/cli": "^3.40.0"
+  }
+}
+

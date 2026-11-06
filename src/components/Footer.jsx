@@ -85,17 +85,15 @@ export default function Footer() {
             </div>
 
             <div className="flex flex-wrap items-center gap-4 pt-2">
-              <a
-                href={orgInfo.donationUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                to="/donate"
                 className="btn-primary py-2.5 px-6 text-xs font-bold tracking-wider inline-flex items-center gap-2 shadow-lg shadow-purple-900/40"
               >
                 <Heart className="w-3.5 h-3.5 fill-current text-rose-300" />
                 <span>Support Our Mission</span>
-              </a>
+              </Link>
               <Link
-                to="/get-involved"
+                to="/volunteer"
                 className="px-6 py-2.5 rounded-full border border-slate-700 hover:bg-slate-900 text-white text-xs font-bold tracking-wider transition-colors"
               >
                 Volunteer Pathways
@@ -161,15 +159,19 @@ export default function Footer() {
               </span>
               <ul className="flex flex-col gap-2 text-sm">
                 <li><Link to="/about" className="text-slate-400 hover:text-white transition-colors">About Diversity Collective</Link></li>
-                <li><Link to="/programs/community-resource-center" className="text-slate-400 hover:text-white transition-colors">Community Resource Center</Link></li>
-                <li><Link to="/programs/rainbow-umbrella" className="text-slate-400 hover:text-white transition-colors">Rainbow Umbrella (Youth 13–23)</Link></li>
-                <li><Link to="/programs/little-unicorns" className="text-slate-400 hover:text-white transition-colors">Little Unicorns (Ages 9–13)</Link></li>
-                <li><Link to="/programs/diversity-shines" className="text-slate-400 hover:text-white transition-colors">Diversity SHINES & Screenings</Link></li>
-                <li><Link to="/community" className="text-slate-400 hover:text-white transition-colors">Community Groups & Meetings</Link></li>
+                <li><Link to="/board-and-staff" className="text-slate-400 hover:text-white transition-colors">Board & Staff</Link></li>
+                <li><Link to="/sponsors" className="text-slate-400 hover:text-white transition-colors">Sponsors & Partners</Link></li>
+                <li><Link to="/programs" className="text-slate-400 hover:text-white transition-colors">Programs & Health Care</Link></li>
+                <li><Link to="/directory" className="text-slate-400 hover:text-white transition-colors">LGBTQ+ Business Directory</Link></li>
+                <li><Link to="/training" className="text-slate-400 hover:text-white transition-colors">P.R.I.D.E. Training</Link></li>
+                <li><Link to="/community" className="text-slate-400 hover:text-white transition-colors">Community Peer Groups</Link></li>
                 <li><Link to="/events" className="text-slate-400 hover:text-white transition-colors">Cultural Calendar & Events</Link></li>
                 <li><Link to="/resources" className="text-slate-400 hover:text-white transition-colors">Support & Crisis Resources</Link></li>
-                <li><Link to="/get-involved" className="text-slate-400 hover:text-white transition-colors">Sponsor, Volunteer & Donate</Link></li>
-                <li><Link to="/contact" className="text-slate-400 hover:text-white transition-colors">Contact & Visit Us</Link></li>
+                <li><Link to="/news" className="text-slate-400 hover:text-white transition-colors">News & Articles</Link></li>
+                <li><Link to="/gallery" className="text-slate-400 hover:text-white transition-colors">Community Gallery</Link></li>
+                <li><Link to="/volunteer" className="text-slate-400 hover:text-white transition-colors">Volunteer Pathways</Link></li>
+                <li><Link to="/donate" className="text-slate-400 hover:text-white transition-colors">Donate & Sustainer Giving</Link></li>
+                <li><Link to="/contact" className="text-slate-400 hover:text-white transition-colors">Contact & Sanctuary</Link></li>
               </ul>
             </div>
 
@@ -221,7 +223,11 @@ export default function Footer() {
 
           <div className="flex flex-wrap items-center gap-4 text-xs">
             <button
-              onClick={() => window.dispatchEvent(new CustomEvent('replayWelcomeAnimation'))}
+              type="button"
+              onClick={() => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                window.dispatchEvent(new CustomEvent('replayWelcomeAnimation'));
+              }}
               className="hover:text-amber-300 transition-colors cursor-pointer inline-flex items-center gap-1 font-bold text-slate-400"
               title="Replay vibrant color entrance animation"
             >
@@ -236,23 +242,19 @@ export default function Footer() {
               Accessibility (WCAG 2.2 AA)
             </Link>
             <span>·</span>
-            <a 
-              href="https://www.diversitycollectivevc.org/privacy-policy/" 
-              target="_blank" 
-              rel="noopener noreferrer" 
+            <Link 
+              to="/privacy" 
               className="hover:text-slate-300 transition-colors"
             >
               Privacy Policy
-            </a>
+            </Link>
             <span>·</span>
-            <a 
-              href="https://www.diversitycollectivevc.org/terms-and-conditions/" 
-              target="_blank" 
-              rel="noopener noreferrer" 
+            <Link 
+              to="/terms" 
               className="hover:text-slate-300 transition-colors"
             >
               Terms & Conditions
-            </a>
+            </Link>
             <span>·</span>
             <span>© {new Date().getFullYear()} DCVC. All Rights Reserved.</span>
           </div>

@@ -1,16 +1,17 @@
 // ==========================================================================
-// DIVERSITY COLLECTIVE VENTURA COUNTY — RECITE ME ACCESSIBILITY STORE
+// DIVERSITY COLLECTIVE VENTURA COUNTY — NATIVE ACCESSIBILITY STORE
 // Full companion state management, persistence, live DOM attribute sync,
 // audio paragraph tracking, and WCAG luminance calculations.
+// 100% Native DCVC Community Sanctuary Accessibility Suite.
 // ==========================================================================
 
-const STORAGE_KEY = 'dcvc_recite_settings';
+const STORAGE_KEY = 'dcvc_a11y_settings';
 
 export const DEFAULT_SETTINGS = {
   // Toolbar State
   toolbarOpen: false,
 
-  // 1. Text & Styling (Recite Me: A-, Aa, A+, Spacing, Fonts)
+  // 1. Text & Styling (A-, Aa, A+, Spacing, Fonts)
   fontSize: 100, // 100, 110, 125, 150, 175, 200 (%)
   fontFamily: 'default', // 'default', 'opendyslexic', 'atkinson', 'arial', 'comicsans', 'verdana'
   lineHeight: 'normal', // 'normal', '1.5', '1.8', '2.0'
@@ -20,7 +21,7 @@ export const DEFAULT_SETTINGS = {
   highlightLinks: false,
   highlightHeadings: false,
 
-  // 2. Color Themes & Palette (Recite Me Colour Wheel)
+  // 2. Color Themes & Palette
   colorTheme: 'default', // 'default', 'yellow-on-black', 'black-on-yellow', 'white-on-blue', 'black-on-peach', 'inverted', 'monochrome', 'custom'
   customColors: false,
   textColor: '#0f172a',
@@ -47,20 +48,22 @@ export const DEFAULT_SETTINGS = {
 
 function loadStoredSettings() {
   try {
+    if (typeof localStorage === 'undefined') return null;
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     return JSON.parse(raw);
   } catch (e) {
-    console.warn('[ReciteStore] LocalStorage error:', e);
+    console.warn('[a11yStore] LocalStorage error:', e);
     return null;
   }
 }
 
 function saveStoredSettings(settings) {
   try {
+    if (typeof localStorage === 'undefined') return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
   } catch (e) {
-    console.warn('[ReciteStore] Failed to save settings:', e);
+    console.warn('[a11yStore] Failed to save settings:', e);
   }
 }
 
@@ -77,7 +80,7 @@ function getOSPreferences() {
   return prefs;
 }
 
-class ReciteAccessibilityStore {
+class NativeAccessibilityStore {
   constructor() {
     this.listeners = new Set();
     const stored = loadStoredSettings();
@@ -87,6 +90,7 @@ class ReciteAccessibilityStore {
       ...DEFAULT_SETTINGS,
       ...osDefaults,
       ...(stored || {}),
+      toolbarOpen: false, // Always start closed on initial load
     };
 
     if (typeof window !== 'undefined') {
@@ -104,7 +108,7 @@ class ReciteAccessibilityStore {
           this.applyToDOM();
           this.notify();
         } catch (e) {
-          console.error('[ReciteStore] Sync error:', e);
+          console.error('[a11yStore] Sync error:', e);
         }
       }
     });
@@ -145,7 +149,44 @@ class ReciteAccessibilityStore {
 
   toggleToolbar() {
     this.update('toolbarOpen', !this.state.toolbarOpen);
-    this.announce(this.state.toolbarOpen ? 'Recite Me accessibility toolbar opened' : 'Accessibility toolbar closed');
+    this.announce(this.state.toolbarOpen ? 'DCVC Accessibility Companion opened' : 'Accessibility toolbar closed');
+  }
+
+  increaseFontSize() {
+    const sizes = [100, 110, 125, 150, 175, 200];
+    const currentIndex = sizes.indexOf(this.state.fontSize);
+    if (currentIndex < sizes.length - 1) {
+      this.update('fontSize', sizes[currentIndex + 1]);
+    }
+  }
+
+  decreaseFontSize() {
+    const sizes = [100, 110, 125, 150, 175, 200];
+    const currentIndex = sizes.indexOf(this.state.fontSize);
+    if (currentIndex > 0) {
+      this.update('fontSize', sizes[currentIndex - 1]);
+    }
+  }
+
+  toggleFontFamily() {
+    const nextFont = this.state.fontFamily === 'default' ? 'opendyslexic' : 'default';
+    this.update('fontFamily', nextFont);
+  }
+
+  setColorTheme(theme) {
+    this.update('colorTheme', theme);
+  }
+
+  toggleRuler() {
+    this.update('ruler', !this.state.ruler);
+  }
+
+  toggleScreenMask() {
+    this.update('screenMask', !this.state.screenMask);
+  }
+
+  togglePauseAnimations() {
+    this.update('pauseAnimations', !this.state.pauseAnimations);
   }
 
   resetAll() {
@@ -162,6 +203,10 @@ class ReciteAccessibilityStore {
     this.announce('All accessibility settings have been reset to defaults.');
   }
 
+  resetSettings() {
+    this.resetAll();
+  }
+
   subscribe(listener) {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
@@ -169,21 +214,26 @@ class ReciteAccessibilityStore {
 
   notify() {
     for (const listener of this.listeners) {
-      listener(this.state);
+      try {
+        listener(this.getState());
+      } catch (err) {
+        console.error('[a11yStore] listener error:', err);
+      }
     }
   }
 
   applyToDOM() {
     if (typeof document === 'undefined') return;
     const html = document.documentElement;
-    const body = document.body;
     const s = this.state;
 
-    // Toolbar status (pads body down when ribbon is open)
+    // Toolbar status
     html.setAttribute('data-recite-toolbar-open', s.toolbarOpen ? 'true' : 'false');
+    html.setAttribute('data-a11y-toolbar-open', s.toolbarOpen ? 'true' : 'false');
 
     // Font size scaling
     html.setAttribute('data-a11y-font-size', s.fontSize.toString());
+    html.style.fontSize = s.fontSize === 100 ? '' : `${s.fontSize}%`;
 
     // Font Family
     html.setAttribute('data-a11y-font-family', s.fontFamily);
@@ -221,6 +271,12 @@ class ReciteAccessibilityStore {
     html.setAttribute('data-a11y-enhanced-focus', s.enhancedFocus ? 'true' : 'false');
     html.setAttribute('data-a11y-pause-animations', s.pauseAnimations ? 'true' : 'false');
 
+    if (s.pauseAnimations) {
+      html.classList.add('reduce-motion');
+    } else {
+      html.classList.remove('reduce-motion');
+    }
+
     // Dispatch event for smooth scroll and animations
     window.dispatchEvent(new CustomEvent('a11ySettingsChanged', { detail: s }));
   }
@@ -244,7 +300,7 @@ class ReciteAccessibilityStore {
   }
 }
 
-export const a11yStore = new ReciteAccessibilityStore();
+export const a11yStore = new NativeAccessibilityStore();
 
 // Contrast ratio helpers
 function hexToRgb(hex) {

@@ -8,32 +8,47 @@ import {
   ArrowUpRight, 
   Share2, 
   ShieldCheck,
-  Check
+  Check,
+  Calendar,
+  Download,
+  AlertTriangle,
+  Repeat
 } from 'lucide-react';
 import { liveEvents, orgInfo } from '../data/dcvcData';
 import CardSpotlight from '../components/CardSpotlight';
+import { getGoogleCalendarUrl, downloadIcsFile } from '../utils/calendar';
+import { usePageMeta } from '../utils/seo';
 
 export default function EventDetail() {
   const { slug } = useParams();
   const event = liveEvents.find(e => e.slug === slug);
   const [copied, setCopied] = useState(false);
 
+  usePageMeta({
+    title: event ? event.title : 'Event Details',
+    description: event ? event.description : 'Gathering and community calendar details for Diversity Collective Ventura County.',
+    canonicalPath: event ? `/events/${event.slug}` : '/events',
+    ogImage: event?.image
+  });
+
   if (!event) {
     return <Navigate to="/events" replace />;
   }
 
   const handleShare = () => {
-    if (navigator.clipboard) {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
       navigator.clipboard.writeText(window.location.href);
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
     }
   };
 
+  const isWeeklyOrMonthly = event.slug.includes('weekly') || event.slug.includes('monthly') || event.title.toLowerCase().includes('weekly');
+
   return (
     <div className="pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
       
-      {/* Back button */}
+      {/* Back button and Share */}
       <div className="container-clean mb-6 flex items-center justify-between">
         <Link 
           to="/events" 
@@ -54,18 +69,36 @@ export default function EventDetail() {
 
       {/* Main Event Article */}
       <article className="container-clean">
+        
+        {/* Cancellation Alert Banner */}
+        {event.isCancelled && (
+          <div className="mb-8 p-5 rounded-2xl bg-rose-50 border-2 border-rose-300 text-rose-900 flex items-center gap-3">
+            <AlertTriangle className="w-6 h-6 text-rose-600 flex-shrink-0" />
+            <div>
+              <span className="font-display font-black text-sm uppercase tracking-wide block">Notice: Gathering Cancelled or Rescheduled</span>
+              <span className="text-xs">Please contact {event.contactEmail || orgInfo.email} for revised gathering dates and questions.</span>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start pb-16 border-b border-slate-100">
           
           {/* Main Info */}
           <div className="lg:col-span-8 space-y-8">
             <div className="space-y-3">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2.5">
                 <span className="text-xs font-black uppercase tracking-wider px-3 py-1 rounded-full bg-purple-50 text-[#5A1E65] border border-purple-200">
                   {event.category}
                 </span>
                 <span className="text-xs text-slate-500 font-bold">
-                  {event.month} {event.day}, {event.year}
+                  {event.month} {event.day}, {event.year} · {event.time}
                 </span>
+                {isWeeklyOrMonthly && (
+                  <span className="text-xs font-bold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1">
+                    <Repeat className="w-3 h-3" />
+                    <span>Recurring Program</span>
+                  </span>
+                )}
               </div>
 
               <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-slate-950 leading-[1.08]">
@@ -73,7 +106,7 @@ export default function EventDetail() {
               </h1>
             </div>
 
-            {/* Image Banner if available in 3D Card */}
+            {/* Image Banner */}
             {event.image && (
               <div className="rounded-3xl overflow-hidden aspect-[16/9] shadow-xl border-2 border-slate-200">
                 <img 
@@ -100,8 +133,37 @@ export default function EventDetail() {
               </p>
             </div>
 
+            {/* Add to Calendar Button Row */}
+            <div className="p-6 rounded-2xl bg-purple-50/70 border border-purple-200 space-y-3">
+              <span className="text-xs font-black uppercase tracking-wider text-[#5A1E65] flex items-center gap-1.5">
+                <Calendar className="w-4 h-4" />
+                <span>Add Gathering to Your Calendar</span>
+              </span>
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => downloadIcsFile(event)}
+                  className="py-2.5 px-4 rounded-xl bg-white border border-slate-300 hover:border-purple-500 text-slate-900 text-xs font-bold shadow-xs hover:shadow-md transition-all inline-flex items-center gap-2 cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5 text-[#5A1E65]" />
+                  <span>Download .ICS (Apple & Outlook)</span>
+                </button>
+
+                <a
+                  href={getGoogleCalendarUrl(event)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="py-2.5 px-4 rounded-xl bg-[#5A1E65] text-white text-xs font-bold shadow-xs hover:shadow-md transition-all inline-flex items-center gap-2"
+                >
+                  <Calendar className="w-3.5 h-3.5 text-amber-300" />
+                  <span>Add to Google Calendar</span>
+                  <ArrowUpRight className="w-3 h-3" />
+                </a>
+              </div>
+            </div>
+
             {/* Action Bar */}
-            <div className="pt-6 flex flex-wrap items-center gap-4">
+            <div className="pt-4 flex flex-wrap items-center gap-4">
               {event.registrationUrl ? (
                 <a
                   href={event.registrationUrl}
@@ -130,10 +192,10 @@ export default function EventDetail() {
             </div>
           </div>
 
-          {/* Sidebar Logistics Card in 3D CardSpotlight */}
-          <div className="lg:col-span-4 sticky top-28 perspective-1000">
+          {/* Sidebar Logistics Card */}
+          <div className="lg:col-span-4 sticky top-28">
             <CardSpotlight
-              className="bg-slate-50/90 p-8 rounded-3xl border-2 border-slate-200 shadow-xl space-y-6 interactive-card-3d"
+              className="bg-slate-50/90 p-8 rounded-3xl border-2 border-slate-200 shadow-xl space-y-6"
               tilt={true}
               maxTilt={5}
               glare={true}

@@ -1,0 +1,43 @@
+[
+  {
+    "slug": "ventura-county-pride",
+    "title": "Ventura County Pride Festival",
+    "sourceUrl": "https://www.diversitycollectivevc.org/dcvc-events/#ventura-county-pride",
+    "tagline": "The Premier LGBTQ+ Cultural Celebration on the Coast",
+    "description": "Annual coastal festival celebrating community pride, local artists, performers, food, community resource vendors, and intersectional solidarity. Includes a dedicated public health pavilion offering free testing.",
+    "location": "Ventura Promenade / Coastal Ventura",
+    "timing": "Annual Fall Event (Typically August/September)",
+    "admission": "Open to all community members; volunteer opportunities available"
+  },
+  {
+    "slug": "diversity-gala",
+    "title": "Diversity Gala",
+    "sourceUrl": "https://www.diversitycollectivevc.org/dcvc-events/#diversity-gala",
+    "tagline": "Honoring Champions of Equity and Community Leadership",
+    "description": "Premier annual benefit gala honoring community advocates, corporate allies, and volunteers whose contributions transform lives across Ventura County.",
+    "location": "Ventura County Event Center",
+    "timing": "Annual Spring/Summer Gala",
+    "admission": "Ticketed fundraising benefit for DCVC Community Resource Center"
+  },
+  {
+    "slug": "pride-prom",
+    "title": "Pride Prom",
+    "sourceUrl": "https://www.diversitycollectivevc.org/dcvc-events/#pride-prom",
+    "tagline": "An Unforgettable, Affirming Night for LGBTQ+ Youth",
+    "description": "Hosted by Rainbow Umbrella for youth ages 13–23. A safe, dry, and welcoming prom where youth can dress authentically, dance with anyone, and celebrate without fear or judgment.",
+    "location": "DCVC Community Resource Center & Local Venues",
+    "timing": "Annual Spring Event",
+    "admission": "Free / Subsidized for Youth ages 13-23"
+  },
+  {
+    "slug": "aids-walk-ventura",
+    "title": "AIDS Walk Ventura",
+    "sourceUrl": "https://www.diversitycollectivevc.org/dcvc-events/#aids-walk-ventura",
+    "tagline": "Walking in Remembrance, Advocating for a Healthier Future",
+    "description": "Commemorating loved ones lost to HIV/AIDS, combating healthcare stigmas, and raising dedicated funding for Diversity SHINES rapid screening and PrEP/PEP linkage.",
+    "location": "Ventura Beach Promenade / Downtown Ventura",
+    "timing": "Annual Community Walk",
+    "admission": "Free participation with fundraising teams"
+  }
+]
+

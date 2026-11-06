@@ -1,0 +1,124 @@
+[
+  {
+    "assetId": "media-01",
+    "filename": "DCVC_FundraisingBrochure_Web_ReplyCard_FINALHR.pdf",
+    "sourceUrl": "https://www.diversitycollectivevc.org/wp-content/uploads/2023/08/DCVC_FundraisingBrochure_Web_ReplyCard_FINALHR.pdf",
+    "targetLocalPath": "/public/documents/DCVC_FundraisingBrochure_Web_ReplyCard_FINALHR.pdf",
+    "cloudinaryFolder": "dcvc/documents",
+    "assetType": "document/pdf",
+    "altText": "Diversity Collective Fundraising Brochure and Donor Reply Card",
+    "caption": "Official printable overview of DCVC history, community programs, and donor giving tiers.",
+    "associatedContent": "Get Involved & Donate Pages"
+  },
+  {
+    "assetId": "media-02",
+    "filename": "crc-building.jpg",
+    "sourceUrl": "https://www.diversitycollectivevc.org/wp-content/uploads/crc/crc-exterior.jpg",
+    "targetLocalPath": "/public/images/crc-building.jpg",
+    "cloudinaryFolder": "dcvc/programs",
+    "assetType": "image",
+    "altText": "Exterior of the Diversity Collective Community Resource Center at 2471 Portola Road in Ventura",
+    "caption": "Diversity Collective Community Resource Center flagship building in Ventura, CA.",
+    "associatedContent": "Community Resource Center Page & Program Detail"
+  },
+  {
+    "assetId": "media-03",
+    "filename": "youth-umbrella.jpg",
+    "sourceUrl": "https://www.diversitycollectivevc.org/wp-content/uploads/programs/rainbow-umbrella.jpg",
+    "targetLocalPath": "/public/images/youth-umbrella.jpg",
+    "cloudinaryFolder": "dcvc/programs",
+    "assetType": "image",
+    "altText": "Diverse youth smiling and holding creative art signs at a Rainbow Umbrella weekly circle",
+    "caption": "Rainbow Umbrella youth gathering for weekly check-ins and peer connection.",
+    "associatedContent": "Rainbow Umbrella Program Page"
+  },
+  {
+    "assetId": "media-04",
+    "filename": "little-unicorns.png",
+    "sourceUrl": "https://www.diversitycollectivevc.org/wp-content/uploads/programs/little-unicorns-art.png",
+    "targetLocalPath": "/public/images/little-unicorns.png",
+    "cloudinaryFolder": "dcvc/programs",
+    "assetType": "image",
+    "altText": "Colorful illustrated unicorn logo for the Little Unicorns youth peer group ages 9-13",
+    "caption": "Little Unicorns monthly peer support program emblem.",
+    "associatedContent": "Little Unicorns Program Page"
+  },
+  {
+    "assetId": "media-05",
+    "filename": "shines-screening.jpg",
+    "sourceUrl": "https://www.diversitycollectivevc.org/wp-content/uploads/health/shines-screening-room.jpg",
+    "targetLocalPath": "/public/images/shines-screening.jpg",
+    "cloudinaryFolder": "dcvc/programs",
+    "assetType": "image",
+    "altText": "Confidential, comfortable wellness consultation room with educational brochures at the Community Resource Center",
+    "caption": "Diversity SHINES free rapid testing and consultation space.",
+    "associatedContent": "Diversity SHINES Program Page"
+  },
+  {
+    "assetId": "media-06",
+    "filename": "volunteers.jpg",
+    "sourceUrl": "https://www.diversitycollectivevc.org/wp-content/uploads/community/dcvc-volunteers.jpg",
+    "targetLocalPath": "/public/images/volunteers.jpg",
+    "cloudinaryFolder": "dcvc/community",
+    "assetType": "image",
+    "altText": "DCVC volunteers wearing purple shirts gathered together at an outreach table",
+    "caption": "Community volunteers representing Diversity Collective at a local event.",
+    "associatedContent": "Volunteer & Get Involved Pages"
+  },
+  {
+    "assetId": "media-07",
+    "filename": "community-gathering.jpg",
+    "sourceUrl": "https://www.diversitycollectivevc.org/wp-content/uploads/events/vc-pride-crowd.jpg",
+    "targetLocalPath": "/public/images/community-gathering.jpg",
+    "cloudinaryFolder": "dcvc/events",
+    "assetType": "image",
+    "altText": "Vibrant crowd celebrating Ventura County Pride along the sunny seaside promenade",
+    "caption": "Community members celebrating diversity and inclusion at Ventura County Pride.",
+    "associatedContent": "Events & News Pages"
+  },
+  {
+    "assetId": "media-08",
+    "filename": "hero-community.jpg",
+    "sourceUrl": "https://www.diversitycollectivevc.org/wp-content/uploads/hero/dcvc-community-hero.jpg",
+    "targetLocalPath": "/public/images/hero-community.jpg",
+    "cloudinaryFolder": "dcvc/hero",
+    "assetType": "image",
+    "altText": "Intergenerational group of LGBTQ+ community members smiling together in Ventura",
+    "caption": "The vibrant, diverse LGBTQ+ community of Ventura County.",
+    "associatedContent": "Home & About Hero Banners"
+  },
+  {
+    "assetId": "media-09",
+    "filename": "vcbh-logo.jpg",
+    "sourceUrl": "https://www.diversitycollectivevc.org/wp-content/uploads/sponsors/vcbh-partner.jpg",
+    "targetLocalPath": "/public/images/vcbh-logo.jpg",
+    "cloudinaryFolder": "dcvc/sponsors",
+    "assetType": "logo",
+    "altText": "Ventura County Behavioral Health official agency logo",
+    "caption": "Foundational community health partner logo.",
+    "associatedContent": "Sponsors & Partners Page"
+  },
+  {
+    "assetId": "media-10",
+    "filename": "vcph-logo.png",
+    "sourceUrl": "https://www.diversitycollectivevc.org/wp-content/uploads/sponsors/vcph-partner.png",
+    "targetLocalPath": "/public/images/vcph-logo.png",
+    "cloudinaryFolder": "dcvc/sponsors",
+    "assetType": "logo",
+    "altText": "Ventura County Public Health official department logo",
+    "caption": "Public health & STI testing partner logo.",
+    "associatedContent": "Sponsors & Partners Page"
+  },
+  {
+    "assetId": "media-11",
+    "filename": "favicon.svg",
+    "sourceUrl": "https://www.diversitycollectivevc.org/favicon.ico",
+    "targetLocalPath": "/public/favicon.svg",
+    "cloudinaryFolder": "dcvc/brand",
+    "assetType": "logo",
+    "altText": "Diversity Collective geometric prism icon",
+    "caption": "Official SVG favicon and brand mark.",
+    "associatedContent": "Sitewide Head & Favicon"
+  }
+]
+

@@ -1,0 +1,31 @@
+[
+  {
+    "url": "https://www.diversitycollectivevc.org/sample-page/",
+    "httpStatus": 404,
+    "errorType": "ORPHAN_PAGE",
+    "description": "Default initial WordPress post with unpopulated lorem ipsum text.",
+    "remediation": "Excluded from migration and ignored."
+  },
+  {
+    "url": "https://www.diversitycollectivevc.org/wp-content/plugins/revslider/",
+    "httpStatus": 403,
+    "errorType": "DEPRECATED_PLUGIN",
+    "description": "Legacy WordPress Revolution Slider asset directory with obsolete interactive flash/scripts.",
+    "remediation": "Replaced by native, accessible React CSS components."
+  },
+  {
+    "url": "https://www.diversitycollectivevc.org/xmlrpc.php",
+    "httpStatus": 405,
+    "errorType": "DEPRECATED_API",
+    "description": "WordPress XML-RPC interface frequently targeted by automated brute-force bots.",
+    "remediation": "Disabled and blocked in Cloudflare configuration."
+  },
+  {
+    "url": "https://www.diversitycollectivevc.org/wp-login.php",
+    "httpStatus": 200,
+    "errorType": "ADMIN_ISOLATION_EXCLUSION",
+    "description": "Legacy public WordPress administrative login endpoint.",
+    "remediation": "Excluded from public app bundle; administrative operations transferred to isolated Sanity Studio at studio.diversitycollective.org."
+  }
+]
+

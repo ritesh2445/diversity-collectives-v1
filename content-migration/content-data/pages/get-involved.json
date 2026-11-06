@@ -1,0 +1,30 @@
+{
+  "sourceUrl": "https://www.diversitycollectivevc.org/get-involved/",
+  "title": "Get Involved | Diversity Collective Ventura County",
+  "waysToSupport": [
+    {
+      "type": "volunteer",
+      "title": "Volunteer Your Talents",
+      "description": "DCVC is powered by passionate volunteers who greet center visitors, facilitate youth activities, staff health pavilions, and produce Ventura County Pride.",
+      "link": "/volunteer"
+    },
+    {
+      "type": "donate",
+      "title": "Financial Contributions & Giving",
+      "description": "As a 501(c)(3) nonprofit, individual donations sustain our free rapid HIV/STI testing, computer access lab, and youth mental health sanctuaries.",
+      "link": "/donate"
+    },
+    {
+      "type": "sponsorship",
+      "title": "Corporate & Civic Partnerships",
+      "description": "Partner with Ventura County's premier LGBTQ+ organization to sponsor annual gatherings, community wellness initiatives, and cultural education.",
+      "link": "/sponsors"
+    }
+  ],
+  "brochure": {
+    "title": "DCVC Community Impact & Fundraising Brochure",
+    "url": "https://www.diversitycollectivevc.org/wp-content/uploads/2023/08/DCVC_FundraisingBrochure_Web_ReplyCard_FINALHR.pdf",
+    "filename": "DCVC_FundraisingBrochure_Web_ReplyCard_FINALHR.pdf"
+  }
+}
+

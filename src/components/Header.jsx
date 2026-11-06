@@ -54,6 +54,18 @@ export default function Header() {
     };
   }, [mobileMenuOpen]);
 
+  // Global Alt + A hotkey for toggling Accessibility Companion
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.altKey && (e.key === 'a' || e.key === 'A')) {
+        e.preventDefault();
+        a11yStore.toggleToolbar();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const handleQuickExit = () => {
     window.location.replace("https://www.google.com");
   };
@@ -61,51 +73,63 @@ export default function Header() {
   const navItems = [
     { label: "About", to: "/about", icon: Info, desc: "Mission, history & 10-year leadership" },
     { label: "Programs", to: "/programs", icon: Sparkles, desc: "Free HIV/STI testing & youth groups" },
+    { label: "Directory", to: "/directory", icon: Compass, desc: "LGBTQ+ affirming business network" },
+    { label: "Training", to: "/training", icon: Sparkles, desc: "P.R.I.D.E. cultural competency" },
     { label: "Community", to: "/community", icon: Users, desc: "Affirming peer circles & gatherings" },
     { label: "Events", to: "/events", icon: Calendar, desc: "Pride prom, galas & workshops" },
     { label: "Resources", to: "/resources", icon: Compass, desc: "Crisis lines & regional mutual aid" },
-    { label: "Get Involved", to: "/get-involved", icon: HeartHandshake, desc: "Volunteer & community support" }
+    { label: "News", to: "/news", icon: Info, desc: "Stories, updates & advocacy" },
+    { label: "Gallery", to: "/gallery", icon: Sparkles, desc: "Celebration & memories" }
   ];
 
   return (
     <>
-      {/* Pride Rainbow Accent Ribbon */}
-      <div className="h-1 pride-rainbow-bar w-full" aria-hidden="true" />
-
       {/* Primary Sticky Header Bar */}
       <header 
         id="main-header"
-        className={`sticky top-0 left-0 right-0 z-50 transition-all duration-200 bg-[#FAF5FF]/90 backdrop-blur-md ${
-          scrolled 
-            ? 'border-b border-purple-200/90 shadow-sm py-2 sm:py-2.5' 
-            : 'border-b border-purple-200/60 py-2.5 sm:py-3.5'
-        }`}
+        className="sticky top-0 left-0 right-0 z-50 transition-all duration-200 bg-[#FAF5FF]/95 backdrop-blur-md border-b border-purple-200/70 shadow-xs"
       >
-        <div className="container-clean px-2.5 sm:px-6">
-          <div className="flex items-center justify-between gap-1.5 sm:gap-6 min-w-0">
+        {/* Pride Rainbow Accent Ribbon integrated at header top */}
+        <div className="h-0.5 sm:h-1 pride-rainbow-bar w-full" aria-hidden="true" />
+
+        <div className={`container-clean px-3 sm:px-6 md:px-8 transition-all duration-200 ${
+          scrolled ? 'py-1.5 sm:py-2.5' : 'py-2 sm:py-3'
+        }`}>
+          <div className="flex items-center justify-between gap-1.5 sm:gap-6">
             
-            {/* Logo & Brand Identity */}
+            {/* Logo & Brand Identity - Never truncated on mobile or desktop */}
             <Link 
               to="/" 
-              className="flex items-center gap-1.5 sm:gap-3.5 group focus:outline-none min-w-0 flex-shrink"
+              className="flex items-center gap-2 sm:gap-3 group focus:outline-none flex-shrink-0 min-w-0"
               aria-label="Diversity Collective Ventura County"
             >
-              <div className="w-8 h-8 xs:w-10 xs:h-10 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-xl overflow-hidden shadow-xs border-2 border-purple-200 bg-white flex-shrink-0 flex items-center justify-center p-0.5 sm:p-1 group-hover:scale-105 group-hover:border-[#5A1E65] transition-all duration-200">
+              <div className="w-8 h-8 xs:w-9 xs:h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-xl overflow-hidden shadow-xs border border-purple-200 bg-white flex-shrink-0 flex items-center justify-center p-0.5 sm:p-1 group-hover:scale-105 group-hover:border-[#5A1E65] transition-all duration-200">
                 <img 
                   src="/images/logo-square.png" 
                   alt="Diversity Collective Ventura County Official Logo" 
                   className="w-full h-full object-contain filter drop-shadow-xs"
                 />
               </div>
-              <div className="flex flex-col justify-center min-w-0">
-                <span className="font-display font-extrabold text-xs xs:text-sm sm:text-xl md:text-2xl tracking-tight leading-tight text-slate-950 group-hover:text-[#5A1E65] transition-colors truncate">
+              <div className="flex flex-col justify-center flex-shrink-0">
+                {/* On mobile: compact stacked two lines matching mockup */}
+                <div className="flex flex-col sm:hidden leading-none">
+                  <span className="font-display font-black text-[13px] tracking-tight text-slate-950 group-hover:text-[#5A1E65] transition-colors">
+                    diversity
+                  </span>
+                  <span className="font-display font-black text-[13px] tracking-tight text-slate-950 group-hover:text-[#5A1E65] transition-colors mt-0.5">
+                    collective
+                  </span>
+                </div>
+
+                {/* On sm+: single line with subtitle */}
+                <span className="hidden sm:block font-display font-extrabold text-base md:text-xl tracking-tight leading-tight text-slate-950 group-hover:text-[#5A1E65] transition-colors whitespace-nowrap">
                   Diversity Collective
                 </span>
-                <div className="flex items-center gap-1 sm:gap-1.5 mt-0.5">
-                  <span className="text-[9px] xs:text-[10px] sm:text-xs font-bold tracking-[0.08em] sm:tracking-[0.18em] text-[#5A1E65] uppercase truncate">
+                <div className="hidden sm:flex items-center gap-1.5 mt-0.5">
+                  <span className="text-[10px] md:text-xs font-bold tracking-[0.14em] text-[#5A1E65] uppercase whitespace-nowrap">
                     Ventura County
                   </span>
-                  <span className="hidden xl:inline-flex text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-purple-100/70 text-[#5A1E65] border border-purple-300/80 leading-none">
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-purple-100/70 text-[#5A1E65] border border-purple-300/80 leading-none whitespace-nowrap">
                     501(c)(3)
                   </span>
                 </div>
@@ -113,7 +137,7 @@ export default function Header() {
             </Link>
 
             {/* Desktop Center Navigation */}
-            <nav id="main-navigation" className="hidden lg:flex items-center gap-1 xl:gap-2" aria-label="Main Navigation">
+            <nav id="main-navigation" className="hidden xl:flex items-center gap-1 xl:gap-2" aria-label="Main Navigation">
               {navItems.map((item) => {
                 const isActive = location.pathname === item.to || 
                   (item.to !== '/' && location.pathname.startsWith(item.to));
@@ -121,7 +145,7 @@ export default function Header() {
                   <Link
                     key={item.to}
                     to={item.to}
-                    className={`px-3.5 py-2 text-sm font-semibold rounded-full transition-all ${
+                    className={`px-3 py-2 text-sm font-semibold rounded-full transition-all whitespace-nowrap ${
                       isActive 
                         ? 'text-white bg-gradient-to-r from-[#5A1E65] to-purple-700 shadow-md shadow-purple-500/20 font-bold' 
                         : 'text-slate-700 hover:text-[#5A1E65] hover:bg-purple-50/80'
@@ -133,60 +157,58 @@ export default function Header() {
               })}
             </nav>
 
-            {/* Right CTAs */}
-            <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
-              {/* Recite Me Accessibility Button */}
+            {/* Right CTAs - Guaranteed zero cropping */}
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 min-w-fit">
+              {/* Accessibility Companion Launcher Button - Circular icon matching mockup */}
               <button
                 type="button"
                 onClick={() => a11yStore.toggleToolbar()}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-800 hover:text-[#5A1E65] border border-amber-300 hover:border-amber-400 bg-amber-50 hover:bg-amber-100/80 rounded-full transition-colors shadow-2xs cursor-pointer"
-                title="Launch Recite Me Accessibility & Audio Toolbar (Alt + A)"
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-slate-300/90 bg-white hover:bg-purple-50 flex items-center justify-center text-slate-800 hover:text-[#5A1E65] transition-all flex-shrink-0 cursor-pointer shadow-2xs"
+                title="Launch DCVC Accessibility Companion (Alt + A)"
                 aria-label="Launch Accessibility & Audio Tools"
               >
-                <Accessibility className="w-3.5 h-3.5 text-[#5A1E65]" />
-                <span className="hidden xs:inline">Accessibility</span>
+                <Accessibility className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#5A1E65] flex-shrink-0" />
               </button>
 
-              {/* Discreet Quick Exit (Tablet & Desktop) */}
+              {/* Quick Exit Shield Button (Always visible on mobile & desktop for crisis safety) */}
               <button
                 onClick={handleQuickExit}
-                className="btn-exit-clean hidden md:inline-flex"
-                title="Quickly exit to Google for your privacy"
+                className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-1 sm:py-1.5 text-[10px] sm:text-xs font-bold text-rose-700 bg-rose-50/95 hover:bg-rose-100 border border-rose-200/90 rounded-full transition-all shadow-2xs cursor-pointer flex-shrink-0 whitespace-nowrap"
+                title="Quickly exit to Google for your privacy and safety"
               >
-                <Shield className="w-3 h-3" />
-                <span>Quick Exit</span>
+                <Shield className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-rose-600 flex-shrink-0" />
+                <span className="hidden min-[380px]:inline">Quick Exit</span>
+                <span className="min-[380px]:hidden">Exit</span>
               </button>
 
-              {/* Get Support */}
+              {/* Get Support (Large desktop screens) */}
               <Link
                 to="/programs"
-                className="hidden xl:inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-slate-700 hover:text-[#5A1E65] border border-slate-200 hover:border-purple-300 rounded-full transition-colors bg-white shadow-2xs"
+                className="hidden 2xl:inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-slate-700 hover:text-[#5A1E65] border border-slate-200 hover:border-purple-300 rounded-full transition-colors bg-white shadow-2xs flex-shrink-0 whitespace-nowrap"
               >
                 <LifeBuoy className="w-3.5 h-3.5 text-[#5A1E65]" />
                 <span>Get Support</span>
               </Link>
 
-              {/* Official Donate Action */}
-              <a
-                href={orgInfo.donationUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-primary py-1.5 sm:py-2 px-2.5 xs:px-3.5 sm:px-5 text-[11px] sm:text-xs font-bold tracking-wide inline-flex items-center gap-1 sm:gap-1.5 shadow-md hover:shadow-purple-500/35 flex-shrink-0"
+              {/* Official Donate Action - Warm Gold Pill (Never Cropped) */}
+              <Link
+                to="/donate"
+                className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 text-xs font-extrabold tracking-wide text-slate-950 bg-[#FDE047] hover:bg-[#FACC15] active:bg-[#EAB308] border border-amber-300/80 rounded-full shadow-xs hover:shadow-md transition-all flex-shrink-0 whitespace-nowrap z-10"
               >
-                <Heart className="w-3.5 h-3.5 fill-current text-rose-300" />
-                <span>Donate</span>
-              </a>
+                <Heart className="w-3.5 h-3.5 fill-current text-slate-950 flex-shrink-0" />
+                <span className="font-extrabold">Donate</span>
+              </Link>
 
-              {/* Mobile Menu Toggle Button (Strict 44x44px Touch Target) */}
+              {/* Mobile & Tablet Menu Toggle Button */}
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(true)}
                 aria-expanded={mobileMenuOpen}
                 aria-controls="mobile-nav-drawer"
-                className="lg:hidden w-8 h-8 xs:w-9 xs:h-9 sm:w-10 sm:h-10 flex items-center justify-center text-slate-800 hover:text-slate-950 focus:outline-none rounded-xl bg-slate-100 hover:bg-slate-200 active:scale-95 transition-all flex-shrink-0 cursor-pointer"
+                className="xl:hidden w-8 h-8 flex items-center justify-center text-slate-800 hover:text-slate-950 focus:outline-none rounded-lg hover:bg-purple-100/60 active:scale-95 transition-all flex-shrink-0 cursor-pointer"
                 aria-label="Open Navigation Menu"
               >
-                <Menu className="w-4 h-4 sm:w-5 sm:h-5" />
+                <Menu className="w-5 h-5 text-slate-900" />
               </button>
             </div>
 
@@ -196,7 +218,7 @@ export default function Header() {
 
       {/* Full-Screen Mobile Navigation Drawer (Layered at z-[100]) */}
       {mobileMenuOpen && (
-        <div id="mobile-nav-drawer" role="dialog" aria-modal="true" aria-label="Mobile Navigation" className="fixed inset-0 z-[100] bg-slate-950/60 backdrop-blur-sm lg:hidden flex flex-col justify-end animate-fadeIn">
+        <div id="mobile-nav-drawer" role="dialog" aria-modal="true" aria-label="Mobile Navigation" className="fixed inset-0 z-[100] bg-slate-950/60 backdrop-blur-sm xl:hidden flex flex-col justify-end animate-fadeIn">
           
           <div className="bg-white w-full h-[95vh] rounded-t-3xl shadow-2xl flex flex-col overflow-hidden animate-slideUp">
             
@@ -308,19 +330,39 @@ export default function Header() {
                 <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
               </Link>
 
+              {/* Mobile Accessibility Companion Toggle */}
+              <button 
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  a11yStore.toggleToolbar();
+                }}
+                className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-amber-50/70 transition-colors group w-full text-left cursor-pointer"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-amber-100 text-[#5A1E65] flex items-center justify-center flex-shrink-0">
+                    <Accessibility className="w-4 h-4 text-[#5A1E65]" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-slate-900 group-hover:text-[#5A1E65] text-sm block">Accessibility Companion</span>
+                    <span className="text-[11px] text-slate-500">Speech reader, focus audio, dyslexia fonts & contrast</span>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+              </button>
+
             </div>
 
             {/* Bottom Mobile Action Drawer Footer */}
             <div className="p-5 border-t border-slate-200 bg-slate-50/90 flex flex-col gap-2.5">
-              <a
-                href={orgInfo.donationUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                to="/donate"
+                onClick={() => setMobileMenuOpen(false)}
                 className="btn-primary w-full py-3 text-center text-xs font-bold uppercase tracking-wider shadow-sm flex items-center justify-center gap-2"
               >
                 <Heart className="w-4 h-4 fill-current" />
                 <span>Make a Tax-Deductible Donation</span>
-              </a>
+              </Link>
 
               <a
                 href={`tel:${orgInfo.phone.replace(/[^0-9]/g, '')}`}

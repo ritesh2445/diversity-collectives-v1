@@ -1,0 +1,39 @@
+[
+  {
+    "name": "Ventura County Behavioral Health",
+    "shortName": "VCBH",
+    "role": "Foundational Community Health Partner",
+    "description": "Longstanding partner co-developing and funding LGBTQ+ cultural competency curriculum, mental health awareness, and suicide prevention resources across Ventura County.",
+    "website": "https://vchca.org/behavioral-health/",
+    "logo": "/images/vcbh-logo.jpg",
+    "verifiedSource": "https://www.diversitycollectivevc.org/sponsors-partners/"
+  },
+  {
+    "name": "Ventura County Public Health",
+    "shortName": "VCPH",
+    "role": "Public Health & STI Screening Partner",
+    "description": "Collaborative clinical partner supplying rapid testing kits, lab support, vaccine distribution (MPOX/Flu), and harm reduction materials for Diversity SHINES.",
+    "website": "https://vchca.org/public-health/",
+    "logo": "/images/vcph-logo.png",
+    "verifiedSource": "https://www.diversitycollectivevc.org/sponsors-partners/"
+  },
+  {
+    "name": "The Transverse",
+    "shortName": "The Transverse",
+    "role": "Transgender Community Ally",
+    "description": "Grassroots trans peer group partner co-hosting bi-weekly transgender and non-binary social circles at the Community Resource Center.",
+    "website": "https://www.thetransverse.net/",
+    "logo": null,
+    "verifiedSource": "https://www.diversitycollectivevc.org/community/"
+  },
+  {
+    "name": "PFLAG Ventura",
+    "shortName": "PFLAG",
+    "role": "Family & Ally Support Ally",
+    "description": "Dedicated family education and peer support chapter meeting monthly at DCVC to strengthen ties between LGBTQ+ individuals and their families.",
+    "website": "https://pflag.org/chapter/ventura/",
+    "logo": null,
+    "verifiedSource": "https://www.diversitycollectivevc.org/community/"
+  }
+]
+

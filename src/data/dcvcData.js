@@ -500,12 +500,12 @@ export const resourcesDirectory = [
 export const boardMembers = [
   {
     name: "Roland Catabona",
-    role: "Board Member",
+    role: "President, Board of Directors",
     bio: "Relocated back to his hometown Oxnard after 18+ years in Community and Business Banking. Roland served as co-chair for AIDS Walk Ventura and fundraising chair for Ventura County Pride. Alongside his partner, he has completed multiple AIDS LifeCycle rides and works to grow the region's cyclist and wellness community. He is also a certified Ashtanga Vinyasa yoga instructor."
   },
   {
     name: "Unique Dowtin",
-    role: "Board Member",
+    role: "Secretary, Board of Directors",
     bio: "Library professional at The Getty and filmmaker. Unique's work across public library systems fostered her deep dedication to advocacy, lifelong learning, and community building. Since moving to Ventura in 2018, she has volunteered for AIDSWalk, Ventura Pride, and Loud & Queer."
   },
   {
@@ -515,7 +515,7 @@ export const boardMembers = [
   },
   {
     name: "Luis Andrade",
-    role: "Board Member",
+    role: "Board Member / Vice President",
     bio: "Testing Specialist with Bank of America Global Risk Management with over two decades of experience in the banking and mortgage sectors. Luis leads events for the Bank of America Southern California LGBT+ Pride Chapter and champions community engagement across Ventura County."
   },
   {
@@ -544,13 +544,6 @@ export const sponsorsList = [
     logo: "/images/vcph-logo.png",
     url: "https://vchca.org/public-health/",
     role: "Public Health & STI Screening Partner"
-  },
-  {
-    name: "Recite Me",
-    shortName: "Recite Me",
-    logo: "/images/accessibility-badge.png",
-    url: "https://www.w3.org/WAI/WCAG2AA-Conformance",
-    role: "Digital Accessibility Champion"
   }
 ];
 
@@ -578,5 +571,329 @@ export const annualSignatureEvents = [
     tagline: "Walking in Remembrance, Advocating for a Healthier Future",
     description: "Commemorating loved ones lost to HIV/AIDS, combating healthcare stigmas, and raising dedicated funding for Diversity SHINES screening and navigation.",
     link: "https://www.diversitycollectivevc.org/dcvc-events/#aids-walk-ventura"
+  }
+];
+
+
+// ==========================================================================
+// EXPANDED CMS & WORKFLOW FIXTURES (Phase 1 Development)
+// ==========================================================================
+
+export const staffMembers = [
+  {
+    name: "Tess Allen",
+    role: "Executive Director",
+    department: "Executive Leadership",
+    bio: "Promoted to DCVC's first official Executive Director after serving as Board President and Co-President. With an extensive background in the nonprofit sector and conservatory training in dance and music, Tess plays a leading role in guiding DCVC's local advocacy, community programs, and wellness initiatives across Ventura County.",
+    email: "info@diversitycollective.org",
+    image: "/images/volunteers.jpg",
+    isPlaceholder: false
+  },
+  {
+    name: "Genevieve Flores-Haro",
+    role: "Associate Director",
+    department: "Executive Leadership & Community Advocacy",
+    bio: "Guiding public policy, grassroots community advocacy, and intersectional wellness programming across Ventura County.",
+    email: "info@diversitycollective.org",
+    image: "/images/volunteers.jpg",
+    isPlaceholder: false
+  },
+  {
+    name: "CRC Program Coordinator",
+    role: "Community Resource Center Operations",
+    department: "Community Operations",
+    bio: "Oversees daily drop-in hours, computer access lab, curated lending library, and peer group logistics at 2471 Portola Road.",
+    email: "info@diversitycollective.org",
+    image: "/images/crc-building.jpg",
+    isPlaceholder: true,
+    placeholderNote: "Official staff name and bio to be verified by DCVC leadership."
+  },
+  {
+    name: "Youth Programs Facilitator",
+    role: "Youth Outreach & Rainbow Umbrella Lead",
+    department: "Youth & Teen Services",
+    bio: "Facilitates weekly peer support circles, Little Unicorns events, and the annual Ventura County Youth Pride Prom.",
+    email: "rainbowumbrella@diversitycollective.org",
+    image: "/images/youth-umbrella.jpg",
+    isPlaceholder: true,
+    placeholderNote: "Official staff name and bio to be verified by DCVC leadership."
+  },
+  {
+    name: "Health Navigation Specialist",
+    role: "Diversity SHINES Clinical Lead",
+    department: "Sexual Health & Prevention",
+    bio: "Coordinates free monthly HIV/STI rapid testing clinics, safer sex supplies distribution, and PrEP/PEP linkage.",
+    email: "shines@diversitycollective.org",
+    image: "/images/shines-screening.jpg",
+    isPlaceholder: true,
+    placeholderNote: "Official staff name and bio to be verified by DCVC leadership."
+  }
+];
+
+export const trainingCourses = [
+  {
+    slug: "pride-cultural-competency",
+    title: "P.R.I.D.E. 4-Hour Cultural Competency Workshop",
+    badge: "Foundational Certification",
+    format: "In-Person or Interactive Virtual",
+    duration: "4 Hours",
+    targetAudience: "Educators, Healthcare Teams, Corporate Staff & Youth Advocates",
+    summary: "Parents & Professionals' Responsibility for Inclusion, Diversity, and Equity — intensive cultural competency curriculum developed in collaboration with Ventura County Behavioral Health.",
+    learningObjectives: [
+      "Understand modern LGBTQ+ terminology, pronouns, and evolving identity nuances.",
+      "Examine local Ventura County public health data and youth mental health statistics.",
+      "Identify systemic healthcare, housing, and educational barriers facing queer and trans residents.",
+      "Implement trauma-informed, affirming communication and intake practices in your organization.",
+      "Review California legal rights, non-discrimination protections, and mandatory workplace standards."
+    ],
+    materials: [
+      "Comprehensive Participant Resource Handbook (PDF & Print)",
+      "Affirming Language & Pronoun Quick-Reference Card",
+      "Ventura County LGBTQ+ Resource Referral Directory",
+      "Certificate of Completion (Eligible for CEU documentation)"
+    ],
+    feeStructure: "Free for non-profit and community partners; sliding scale for corporate teams.",
+    contactEmail: "info@diversitycollective.org"
+  },
+  {
+    slug: "healthcare-affirming-care",
+    title: "Status-Neutral Healthcare & Clinical Affirmation",
+    badge: "Clinical & Healthcare",
+    format: "Interactive Workshop (On-Site or Virtual)",
+    duration: "2.5 Hours",
+    targetAudience: "Nurses, Medical Assistants, Intake Staff & Mental Health Clinicians",
+    summary: "Specialized clinical training on status-neutral care delivery, gender-affirming intake workflows, and trauma-informed STI/HIV screening practices.",
+    learningObjectives: [
+      "Adopt a whole-person, status-neutral framework for HIV and STI prevention and navigation.",
+      "Implement affirming electronic health record (EHR) name and gender-marker practices.",
+      "Overcome implicit biases in clinical consultations and diagnostic interviews.",
+      "Best practices for PrEP (Pre-Exposure) and PEP (Post-Exposure) proactive linkage."
+    ],
+    materials: [
+      "Clinical Intake Checklist for LGBTQ+ Patients",
+      "Status-Neutral Care Pathway Flowchart",
+      "Local Referral Roster for Gender-Affirming Specialists"
+    ],
+    feeStructure: "Provided in partnership with Ventura County Public Health.",
+    contactEmail: "shines@diversitycollective.org"
+  },
+  {
+    slug: "youth-affirming-spaces",
+    title: "Creating Safe & Affirming Spaces for LGBTQ+ Youth",
+    badge: "Schools & Youth Groups",
+    format: "Interactive Seminar",
+    duration: "3 Hours",
+    targetAudience: "K-12 Teachers, School Counselors, Coaches & Youth Mentors",
+    summary: "Research proves that having even one affirming adult reduces suicide risk in LGBTQ+ youth by over 40%. Equip your team to be that sanctuary.",
+    learningObjectives: [
+      "Creating supportive classroom and club spaces (e.g. GSAs).",
+      "Navigating family dynamics and sensitive student disclosures with privacy and trust.",
+      "Addressing bullying, cyber harassment, and peer exclusion proactively.",
+      "Supporting transgender and non-binary youth during social transitions."
+    ],
+    materials: [
+      "Educator's Guide to LGBTQ+ Youth Wellbeing",
+      "Emergency Crisis Protocols & Hotline Pocket Guide"
+    ],
+    feeStructure: "Subsidized through foundation grants; free for public school districts.",
+    contactEmail: "rainbowumbrella@diversitycollective.org"
+  }
+];
+
+export const newsArticles = [
+  {
+    slug: "ventura-county-pride-2026-announcement",
+    title: "Ventura County Pride Returns to the Coast with Record Community Alliances",
+    publishedAt: "October 10, 2026",
+    readingTime: "4 min read",
+    author: "DCVC Communications Team",
+    category: "Community & Culture",
+    image: "/images/community-gathering.jpg",
+    excerpt: "Diversity Collective announces the expanded coastal festival schedule, celebrating over a decade of community solidarity, local queer artists, and free public health services.",
+    body: [
+      "Ventura County Pride continues to serve as the premier coastal celebration of LGBTQ+ visibility, resilience, and intersectional culture. Established in 2014, Diversity Collective Ventura County has welcomed tens of thousands of residents to celebrate authentic identity without fear.",
+      "This year's festival expands our health and wellness pavilion, featuring free rapid HIV and STI screenings provided by state-certified counselors from Diversity SHINES, youth creative showcases organized by Rainbow Umbrella, and participation from over 80 local vendors and civic organizations.",
+      "All festival proceeds directly sustain the ongoing operations of our Community Resource Center on Portola Road, keeping our computer access lab, youth circles, and emergency mutual aid 100% free for everyone who walks through our doors."
+    ]
+  },
+  {
+    slug: "diversity-shines-mobile-testing-expansion",
+    title: "Expanding Status-Neutral Sexual Wellness Across Ventura County Cities",
+    publishedAt: "September 24, 2026",
+    readingTime: "3 min read",
+    author: "Diversity SHINES Clinical Lead",
+    category: "Health & Wellness",
+    image: "/images/shines-screening.jpg",
+    excerpt: "New clinical partnership brings free confidential rapid testing, safer sex kits, and direct PrEP/PEP linkage to satellite popups in Oxnard, Santa Paula, and Simi Valley.",
+    body: [
+      "A status-neutral approach to sexual wellness means that regardless of HIV or STI status, community members receive immediate, compassionate, stigma-free care to stay healthy and thrive.",
+      "Through generous support from Ventura County Public Health, Diversity SHINES is expanding its free monthly screening clinics beyond our Ventura flagship center to rotating community hubs across the county.",
+      "Screenings take less than 20 minutes, require no health insurance, and results are shared in strict confidence by bilingual counselors."
+    ]
+  },
+  {
+    slug: "youth-voices-reflections-on-affirming-spaces",
+    title: "Finding Belonging: Reflections from Rainbow Umbrella Youth Circles",
+    publishedAt: "August 15, 2026",
+    readingTime: "5 min read",
+    author: "Rainbow Umbrella Youth Facilitators",
+    category: "Youth Empowerment",
+    image: "/images/youth-umbrella.jpg",
+    excerpt: "Young participants share what it means to have an affirming space every Friday night where they can speak honestly, make lifelong friends, and celebrate their authentic identities.",
+    body: [
+      "Growing up queer or transgender in coastal and agricultural communities can often feel isolating. For over a decade, Rainbow Umbrella has offered a safe harbor every Friday from 5:30 to 7:30 PM for youth ages 13 to 23.",
+      "Beyond games, art workshops, and check-ins, the group empowers youth leadership — including organizing the annual Ventura County Youth Pride Prom, where attendees can dress authentically and dance without judgment.",
+      "DCVC is deeply grateful to our monthly donors who ensure that snacks, craft supplies, and professional adult mentors remain unconditionally accessible to every young person."
+    ]
+  }
+];
+
+export const galleryPhotos = [
+  {
+    id: "gal-1",
+    title: "Ventura County Pride Coastline Gathering",
+    category: "Festivals & Pride",
+    year: "2026",
+    image: "/images/community-gathering.jpg",
+    description: "Community members uniting on the Ventura Promenade for celebration, music, and solidarity."
+  },
+  {
+    id: "gal-2",
+    title: "Rainbow Umbrella Youth Circle",
+    category: "Youth & Community",
+    year: "2026",
+    image: "/images/youth-umbrella.jpg",
+    description: "Weekly youth peer support circle exploring creative art and self-expression."
+  },
+  {
+    id: "gal-3",
+    title: "Dedicated Community Volunteers",
+    category: "Volunteers & Action",
+    year: "2026",
+    image: "/images/volunteers.jpg",
+    description: "Passionate community members packing 'SHINE With Me' safer-sex kits at our outreach booth."
+  },
+  {
+    id: "gal-4",
+    title: "Community Resource Center Flagship",
+    category: "Sanctuary & CRC",
+    year: "2026",
+    image: "/images/crc-building.jpg",
+    description: "Our physical sanctuary at 2471 Portola Road, Suite 100 in Ventura, CA."
+  },
+  {
+    id: "gal-5",
+    title: "Diversity SHINES Health Testing Clinic",
+    category: "Health & Wellness",
+    year: "2026",
+    image: "/images/shines-screening.jpg",
+    description: "State-certified counselors administering free, confidential rapid HIV and STI screenings."
+  },
+  {
+    id: "gal-6",
+    title: "Little Unicorns Family & Youth Circle",
+    category: "Kids & Families",
+    year: "2026",
+    image: "/images/little-unicorns.png",
+    description: "Monthly gentle gatherings for pre-teens ages 9–13, parents, and affirming allies."
+  }
+];
+
+export const businessDirectorySeed = [
+  {
+    id: "biz-1",
+    slug: "beacon-coffee-company",
+    name: "Beacon Coffee Company",
+    category: "Dining & Coffee",
+    city: "Ventura",
+    address: "5777 Valentine Rd, Ventura, CA 93003",
+    phone: "(805) 248-7054",
+    email: "hello@beaconcoffee.com",
+    website: "https://beaconcoffee.com",
+    isLGBTQOwned: true,
+    isVerifiedAffirming: true,
+    description: "Artisanal, sustainably sourced specialty coffee roastery and welcoming community gathering spot with all-gender facilities and inclusive staff training.",
+    image: "/images/community-gathering.jpg",
+    tags: ["Coffee", "Bakery", "Wi-Fi", "All-Gender Restroom"]
+  },
+  {
+    id: "biz-2",
+    slug: "coastal-pride-counseling",
+    name: "Coastal Pride Counseling & Wellness",
+    category: "Health & Wellness",
+    city: "Ventura",
+    address: "1070 E Front St, Suite 200, Ventura, CA 93001",
+    phone: "(805) 555-0144",
+    email: "care@coastalpridecounseling.com",
+    website: "https://example.com/coastal-pride",
+    isLGBTQOwned: true,
+    isVerifiedAffirming: true,
+    description: "Trauma-informed, gender-affirming psychotherapy and mental health counseling specializing in LGBTQ+ youth, gender transitions, and couples therapy.",
+    image: "/images/hero-community.jpg",
+    tags: ["Therapy", "Gender-Affirming", "Telehealth", "Sliding Scale"]
+  },
+  {
+    id: "biz-3",
+    slug: "channel-islands-law-group",
+    name: "Channel Islands Inclusive Law Group",
+    category: "Legal & Financial",
+    city: "Oxnard",
+    address: "300 E Esplanade Dr, Suite 900, Oxnard, CA 93036",
+    phone: "(805) 555-0182",
+    email: "info@cilawgroup.example",
+    website: "https://example.com/cilaw",
+    isLGBTQOwned: false,
+    isVerifiedAffirming: true,
+    description: "Full-service legal practice focusing on California legal name and gender-marker changes, estate planning for non-traditional families, and workplace advocacy.",
+    image: "/images/volunteers.jpg",
+    tags: ["Legal", "Name Change", "Family Law", "Bilingual Spanish"]
+  },
+  {
+    id: "biz-4",
+    slug: "ojai-valley-botanicals",
+    name: "Ojai Valley Botanicals & Tea Lounge",
+    category: "Retail & Gifts",
+    city: "Ojai",
+    address: "214 E Ojai Ave, Ojai, CA 93023",
+    phone: "(805) 555-0199",
+    email: "herbs@ojaibotanicals.example",
+    website: "https://example.com/ojai-botanicals",
+    isLGBTQOwned: true,
+    isVerifiedAffirming: true,
+    description: "Queer-owned organic herbal dispensary, local artwork gallery, and safe community space hosting queer book clubs and acoustic open mics.",
+    image: "/images/botanical-flyer.jpg",
+    tags: ["Herbal", "Tea", "Local Art", "Safe Space"]
+  },
+  {
+    id: "biz-5",
+    slug: "conejo-valley-fitness-collective",
+    name: "Conejo Valley Fitness Collective",
+    category: "Fitness & Recreation",
+    city: "Thousand Oaks",
+    address: "145 E Thousand Oaks Blvd, Thousand Oaks, CA 91360",
+    phone: "(805) 555-0123",
+    email: "train@conejofitness.example",
+    website: "https://example.com/conejofitness",
+    isLGBTQOwned: false,
+    isVerifiedAffirming: true,
+    description: "Body-neutral, trans-inclusive functional movement studio with private changing suites, gender-neutral showers, and certified affirming personal trainers.",
+    image: "/images/community-gathering.jpg",
+    tags: ["Fitness", "Body-Positive", "Private Showers", "Personal Training"]
+  },
+  {
+    id: "biz-6",
+    slug: "pacific-view-design-studio",
+    name: "Pacific View Creative & Web Studio",
+    category: "Professional Services",
+    city: "Camarillo",
+    address: "4001 Mission Oaks Blvd, Camarillo, CA 93012",
+    phone: "(805) 555-0167",
+    email: "create@pacificview.example",
+    website: "https://example.com/pacificview",
+    isLGBTQOwned: true,
+    isVerifiedAffirming: true,
+    description: "Full-stack digital design, web accessibility auditing, and brand strategy studio partnering with non-profits, progressive campaigns, and queer creators.",
+    image: "/images/hero-community.jpg",
+    tags: ["Design", "Web Development", "Accessibility", "Branding"]
   }
 ];

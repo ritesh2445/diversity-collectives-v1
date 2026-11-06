@@ -7,34 +7,62 @@ import {
   ArrowUpRight, 
   Send, 
   CheckCircle2, 
-  LifeBuoy
+  LifeBuoy,
+  AlertCircle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { orgInfo } from '../data/dcvcData';
 import CardSpotlight from '../components/CardSpotlight';
+import { submitContact } from '../services/api';
+import { usePageMeta } from '../utils/seo';
 
 export default function Contact() {
-  const [formSubmitted, setFormSubmitted] = useState(false);
+  usePageMeta({
+    title: 'Contact & Sanctuary Directions',
+    description: 'Reach out to Diversity Collective Ventura County. Visit our physical Community Resource Center in Ventura, call our helpline, or send a confidential inquiry.',
+    canonicalPath: '/contact'
+  });
+
+  const [formStatus, setFormStatus] = useState('idle'); // 'idle' | 'loading' | 'success' | 'error'
+  const [statusMessage, setStatusMessage] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
     topic: 'General Inquiry',
-    message: ''
+    message: '',
+    consent: false
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setFormSubmitted(true);
-    try {
-      confetti({
-        particleCount: 50,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#5A1E65', '#10B981', '#F59E0B', '#38BDF8']
-      });
-    } catch {
-      // Graceful fallback
+
+    if (!formData.consent) {
+      setFormStatus('error');
+      setStatusMessage('Please check the privacy and communications consent box before submitting.');
+      return;
+    }
+
+    setFormStatus('loading');
+    const res = await submitContact(formData);
+
+    if (res.success) {
+      setFormStatus('success');
+      setStatusMessage(res.message);
+      try {
+        confetti({
+          particleCount: 50,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#5A1E65', '#10B981', '#F59E0B', '#38BDF8'],
+          disableForReducedMotion: true
+        });
+      } catch {
+        // Fallback
+      }
+    } else {
+      setFormStatus('error');
+      setStatusMessage(res.message || 'Unable to submit your inquiry. Please call (805) 644-5428 or try again.');
     }
   };
 
@@ -43,7 +71,6 @@ export default function Contact() {
       
       {/* Header */}
       <section className="container-clean pb-14 border-b border-slate-100 relative overflow-hidden">
-        {/* Specular Ambient Glow */}
         <div 
           className="absolute -top-24 right-10 w-96 h-96 rounded-full bg-purple-200/25 blur-3xl pointer-events-none" 
           aria-hidden="true" 
@@ -67,12 +94,12 @@ export default function Contact() {
       <section className="container-clean py-16">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14">
           
-          {/* Left Column: Location & Contact Cards in 3D */}
-          <div className="lg:col-span-5 space-y-6 perspective-1000">
+          {/* Left Column: Location & Contact Cards */}
+          <div className="lg:col-span-5 space-y-6">
             
             {/* Physical Location Card */}
             <CardSpotlight
-              className="p-8 bg-white rounded-3xl border-2 border-purple-200 shadow-xl space-y-4 interactive-card-3d glow-amethyst"
+              className="p-8 bg-white rounded-3xl border-2 border-purple-200 shadow-xl space-y-4"
               tilt={true}
               maxTilt={6}
               glare={true}
@@ -153,10 +180,10 @@ export default function Contact() {
 
           </div>
 
-          {/* Right Column: Functional Message Form in 3D Card */}
-          <div className="lg:col-span-7 perspective-1000">
+          {/* Right Column: Functional Message Form */}
+          <div className="lg:col-span-7">
             <CardSpotlight
-              className="p-8 sm:p-12 bg-white rounded-3xl border-2 border-slate-200 shadow-2xl interactive-card-3d"
+              className="p-8 sm:p-12 bg-white rounded-3xl border-2 border-slate-200 shadow-2xl"
               tilt={true}
               maxTilt={4}
               glare={true}
@@ -171,8 +198,8 @@ export default function Contact() {
                 Messages are reviewed daily by our Community Resource Center team during weekday operating hours.
               </p>
 
-              {formSubmitted ? (
-                <div className="p-8 bg-emerald-50 border-2 border-emerald-300 rounded-3xl text-center space-y-4 shadow-sm animate-float-slow">
+              {formStatus === 'success' ? (
+                <div className="p-8 bg-emerald-50 border-2 border-emerald-300 rounded-3xl text-center space-y-4 shadow-sm animate-in fade-in">
                   <div className="w-14 h-14 rounded-2xl bg-emerald-600 text-white flex items-center justify-center mx-auto shadow-md">
                     <CheckCircle2 className="w-8 h-8" />
                   </div>
@@ -180,12 +207,12 @@ export default function Contact() {
                     Thank You, {formData.name || 'Friend'}!
                   </h3>
                   <p className="text-sm text-emerald-900 max-w-md mx-auto font-medium leading-relaxed">
-                    Your message regarding <strong>{formData.topic}</strong> has been safely received. Our community coordinator will respond to you shortly at <span className="font-bold underline">{formData.email}</span>.
+                    {statusMessage}
                   </p>
                   <button
                     onClick={() => {
-                      setFormSubmitted(false);
-                      setFormData({ name: '', email: '', phone: '', topic: 'General Inquiry', message: '' });
+                      setFormStatus('idle');
+                      setFormData({ name: '', email: '', phone: '', topic: 'General Inquiry', message: '', consent: false });
                     }}
                     className="btn-primary py-2.5 px-6 text-xs font-bold mt-2 shadow-md cursor-pointer"
                   >
@@ -195,6 +222,13 @@ export default function Contact() {
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-6">
                   
+                  {formStatus === 'error' && (
+                    <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                      <span>{statusMessage}</span>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div className="space-y-1.5">
                       <label htmlFor="name" className="text-xs font-bold uppercase tracking-wider text-slate-800 block">
@@ -253,9 +287,10 @@ export default function Contact() {
                         className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none transition-all bg-white"
                       >
                         <option value="General Inquiry">General Inquiry</option>
-                        <option value="HIV/STI Health Testing">Diversity SHINES Health Testing</option>
-                        <option value="Youth Programs">Rainbow Umbrella (Youth 13–23)</option>
-                        <option value="Family Programs">Little Unicorns (Kids 9–13)</option>
+                        <option value="Diversity SHINES Testing">Diversity SHINES Rapid Health Testing</option>
+                        <option value="Rainbow Umbrella Youth">Rainbow Umbrella (Youth 13–23)</option>
+                        <option value="Little Unicorns">Little Unicorns (Kids 9–13)</option>
+                        <option value="P.R.I.D.E. Training">P.R.I.D.E. Training & Education</option>
                         <option value="Volunteering">Volunteering Opportunities</option>
                         <option value="Donations & Sponsorship">Donations & Corporate Sponsorship</option>
                         <option value="Community Space Rental">Hosting a Meeting at the Center</option>
@@ -271,6 +306,7 @@ export default function Contact() {
                       id="message"
                       rows={5}
                       required
+                      minLength={10}
                       value={formData.message}
                       onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                       placeholder="Tell us how we can best assist or welcome you..."
@@ -278,13 +314,29 @@ export default function Contact() {
                     />
                   </div>
 
+                  {/* Consent Checkbox */}
+                  <div className="flex items-start gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                    <input
+                      id="consent"
+                      type="checkbox"
+                      required
+                      checked={formData.consent}
+                      onChange={(e) => setFormData({ ...formData, consent: e.target.checked })}
+                      className="mt-1 h-4 w-4 rounded border-slate-300 text-[#5A1E65] focus:ring-[#5A1E65]"
+                    />
+                    <label htmlFor="consent" className="text-xs text-slate-700 leading-relaxed font-medium">
+                      I consent to Diversity Collective Ventura County securely processing and storing my contact details to reply to this inquiry. Information will never be sold or shared. <span className="text-rose-600">*</span>
+                    </label>
+                  </div>
+
                   <div className="pt-2">
                     <button
                       type="submit"
-                      className="w-full sm:w-auto py-4 px-10 rounded-2xl bg-gradient-to-r from-[#5A1E65] to-purple-800 text-white font-black text-sm tracking-wide shadow-lg hover:shadow-2xl hover:scale-102 transition-all inline-flex items-center justify-center gap-2 cursor-pointer"
+                      disabled={formStatus === 'loading'}
+                      className="w-full sm:w-auto py-4 px-10 rounded-2xl bg-gradient-to-r from-[#5A1E65] to-purple-800 text-white font-black text-sm tracking-wide shadow-lg hover:shadow-2xl hover:scale-102 transition-all inline-flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                     >
                       <Send className="w-4 h-4 text-amber-300" />
-                      <span>Send Confidential Message</span>
+                      <span>{formStatus === 'loading' ? 'Transmitting Note...' : 'Send Confidential Message'}</span>
                     </button>
                   </div>
 

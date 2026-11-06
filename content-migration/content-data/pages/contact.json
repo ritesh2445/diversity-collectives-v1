@@ -1,0 +1,24 @@
+{
+  "sourceUrl": "https://www.diversitycollectivevc.org/contact/",
+  "title": "Contact Diversity Collective Ventura County",
+  "facility": "Diversity Collective Community Resource Center",
+  "address": {
+    "street": "2471 Portola Road, Suite 100",
+    "city": "Ventura",
+    "state": "CA",
+    "zip": "93003",
+    "country": "USA"
+  },
+  "phone": "(805) 644-5428",
+  "phoneDisplay": "(805) 644-LGBT (5428)",
+  "email": "info@diversitycollective.org",
+  "hours": "1:00 PM – 5:00 PM Weekdays (Please call for drop-in hours)",
+  "departmentRouting": [
+    { "department": "General Inquiries", "email": "info@diversitycollective.org" },
+    { "department": "Youth Programs (Rainbow Umbrella)", "email": "rainbowumbrella@diversitycollective.org" },
+    { "department": "Youth Programs (Little Unicorns)", "email": "littleunicorns@diversitycollective.org" },
+    { "department": "Sexual Health & Testing (Diversity SHINES)", "email": "shines@diversitycollective.org" },
+    { "department": "Volunteer Coordination", "email": "volunteer@diversitycollective.org" }
+  ]
+}
+

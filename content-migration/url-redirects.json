@@ -1,0 +1,231 @@
+[
+  {
+    "from": "/donate/",
+    "to": "/donate",
+    "status": 301,
+    "notes": "Direct trailing slash normalization for giving page"
+  },
+  {
+    "from": "/volunteer/",
+    "to": "/volunteer",
+    "status": 301,
+    "notes": "Direct trailing slash normalization for volunteer page"
+  },
+  {
+    "from": "/community-resource-center",
+    "to": "/programs/community-resource-center",
+    "status": 301,
+    "notes": "Legacy program slug mapped to new hierarchical structure"
+  },
+  {
+    "from": "/community-resource-center/",
+    "to": "/programs/community-resource-center",
+    "status": 301,
+    "notes": "Trailing slash legacy program URL mapped to new hierarchical structure"
+  },
+  {
+    "from": "/rainbow-umbrella",
+    "to": "/programs/rainbow-umbrella",
+    "status": 301,
+    "notes": "Legacy youth program slug mapped to program detail route"
+  },
+  {
+    "from": "/rainbow-umbrella/",
+    "to": "/programs/rainbow-umbrella",
+    "status": 301,
+    "notes": "Trailing slash legacy youth program URL mapped to program detail route"
+  },
+  {
+    "from": "/diversity-shines",
+    "to": "/programs/diversity-shines",
+    "status": 301,
+    "notes": "Legacy health program slug mapped to program detail route"
+  },
+  {
+    "from": "/diversity-shines/",
+    "to": "/programs/diversity-shines",
+    "status": 301,
+    "notes": "Trailing slash legacy health program URL mapped to program detail route"
+  },
+  {
+    "from": "/little-unicorns",
+    "to": "/programs/little-unicorns",
+    "status": 301,
+    "notes": "Legacy pre-teen program slug mapped to program detail route"
+  },
+  {
+    "from": "/little-unicorns/",
+    "to": "/programs/little-unicorns",
+    "status": 301,
+    "notes": "Trailing slash pre-teen program URL mapped to program detail route"
+  },
+  {
+    "from": "/ventura-county-pride",
+    "to": "/programs/ventura-county-pride",
+    "status": 301,
+    "notes": "Legacy Pride slug mapped to program/event route"
+  },
+  {
+    "from": "/ventura-county-pride/",
+    "to": "/programs/ventura-county-pride",
+    "status": 301,
+    "notes": "Trailing slash Pride URL mapped to program/event route"
+  },
+  {
+    "from": "/pride",
+    "to": "/programs/ventura-county-pride",
+    "status": 301,
+    "notes": "Short alias for Pride festival"
+  },
+  {
+    "from": "/pride/",
+    "to": "/programs/ventura-county-pride",
+    "status": 301,
+    "notes": "Trailing slash short alias for Pride festival"
+  },
+  {
+    "from": "/board",
+    "to": "/board-and-staff",
+    "status": 301,
+    "notes": "Legacy board alias mapped to new dedicated Board and Staff route"
+  },
+  {
+    "from": "/board/",
+    "to": "/board-and-staff",
+    "status": 301,
+    "notes": "Trailing slash board alias mapped to new dedicated Board and Staff route"
+  },
+  {
+    "from": "/board-of-directors",
+    "to": "/board-and-staff",
+    "status": 301,
+    "notes": "Full legacy board path mapped to new dedicated Board and Staff route"
+  },
+  {
+    "from": "/board-of-directors/",
+    "to": "/board-and-staff",
+    "status": 301,
+    "notes": "Trailing slash full legacy board path mapped to new dedicated Board and Staff route"
+  },
+  {
+    "from": "/staff",
+    "to": "/board-and-staff",
+    "status": 301,
+    "notes": "Staff alias mapped to new dedicated Board and Staff route"
+  },
+  {
+    "from": "/staff/",
+    "to": "/board-and-staff",
+    "status": 301,
+    "notes": "Trailing slash staff alias mapped to new dedicated Board and Staff route"
+  },
+  {
+    "from": "/sponsors-partners",
+    "to": "/sponsors",
+    "status": 301,
+    "notes": "Legacy compound sponsor URL mapped to new /sponsors route"
+  },
+  {
+    "from": "/sponsors-partners/",
+    "to": "/sponsors",
+    "status": 301,
+    "notes": "Trailing slash legacy compound sponsor URL mapped to new /sponsors route"
+  },
+  {
+    "from": "/partners",
+    "to": "/sponsors",
+    "status": 301,
+    "notes": "Partners alias mapped to /sponsors route"
+  },
+  {
+    "from": "/partners/",
+    "to": "/sponsors",
+    "status": 301,
+    "notes": "Trailing slash partners alias mapped to /sponsors route"
+  },
+  {
+    "from": "/training-education",
+    "to": "/training",
+    "status": 301,
+    "notes": "Legacy compound training URL mapped to /training catalog"
+  },
+  {
+    "from": "/education",
+    "to": "/training",
+    "status": 301,
+    "notes": "Short education alias mapped to /training catalog"
+  },
+  {
+    "from": "/business-directory",
+    "to": "/directory",
+    "status": 301,
+    "notes": "Legacy planned directory path mapped to /directory"
+  },
+  {
+    "from": "/business-directory/",
+    "to": "/directory",
+    "status": 301,
+    "notes": "Trailing slash directory path mapped to /directory"
+  },
+  {
+    "from": "/directory/listings",
+    "to": "/directory",
+    "status": 301,
+    "notes": "Sub-path listing redirect to canonical /directory"
+  },
+  {
+    "from": "/news-blog",
+    "to": "/news",
+    "status": 301,
+    "notes": "Legacy compound blog path mapped to /news"
+  },
+  {
+    "from": "/blog",
+    "to": "/news",
+    "status": 301,
+    "notes": "Short blog alias mapped to /news"
+  },
+  {
+    "from": "/blog/",
+    "to": "/news",
+    "status": 301,
+    "notes": "Trailing slash blog alias mapped to /news"
+  },
+  {
+    "from": "/gallery-photos",
+    "to": "/gallery",
+    "status": 301,
+    "notes": "Compound gallery path mapped to /gallery"
+  },
+  {
+    "from": "/photos",
+    "to": "/gallery",
+    "status": 301,
+    "notes": "Photos alias mapped to /gallery"
+  },
+  {
+    "from": "/a11y",
+    "to": "/accessibility",
+    "status": 301,
+    "notes": "A11y abbreviation mapped to /accessibility"
+  },
+  {
+    "from": "/accessibility-statement",
+    "to": "/accessibility",
+    "status": 301,
+    "notes": "Full statement path mapped to canonical /accessibility"
+  },
+  {
+    "from": "/privacy-policy",
+    "to": "/privacy",
+    "status": 301,
+    "notes": "Full privacy path mapped to canonical /privacy"
+  },
+  {
+    "from": "/terms-of-use",
+    "to": "/terms",
+    "status": 301,
+    "notes": "Terms of use path mapped to canonical /terms"
+  }
+]
+

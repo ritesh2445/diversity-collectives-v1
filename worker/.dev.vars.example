@@ -1,0 +1,25 @@
+# Cloudflare Worker Local Development Variables Template
+# Copy this file to worker/.dev.vars for local wrangler dev testing
+# In production, set secrets using: npx wrangler secret put <NAME>
+
+# 1. Turso libSQL Database Credentials
+TURSO_DATABASE_URL=libsql://dcvc-production-example.turso.io
+TURSO_AUTH_TOKEN=mock_turso_auth_jwt_token_for_local_testing
+
+# 2. Resend Transactional Email Credentials
+RESEND_API_KEY=re_mock_test_key_123456789
+
+# 3. Cloudflare Turnstile Verification Secret
+TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
+
+# 4. Zeffy Webhook HMAC Signature Verification Secret
+ZEFFY_WEBHOOK_SECRET=mock_zeffy_webhook_secret_key_for_testing
+
+# 5. Service Configuration Flags
+CHATBOT_ENABLED=false
+AI_MODEL=@cf/meta/llama-3.1-8b-instruct-fp8
+ALLOWED_ORIGIN=http://localhost:5173
+FRONTEND_BASE_URL=http://localhost:5173
+DCVC_STAFF_EMAIL=info@diversitycollective.org
+RESEND_FROM_EMAIL=Diversity Collective <noreply@diversitycollective.org>
+

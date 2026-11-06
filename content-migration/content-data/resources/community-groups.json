@@ -1,0 +1,82 @@
+[
+  {
+    "name": "Rainbow Umbrella Youth Group",
+    "frequency": "Every Friday, 5:30 PM – 7:30 PM",
+    "ages": "Ages 13–23",
+    "location": "DCVC Community Resource Center",
+    "category": "Youth Peer Support",
+    "description": "Weekly youth peer group providing check-ins, discussions, and creative workshops supporting mental health, authentic self-expression, and community connection.",
+    "contact": "rainbowumbrella@diversitycollective.org",
+    "link": "/programs/rainbow-umbrella"
+  },
+  {
+    "name": "Little Unicorns",
+    "frequency": "Last Saturday of the Month, 1:00 PM – 3:00 PM",
+    "ages": "Ages 9–13",
+    "location": "DCVC Community Resource Center / Hobart Park",
+    "category": "Youth Peer Support",
+    "description": "A fun, relaxed peer group for younger LGBTQ+, questioning, and ally kids to make friends, engage in arts, and feel unconditionally affirmed.",
+    "contact": "littleunicorns@diversitycollective.org",
+    "link": "/programs/little-unicorns"
+  },
+  {
+    "name": "Queer Adulting Group",
+    "frequency": "1st & 3rd Wednesday of the Month, 7:00 PM – 9:00 PM",
+    "ages": "Ages 18+",
+    "location": "DCVC Community Resource Center",
+    "category": "Adult Peer Support",
+    "description": "An all-inclusive LGBTQAI+ meeting for adults 18+ to socialize, discuss career, relationships, identity, life milestones, and navigate adulting together.",
+    "contact": "info@diversitycollective.org",
+    "link": "/events"
+  },
+  {
+    "name": "Trans Peer Group by The Transverse",
+    "frequency": "Every Other Sunday at 4:00 PM",
+    "ages": "All Ages under Trans/Non-Binary Umbrella",
+    "location": "DCVC Community Resource Center",
+    "category": "Trans & Non-Binary Support",
+    "description": "A relaxed, open-format social and support group for anyone under the transgender, non-binary, and gender non-conforming umbrellas to connect and share stories.",
+    "contact": "info@thetransverse.net",
+    "externalLink": "https://forms.gle/xXVdi3cSCeg8dckT8"
+  },
+  {
+    "name": "Silver Collective",
+    "frequency": "2nd Thursday of the Month, 6:00 PM – 7:30 PM",
+    "ages": "Adults 55+",
+    "location": "DCVC Community Resource Center",
+    "category": "Seniors / 55+",
+    "description": "Creating welcoming spaces for LGBTQ+ adults 55+ to connect, reminisce, learn, and feel celebrated. Dedicated to visibility and care for older LGBTQ+ adults.",
+    "contact": "info@diversitycollective.org",
+    "link": "/events"
+  },
+  {
+    "name": "Diversity Toastmasters",
+    "frequency": "1st & 3rd Tuesday of the Month, 6:30 PM – 8:00 PM",
+    "ages": "Ages 18+",
+    "location": "DCVC Community Resource Center",
+    "category": "Professional & Personal Growth",
+    "description": "LGBTQ+ friendly club to practice public speaking, presentation skills, and leadership development. A safe space to practice telling our true stories without judgment.",
+    "contact": "info@diversitycollective.org",
+    "link": "/events"
+  },
+  {
+    "name": "PFLAG Ventura Chapter",
+    "frequency": "2nd Tuesday of the Month, 6:30 PM",
+    "ages": "All Families, Allies & LGBTQ+ Individuals",
+    "location": "DCVC Community Resource Center",
+    "category": "Family & Ally Support",
+    "description": "The nation's largest organization dedicated to supporting, educating, and advocating for LGBTQ+ people and their families. Monthly meetings in Ventura.",
+    "contact": "info@diversitycollective.org",
+    "externalLink": "https://pflag.org/chapter/ventura/"
+  },
+  {
+    "name": "Narcotics Anonymous (LGBTQ+ Affirming)",
+    "frequency": "Every Monday, 7:00 PM – 8:30 PM",
+    "ages": "All seeking recovery",
+    "location": "DCVC Community Resource Center",
+    "category": "Recovery Support",
+    "description": "Weekly 12-step recovery meeting welcoming all individuals seeking freedom from active addiction in a non-judgmental, inclusive setting.",
+    "contact": "info@diversitycollective.org"
+  }
+]
+

@@ -111,3 +111,4 @@ export function createAccessibleUtterance(text, voice, rate = 0.95) {
 
   return utterance;
 }
+

@@ -1,0 +1,25 @@
+{
+  "sourceUrl": "https://www.diversitycollectivevc.org/",
+  "title": "Diversity Collective Ventura County | LGBTQ+ Community Resource Center",
+  "metaDescription": "Diversity Collective Ventura County is an LGBTQ+ non-profit 501(c)(3) public benefit organization providing advocacy, visibility, safety, and wellness for the LGBTQ+ community across Ventura County.",
+  "heroHeading": "Providing Advocacy, Visibility, Safety, and Wellness",
+  "tagline": "You Are Welcome Here.",
+  "primaryAddress": "2471 Portola Road, Suite 100, Ventura, CA 93003",
+  "phone": "(805) 644-LGBT (5428)",
+  "email": "info@diversitycollective.org",
+  "hours": "1:00 PM – 5:00 PM Weekdays (Please call for drop-in hours)",
+  "impactStats": [
+    { "label": "Years of Community Sanctuary", "value": "10+" },
+    { "label": "Annual Program Participants", "value": "2,400+" },
+    { "label": "Free Rapid Health Screenings", "value": "1,200+" },
+    { "label": "Youth Peer Circles Held", "value": "500+" }
+  ],
+  "flagshipProgramsFeatured": [
+    "Community Resource Center",
+    "Rainbow Umbrella",
+    "Little Unicorns",
+    "Diversity SHINES",
+    "P.R.I.D.E. Educational Training"
+  ]
+}
+

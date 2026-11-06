@@ -1,4 +1,42 @@
 {
+  "redirects": [
+    { "source": "/donate/", "destination": "/donate", "permanent": true },
+    { "source": "/volunteer/", "destination": "/volunteer", "permanent": true },
+    { "source": "/community-resource-center", "destination": "/programs/community-resource-center", "permanent": true },
+    { "source": "/community-resource-center/", "destination": "/programs/community-resource-center", "permanent": true },
+    { "source": "/rainbow-umbrella", "destination": "/programs/rainbow-umbrella", "permanent": true },
+    { "source": "/rainbow-umbrella/", "destination": "/programs/rainbow-umbrella", "permanent": true },
+    { "source": "/diversity-shines", "destination": "/programs/diversity-shines", "permanent": true },
+    { "source": "/diversity-shines/", "destination": "/programs/diversity-shines", "permanent": true },
+    { "source": "/ventura-county-pride", "destination": "/programs/ventura-county-pride", "permanent": true },
+    { "source": "/ventura-county-pride/", "destination": "/programs/ventura-county-pride", "permanent": true },
+    { "source": "/pride", "destination": "/programs/ventura-county-pride", "permanent": true },
+    { "source": "/pride/", "destination": "/programs/ventura-county-pride", "permanent": true },
+    { "source": "/board", "destination": "/board-and-staff", "permanent": true },
+    { "source": "/board/", "destination": "/board-and-staff", "permanent": true },
+    { "source": "/board-of-directors", "destination": "/board-and-staff", "permanent": true },
+    { "source": "/board-of-directors/", "destination": "/board-and-staff", "permanent": true },
+    { "source": "/staff", "destination": "/board-and-staff", "permanent": true },
+    { "source": "/staff/", "destination": "/board-and-staff", "permanent": true },
+    { "source": "/sponsors-partners", "destination": "/sponsors", "permanent": true },
+    { "source": "/sponsors-partners/", "destination": "/sponsors", "permanent": true },
+    { "source": "/partners", "destination": "/sponsors", "permanent": true },
+    { "source": "/partners/", "destination": "/sponsors", "permanent": true },
+    { "source": "/training-education", "destination": "/training", "permanent": true },
+    { "source": "/education", "destination": "/training", "permanent": true },
+    { "source": "/business-directory", "destination": "/directory", "permanent": true },
+    { "source": "/business-directory/", "destination": "/directory", "permanent": true },
+    { "source": "/directory/listings", "destination": "/directory", "permanent": true },
+    { "source": "/news-blog", "destination": "/news", "permanent": true },
+    { "source": "/blog", "destination": "/news", "permanent": true },
+    { "source": "/blog/", "destination": "/news", "permanent": true },
+    { "source": "/gallery-photos", "destination": "/gallery", "permanent": true },
+    { "source": "/photos", "destination": "/gallery", "permanent": true },
+    { "source": "/a11y", "destination": "/accessibility", "permanent": true },
+    { "source": "/accessibility-statement", "destination": "/accessibility", "permanent": true },
+    { "source": "/privacy-policy", "destination": "/privacy", "permanent": true },
+    { "source": "/terms-of-use", "destination": "/terms", "permanent": true }
+  ],
   "rewrites": [
     {
       "source": "/(.*)",
@@ -21,6 +59,23 @@
         {
           "key": "Cache-Control",
           "value": "public, max-age=86400, stale-while-revalidate=604800"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
         }
       ]
     }

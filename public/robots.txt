@@ -1,0 +1,20 @@
+# Robots.txt for Diversity Collective Ventura County (diversitycollective.org)
+User-agent: *
+Allow: /
+
+# Disallow API and Private Form State Pages
+Disallow: /api/
+Disallow: /submission-success
+Disallow: /submission-error
+Disallow: /error
+
+# Protect Donor Appreciation Card Privacy from Web Crawlers
+Allow: /appreciation-card/preview
+Disallow: /appreciation-card/
+
+# Disallow Staging / Dev Environments (applied via HTTP headers on preview branches)
+# X-Robots-Tag: noindex, nofollow
+
+# Canonical XML Sitemap
+Sitemap: https://diversitycollective.org/sitemap.xml
+

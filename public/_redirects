@@ -1,0 +1,43 @@
+# Legacy URL 301 Permanent Redirects for Diversity Collective Ventura County
+# Maps older WordPress URL structures and aliases to the new canonical routes
+
+/donate/                                 /donate                         301
+/volunteer/                              /volunteer                      301
+/community-resource-center               /programs/community-resource-center 301
+/community-resource-center/              /programs/community-resource-center 301
+/rainbow-umbrella                        /programs/rainbow-umbrella      301
+/rainbow-umbrella/                       /programs/rainbow-umbrella      301
+/diversity-shines                        /programs/diversity-shines      301
+/diversity-shines/                       /programs/diversity-shines      301
+/ventura-county-pride                    /programs/ventura-county-pride  301
+/ventura-county-pride/                   /programs/ventura-county-pride  301
+/pride                                   /programs/ventura-county-pride  301
+/pride/                                  /programs/ventura-county-pride  301
+/board                                   /board-and-staff                301
+/board/                                  /board-and-staff                301
+/board-of-directors                      /board-and-staff                301
+/board-of-directors/                     /board-and-staff                301
+/staff                                   /board-and-staff                301
+/staff/                                  /board-and-staff                301
+/sponsors-partners                       /sponsors                       301
+/sponsors-partners/                      /sponsors                       301
+/partners                                /sponsors                       301
+/partners/                               /sponsors                       301
+/training-education                      /training                       301
+/education                               /training                       301
+/business-directory                      /directory                      301
+/business-directory/                     /directory                      301
+/directory/listings                      /directory                      301
+/news-blog                               /news                           301
+/blog                                    /news                           301
+/blog/                                   /news                           301
+/gallery-photos                          /gallery                        301
+/photos                                  /gallery                        301
+/a11y                                    /accessibility                  301
+/accessibility-statement                 /accessibility                  301
+/privacy-policy                          /privacy                        301
+/terms-of-use                            /terms                          301
+
+# SPA fallback rule for client-side routing
+/*                                       /index.html                     200
+

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 import { 
@@ -8,6 +8,7 @@ import {
   Clock, 
   Phone, 
   Heart, 
+  Shield,
   ShieldCheck, 
   Calendar,
   CheckCircle2,
@@ -25,14 +26,150 @@ import {
 import { 
   orgInfo, 
   programsList, 
-  liveEvents 
+  liveEvents,
+  businessDirectorySeed 
 } from '../data/dcvcData';
 import AnimatedCounter from '../components/AnimatedCounter';
 import CardSpotlight from '../components/CardSpotlight';
-import CommunityCompass from '../components/CommunityCompass';
-import RegionalHubExplorer from '../components/RegionalHubExplorer';
+import NewsletterSignup from '../components/NewsletterSignup';
+import { usePageMeta } from '../utils/seo';
+import { 
+  getActiveHeroTheme, 
+  subscribeToHeroTheme, 
+  HERO_THEMES 
+} from '../services/heroThemeStore';
+
+function LotusIcon({ className = "w-6 h-6" }) {
+  return (
+    <svg 
+      className={className} 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth="1.5" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 4c-1.8 3-2.5 6.5-2.5 9.5a2.5 2.5 0 0 0 5 0c0-3-.7-6.5-2.5-9.5z" />
+      <path d="M9.5 13.5C7.5 11 5 10 2.5 11c1 3.2 3.2 5.8 7 6.5" />
+      <path d="M14.5 13.5C16.5 11 19 10 21.5 11c-1 3.2-3.2 5.8-7 6.5" />
+      <path d="M7 17.5c-2.5.8-4.5 0-5.5-1 1.2 2.2 3.8 3 6.5 2" />
+      <path d="M17 17.5c2.5.8 4.5 0 5.5-1-1.2 2.2-3.8 3-6.5 2" />
+      <path d="M8.5 20c2.3 1 4.7 1 7 0" />
+    </svg>
+  );
+}
+
+// ============================================================================
+// ANIMATED FESTIVAL ATMOSPHERE PARTICLES & GLOWS
+// ============================================================================
+function AnimatedFestivalAtmosphere({ themeId }) {
+  if (themeId === 'fest-pride') {
+    const confettiColors = ['#EF4444', '#F97316', '#FBBF24', '#10B981', '#06B6D4', '#8B5CF6', '#F472B6', '#38BDF8'];
+    return (
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0" aria-hidden="true">
+        {Array.from({ length: 14 }).map((_, idx) => (
+          <span
+            key={idx}
+            className="absolute -top-6 w-3 h-3 rounded-xs opacity-75 animate-confetti-drift shadow-xs"
+            style={{
+              backgroundColor: confettiColors[idx % confettiColors.length],
+              left: `${(idx * 7.5 + 4)}%`,
+              animationDuration: `${6 + (idx % 5) * 1.2}s`,
+              animationDelay: `${(idx % 4) * 1.1}s`,
+              transform: `rotate(${idx * 35}deg)`
+            }}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  if (themeId === 'fest-prom') {
+    return (
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0" aria-hidden="true">
+        {[
+          { top: '15%', left: '10%', size: 'text-2xl', delay: '0s' },
+          { top: '25%', left: '88%', size: 'text-3xl', delay: '1.2s' },
+          { top: '55%', left: '6%', size: 'text-xl', delay: '2.1s' },
+          { top: '65%', left: '92%', size: 'text-2xl', delay: '0.8s' },
+          { top: '78%', left: '32%', size: 'text-lg', delay: '1.7s' },
+          { top: '22%', left: '52%', size: 'text-3xl', delay: '2.6s' },
+          { top: '42%', left: '78%', size: 'text-xl', delay: '1.9s' }
+        ].map((s, idx) => (
+          <span
+            key={idx}
+            className={`absolute ${s.size} select-none animate-star-twinkle text-amber-300 drop-shadow-md`}
+            style={{ top: s.top, left: s.left, animationDelay: s.delay }}
+          >
+            ✨
+          </span>
+        ))}
+      </div>
+    );
+  }
+
+  if (themeId === 'fest-spirit') {
+    return (
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0" aria-hidden="true">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[36rem] h-[36rem] rounded-full bg-gradient-to-tr from-purple-600/30 via-fuchsia-500/20 to-purple-900/35 blur-3xl animate-glow-pulse" />
+      </div>
+    );
+  }
+
+  if (themeId === 'fest-tvd') {
+    return (
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0" aria-hidden="true">
+        <div className="absolute -top-12 -left-12 w-[32rem] h-[32rem] rounded-full bg-sky-200/50 blur-3xl animate-aurora-drift-1" />
+        <div className="absolute -bottom-12 -right-12 w-[32rem] h-[32rem] rounded-full bg-pink-200/50 blur-3xl animate-aurora-drift-2" />
+      </div>
+    );
+  }
+
+  if (themeId === 'fest-world-aids') {
+    return (
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0" aria-hidden="true">
+        <div className="absolute top-1/2 right-10 -translate-y-1/2 w-[30rem] h-[30rem] rounded-full bg-red-400/25 blur-3xl animate-glow-pulse" />
+      </div>
+    );
+  }
+
+  if (themeId === 'fest-coming-out') {
+    return (
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0" aria-hidden="true">
+        <div className="absolute -top-10 left-1/3 w-[34rem] h-[34rem] rounded-full bg-gradient-to-r from-amber-300/30 via-rose-300/25 to-orange-300/30 blur-3xl animate-aurora-drift-1" />
+      </div>
+    );
+  }
+
+  if (themeId === 'fest-lesbian') {
+    return (
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0" aria-hidden="true">
+        <div className="absolute bottom-0 right-1/4 w-[32rem] h-[32rem] rounded-full bg-gradient-to-tr from-orange-400/25 via-pink-400/20 to-amber-200/30 blur-3xl animate-glow-pulse" />
+      </div>
+    );
+  }
+
+  if (themeId === 'fest-bi') {
+    return (
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0" aria-hidden="true">
+        <div className="absolute top-10 left-10 w-[30rem] h-[30rem] rounded-full bg-fuchsia-400/25 blur-3xl animate-aurora-drift-1" />
+        <div className="absolute bottom-10 right-10 w-[30rem] h-[30rem] rounded-full bg-blue-500/25 blur-3xl animate-aurora-drift-2" />
+      </div>
+    );
+  }
+
+  return null;
+}
 
 export default function Home() {
+  usePageMeta({
+    title: 'You Are Welcome Here',
+    description: 'Diversity Collective Ventura County is a 501(c)(3) nonprofit providing advocacy, visibility, safety, and wellness for the LGBTQ+ community throughout Ventura County.',
+    canonicalPath: '/'
+  });
+
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedDonationTier, setSelectedDonationTier] = useState(50);
   const [donationFreq, setDonationFreq] = useState('once');
@@ -40,6 +177,45 @@ export default function Home() {
   const [heroService, setHeroService] = useState('testing');
   const [selectedEventCategory, setSelectedEventCategory] = useState('all');
   const [expandedProgram, setExpandedProgram] = useState(null);
+  const [activeThemeId, setActiveThemeId] = useState(getActiveHeroTheme);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToHeroTheme((themeId) => {
+      setActiveThemeId(themeId);
+    });
+    return unsubscribe;
+  }, []);
+
+  const activeThemeObj = HERO_THEMES.find(t => t.id === activeThemeId) || HERO_THEMES[0];
+
+  // Dynamic sanctuary schedule & live status
+  const getSanctuaryStatus = () => {
+    try {
+      const now = new Date();
+      const ptString = now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
+      const ptDate = new Date(ptString);
+      const day = ptDate.getDay();
+      const hour = ptDate.getHours();
+      const isWeekday = day >= 1 && day <= 5;
+      const isOpenNow = isWeekday && hour >= 13 && hour < 17;
+      return {
+        isOpenNow,
+        isWeekday,
+        statusText: isOpenNow 
+          ? "Sanctuary Open Now · Mon–Fri 1:00 PM – 5:00 PM · Free HIV/STI Screenings"
+          : isWeekday && hour < 13
+          ? "Sanctuary Opens Today 1:00 PM · Mon–Fri 1:00 PM – 5:00 PM · Free HIV/STI Screenings"
+          : "Sanctuary Open Today · Mon–Fri 1:00 PM – 5:00 PM · Free HIV/STI Screenings"
+      };
+    } catch {
+      return {
+        isOpenNow: true,
+        isWeekday: true,
+        statusText: "Sanctuary Open Today · Mon–Fri 1:00 PM – 5:00 PM · Free HIV/STI Screenings"
+      };
+    }
+  };
+  const sanctuaryStatus = getSanctuaryStatus();
 
   const impactStats = [
     {
@@ -181,281 +357,411 @@ export default function Home() {
     <div className="bg-transparent text-slate-800">
 
       {/* ====================================================================
-          HERO: HIGH-IMPACT EDITORIAL FLAGSHIP WITH INTERACTIVE DISCOVERY & CIVIC LOGOS
+          HERO SECTION: DYNAMIC MULTI-THEME DISPATCHER
+          Vibrant Multi-Color Aurora Canvas with Rich Gradients & Eye-Catchy Aesthetics
           ==================================================================== */}
-      <section className="pt-8 md:pt-12 pb-14 md:pb-18 border-b border-purple-200/70 bg-gradient-to-b from-purple-200/50 via-rose-100/30 via-amber-100/30 to-purple-100/40 relative overflow-hidden">
+      <section className="relative overflow-hidden pt-4 sm:pt-6 bg-gradient-to-b from-[#FFFDF9] via-[#FAF5FF] via-[#FFF5F8] to-[#FDF4FF] border-b border-purple-200/60">
         
-        {/* Ambient Vibrant Aurora Light Fields */}
-        <div 
-          className="absolute -top-28 right-5 w-[36rem] h-[36rem] rounded-full aura-orb-violet blur-3xl pointer-events-none" 
-          aria-hidden="true" 
-        />
-        <div 
-          className="absolute top-1/4 -left-28 w-[32rem] h-[32rem] rounded-full aura-orb-rose blur-3xl pointer-events-none" 
-          aria-hidden="true" 
-        />
-        <div 
-          className="absolute -bottom-20 right-1/4 w-[30rem] h-[30rem] rounded-full aura-orb-teal blur-3xl pointer-events-none" 
-          aria-hidden="true" 
-        />
-        <div 
-          className="absolute top-12 left-1/3 w-[26rem] h-[26rem] rounded-full aura-orb-amber blur-3xl pointer-events-none" 
-          aria-hidden="true" 
-        />
+        {/* Full-Bleed Ambient Radiant Multi-Color Aurora Atmosphere (z-0) */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none z-0" aria-hidden="true">
+          {/* Orb 1: Upper-Left Glowing Amethyst & Fuchsia */}
+          <div className="absolute -top-20 -left-20 w-[36rem] h-[36rem] rounded-full bg-gradient-to-br from-purple-500/25 via-fuchsia-500/18 to-transparent blur-3xl animate-pulse" style={{ animationDuration: '7s' }} />
 
-        <div className="container-clean relative z-10 flex flex-col gap-10">
+          {/* Orb 2: Upper-Right Radiant Sunburst Coral & Gold */}
+          <div className="absolute -top-16 -right-16 w-[38rem] h-[38rem] rounded-full bg-gradient-to-bl from-amber-400/30 via-rose-400/25 to-purple-400/15 blur-3xl animate-aurora-drift-1" />
+
+          {/* Orb 3: Center-Bottom Glowing Oceanic Teal & Sky Blue */}
+          <div className="absolute bottom-10 left-1/3 w-[32rem] h-[32rem] rounded-full bg-gradient-to-tr from-teal-400/20 via-sky-400/18 to-transparent blur-3xl animate-aurora-drift-2" />
+
+          {/* Unified Full-Bleed Back Aurora Stream passing smoothly behind photo */}
+          <svg className="w-full h-full min-h-[550px] opacity-75" viewBox="0 0 1440 800" fill="none" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="aurora-stream-back" x1="100%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.45" />
+                <stop offset="30%" stopColor="#F43F5E" stopOpacity="0.4" />
+                <stop offset="65%" stopColor="#C026D3" stopOpacity="0.35" />
+                <stop offset="100%" stopColor="#38BDF8" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            <path
+              d="M 1440,0 C 1200,180 1020,320 800,450 C 580,580 320,680 0,720 L 0,800 L 1440,800 Z"
+              fill="url(#aurora-stream-back)"
+            />
+          </svg>
+        </div>
+
+        {/* Content Container (z-10) */}
+        <div className="container-clean relative z-10 flex flex-col gap-5 sm:gap-6 md:gap-7">
           
-          {/* Top Live Sanctuary & Crisis Alert Ribbon */}
-          <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
-            <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white/95 border border-purple-200/90 backdrop-blur-md font-bold text-[#5A1E65] shadow-xs hover:border-purple-400 transition-colors">
-              <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-              </span>
-              <span>Sanctuary Open Today · Mon–Fri 1:00 PM – 5:00 PM · Free HIV/STI Screenings</span>
-            </div>
-
-            <div className="hidden sm:inline-flex items-center gap-2 text-slate-700 bg-white/90 px-4 py-1.5 rounded-full border border-purple-200/70 text-xs font-semibold shadow-2xs">
-              <Phone className="w-3.5 h-3.5 text-purple-700" />
-              <span>Helpline: <strong className="text-purple-900">(805) 644-5428</strong> · 24/7 Crisis: <strong className="text-rose-700">Dial 988</strong></span>
-            </div>
+          {/* Top Live Sanctuary Alert Pill with Shimmering Gradient Border */}
+          <div className="flex items-center justify-start">
+            <Link 
+              to="/programs/community-resource-center" 
+              className="group w-full max-w-2xl flex items-center justify-between gap-3 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full bg-white/95 hover:bg-white border-2 border-purple-200/90 hover:border-purple-400 shadow-md shadow-purple-500/10 hover:shadow-lg transition-all"
+              title="View Community Resource Center hours and free clinical services"
+            >
+              <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                <span className="relative flex h-3.5 w-3.5 flex-shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-80"></span>
+                  <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-gradient-to-tr from-emerald-600 to-teal-400 shadow-[0_0_10px_rgba(16,185,129,0.7)]"></span>
+                </span>
+                <span className="text-xs sm:text-sm font-semibold text-slate-800 leading-snug truncate">
+                  {sanctuaryStatus.isOpenNow ? (
+                    <>
+                      <strong className="text-emerald-700 font-extrabold">Sanctuary Open Now</strong>{' '}
+                      <span className="text-purple-300 font-bold">•</span>{' '}
+                      <span className="text-slate-800 font-semibold">Mon–Fri 1:00 PM – 5:00 PM</span>{' '}
+                      <span className="text-purple-300 font-bold">•</span>{' '}
+                      <strong className="bg-gradient-to-r from-purple-700 via-pink-600 to-[#5A1E65] bg-clip-text text-transparent font-extrabold">Free HIV/STI Screenings</strong>
+                    </>
+                  ) : (
+                    <>
+                      <strong className="text-purple-900 font-bold">Sanctuary Open Today</strong>{' '}
+                      <span className="text-purple-300 font-bold">•</span>{' '}
+                      <span className="text-slate-800 font-semibold">Mon–Fri 1:00 PM – 5:00 PM</span>{' '}
+                      <span className="text-purple-300 font-bold">•</span>{' '}
+                      <strong className="bg-gradient-to-r from-purple-700 via-pink-600 to-[#5A1E65] bg-clip-text text-transparent font-extrabold">Free HIV/STI Screenings</strong>
+                    </>
+                  )}
+                </span>
+              </div>
+              <div className="w-6 h-6 rounded-full bg-purple-100/80 group-hover:bg-[#5A1E65] flex items-center justify-center transition-all flex-shrink-0">
+                <ArrowRight className="w-3.5 h-3.5 text-purple-800 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+              </div>
+            </Link>
           </div>
 
-          {/* Main Hero Split: Editorial Headline + Multi-Layer Showcase */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
-            
-            {/* Left Column: Bold Headline & Interactive Portals */}
-            <div className="lg:col-span-7 flex flex-col gap-6">
+          {/* ==================================================================
+              LAYOUT THEME A: FLAGSHIP AURORA SANCTUARY (Vibrant & Eye-Catchy)
+              - Serif Fraunces headline + Living rainbow gradient "Always"
+              - Strictly ZERO orange cursive text per user instruction
+              - Authentic site photography (/images/community-gathering.jpg)
+              - 3 full-width / rounded-full stacked action pills with vibrant gradients
+              - Single unified flowing full-bleed aurora ribbon wave crossing from back to break line
+              ================================================================== */}
+          {activeThemeObj.category !== 'festival' && (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 xl:gap-10 items-center">
               
-              <div className="flex flex-col gap-3.5">
-                <span className="glass-pill text-xs font-bold text-[#5A1E65] py-1 px-3.5 bg-purple-50/95 border-purple-200/90 shadow-2xs">
-                  ESTABLISHED 2014 · VENTURA COUNTY 501(C)(3) NONPROFIT
-                </span>
+              {/* Left Column: Eyebrow + Headline + Copy + 3 Stacked Action Pills */}
+              <div className="lg:col-span-7 xl:col-span-6 flex flex-col justify-center gap-5 sm:gap-6 z-10 pb-2 sm:pb-4 lg:pb-8">
+                <div className="flex flex-col gap-2.5 sm:gap-3.5">
+                  
+                  {/* Jewel-Toned Glowing Eyebrow Badge */}
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-purple-100/90 via-pink-100/90 to-amber-100/90 border border-purple-300/80 shadow-2xs self-start">
+                    <span className="w-2 h-2 rounded-full bg-gradient-to-tr from-amber-400 via-rose-500 to-purple-600 animate-pulse"></span>
+                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.22em] bg-gradient-to-r from-[#5A1E65] via-purple-800 to-rose-700 bg-clip-text text-transparent">
+                      ESTABLISHED 2014 • VENTURA COUNTY 501(C)(3) NONPROFIT
+                    </span>
+                  </div>
 
-                <h1 className="font-display text-3xl sm:text-5xl md:text-7xl xl:text-[5.25rem] font-black tracking-tight text-slate-950 leading-[1.08] sm:leading-[1.04]">
-                  You Are <span className="font-serif italic font-normal bg-gradient-to-r from-[#5A1E65] via-purple-700 via-rose-600 to-amber-500 bg-clip-text text-transparent relative inline-block">
-                    Always Welcome
-                    <svg className="absolute -bottom-1 left-0 w-full h-2.5 text-rose-500/50" viewBox="0 0 100 10" preserveAspectRatio="none">
-                      <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="3" fill="transparent" />
-                    </svg>
-                  </span> Here.
-                </h1>
+                  {/* Editorial Headline with Fraunces & Living Rainbow Gradient "Always" */}
+                  <h1 className="font-fraunces text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-[4.25rem] xl:text-[4.85rem] font-black tracking-tight text-slate-950 leading-[1.05]">
+                    <span className="block font-black">You Are</span>
+                    <span className="block italic font-black my-1 text-[1.12em] animate-liquid-flow select-none drop-shadow-sm">
+                      Always
+                    </span>
+                    <span className="block font-black">Welcome Here.</span>
+                  </h1>
 
-                <p className="text-sm sm:text-lg md:text-xl text-slate-600 leading-relaxed max-w-2xl pt-1 font-medium">
-                  Diversity Collective is Ventura County's premier cultural sanctuary and clinical wellness home — delivering free rapid health testing, youth peer programs, mutual aid, and intersectional advocacy across all 10 county cities.
-                </p>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-1">
-                <Link 
-                  to="/programs" 
-                  className="btn-primary group shadow-md hover:shadow-xl text-sm py-3 sm:py-3.5 px-6 sm:px-8 text-center justify-center"
-                >
-                  <span>Explore Free Programs</span>
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </Link>
-                <Link 
-                  to="/contact" 
-                  className="btn-secondary group backdrop-blur-md bg-white/95 text-sm py-3 sm:py-3.5 px-6 sm:px-8 text-center justify-center"
-                >
-                  <MapPin className="w-4 h-4 text-purple-700 group-hover:scale-110 transition-transform" />
-                  <span>Visit Sanctuary</span>
-                </Link>
-                <a
-                  href={`tel:${orgInfo.phone.replace(/[^0-9]/g, '')}`}
-                  className="inline-flex items-center justify-center gap-2 text-xs font-bold text-slate-700 hover:text-purple-900 px-4 py-2.5 bg-white/90 hover:bg-purple-50 rounded-full border border-purple-200/80 transition-all self-start sm:self-auto shadow-2xs"
-                >
-                  <Phone className="w-3.5 h-3.5 text-purple-600" />
-                  <span>{orgInfo.phone}</span>
-                </a>
-              </div>
-
-              {/* Interactive "What Brings You In Today?" Quick Pathfinder with Multi-Color Themes */}
-              <div className="mt-4 p-5 sm:p-6 rounded-2xl bg-white/95 backdrop-blur-md border-2 border-purple-100 shadow-lg shadow-purple-500/5 flex flex-col gap-3.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-amber-500 animate-pulse" />
-                    <span>Instant Sanctuary Navigator — What brings you in today?</span>
-                  </span>
-                  <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">100% Confidential</span>
+                  {/* Verified Non-AI Authentic DCVC Mission Copy with Highlighted Accents */}
+                  <p className="text-sm sm:text-base md:text-lg text-slate-700 leading-relaxed font-normal max-w-xl pt-0.5">
+                    Diversity Collective is Ventura County's premier cultural sanctuary and clinical wellness home — delivering <span className="font-bold text-[#5A1E65]">free rapid health testing</span>, <span className="font-bold text-rose-700">youth peer programs</span>, <span className="font-bold text-amber-700">mutual aid</span>, and intersectional advocacy across all 10 county cities.
+                  </p>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  <button
-                    onClick={() => setHeroService('testing')}
-                    className={`p-3 rounded-xl text-left transition-all border-2 text-xs font-semibold cursor-pointer interactive-card-3d ${
-                      heroService === 'testing'
-                        ? 'bg-gradient-to-br from-teal-50 to-emerald-50 border-teal-500 text-teal-950 shadow-md shadow-teal-500/20 ring-2 ring-teal-400/40'
-                        : 'bg-white border-slate-200/90 text-slate-700 hover:border-teal-300 hover:bg-teal-50/40'
-                    }`}
+                {/* 3 Action Pill Buttons (Stacked with Rich Gradients & High Contrast) */}
+                <div className="flex flex-col gap-3 w-full sm:max-w-md pt-1">
+                  {/* 1. Primary CTA - Explore Free Programs */}
+                  <Link 
+                    to="/programs" 
+                    className="w-full inline-flex items-center justify-center gap-2.5 text-sm sm:text-base font-extrabold text-white bg-gradient-to-r from-[#5A1E65] via-[#8B1A8F] via-[#C026D3] to-[#7C3AED] hover:from-[#4A0E4F] hover:to-[#6D28D9] active:scale-[0.99] py-3.5 sm:py-4 px-7 rounded-full shadow-lg shadow-purple-900/30 hover:shadow-xl hover:shadow-purple-700/40 hover:scale-[1.01] transition-all text-center group btn-shimmer"
                   >
-                    <div className="font-extrabold flex items-center gap-1.5 text-teal-700">
-                      <span>🩺</span> Rapid Testing
-                    </div>
-                    <span className="text-[10px] text-slate-500 block font-medium mt-0.5">Diversity SHINES</span>
-                  </button>
+                    <span>Explore Free Programs</span>
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
+                  </Link>
 
-                  <button
-                    onClick={() => setHeroService('youth')}
-                    className={`p-3 rounded-xl text-left transition-all border-2 text-xs font-semibold cursor-pointer interactive-card-3d ${
-                      heroService === 'youth'
-                        ? 'bg-gradient-to-br from-amber-50 to-orange-50 border-amber-500 text-amber-950 shadow-md shadow-amber-500/20 ring-2 ring-amber-400/40'
-                        : 'bg-white border-slate-200/90 text-slate-700 hover:border-amber-300 hover:bg-amber-50/40'
-                    }`}
+                  {/* 2. Secondary CTA - Visit Sanctuary */}
+                  <Link 
+                    to="/contact" 
+                    className="w-full inline-flex items-center justify-center gap-2.5 text-sm sm:text-base font-extrabold text-slate-800 bg-white/95 hover:bg-white active:scale-[0.99] py-3.5 px-6 rounded-full border-2 border-purple-200/90 hover:border-purple-400 shadow-xs hover:shadow-md hover:scale-[1.01] transition-all text-center group"
                   >
-                    <div className="font-extrabold flex items-center gap-1.5 text-amber-700">
-                      <span>🌈</span> Youth (13–23)
+                    <div className="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
+                      <MapPin className="w-3.5 h-3.5 text-[#5A1E65]" />
                     </div>
-                    <span className="text-[10px] text-slate-500 block font-medium mt-0.5">Rainbow Umbrella</span>
-                  </button>
+                    <span>Visit Sanctuary</span>
+                  </Link>
 
-                  <button
-                    onClick={() => setHeroService('center')}
-                    className={`p-3 rounded-xl text-left transition-all border-2 text-xs font-semibold cursor-pointer interactive-card-3d ${
-                      heroService === 'center'
-                        ? 'bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-600 text-purple-950 shadow-md shadow-purple-500/20 ring-2 ring-purple-400/40'
-                        : 'bg-white border-slate-200/90 text-slate-700 hover:border-purple-300 hover:bg-purple-50/40'
-                    }`}
+                  {/* 3. Tertiary CTA - Direct Phone Call */}
+                  <a
+                    href={`tel:${orgInfo.phone.replace(/[^0-9]/g, '')}`}
+                    className="w-full inline-flex items-center justify-center gap-2.5 text-sm sm:text-base font-extrabold text-slate-800 bg-white/95 hover:bg-white active:scale-[0.99] py-3.5 px-6 rounded-full border-2 border-purple-200/90 hover:border-purple-400 shadow-xs hover:shadow-md hover:scale-[1.01] transition-all text-center group"
                   >
-                    <div className="font-extrabold flex items-center gap-1.5 text-purple-700">
-                      <span>🏠</span> Drop-In Hub
+                    <div className="w-6 h-6 rounded-full bg-rose-100 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
+                      <Phone className="w-3.5 h-3.5 text-rose-700" />
                     </div>
-                    <span className="text-[10px] text-slate-500 block font-medium mt-0.5">Library & Lounge</span>
-                  </button>
-
-                  <button
-                    onClick={() => setHeroService('donate')}
-                    className={`p-3 rounded-xl text-left transition-all border-2 text-xs font-semibold cursor-pointer interactive-card-3d ${
-                      heroService === 'donate'
-                        ? 'bg-gradient-to-br from-rose-50 to-pink-50 border-rose-500 text-rose-950 shadow-md shadow-rose-500/20 ring-2 ring-rose-400/40'
-                        : 'bg-white border-slate-200/90 text-slate-700 hover:border-rose-300 hover:bg-rose-50/40'
-                    }`}
-                  >
-                    <div className="font-extrabold flex items-center gap-1.5 text-rose-700">
-                      <span>💖</span> Give or Join
-                    </div>
-                    <span className="text-[10px] text-slate-500 block font-medium mt-0.5">501(c)(3) Support</span>
-                  </button>
-                </div>
-
-                {/* Dynamic Pathfinder Detail Card */}
-                <div className="pt-2 border-t border-purple-100 flex items-center justify-between text-xs">
-                  {heroService === 'testing' && (
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 w-full p-2.5 rounded-xl bg-teal-50/60 border border-teal-200/70">
-                      <span className="text-teal-900 font-medium">
-                        <strong className="text-teal-950 font-bold">Diversity SHINES:</strong> Free, confidential rapid HIV & Hepatitis C testing with immediate results. Walk-ins Mon–Fri 1–5 PM.
-                      </span>
-                      <Link to="/programs" className="text-teal-700 font-extrabold hover:underline sm:ml-3 flex-shrink-0">
-                        View Testing Hours →
-                      </Link>
-                    </div>
-                  )}
-                  {heroService === 'youth' && (
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 w-full p-2.5 rounded-xl bg-amber-50/60 border border-amber-200/70">
-                      <span className="text-amber-900 font-medium">
-                        <strong className="text-amber-950 font-bold">Rainbow Umbrella:</strong> Affirming peer circles for youth ages 13–23 every Friday from 5:30 PM to 7:30 PM.
-                      </span>
-                      <Link to="/programs" className="text-amber-700 font-extrabold hover:underline sm:ml-3 flex-shrink-0">
-                        Youth Info →
-                      </Link>
-                    </div>
-                  )}
-                  {heroService === 'center' && (
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 w-full p-2.5 rounded-xl bg-purple-50/60 border border-purple-200/70">
-                      <span className="text-purple-900 font-medium">
-                        <strong className="text-purple-950 font-bold">Community Resource Center:</strong> 2471 Portola Rd, Suite 100, Ventura. Free computer lab, queer lending library, and coffee.
-                      </span>
-                      <Link to="/contact" className="text-purple-700 font-extrabold hover:underline sm:ml-3 flex-shrink-0">
-                        Directions →
-                      </Link>
-                    </div>
-                  )}
-                  {heroService === 'donate' && (
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 w-full p-2.5 rounded-xl bg-rose-50/60 border border-rose-200/70">
-                      <span className="text-rose-900 font-medium">
-                        <strong className="text-rose-950 font-bold">Community Philanthropy:</strong> Your tax-deductible gift directly funds free youth meals, safe spaces, and vital screenings.
-                      </span>
-                      <a href="#giving" className="text-rose-700 font-extrabold hover:underline sm:ml-3 flex-shrink-0">
-                        Donate Now →
-                      </a>
-                    </div>
-                  )}
+                    <span>(805) 644-LGBT (5428)</span>
+                  </a>
                 </div>
 
               </div>
 
-            </div>
-
-            {/* Right Column: Multi-Layer 3D Editorial Visual Collage */}
-            <div className="lg:col-span-5 relative perspective-1000 preserve-3d">
-              
-              {/* Primary Visual Frame with Interactive 3D Card */}
-              <div className="relative group/card rounded-3xl transition-transform duration-300 ease-out hover:-translate-y-1.5">
-                {/* Specular Multi-Color Ambient Aura Backlight */}
-                <div 
-                  className="absolute -inset-2 bg-gradient-to-r from-purple-600 via-rose-500 via-amber-400 to-teal-500 rounded-3xl blur-2xl opacity-35 group-hover/card:opacity-60 transition-all duration-500 pointer-events-none" 
-                  aria-hidden="true" 
-                />
-
-                <CardSpotlight 
-                  className="glass-card rounded-3xl overflow-hidden shadow-2xl border-2 border-purple-200/90 relative"
-                  tilt={false}
-                  scale={1}
-                  glare={false}
-                >
-                  <div className="relative overflow-hidden aspect-[4/3] group">
+              {/* Right Column: Authentic Site Community Showcase */}
+              <div className="lg:col-span-5 xl:col-span-6 relative flex flex-col justify-center">
+                
+                {/* Image Card Frame (Iridescent Gradient Aura + Authentic Site Photo) */}
+                <div className="relative z-10 w-full p-1 rounded-3xl bg-gradient-to-tr from-purple-500 via-pink-500 via-amber-400 to-teal-400 shadow-2xl shadow-purple-500/25 group select-none">
+                  <div className="relative w-full h-full min-h-[280px] sm:min-h-[360px] lg:min-h-[440px] rounded-[1.4rem] overflow-hidden bg-slate-950">
+                    
+                    {/* Authentic Site Photography from diversitycollectivevc.org */}
                     <img 
-                      src="/images/community-gathering.jpg" 
+                      src="/images/community-gathering.jpg"
                       alt="Diversity Collective Ventura County community members gathering"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
                       onError={(e) => {
                         e.target.src = "/images/hero-community.jpg";
                       }}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-950/15 to-transparent pointer-events-none" />
-                    
-                    {/* Floating In-Frame Physical Location Tag */}
-                    <div className="absolute bottom-4 left-4 right-4 flex flex-wrap items-center justify-between gap-2 text-white text-xs pointer-events-none">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-amber-300 flex-shrink-0" />
-                        <span className="font-semibold text-white drop-shadow-md">2471 Portola Road, Suite 100, Ventura</span>
+
+                    {/* Deep gradient vignette for contrast */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-950/10 to-transparent pointer-events-none" />
+
+                    {/* Floating In-Frame Physical Location Tag at top of photo */}
+                    <div className="absolute top-3.5 left-3.5 right-3.5 flex flex-wrap items-center justify-between gap-2 text-white text-xs pointer-events-none z-30">
+                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-950/85 backdrop-blur-md border border-white/20 shadow-lg">
+                        <MapPin className="w-3.5 h-3.5 text-amber-300 flex-shrink-0" />
+                        <span className="font-bold text-white drop-shadow-md truncate">2471 Portola Road, Suite 100, Ventura</span>
                       </div>
-                      <span className="text-emerald-300 drop-shadow-md font-bold text-[11px] bg-emerald-950/80 px-2.5 py-1 rounded-full border border-emerald-400/50 shadow-sm">
+                      <span className="text-emerald-300 drop-shadow-md font-extrabold text-[11px] bg-emerald-950/90 backdrop-blur-md px-3 py-1.5 rounded-full border border-emerald-400/60 shadow-lg flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
                         Open Today
                       </span>
                     </div>
                   </div>
+                </div>
 
-                  {/* Bottom Bar with Prominent DCVC Emblem */}
-                  <div className="p-4 bg-white/95 backdrop-blur-md border-t border-slate-100 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-xl bg-white p-1 border-2 border-purple-100 shadow-sm flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
-                        <img 
-                          src="/images/logo-square.png" 
-                          alt="Diversity Collective Emblem" 
-                          className="w-full h-full object-contain" 
-                        />
-                      </div>
-                      <div>
-                        <span className="font-bold text-slate-900 text-sm block leading-tight">Community Resource Center</span>
-                        <span className="text-xs text-slate-500 font-medium">Physical safe harbor & clinical navigation</span>
-                      </div>
-                    </div>
-                    <Link 
-                      to="/about"
-                      className="text-xs font-extrabold text-[#5A1E65] hover:text-purple-700 hover:underline inline-flex items-center gap-1 group/link"
-                    >
-                      <span>About Us</span>
-                      <ArrowUpRight className="w-3.5 h-3.5 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-transform" />
-                    </Link>
-                  </div>
-                </CardSpotlight>
               </div>
 
             </div>
+          )}
 
+          {/* ==================================================================
+              LAYOUT THEME B: US LGBTQ+ FESTIVAL HERO (When activeTheme is a Festival)
+              Specialized event themes: Pride Month, Transgender Visibility,
+              Spirit Day, National Coming Out Day, World AIDS Day, etc.
+              ================================================================== */}
+          {activeThemeObj.category === 'festival' && (
+            <div className="relative flex flex-col gap-6">
+              <AnimatedFestivalAtmosphere themeId={activeThemeId} />
+              {/* Festival Calendar Event Badge */}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-900 text-white text-xs font-bold shadow-md">
+                  <Calendar className="w-3.5 h-3.5 text-amber-300" />
+                  <span>{activeThemeObj.badge}</span>
+                  <span className="text-purple-300">•</span>
+                  <span className="text-purple-200 font-medium">{activeThemeObj.eventDates}</span>
+                </div>
+                <button
+                  onClick={(e) => triggerMilestoneConfetti(e)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-extrabold text-[#5A1E65] bg-purple-100 hover:bg-purple-200 border border-purple-300 rounded-full transition-all cursor-pointer shadow-2xs"
+                  title="Celebrate this community milestone with confetti!"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Celebrate Event 🎉</span>
+                </button>
+              </div>
+
+              {/* Festival Headline & Callout */}
+              <div className="max-w-3xl flex flex-col gap-3">
+                <span className="text-xs font-extrabold tracking-[0.2em] text-[#5A1E65] uppercase block">
+                  SPECIAL EVENT SEASON · VENTURA COUNTY 501(C)(3) NONPROFIT
+                </span>
+                <h1 className="font-fraunces text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight text-slate-950 leading-[1.1]">
+                  {activeThemeObj.headline}
+                </h1>
+                <p className="text-base sm:text-lg text-slate-700 leading-relaxed font-normal pt-1">
+                  {activeThemeObj.description}
+                </p>
+              </div>
+
+              {/* Festival CTAs */}
+              <div className="flex flex-wrap items-center gap-3 pt-1">
+                <Link
+                  to="/events"
+                  className="btn-primary py-3 px-7 text-sm font-bold shadow-md flex items-center gap-2 group"
+                >
+                  <span>View Event Calendar & Schedules</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </Link>
+                <Link
+                  to="/volunteer"
+                  className="btn-secondary py-3 px-6 text-sm font-bold bg-white flex items-center gap-2"
+                >
+                  <span>Volunteer at Event</span>
+                </Link>
+                <Link
+                  to="/donate"
+                  className="inline-flex items-center gap-2 px-5 py-3 text-sm font-bold text-slate-950 bg-[#FDE047] hover:bg-[#FACC15] rounded-full border border-amber-300 shadow-sm transition-all"
+                >
+                  <Heart className="w-4 h-4 fill-current text-slate-950" />
+                  <span>Support Event Fund</span>
+                </Link>
+              </div>
+            </div>
+          )}
+
+        </div>
+
+        {/* ====================================================================
+            FULL-BLEED CONTINUOUS FOREGROUND WAVE CASCADE EXTENDING TILL THE BREAK LINE
+            - Spans 100% of the screen width from edge to edge (left-0 to right-0).
+            - Zero pixel clamps, zero column boundaries, zero cropping.
+            - Overlaps the lower photo area smoothly and lands flush on the first break line.
+            - Saturated, high-contrast rich pride gradients (Amber, Magenta, Oceanic Cyan).
+            ==================================================================== */}
+        {activeThemeObj.category !== 'festival' && (
+          <div className="relative w-full -mt-10 sm:-mt-16 md:-mt-24 lg:-mt-28 pointer-events-none z-20 overflow-hidden leading-none select-none">
+            <svg 
+              className="w-full h-24 sm:h-32 md:h-44 lg:h-52 block filter drop-shadow-[0_-8px_16px_rgba(217,70,239,0.22)]" 
+              viewBox="0 0 1440 220" 
+              fill="none" 
+              preserveAspectRatio="none"
+            >
+              <defs>
+                {/* Wave Ribbon 1: Amber Gold to Sunset Rose */}
+                <linearGradient id="vibrant-wave-amber" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.8" />
+                  <stop offset="35%" stopColor="#FB7185" stopOpacity="0.75" />
+                  <stop offset="70%" stopColor="#C084FC" stopOpacity="0.7" />
+                  <stop offset="100%" stopColor="#38BDF8" stopOpacity="0.6" />
+                </linearGradient>
+
+                {/* Wave Ribbon 2: Saturated Magenta to Ultraviolet (Main Crest) */}
+                <linearGradient id="vibrant-wave-magenta" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#E11D48" stopOpacity="0.88" />
+                  <stop offset="30%" stopColor="#EC4899" stopOpacity="0.85" />
+                  <stop offset="65%" stopColor="#A855F7" stopOpacity="0.88" />
+                  <stop offset="100%" stopColor="#06B6D4" stopOpacity="0.75" />
+                </linearGradient>
+
+                {/* Wave Ribbon 3: Oceanic Emerald to Coastal Cyan */}
+                <linearGradient id="vibrant-wave-cyan" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#10B981" stopOpacity="0.82" />
+                  <stop offset="35%" stopColor="#06B6D4" stopOpacity="0.8" />
+                  <stop offset="70%" stopColor="#8B5CF6" stopOpacity="0.8" />
+                  <stop offset="100%" stopColor="#F43F5E" stopOpacity="0.7" />
+                </linearGradient>
+              </defs>
+
+              {/* Ribbon 1: Golden Amber base flowing edge-to-edge */}
+              <path
+                d="M 0,160 C 240,165 480,140 720,110 C 960,80 1200,60 1440,90 L 1440,220 L 0,220 Z"
+                fill="url(#vibrant-wave-amber)"
+              />
+
+              {/* Ribbon 2: Saturated Magenta crest sweeping over the photo with luminous stroke */}
+              <g className="animate-ribbon-undulate">
+                <path
+                  d="M 0,140 C 220,145 460,110 700,75 C 940,40 1180,35 1440,65 L 1440,220 L 0,220 Z"
+                  fill="url(#vibrant-wave-magenta)"
+                />
+                <path
+                  d="M 0,140 C 220,145 460,110 700,75 C 940,40 1180,35 1440,65"
+                  stroke="rgba(255, 255, 255, 0.95)"
+                  strokeWidth="3.5"
+                  strokeLinecap="round"
+                  fill="none"
+                />
+              </g>
+
+              {/* Ribbon 3: Oceanic Cyan & Emerald with flowing highlight */}
+              <g className="animate-ribbon-wave-slow">
+                <path
+                  d="M 0,175 C 260,180 520,150 780,115 C 1020,80 1240,75 1440,95 L 1440,220 L 0,220 Z"
+                  fill="url(#vibrant-wave-cyan)"
+                />
+                <path
+                  d="M 0,175 C 260,180 520,150 780,115 C 1020,80 1240,75 1440,95"
+                  stroke="rgba(255, 255, 255, 0.85)"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  fill="none"
+                />
+              </g>
+            </svg>
           </div>
+        )}
+
+        {/* ====================================================================
+            4-PILLAR ACCENT STRIP: PEOPLE • SAFETY • WELLNESS • OPPORTUNITY
+            Grounded cleanly right at the first break line.
+            Spans full-width with responsive inner container.
+            ==================================================================== */}
+        <div className="w-full border-t-2 border-purple-200/90 bg-white/60 backdrop-blur-xs relative z-10">
+          <div className="container-clean py-4 sm:py-5">
+            <div className="grid grid-cols-4 divide-x-2 divide-purple-200/80 text-center">
+              
+              {/* Pillar 1: PEOPLE (Amethyst & Fuchsia) */}
+              <Link 
+                to="/community" 
+                className="pillar-card group flex flex-col items-center justify-center gap-2 py-2 px-1 sm:px-4 rounded-2xl hover:bg-purple-50/90 transition-all cursor-pointer"
+                title="People — Affirming community circles & peer gatherings"
+              >
+                <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-purple-100 to-fuchsia-100 border border-purple-200 flex items-center justify-center group-hover:scale-110 group-hover:shadow-md group-hover:shadow-purple-400/20 transition-all">
+                  <Users className="w-4 h-4 sm:w-5 sm:h-5 text-[#5A1E65] stroke-[2]" />
+                </div>
+                <span className="text-[10px] sm:text-xs md:text-sm font-black uppercase tracking-[0.18em] sm:tracking-[0.22em] text-[#5A1E65] group-hover:text-purple-900 transition-colors">
+                  PEOPLE
+                </span>
+              </Link>
+
+              {/* Pillar 2: SAFETY (Oceanic Azure & Cyan) */}
+              <Link 
+                to="/programs/community-resource-center" 
+                className="pillar-card group flex flex-col items-center justify-center gap-2 py-2 px-1 sm:px-4 rounded-2xl hover:bg-sky-50/90 transition-all cursor-pointer"
+                title="Safety — Cultural sanctuary, crisis navigation & drop-in safe harbor"
+              >
+                <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-sky-100 to-cyan-100 border border-sky-200 flex items-center justify-center group-hover:scale-110 group-hover:shadow-md group-hover:shadow-sky-400/20 transition-all">
+                  <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-sky-700 stroke-[2]" />
+                </div>
+                <span className="text-[10px] sm:text-xs md:text-sm font-black uppercase tracking-[0.18em] sm:tracking-[0.22em] text-sky-900 group-hover:text-sky-700 transition-colors">
+                  SAFETY
+                </span>
+              </Link>
+
+              {/* Pillar 3: WELLNESS (Emerald & Mint) */}
+              <Link 
+                to="/programs/diversity-shines" 
+                className="pillar-card group flex flex-col items-center justify-center gap-2 py-2 px-1 sm:px-4 rounded-2xl hover:bg-emerald-50/90 transition-all cursor-pointer"
+                title="Wellness — Diversity SHINES free rapid health testing & mental health"
+              >
+                <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 border border-emerald-200 flex items-center justify-center group-hover:scale-110 group-hover:shadow-md group-hover:shadow-emerald-400/20 transition-all">
+                  <LotusIcon className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-700 stroke-[2]" />
+                </div>
+                <span className="text-[10px] sm:text-xs md:text-sm font-black uppercase tracking-[0.18em] sm:tracking-[0.22em] text-emerald-900 group-hover:text-emerald-700 transition-colors">
+                  WELLNESS
+                </span>
+              </Link>
+
+              {/* Pillar 4: OPPORTUNITY (Sunset Rose & Coral) */}
+              <Link 
+                to="/donate" 
+                className="pillar-card group flex flex-col items-center justify-center gap-2 py-2 px-1 sm:px-4 rounded-2xl hover:bg-rose-50/90 transition-all cursor-pointer"
+                title="Opportunity — Mutual aid, youth leadership & community giving"
+              >
+                <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-rose-100 to-pink-100 border border-rose-200 flex items-center justify-center group-hover:scale-110 group-hover:shadow-md group-hover:shadow-rose-400/20 transition-all">
+                  <Heart className="w-4 h-4 sm:w-5 sm:h-5 text-rose-600 stroke-[2] fill-rose-500/20" />
+                </div>
+                <span className="text-[10px] sm:text-xs md:text-sm font-black uppercase tracking-[0.18em] sm:tracking-[0.22em] text-rose-900 group-hover:text-rose-700 transition-colors">
+                  OPPORTUNITY
+                </span>
+              </Link>
+
+            </div>
+          </div>
+        </div>
+
+        {/* Civic Alliances & Public Health Logos Container */}
+        <div className="container-clean relative z-10 pb-6 sm:pb-8">
 
           {/* ====================================================================
               HIGH-VISIBILITY CIVIC & PUBLIC HEALTH LOGOS SHOWCASE
@@ -468,11 +774,11 @@ export default function Home() {
                 <span>Verified Civic Alliances & Public Health Leadership</span>
               </span>
               <span className="text-xs text-slate-400">
-                Official Ventura County Agency & Accessibility Partners
+                Official Ventura County Agency & Public Health Partners
               </span>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6 pt-2">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 pt-2">
               {/* Partner 1: VCBH */}
               <a 
                 href="https://vchca.org/behavioral-health/" 
@@ -537,32 +843,10 @@ export default function Home() {
                 <span className="text-[11px] text-slate-400 text-center font-medium">Clinical Rapid Testing</span>
               </Link>
 
-              {/* Partner 4: Recite Me */}
-              <a 
-                href="https://www.w3.org/WAI/WCAG2AA-Conformance" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="group flex flex-col items-center justify-center p-5 rounded-2xl bg-white shadow-sm hover:shadow-2xl border-2 border-slate-200/90 hover:border-[#5A1E65] transition-all interactive-card-3d cursor-pointer relative overflow-hidden"
-                title="Recite Me Digital Accessibility"
-              >
-                <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/0 via-amber-500/0 to-amber-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-                <div className="h-16 md:h-20 w-full flex items-center justify-center">
-                  <img 
-                    src="/images/accessibility-badge.png" 
-                    alt="Recite Me Accessibility Certified Logo" 
-                    className="max-h-14 md:max-h-16 max-w-[85%] object-contain group-hover:scale-108 transition-transform duration-300" 
-                  />
-                </div>
-                <span className="text-xs font-bold text-slate-800 mt-2 text-center block group-hover:text-[#5A1E65] leading-tight">
-                  Recite Me Certified
-                </span>
-                <span className="text-[11px] text-slate-400 text-center font-medium">Accessibility Champion</span>
-              </a>
-
-              {/* Partner 5: Little Unicorns */}
+              {/* Partner 4: Little Unicorns */}
               <Link 
                 to="/programs" 
-                className="group col-span-2 sm:col-span-1 flex flex-col items-center justify-center p-5 rounded-2xl bg-white shadow-sm hover:shadow-2xl border-2 border-slate-200/90 hover:border-[#5A1E65] transition-all interactive-card-3d cursor-pointer relative overflow-hidden"
+                className="group flex flex-col items-center justify-center p-5 rounded-2xl bg-white shadow-sm hover:shadow-2xl border-2 border-slate-200/90 hover:border-[#5A1E65] transition-all interactive-card-3d cursor-pointer relative overflow-hidden"
                 title="Little Unicorns Kids & Family Initiative"
               >
                 <div className="absolute inset-0 bg-gradient-to-tr from-rose-500/0 via-rose-500/0 to-rose-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
@@ -665,11 +949,59 @@ export default function Home() {
       </section>
 
       {/* ====================================================================
-          INTERACTIVE MODULE: CARE & COMMUNITY COMPASS
+          LGBTQ+ AFFIRMING BUSINESS DIRECTORY SPOTLIGHT
           ==================================================================== */}
       <section className="py-14 md:py-20 bg-white border-b border-slate-100">
         <div className="container-clean">
-          <CommunityCompass />
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+            <div className="flex flex-col gap-3 max-w-2xl">
+              <span className="glass-pill text-xs font-bold text-[#5A1E65] bg-purple-50 border-purple-200">
+                VENTURA COUNTY AFFIRMING NETWORK
+              </span>
+              <h2 className="font-display text-2xl sm:text-4xl font-extrabold text-slate-950 tracking-tight">
+                Shop, Dine & Connect Safely.
+              </h2>
+              <p className="text-sm sm:text-base text-slate-600 leading-relaxed font-medium">
+                Discover verified LGBTQ+ owned and affirming businesses across Ventura, Oxnard, Ojai, Camarillo, and the Conejo Valley.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Link to="/directory" className="btn-primary py-2.5 px-5 text-xs font-bold inline-flex items-center gap-1.5 shadow-sm">
+                <span>Browse Full Directory</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+              <Link to="/directory/submit" className="btn-secondary py-2.5 px-4 text-xs font-bold inline-flex items-center gap-1.5 bg-white">
+                <span>Submit Your Business</span>
+              </Link>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {businessDirectorySeed.slice(0, 3).map((biz) => (
+              <div key={biz.id} className="p-6 rounded-3xl bg-slate-50 border border-slate-200/90 hover:border-purple-300 transition-all shadow-xs hover:shadow-lg flex flex-col justify-between gap-4">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-[#5A1E65] bg-purple-50 px-2.5 py-1 rounded-full border border-purple-200">
+                      {biz.category}
+                    </span>
+                    <span className="text-xs font-bold text-slate-500">{biz.city}</span>
+                  </div>
+                  <h3 className="font-display text-xl font-black text-slate-900">{biz.name}</h3>
+                  <p className="text-xs text-slate-600 leading-relaxed font-medium line-clamp-3">{biz.description}</p>
+                </div>
+                <div className="pt-3 border-t border-slate-200/80 flex items-center justify-between text-xs">
+                  <span className="text-emerald-700 font-bold flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>Affirming Vetted</span>
+                  </span>
+                  <Link to={`/directory/${biz.slug}`} className="text-[#5A1E65] font-black hover:underline inline-flex items-center gap-1">
+                    <span>View Profile</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -959,23 +1291,56 @@ export default function Home() {
       </section>
 
       {/* ====================================================================
-          INTERACTIVE MODULE: VENTURA COUNTY REGIONAL HUB EXPLORER
+          FLAGSHIP COMMUNITY RESOURCE CENTER & SANCTUARY
           ==================================================================== */}
       <section className="py-14 md:py-20 bg-gradient-to-b from-teal-100/30 via-purple-100/40 to-amber-100/30 border-b border-purple-200/60 relative overflow-hidden">
         <div className="container-clean">
-          <div className="max-w-2xl mx-auto text-center mb-10 flex flex-col items-center gap-3">
-            <span className="glass-pill">
-              REGIONAL PRESENCE
-            </span>
-            <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900">
-              Serving every corner of Ventura County.
-            </h2>
-            <p className="text-sm text-slate-600 leading-relaxed">
-              From the coastal communities of Ventura and Oxnard to the inland valleys of Simi, Thousand Oaks, and Ojai — discover where we meet you.
-            </p>
+          <div className="p-8 sm:p-12 rounded-3xl bg-white/95 border-2 border-purple-200/80 shadow-xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            <div className="lg:col-span-7 space-y-4">
+              <span className="glass-pill text-xs font-bold text-[#5A1E65] bg-purple-50 border-purple-200">
+                PHYSICAL SANCTUARY · DROP-IN HUB
+              </span>
+              <h2 className="font-display text-2xl sm:text-4xl font-black text-slate-950 tracking-tight">
+                Our Community Resource Center in Ventura
+              </h2>
+              <p className="text-sm sm:text-base text-slate-600 leading-relaxed font-medium">
+                Located at 2471 Portola Road, Suite 100 in Ventura, our Center is the cultural and wellness hub of LGBTQ+ Ventura County. Stop in during weekday hours for computer and printing access, lending library browsing, safer-sex supplies, or confidential peer support.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-2">
+                <div className="p-3 bg-purple-50/70 rounded-xl border border-purple-100 flex items-center gap-2.5">
+                  <Clock className="w-4 h-4 text-[#5A1E65]" />
+                  <span>Mon–Fri 1:00 PM – 5:00 PM</span>
+                </div>
+                <div className="p-3 bg-purple-50/70 rounded-xl border border-purple-100 flex items-center gap-2.5">
+                  <Phone className="w-4 h-4 text-[#5A1E65]" />
+                  <span>Helpline: (805) 644-5428</span>
+                </div>
+              </div>
+              <div className="pt-2 flex flex-wrap items-center gap-3">
+                <Link to="/contact" className="btn-primary py-2.5 px-6 text-xs font-bold inline-flex items-center gap-1.5 shadow-sm">
+                  <span>Plan Your Visit & Directions</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+                <a
+                  href={orgInfo.address.googleMapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-secondary py-2.5 px-5 text-xs font-bold inline-flex items-center gap-1.5 bg-white"
+                >
+                  <MapPin className="w-3.5 h-3.5 text-purple-600" />
+                  <span>Google Maps</span>
+                  <ArrowUpRight className="w-3 h-3" />
+                </a>
+              </div>
+            </div>
+            <div className="lg:col-span-5 rounded-2xl overflow-hidden shadow-lg border border-slate-200 aspect-[4/3]">
+              <img
+                src="/images/crc-building.jpg"
+                alt="Diversity Collective Community Resource Center Building"
+                className="w-full h-full object-cover"
+              />
+            </div>
           </div>
-
-          <RegionalHubExplorer />
         </div>
       </section>
 
@@ -1426,6 +1791,15 @@ export default function Home() {
       </section>
 
       {/* ====================================================================
+          NEWSLETTER SIGNUP DISPATCH
+          ==================================================================== */}
+      <section className="py-12 bg-white">
+        <div className="container-clean">
+          <NewsletterSignup />
+        </div>
+      </section>
+
+      {/* ====================================================================
           FINAL CALL TO ACTION: LUXURY 3D AURORA ARCHITECTURE
           ==================================================================== */}
       <section className="py-20 md:py-28 aurora-bg text-white relative overflow-hidden">
@@ -1457,19 +1831,16 @@ export default function Home() {
           </p>
 
           <div className="pt-3 flex flex-wrap items-center justify-center gap-4">
-            <a
-              href={orgInfo.donationUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={triggerMilestoneConfetti}
+            <Link
+              to="/donate"
               className="py-4 px-8 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-400 text-slate-950 font-black text-sm sm:text-base tracking-wide flex items-center justify-center gap-2 shadow-[0_10px_30px_-5px_rgba(245,158,11,0.5)] hover:shadow-[0_15px_40px_-5px_rgba(245,158,11,0.7)] hover:scale-103 transition-all cursor-pointer"
             >
               <Heart className="w-4 h-4 fill-current text-rose-700 animate-bounce" />
               <span>Make a Community Gift Online</span>
-              <ArrowUpRight className="w-4 h-4" />
-            </a>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
             <Link
-              to="/get-involved"
+              to="/volunteer"
               className="py-4 px-8 rounded-2xl border-2 border-white/20 hover:border-white/50 bg-white/10 hover:bg-white/15 text-white text-sm font-bold transition-all backdrop-blur-md interactive-card-3d"
             >
               <span>Explore Volunteer Roles</span>

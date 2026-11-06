@@ -1,0 +1,18 @@
+{
+  "name": "dcvc-api-worker",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Cloudflare Worker Backend for Diversity Collective Ventura County",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.6.0"
+  },
+  "devDependencies": {
+    "wrangler": "^3.50.0"
+  }
+}
+

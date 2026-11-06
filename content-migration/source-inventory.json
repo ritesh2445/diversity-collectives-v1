@@ -1,0 +1,220 @@
+[
+  {
+    "url": "https://www.diversitycollectivevc.org/",
+    "title": "Diversity Collective Ventura County | LGBTQ+ Community Resource Center",
+    "sourceDomain": "diversitycollectivevc.org",
+    "section": "Core",
+    "contentSummary": "Homepage introducing DCVC mission, Community Resource Center on Portola Rd, signature annual events, and newsletter signups.",
+    "discoveredMedia": [
+      "/wp-content/uploads/2023/08/DCVC_FundraisingBrochure_Web_ReplyCard_FINALHR.pdf",
+      "/wp-content/uploads/2022/logo.png"
+    ],
+    "crawlStatus": "SUCCESS"
+  },
+  {
+    "url": "https://www.diversitycollectivevc.org/about/",
+    "title": "About Us | Diversity Collective Ventura County",
+    "sourceDomain": "diversitycollectivevc.org",
+    "section": "Organization",
+    "contentSummary": "Mission, vision, core values statement, DEI commitment, 2014 founding history, and leadership biographies (Tess Allen, Roland Catabona, Steve Somann, Unique Dowtin, Luis Andrade, Celia Sandhya Daniels, AJ Holmes).",
+    "discoveredMedia": [
+      "/wp-content/uploads/board-photos/roland-catabona.jpg",
+      "/wp-content/uploads/board-photos/steve-somann.jpg",
+      "/wp-content/uploads/board-photos/celia-daniels.jpg"
+    ],
+    "crawlStatus": "SUCCESS"
+  },
+  {
+    "url": "https://www.diversitycollectivevc.org/programs/",
+    "title": "Programs & Services | Diversity Collective Ventura County",
+    "sourceDomain": "diversitycollectivevc.org",
+    "section": "Programs",
+    "contentSummary": "Overview of flagship community operations: Community Resource Center drop-in hours, Rainbow Umbrella (13-23), Little Unicorns (9-13), Diversity SHINES health initiatives, and cultural competency workshops.",
+    "discoveredMedia": [
+      "/wp-content/uploads/programs/crc-exterior.jpg",
+      "/wp-content/uploads/programs/youth-umbrella-flyer.png",
+      "/wp-content/uploads/programs/little-unicorns-art.png"
+    ],
+    "crawlStatus": "SUCCESS"
+  },
+  {
+    "url": "https://www.diversitycollectivevc.org/programs/rainbow-umbrella/",
+    "title": "Rainbow Umbrella Youth Peer Support | Diversity Collective",
+    "sourceDomain": "diversitycollectivevc.org",
+    "section": "Programs",
+    "contentSummary": "Weekly youth peer group (ages 13–23) meeting Fridays 5:30–7:30 PM at the CRC. Offers activities, check-ins, mental health resilience, and Pride Prom planning.",
+    "discoveredMedia": [
+      "/wp-content/uploads/programs/rainbow-umbrella-prom.jpg"
+    ],
+    "crawlStatus": "SUCCESS"
+  },
+  {
+    "url": "https://www.diversitycollectivevc.org/programs/little-unicorns/",
+    "title": "Little Unicorns (Ages 9–13) | Diversity Collective",
+    "sourceDomain": "diversitycollectivevc.org",
+    "section": "Programs",
+    "contentSummary": "Monthly youth gathering for younger LGBTQ+, questioning, and ally kids on the last Saturday of each month (1:00–3:00 PM) at the CRC and local parks.",
+    "discoveredMedia": [
+      "/wp-content/uploads/programs/little-unicorns-badge.png"
+    ],
+    "crawlStatus": "SUCCESS"
+  },
+  {
+    "url": "https://www.diversitycollectivevc.org/programs/diversity-shines/",
+    "title": "Diversity SHINES Health & Wellness | Diversity Collective",
+    "sourceDomain": "diversitycollectivevc.org",
+    "section": "Programs",
+    "contentSummary": "Sexual health education, free rapid confidential HIV and STI testing (syphilis, chlamydia, gonorrhea), PrEP/PEP linkage, MPOX coordination with VCPH, and 'SHINE With Me' safer sex kit distribution.",
+    "discoveredMedia": [
+      "/wp-content/uploads/health/shines-screening-room.jpg",
+      "/wp-content/uploads/health/shine-with-me-kit.png"
+    ],
+    "crawlStatus": "SUCCESS"
+  },
+  {
+    "url": "https://www.diversitycollectivevc.org/programs/community-resource-center/",
+    "title": "Community Resource Center | Diversity Collective",
+    "sourceDomain": "diversitycollectivevc.org",
+    "section": "Programs",
+    "contentSummary": "The physical hub at 2471 Portola Road, Suite 100, Ventura, CA 93003. Drop-in hours (1-5 PM weekdays), computer lab, lending library, peer groups, and harm reduction supplies.",
+    "discoveredMedia": [
+      "/wp-content/uploads/crc/crc-lounge.jpg",
+      "/wp-content/uploads/crc/computer-lab.jpg"
+    ],
+    "crawlStatus": "SUCCESS"
+  },
+  {
+    "url": "https://www.diversitycollectivevc.org/training-education/",
+    "title": "Cultural Competency & Educational Trainings | Diversity Collective",
+    "sourceDomain": "diversitycollectivevc.org",
+    "section": "Education",
+    "contentSummary": "P.R.I.D.E. 4-hour cultural competency workshops for educators, medical professionals, and corporate organizations, developed in partnership with Ventura County Behavioral Health.",
+    "discoveredMedia": [
+      "/wp-content/uploads/training/pride-training-flyer.pdf"
+    ],
+    "crawlStatus": "SUCCESS"
+  },
+  {
+    "url": "https://www.diversitycollectivevc.org/dcvc-events/",
+    "title": "DCVC Community Events | Diversity Collective",
+    "sourceDomain": "diversitycollectivevc.org",
+    "section": "Events",
+    "contentSummary": "Annual signature calendar: Ventura County Pride Festival, Diversity Gala, Pride Prom, and AIDS Walk Ventura, plus weekly/monthly peer groups.",
+    "discoveredMedia": [
+      "/wp-content/uploads/events/vc-pride-poster.jpg",
+      "/wp-content/uploads/events/diversity-gala-banner.jpg",
+      "/wp-content/uploads/events/aids-walk-sponsorship.pdf"
+    ],
+    "crawlStatus": "SUCCESS"
+  },
+  {
+    "url": "https://www.diversitycollectivevc.org/dcvc-events/#ventura-county-pride",
+    "title": "Ventura County Pride | Diversity Collective",
+    "sourceDomain": "diversitycollectivevc.org",
+    "section": "Events",
+    "contentSummary": "Seaside Pride festival celebrating community resilience, queer artists, food, and public health pavilion with free testing.",
+    "discoveredMedia": [
+      "/wp-content/uploads/events/vc-pride-volunteer-packet.pdf"
+    ],
+    "crawlStatus": "SUCCESS"
+  },
+  {
+    "url": "https://www.diversitycollectivevc.org/dcvc-events/#diversity-gala",
+    "title": "Diversity Gala | Diversity Collective",
+    "sourceDomain": "diversitycollectivevc.org",
+    "section": "Events",
+    "contentSummary": "Premier annual fundraising evening recognizing regional community leaders and corporate champions of equity.",
+    "discoveredMedia": [
+      "/wp-content/uploads/events/gala-table-sponsor-packet.pdf"
+    ],
+    "crawlStatus": "SUCCESS"
+  },
+  {
+    "url": "https://www.diversitycollectivevc.org/dcvc-events/#pride-prom",
+    "title": "Pride Prom | Diversity Collective",
+    "sourceDomain": "diversitycollectivevc.org",
+    "section": "Events",
+    "contentSummary": "Annual safe, affirming, sober prom for youth ages 13-23 hosted by Rainbow Umbrella.",
+    "discoveredMedia": [
+      "/wp-content/uploads/events/pride-prom-flyer.png"
+    ],
+    "crawlStatus": "SUCCESS"
+  },
+  {
+    "url": "https://www.diversitycollectivevc.org/dcvc-events/#aids-walk-ventura",
+    "title": "AIDS Walk Ventura | Diversity Collective",
+    "sourceDomain": "diversitycollectivevc.org",
+    "section": "Events",
+    "contentSummary": "Walk to remember those lost to HIV/AIDS, combat healthcare stigma, and raise funds for Diversity SHINES.",
+    "discoveredMedia": [
+      "/wp-content/uploads/events/aids-walk-route.jpg"
+    ],
+    "crawlStatus": "SUCCESS"
+  },
+  {
+    "url": "https://www.diversitycollectivevc.org/resources/",
+    "title": "LGBTQ+ Resources & Referrals | Diversity Collective",
+    "sourceDomain": "diversitycollectivevc.org",
+    "section": "Resources",
+    "contentSummary": "Community partner referrals: Ventura County Behavioral Health, Public Health, The Transverse, PFLAG Ventura, Silver Collective, and crisis helplines.",
+    "discoveredMedia": [],
+    "crawlStatus": "SUCCESS"
+  },
+  {
+    "url": "https://www.diversitycollectivevc.org/get-involved/",
+    "title": "Get Involved | Diversity Collective Ventura County",
+    "sourceDomain": "diversitycollectivevc.org",
+    "section": "Engagement",
+    "contentSummary": "High-level overview of ways to support DCVC: volunteer applications, direct donations, and corporate sponsorship opportunities.",
+    "discoveredMedia": [
+      "/wp-content/uploads/2023/08/DCVC_FundraisingBrochure_Web_ReplyCard_FINALHR.pdf"
+    ],
+    "crawlStatus": "SUCCESS"
+  },
+  {
+    "url": "https://www.diversitycollectivevc.org/volunteer/",
+    "title": "Volunteer With Us | Diversity Collective",
+    "sourceDomain": "diversitycollectivevc.org",
+    "section": "Engagement",
+    "contentSummary": "Volunteer application instructions for CRC greeters, event support, and youth mentoring.",
+    "discoveredMedia": [],
+    "crawlStatus": "SUCCESS"
+  },
+  {
+    "url": "https://www.diversitycollectivevc.org/get-involved/#donate",
+    "title": "Donate | Diversity Collective",
+    "sourceDomain": "diversitycollectivevc.org",
+    "section": "Engagement",
+    "contentSummary": "501(c)(3) donation appeals, EIN disclosure 46-5312131, and monthly sustaining donor opportunities.",
+    "discoveredMedia": [],
+    "crawlStatus": "SUCCESS"
+  },
+  {
+    "url": "https://www.diversitycollectivevc.org/contact/",
+    "title": "Contact Us | Diversity Collective Ventura County",
+    "sourceDomain": "diversitycollectivevc.org",
+    "section": "Contact",
+    "contentSummary": "Headquarters address at 2471 Portola Road, Suite 100, Ventura, CA 93003, phone (805) 644-5428, and info@diversitycollective.org.",
+    "discoveredMedia": [],
+    "crawlStatus": "SUCCESS"
+  },
+  {
+    "url": "https://www.diversitycollectivevc.org/news/",
+    "title": "News & Announcements | Diversity Collective",
+    "sourceDomain": "diversitycollectivevc.org",
+    "section": "News",
+    "contentSummary": "Archived blog posts and press dispatches on Pride dates, executive announcements, and health clinic expansions.",
+    "discoveredMedia": [],
+    "crawlStatus": "SUCCESS"
+  },
+  {
+    "url": "https://www.diversitycollectivevc.org/wp-login.php",
+    "title": "Legacy WordPress Login",
+    "sourceDomain": "diversitycollectivevc.org",
+    "section": "Admin",
+    "contentSummary": "Administrative CMS login path on legacy installation.",
+    "discoveredMedia": [],
+    "crawlStatus": "EXCLUDED"
+  }
+]
+

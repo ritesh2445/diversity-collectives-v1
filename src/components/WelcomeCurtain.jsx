@@ -21,42 +21,45 @@ export default function WelcomeCurtain() {
     }
   };
 
+  // Always listen for replay requests regardless of initial session state
   useEffect(() => {
+    const handleReplay = () => {
+      try {
+        sessionStorage.removeItem('dcvc_welcome_seen');
+      } catch {
+        // Graceful fallback
+      }
+      setKey((prev) => prev + 1);
+      setAnimating(true);
+    };
+
+    window.addEventListener('replayWelcomeAnimation', handleReplay);
+    return () => {
+      window.removeEventListener('replayWelcomeAnimation', handleReplay);
+    };
+  }, []);
+
+  // Manage animation auto-dismissal timer
+  useEffect(() => {
+    if (!animating) return;
+
     const isPaused = typeof window !== 'undefined' && (
       window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
       document.documentElement.getAttribute('data-a11y-pause-animations') === 'true'
     );
 
-    if (isPaused) {
+    // If reduced-motion is active and not an explicit replay button press
+    if (isPaused && key === 0) {
       setAnimating(false);
       return;
     }
-
-    if (!animating && key === 0) {
-      return;
-    }
-
-    setAnimating(true);
 
     const timer = setTimeout(() => {
       handleDismiss();
     }, 2500);
 
-    const handleReplay = () => {
-      setKey(prev => prev + 1);
-      setAnimating(true);
-      setTimeout(() => {
-        handleDismiss();
-      }, 2500);
-    };
-
-    window.addEventListener('replayWelcomeAnimation', handleReplay);
-
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('replayWelcomeAnimation', handleReplay);
-    };
-  }, [key]);
+    return () => clearTimeout(timer);
+  }, [animating, key]);
 
   if (!animating) return null;
 
@@ -151,6 +154,7 @@ export default function WelcomeCurtain() {
       {/* Top Skip Button */}
       <div className="absolute top-4 sm:top-6 right-4 sm:right-6 z-50 pointer-events-auto">
         <button
+          type="button"
           onClick={handleDismiss}
           className="px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full bg-black/75 text-white border border-white/25 text-[11px] sm:text-xs font-bold tracking-wider uppercase transition-colors hover:bg-black flex items-center gap-1.5 shadow-xl cursor-pointer"
         >

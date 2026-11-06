@@ -175,24 +175,24 @@ export default function AccessibilityStatement() {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
             <a
-              href={`tel:${orgInfo.phone.raw}`}
+              href={`tel:${orgInfo.phoneRaw}`}
               className="p-4 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/10 transition-colors flex items-center gap-3"
             >
               <Phone className="w-5 h-5 text-amber-400" aria-hidden="true" />
               <div>
                 <span className="text-[11px] text-slate-400 block font-bold uppercase">Phone</span>
-                <span className="text-xs font-bold text-white">{orgInfo.phone.display}</span>
+                <span className="text-xs font-bold text-white">{orgInfo.phone}</span>
               </div>
             </a>
 
             <a
-              href={`mailto:${orgInfo.email.general}`}
+              href={`mailto:${orgInfo.email}`}
               className="p-4 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/10 transition-colors flex items-center gap-3"
             >
               <Mail className="w-5 h-5 text-amber-400" aria-hidden="true" />
               <div>
                 <span className="text-[11px] text-slate-400 block font-bold uppercase">Email</span>
-                <span className="text-xs font-bold text-white">{orgInfo.email.general}</span>
+                <span className="text-xs font-bold text-white">{orgInfo.email}</span>
               </div>
             </a>
 
@@ -207,6 +207,18 @@ export default function AccessibilityStatement() {
                 <span className="text-[11px] text-slate-400 block font-bold uppercase">Sanctuary</span>
                 <span className="text-xs font-bold text-white">Ventura, CA 93003</span>
               </div>
+            </a>
+          </div>
+
+          <div className="pt-4 border-t border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <span className="text-xs text-slate-300">
+              Encountered a digital barrier or need materials in an alternative format?
+            </span>
+            <a
+              href="/accessibility-feedback"
+              className="btn-primary py-2.5 px-5 text-xs font-bold inline-flex items-center gap-2 shadow-sm"
+            >
+              Submit Accessibility Feedback
             </a>
           </div>
 

@@ -33,7 +33,8 @@
   /* Typography Stacks: Modern Professional Neo-Grotesk & Editorial Accents */
   --font-display: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-sans: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-serif: 'Newsreader', 'Cormorant Garamond', Georgia, serif;
+  --font-serif: 'Fraunces', 'Newsreader', 'Playfair Display', Georgia, serif;
+  --font-script: 'Caveat', cursive, sans-serif;
 
   /* Layout Max Width - Expansive Full Widescreen */
   --max-width: 1720px;
@@ -49,8 +50,17 @@ html {
   color: var(--text-heading);
   overflow-x: hidden;
   width: 100%;
-  max-width: 100vw;
+  max-width: 100%;
   -webkit-tap-highlight-color: transparent;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+#root {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
+  min-height: 100vh;
 }
 
 body {
@@ -71,8 +81,28 @@ body {
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'tnum';
   overflow-x: hidden;
   width: 100%;
-  max-width: 100vw;
+  max-width: 100%;
   -webkit-text-size-adjust: 100%;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+#root {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
+  min-height: 100vh;
+}
+
+/* Hide browser vertical scrollbar completely to prevent header/nav overlap */
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  -webkit-appearance: none;
+  background: transparent !important;
 }
 
 @layer base {
@@ -98,6 +128,15 @@ body {
 
 .font-serif {
   font-family: var(--font-serif);
+}
+
+.font-fraunces {
+  font-family: 'Fraunces', Georgia, serif;
+  font-optical-sizing: auto;
+}
+
+.font-script {
+  font-family: var(--font-script);
 }
 
 .font-sans {
@@ -339,7 +378,7 @@ img {
   gap: 0.6rem;
   padding: 0.875rem 2rem;
   font-size: 0.9rem;
-  font-weight: 600;
+  font-weight: 700;
   white-space: nowrap;
   flex-shrink: 0;
   border-radius: 9999px;
@@ -689,6 +728,370 @@ a:focus-visible, button:focus-visible {
 
 .animate-fadeIn {
   animation: fadeIn 0.2s ease forwards;
+}
+
+/* ==========================================================================
+   HIGH-FASHION EDITORIAL HERO TYPOGRAPHY & ANIMATIONS
+   ========================================================================== */
+
+/* ==========================================================================
+   HOLLOW GLASS VESSEL WITH FLOWING LIQUID RAINBOW COLORS
+   ========================================================================== */
+@keyframes liquid-flow-chroma {
+  0% {
+    background-position: 0% 50%;
+    filter: hue-rotate(0deg);
+  }
+  50% {
+    background-position: 100% 50%;
+    filter: hue-rotate(35deg);
+  }
+  100% {
+    background-position: 0% 50%;
+    filter: hue-rotate(0deg);
+  }
+}
+
+.hollow-liquid-vessel {
+  position: relative;
+  display: inline-block;
+  font-family: 'Fraunces', Georgia, serif;
+  font-style: italic;
+  font-weight: 700;
+  width: fit-content;
+}
+
+.hollow-liquid-vessel .liquid-fill {
+  background: linear-gradient(
+    115deg,
+    #E11D48 0%,
+    #EA580C 16%,
+    #F59E0B 32%,
+    #10B981 50%,
+    #06B6D4 68%,
+    #8B5CF6 84%,
+    #EC4899 94%,
+    #E11D48 100%
+  );
+  background-size: 260% 260%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: liquid-flow-chroma 5s ease-in-out infinite;
+  display: inline-block;
+  padding-right: 0.14em;
+  filter: drop-shadow(0 4px 14px rgba(168, 85, 247, 0.3));
+}
+
+.hollow-liquid-vessel .hollow-outline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  color: transparent;
+  -webkit-text-stroke: 1.75px #0F172A;
+  -webkit-text-fill-color: transparent;
+  pointer-events: none;
+  padding-right: 0.14em;
+  filter: drop-shadow(0 2px 8px rgba(15, 23, 42, 0.2));
+}
+
+/* Luminous, Living Gradient Italic for "Always" */
+.hero-gradient-italic {
+  font-family: 'Fraunces', 'Newsreader', Georgia, serif;
+  font-style: italic;
+  font-weight: 600;
+  background: linear-gradient(
+    120deg,
+    #E11D48 0%,
+    #F43F5E 15%,
+    #EA580C 30%,
+    #F59E0B 45%,
+    #10B981 60%,
+    #06B6D4 75%,
+    #8B5CF6 90%,
+    #E11D48 100%
+  );
+  background-size: 240% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: hero-gradient-flow 8s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
+  display: inline-block;
+  padding-right: 0.12em; /* Prevents italic glyph clipping */
+  letter-spacing: -0.015em;
+  filter: drop-shadow(0 2px 10px rgba(139, 92, 246, 0.18));
+}
+
+@keyframes hero-gradient-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Floating Aurora Orbs Ambient Motion */
+@keyframes aurora-drift-1 {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -20px) scale(1.06);
+  }
+  66% {
+    transform: translate(-20px, 25px) scale(0.96);
+  }
+}
+
+@keyframes aurora-drift-2 {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(-25px, 25px) scale(1.08);
+  }
+  66% {
+    transform: translate(35px, -15px) scale(0.94);
+  }
+}
+
+.animate-aurora-drift-1 {
+  animation: aurora-drift-1 14s ease-in-out infinite;
+}
+
+.animate-aurora-drift-2 {
+  animation: aurora-drift-2 18s ease-in-out infinite;
+}
+
+/* CTA Traveling Sheen Sweep */
+.btn-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-shimmer::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -60%;
+  width: 40%;
+  height: 200%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.32) 50%,
+    transparent 100%
+  );
+  transform: rotate(25deg);
+  animation: btn-sheen 6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes btn-sheen {
+  0%, 75% {
+    transform: translateX(-120%) rotate(25deg);
+  }
+  100% {
+    transform: translateX(450%) rotate(25deg);
+  }
+}
+
+/* 4-Pillar Accent Bar Hover Micro-Interactions */
+.pillar-card {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.pillar-card:hover {
+  background-color: rgba(255, 255, 255, 0.85);
+  transform: translateY(-2px);
+}
+
+.pillar-card .pillar-icon {
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.25s ease;
+}
+
+.pillar-card:hover .pillar-icon {
+  transform: translateY(-4px) scale(1.12);
+}
+
+.pillar-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%) scaleX(0);
+  width: 32px;
+  height: 2.5px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #5A1E65, #E11D48);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pillar-card:hover::after {
+  transform: translateX(-50%) scaleX(1);
+}
+
+/* ==========================================================================
+   ANIMATED THEMES ENGINE: Living gradients, fluid aurora waves & festival motion
+   ========================================================================== */
+
+/* 1. Liquid Rainbow Flow for Headline ("Always") */
+.animate-liquid-flow {
+  background: linear-gradient(
+    90deg,
+    #CA8A04 0%,
+    #059669 20%,
+    #06B6D4 40%,
+    #2563EB 60%,
+    #7C3AED 80%,
+    #CA8A04 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: liquidFlowRainbow 5s linear infinite;
+  display: inline-block;
+  padding-right: 0.12em;
+}
+
+@keyframes liquidFlowRainbow {
+  0% {
+    background-position: 0% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+/* 2. Fluid Aurora Ribbon Wave Undulation */
+.animate-ribbon-undulate {
+  animation: ribbonUndulate 10s ease-in-out infinite alternate;
+  transform-origin: center bottom;
+}
+
+@keyframes ribbonUndulate {
+  0% {
+    transform: translateY(0px) scaleY(1);
+  }
+  50% {
+    transform: translateY(-8px) scaleY(1.06) scaleX(1.02);
+  }
+  100% {
+    transform: translateY(4px) scaleY(0.96) scaleX(0.99);
+  }
+}
+
+.animate-ribbon-wave-slow {
+  animation: ribbonWaveSlow 14s ease-in-out infinite alternate;
+  transform-origin: center bottom;
+}
+
+@keyframes ribbonWaveSlow {
+  0% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-6px) rotate(0.4deg);
+  }
+  100% {
+    transform: translateY(5px) rotate(-0.4deg);
+  }
+}
+
+/* 3. Handwritten Script Gentle Breathing */
+.animate-script-breath {
+  animation: scriptBreath 6s ease-in-out infinite alternate;
+  display: inline-block;
+}
+
+@keyframes scriptBreath {
+  0% {
+    transform: rotate(-6deg) translateY(0px);
+  }
+  100% {
+    transform: rotate(-4.5deg) translateY(-4px);
+  }
+}
+
+/* 4. Festival Ambient Floating Motion */
+.animate-glow-pulse {
+  animation: glowPulse 4s ease-in-out infinite alternate;
+}
+
+@keyframes glowPulse {
+  0% {
+    opacity: 0.35;
+    transform: scale(0.98);
+  }
+  100% {
+    opacity: 0.75;
+    transform: scale(1.05);
+  }
+}
+
+.animate-star-twinkle {
+  animation: starTwinkle 3s ease-in-out infinite;
+}
+
+@keyframes starTwinkle {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(0.75) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2) rotate(15deg);
+  }
+}
+
+/* 5. Falling Pride Confetti Drift */
+.animate-confetti-drift {
+  animation: confettiDrift 7s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+}
+
+@keyframes confettiDrift {
+  0% {
+    transform: translateY(-20px) rotate(0deg) scale(0.85);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.85;
+  }
+  85% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateY(520px) rotate(540deg) scale(1.1);
+    opacity: 0;
+  }
+}
+
+/* Respect Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .hero-gradient-italic,
+  .animate-liquid-flow,
+  .animate-ribbon-undulate,
+  .animate-ribbon-wave-slow,
+  .animate-script-breath,
+  .animate-glow-pulse,
+  .animate-star-twinkle,
+  .animate-confetti-drift,
+  .animate-aurora-drift-1,
+  .animate-aurora-drift-2,
+  .btn-shimmer::after,
+  .pillar-card,
+  .pillar-card .pillar-icon {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
 }
 
 
