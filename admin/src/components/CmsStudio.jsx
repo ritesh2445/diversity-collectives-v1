@@ -473,17 +473,33 @@ export default function CmsStudio() {
                     </span>
                   </div>
 
-                  <div className="aspect-[16/9] rounded-2xl overflow-hidden bg-slate-900 relative">
-                    <img
-                      src={prog.heroImage}
-                      alt={prog.title}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src = '/images/crc-building.jpg';
-                      }}
-                    />
-                  </div>
+                  {(() => {
+                    const isContain = prog.imageFit === 'contain' || 
+                      prog.heroImage?.includes('crc-building') || 
+                      prog.heroImage?.includes('unicorns') || 
+                      prog.heroImage?.includes('logo');
+                    return (
+                      <div className="aspect-[16/9] rounded-2xl overflow-hidden bg-slate-900 relative flex items-center justify-center p-3">
+                        {isContain && (
+                          <img
+                            src={prog.heroImage}
+                            alt=""
+                            aria-hidden="true"
+                            className="absolute inset-0 w-full h-full object-cover blur-xl opacity-30 scale-125 pointer-events-none"
+                          />
+                        )}
+                        <img
+                          src={prog.heroImage}
+                          alt={prog.title}
+                          className={`w-full h-full ${isContain ? 'object-contain relative z-10' : 'object-cover'}`}
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = '/images/crc-building.jpg';
+                          }}
+                        />
+                      </div>
+                    );
+                  })()}
 
                   <div>
                     <h4 className="font-display text-lg font-black text-slate-950 leading-tight">
@@ -1411,6 +1427,28 @@ export default function CmsStudio() {
                     label="Program Header / Sanctuary Picture"
                     aspectRatio="aspect-[16/9]"
                   />
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-purple-50/50 border border-purple-100 rounded-2xl">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-800 mb-1">Image Framing & Fit</label>
+                      <select
+                        value={formData.imageFit || 'cover'}
+                        onChange={(e) => setFormData({ ...formData, imageFit: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs bg-white text-slate-900 font-semibold focus:ring-2 focus:ring-[#5A1E65]"
+                      >
+                        <option value="cover">Fill Card (Cover / Photo)</option>
+                        <option value="contain">Fit Whole Image (Contain / No Crop - Best for Logos & Graphics)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-800 mb-1">Cropping Protection</label>
+                      <p className="text-[11px] text-slate-600 leading-tight pt-1">
+                        {formData.imageFit === 'contain' 
+                          ? '✓ 100% of circular badges and logos are preserved with zero edge clipping.' 
+                          : 'Standard full-bleed cover frame. Use Adjust & Crop above if logos clip.'}
+                      </p>
+                    </div>
+                  </div>
 
                   <StyleCustomizer
                     fontSize={formData.fontSize || 'base'}

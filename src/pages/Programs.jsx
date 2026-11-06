@@ -65,29 +65,45 @@ export default function Programs() {
                     maxTilt={7}
                     glare={true}
                   >
-                    <div className="aspect-[16/11] relative overflow-hidden">
-                      <img 
-                        src={prog.heroImage} 
-                        alt={prog.title}
-                        className="w-full h-full object-cover group-hover:scale-106 transition-transform duration-700 ease-out"
-                        onError={(e) => {
-                          e.target.src = "/images/crc-building.jpg";
-                        }}
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
-                      
-                      <div 
-                        className="absolute top-4 left-4 px-3.5 py-1.5 bg-white/95 backdrop-blur-md rounded-full text-xs font-black tracking-wider uppercase shadow-md border border-slate-200"
-                        style={{ color: prog.accent || '#5A1E65' }}
-                      >
-                        PROGRAM {prog.chapter}
-                      </div>
+                    {(() => {
+                      const isContain = prog.imageFit === 'contain' || 
+                        prog.heroImage?.includes('crc-building') || 
+                        prog.heroImage?.includes('unicorns') || 
+                        prog.heroImage?.includes('logo');
+                      return (
+                        <div className="aspect-[16/11] relative overflow-hidden bg-slate-50 flex items-center justify-center">
+                          {isContain && (
+                            <img 
+                              src={prog.heroImage} 
+                              alt="" 
+                              aria-hidden="true"
+                              className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-30 scale-125 pointer-events-none"
+                            />
+                          )}
+                          <img 
+                            src={prog.heroImage} 
+                            alt={prog.title}
+                            className={`w-full h-full ${isContain ? 'object-contain p-6 relative z-10' : 'object-cover'} group-hover:scale-106 transition-transform duration-700 ease-out`}
+                            onError={(e) => {
+                              e.target.src = "/images/crc-building.jpg";
+                            }}
+                          />
+                          <div className={`absolute inset-0 ${isContain ? 'bg-gradient-to-t from-slate-950/40 via-transparent to-transparent' : 'bg-gradient-to-t from-slate-950/70 via-transparent to-transparent'} z-10`} />
+                          
+                          <div 
+                            className="absolute top-4 left-4 px-3.5 py-1.5 bg-white/95 backdrop-blur-md rounded-full text-xs font-black tracking-wider uppercase shadow-md border border-slate-200 z-20"
+                            style={{ color: prog.accent || '#5A1E65' }}
+                          >
+                            PROGRAM {prog.chapter}
+                          </div>
 
-                      <div className="absolute bottom-4 left-4 right-4 text-white text-xs flex items-center justify-between translate-z-10">
-                        <span className="font-bold drop-shadow-md">{prog.audience}</span>
-                        <span className="bg-slate-900/70 backdrop-blur-md px-2.5 py-1 rounded-full text-[11px] font-bold border border-white/20">100% Free Care</span>
-                      </div>
-                    </div>
+                          <div className="absolute bottom-4 left-4 right-4 text-white text-xs flex items-center justify-between translate-z-10 z-20">
+                            <span className="font-bold drop-shadow-md">{prog.audience}</span>
+                            <span className="bg-slate-900/70 backdrop-blur-md px-2.5 py-1 rounded-full text-[11px] font-bold border border-white/20">100% Free Care</span>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </CardSpotlight>
                 </div>
 

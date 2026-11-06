@@ -8,9 +8,12 @@ import {
   ExternalLink,
   FolderOpen,
   Eye,
-  RefreshCw
+  RefreshCw,
+  Crop,
+  Sliders
 } from 'lucide-react';
 import { DCVC_IMAGE_LIBRARY, uploadAndStoreImage, optimizeImageFile } from '../services/imageService.js';
+import ImageCropperModal from './ImageCropperModal.jsx';
 
 export default function ImagePicker({ 
   value, 
@@ -23,28 +26,50 @@ export default function ImagePicker({
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [optimizeStatus, setOptimizeStatus] = useState('');
   const [showDirectUrlInput, setShowDirectUrlInput] = useState(false);
+  const [showCropper, setShowCropper] = useState(false);
+  const [cropperSource, setCropperSource] = useState(null);
   const fileInputRef = useRef(null);
 
-  const handleFileChange = async (e) => {
+  // When user selects a file from computer, load into Cropper Studio first
+  const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCropperSource(reader.result);
+      setShowCropper(true);
+    };
+    reader.readAsDataURL(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  // Open cropper for currently selected image
+  const handleOpenCropperForCurrent = () => {
+    if (!value) return;
+    setCropperSource(value);
+    setShowCropper(true);
+  };
+
+  // Handle Cropper Apply
+  const handleCropperApply = async (croppedFile, previewUrl) => {
+    setShowCropper(false);
     try {
       setIsOptimizing(true);
-      setOptimizeStatus('Optimizing image for web...');
+      setOptimizeStatus('Optimizing & storing cropped image...');
 
-      const result = await uploadAndStoreImage(file);
+      const result = await uploadAndStoreImage(croppedFile);
       onChange(result.url);
 
       const kbSaved = ((result.sizeBytes || 0) / 1024).toFixed(0);
-      setOptimizeStatus(`✓ Optimized & applied (${kbSaved} KB)`);
+      setOptimizeStatus(`✓ Cropped & saved (${kbSaved} KB)`);
       setTimeout(() => setOptimizeStatus(''), 4000);
     } catch (err) {
-      alert('Failed to process image: ' + err.message);
+      alert('Failed to process cropped image: ' + err.message);
+      if (previewUrl) onChange(previewUrl);
       setOptimizeStatus('');
     } finally {
       setIsOptimizing(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -108,6 +133,17 @@ export default function ImagePicker({
             {value && (
               <button
                 type="button"
+                onClick={handleOpenCropperForCurrent}
+                className="px-3 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-bold shadow-md cursor-pointer flex items-center gap-1.5"
+                title="Adjust framing, zoom, or aspect ratio"
+              >
+                <Crop className="w-3.5 h-3.5 text-slate-950" />
+                <span>Adjust & Crop</span>
+              </button>
+            )}
+            {value && (
+              <button
+                type="button"
                 onClick={() => onChange('')}
                 className="p-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white cursor-pointer"
                 title="Remove Picture"
@@ -148,6 +184,17 @@ export default function ImagePicker({
           <FolderOpen className="w-3.5 h-3.5 text-amber-600" />
           <span>Select from DCVC Photos</span>
         </button>
+
+        {value && (
+          <button
+            type="button"
+            onClick={handleOpenCropperForCurrent}
+            className="px-3 py-1.5 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-950 text-xs font-bold cursor-pointer flex items-center gap-1.5 transition-colors shadow-2xs"
+          >
+            <Crop className="w-3.5 h-3.5 text-amber-700" />
+            <span>Adjust & Crop</span>
+          </button>
+        )}
 
         {optimizeStatus && (
           <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 animate-fade-in">
@@ -245,6 +292,19 @@ export default function ImagePicker({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Interactive Crop & Adjustment Studio Modal */}
+      {showCropper && cropperSource && (
+        <ImageCropperModal
+          imageSrc={cropperSource}
+          initialAspect={aspectRatio.includes('16/9') ? '16:9' : aspectRatio.includes('1/1') ? '1:1' : '16:9'}
+          onApply={handleCropperApply}
+          onCancel={() => {
+            setShowCropper(false);
+            setCropperSource(null);
+          }}
+        />
       )}
     </div>
   );

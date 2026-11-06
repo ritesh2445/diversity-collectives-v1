@@ -122,21 +122,37 @@ export default function ProgramDetail() {
           </div>
 
           <div className="lg:col-span-5 perspective-1000">
-            <CardSpotlight
-              className="rounded-3xl shadow-2xl overflow-hidden aspect-[4/5] border-2 border-slate-200 group interactive-card-3d"
-              tilt={true}
-              maxTilt={6}
-              glare={true}
-            >
-              <img 
-                src={program.heroImage} 
-                alt={program.title}
-                className="w-full h-full object-cover group-hover:scale-106 transition-transform duration-700 ease-out"
-                onError={(e) => {
-                  e.target.src = "/images/crc-building.jpg";
-                }}
-              />
-            </CardSpotlight>
+            {(() => {
+              const isContain = program.imageFit === 'contain' || 
+                program.heroImage?.includes('crc-building') || 
+                program.heroImage?.includes('unicorns') || 
+                program.heroImage?.includes('logo');
+              return (
+                <CardSpotlight
+                  className={`rounded-3xl shadow-2xl overflow-hidden aspect-[4/5] border-2 border-slate-200 group interactive-card-3d relative ${isContain ? 'bg-slate-50 flex items-center justify-center p-8' : ''}`}
+                  tilt={true}
+                  maxTilt={6}
+                  glare={true}
+                >
+                  {isContain && (
+                    <img 
+                      src={program.heroImage} 
+                      alt="" 
+                      aria-hidden="true"
+                      className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-30 scale-125 pointer-events-none"
+                    />
+                  )}
+                  <img 
+                    src={program.heroImage} 
+                    alt={program.title}
+                    className={`w-full h-full ${isContain ? 'object-contain relative z-10' : 'object-cover'} group-hover:scale-106 transition-transform duration-700 ease-out`}
+                    onError={(e) => {
+                      e.target.src = "/images/crc-building.jpg";
+                    }}
+                  />
+                </CardSpotlight>
+              );
+            })()}
           </div>
 
         </div>

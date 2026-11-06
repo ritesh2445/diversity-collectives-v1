@@ -1377,17 +1377,33 @@ export default function Home() {
                   glare={true}
                 >
                   <div>
-                    <div className="aspect-[16/10] overflow-hidden bg-slate-100 relative group">
-                      <img 
-                        src={program.heroImage} 
-                        alt={program.title}
-                        className="w-full h-full object-cover group-hover:scale-106 transition-transform duration-500 ease-out"
-                        onError={(e) => {
-                          e.target.src = "/images/crc-building.jpg";
-                        }}
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </div>
+                    {(() => {
+                      const isContain = program.imageFit === 'contain' || 
+                        program.heroImage?.includes('crc-building') || 
+                        program.heroImage?.includes('unicorns') || 
+                        program.heroImage?.includes('logo');
+                      return (
+                        <div className="aspect-[16/10] overflow-hidden bg-slate-50 relative group flex items-center justify-center">
+                          {isContain && (
+                            <img 
+                              src={program.heroImage} 
+                              alt="" 
+                              aria-hidden="true"
+                              className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-30 scale-125 pointer-events-none"
+                            />
+                          )}
+                          <img 
+                            src={program.heroImage} 
+                            alt={program.title}
+                            className={`w-full h-full ${isContain ? 'object-contain p-6 relative z-10' : 'object-cover'} group-hover:scale-106 transition-transform duration-500 ease-out`}
+                            onError={(e) => {
+                              e.target.src = "/images/crc-building.jpg";
+                            }}
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10" />
+                        </div>
+                      );
+                    })()}
 
                     <div className="p-6 md:p-8 flex flex-col gap-2.5">
                       <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border w-fit block shadow-2xs ${audienceBadgeColor}`}>
