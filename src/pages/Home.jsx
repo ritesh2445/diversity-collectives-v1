@@ -921,12 +921,12 @@ export default function Home() {
         </div>
 
         {/* ====================================================================
-            FULL-BLEED FOREGROUND WAVE CROSSOVER EXTENDING FLUSH TO BREAK LINE (DESIGN 1)
-            - Sweeps across the bottom of the photo frame from left to right.
+            FULL-BLEED FOREGROUND WAVE CROSSOVER EXTENDING FLUSH TO BREAK LINE
+            - Sweeps across the bottom of the hero section from left to right.
             - Saturated, high-contrast, rich Pride gradients with white luminous crest.
             - Connects seamlessly with ZERO gaps directly to the first break line.
             ==================================================================== */}
-        {!isDesign2 && activeThemeObj.category !== 'festival' && (
+        {activeThemeObj.category !== 'festival' && (
           <div className="relative w-full -mt-6 sm:-mt-8 md:-mt-10 lg:-mt-12 pointer-events-none z-10 overflow-hidden leading-none select-none">
             <svg 
               className="w-full h-24 sm:h-32 md:h-44 lg:h-52 block filter drop-shadow-[0_-8px_18px_rgba(217,70,239,0.28)]" 
