@@ -440,7 +440,7 @@ export default function Home() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 xl:gap-10 items-center">
               
               {/* Left Column: Eyebrow + Headline + Copy + 3 Stacked Action Pills */}
-              <div className="lg:col-span-7 xl:col-span-6 flex flex-col justify-center gap-5 sm:gap-6 z-10 pb-2 sm:pb-4 lg:pb-8">
+              <div className="lg:col-span-7 xl:col-span-6 flex flex-col justify-center gap-5 sm:gap-6 z-10 pb-6 sm:pb-8 lg:pb-12">
                 <div className="flex flex-col gap-2.5 sm:gap-3.5">
                   
                   {/* Authentic Unboxed Eyebrow Typography Matching Reference Mockup */}
@@ -463,8 +463,8 @@ export default function Home() {
                   </p>
                 </div>
 
-                {/* 3 Action Pill Buttons (Stacked with Rich Gradients & High Contrast) */}
-                <div className="flex flex-col gap-3 w-full sm:max-w-md pt-1">
+                {/* 3 Action Pill Buttons (Stacked with Rich Gradients & High Contrast, Safe Z-Index) */}
+                <div className="flex flex-col gap-3 w-full sm:max-w-md pt-1 relative z-30">
                   {/* 1. Primary CTA - Explore Free Programs */}
                   <Link 
                     to="/programs" 
@@ -602,7 +602,7 @@ export default function Home() {
             - Connects seamlessly with ZERO gaps directly to the first break line.
             ==================================================================== */}
         {activeThemeObj.category !== 'festival' && (
-          <div className="relative w-full -mt-16 sm:-mt-24 md:-mt-32 lg:-mt-36 pointer-events-none z-20 overflow-hidden leading-none select-none">
+          <div className="relative w-full -mt-6 sm:-mt-8 md:-mt-10 lg:-mt-12 pointer-events-none z-10 overflow-hidden leading-none select-none">
             <svg 
               className="w-full h-24 sm:h-32 md:h-44 lg:h-52 block filter drop-shadow-[0_-8px_18px_rgba(217,70,239,0.28)]" 
               viewBox="0 0 1440 220" 
@@ -635,20 +635,20 @@ export default function Home() {
                 </linearGradient>
               </defs>
 
-              {/* Ribbon 1: Golden Amber base flowing edge-to-edge */}
+              {/* Ribbon 1: Golden Amber base flowing edge-to-edge (Guaranteed low on left for 100% button clearance) */}
               <path
-                d="M 0,150 C 240,160 480,130 720,105 C 960,80 1200,60 1440,90 L 1440,220 L 0,220 Z"
+                d="M 0,210 C 300,210 580,200 750,150 C 950,95 1180,75 1440,105 L 1440,220 L 0,220 Z"
                 fill="url(#vibrant-wave-amber)"
               />
 
               {/* Ribbon 2: Saturated Magenta crest sweeping over photo with luminous white stroke */}
               <g className="animate-ribbon-undulate">
                 <path
-                  d="M 0,130 C 220,140 460,100 700,70 C 940,38 1180,35 1440,65 L 1440,220 L 0,220 Z"
+                  d="M 0,200 C 300,200 560,185 740,125 C 920,68 1160,50 1440,80 L 1440,220 L 0,220 Z"
                   fill="url(#vibrant-wave-magenta)"
                 />
                 <path
-                  d="M 0,130 C 220,140 460,100 700,70 C 940,38 1180,35 1440,65"
+                  d="M 0,200 C 300,200 560,185 740,125 C 920,68 1160,50 1440,80"
                   stroke="rgba(255, 255, 255, 0.95)"
                   strokeWidth="3.5"
                   strokeLinecap="round"
@@ -659,11 +659,11 @@ export default function Home() {
               {/* Ribbon 3: Oceanic Cyan & Emerald with flowing highlight */}
               <g className="animate-ribbon-wave-slow">
                 <path
-                  d="M 0,165 C 260,175 520,140 780,110 C 1020,78 1240,75 1440,95 L 1440,220 L 0,220 Z"
+                  d="M 0,212 C 320,212 590,205 770,145 C 960,88 1200,68 1440,95 L 1440,220 L 0,220 Z"
                   fill="url(#vibrant-wave-cyan)"
                 />
                 <path
-                  d="M 0,165 C 260,175 520,140 780,110 C 1020,78 1240,75 1440,95"
+                  d="M 0,212 C 320,212 590,205 770,145 C 960,88 1200,68 1440,95"
                   stroke="rgba(255, 255, 255, 0.85)"
                   strokeWidth="2.5"
                   strokeLinecap="round"
