@@ -945,18 +945,20 @@ a:focus-visible, button:focus-visible {
 .animate-liquid-flow {
   background: linear-gradient(
     90deg,
-    #CA8A04 0%,
-    #059669 20%,
-    #06B6D4 40%,
-    #2563EB 60%,
-    #7C3AED 80%,
-    #CA8A04 100%
+    #EF4444 0%,
+    #F97316 15%,
+    #F59E0B 30%,
+    #10B981 48%,
+    #06B6D4 65%,
+    #8B5CF6 82%,
+    #EC4899 95%,
+    #EF4444 100%
   );
   background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  animation: liquidFlowRainbow 5s linear infinite;
+  animation: liquidFlowRainbow 7s linear infinite;
   display: inline-block;
   padding-right: 0.12em;
 }

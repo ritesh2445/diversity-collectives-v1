@@ -133,3 +133,74 @@ export function formatDonationAmount(centsOrDollars, isCents = false) {
   }).format(dollars);
 }
 
+/**
+ * Retrieve active tier configurations, including any customizations made by staff in the Admin Portal
+ */
+export function getActiveTierConfigs() {
+  if (typeof window === 'undefined') return TIER_CONFIGS;
+  try {
+    const custom = localStorage.getItem('dcvc_admin_card_tiers');
+    if (custom) {
+      const parsed = JSON.parse(custom);
+      return {
+        ...TIER_CONFIGS,
+        ...parsed
+      };
+    }
+  } catch {}
+  return TIER_CONFIGS;
+}
+
+/**
+ * Retrieve special custom cards created by staff in the Admin Portal
+ */
+export function getCustomSpecialCards() {
+  if (typeof window === 'undefined') return [];
+  try {
+    const saved = localStorage.getItem('dcvc_admin_custom_cards');
+    if (saved) return JSON.parse(saved);
+  } catch {}
+  return [
+    {
+      id: 'custom-pride-gala-2026',
+      title: 'Ventura County Pride Gala Sponsor',
+      circleName: 'Gala Benefactor Circle',
+      certificatePrefix: 'GALA',
+      minAmount: 1000,
+      accentColor: '#F59E0B',
+      themeGradient: 'from-amber-400 via-rose-500 to-purple-800',
+      badgeText: 'PRIDE GALA SPONSOR',
+      tagline: 'Illuminating Equality Across Ventura County',
+      impactNarrative: 'Presented in tribute for underwriting the 2026 Ventura County Pride Festival and Gala, ensuring our annual celebration remains forever free, accessible, and affirming for all 10 county cities.',
+      quote: '"Your visionary sponsorship transforms our community gathering into an enduring beacon of queer joy and safety."',
+      insignia: 'Prismatic Starlight & 24K Gala Laurel',
+      motif: 'sovereign_gold_crest',
+      signee1Name: 'Tess Allen',
+      signee1Title: 'Executive Director · DCVC',
+      signee2Name: 'Roland Catabona',
+      signee2Title: 'President, Board of Directors',
+      createdAt: '2026-02-15'
+    },
+    {
+      id: 'custom-youth-champion',
+      title: 'Rainbow Umbrella Youth Champion',
+      circleName: 'Youth Guardian Circle',
+      certificatePrefix: 'YOUTH',
+      minAmount: 250,
+      accentColor: '#10B981',
+      themeGradient: 'from-emerald-500 via-teal-500 to-purple-700',
+      badgeText: 'YOUTH CHAMPION',
+      tagline: 'Nurturing the Next Generation of Leaders',
+      impactNarrative: 'Dedicated in grateful appreciation for sustaining safe peer circles, mental health resilience, and the annual Youth Pride Prom for LGBTQ+ youth ages 13 to 23.',
+      quote: '"Because you stood up for our youth, hundreds of young people found a community where they can thrive without fear."',
+      insignia: 'Emerald Laurel & Guiding Beacon',
+      motif: 'pride_aurora_ribbons',
+      signee1Name: 'Tess Allen',
+      signee1Title: 'Executive Director · DCVC',
+      signee2Name: 'Sofia Rodriguez',
+      signee2Title: 'Youth & Sanctuary Programs Lead',
+      createdAt: '2026-03-01'
+    }
+  ];
+}
+

@@ -27,7 +27,9 @@ import {
   APPRECIATION_TIERS, 
   TIER_CONFIGS, 
   getTierForAmount, 
-  formatDonationAmount 
+  formatDonationAmount,
+  getActiveTierConfigs,
+  getCustomSpecialCards
 } from '../data/appreciationTiers';
 import { usePageMeta } from '../utils/seo';
 
@@ -523,13 +525,19 @@ export default function AppreciationCard() {
 
   // Fetch real card data by token
   useEffect(() => {
+    const activeConfigs = getActiveTierConfigs();
+    const customCards = getCustomSpecialCards();
+
     if (isPreview) {
-      const config = TIER_CONFIGS[activeTierId];
+      const config = customCards.find(c => c.id === activeTierId) || 
+        activeConfigs[activeTierId] || 
+        activeConfigs[APPRECIATION_TIERS.PRIDE_ADVOCATE];
+
       setCardData({
         donorDisplayName: customDonorName || 'Affirming Community Supporter',
         tier: activeTierId,
         tierName: config.title,
-        amountCents: config.minAmount * 100,
+        amountCents: (config.minAmount || 50) * 100,
         frequency: 'monthly',
         isAnonymous: false,
         impactMessage: config.impactNarrative,
@@ -558,7 +566,7 @@ export default function AppreciationCard() {
             amountCents: 5000,
             frequency: 'one-time',
             isAnonymous: false,
-            impactMessage: TIER_CONFIGS[APPRECIATION_TIERS.PRIDE_ADVOCATE].impactNarrative,
+            impactMessage: activeConfigs[APPRECIATION_TIERS.PRIDE_ADVOCATE]?.impactNarrative || 'Supporting DCVC community sanctuary and wellness.',
             createdAt: new Date().toISOString()
           });
         }
@@ -571,7 +579,7 @@ export default function AppreciationCard() {
           amountCents: 5000,
           frequency: 'one-time',
           isAnonymous: false,
-          impactMessage: TIER_CONFIGS[APPRECIATION_TIERS.PRIDE_ADVOCATE].impactNarrative,
+          impactMessage: activeConfigs[APPRECIATION_TIERS.PRIDE_ADVOCATE]?.impactNarrative || 'Supporting DCVC community sanctuary and wellness.',
           createdAt: new Date().toISOString()
         });
       } finally {
@@ -630,7 +638,11 @@ export default function AppreciationCard() {
     window.print();
   };
 
-  const currentTier = TIER_CONFIGS[cardData?.tier || activeTierId] || TIER_CONFIGS[APPRECIATION_TIERS.COMMUNITY_ALLY];
+  const activeConfigs = getActiveTierConfigs();
+  const customCards = getCustomSpecialCards();
+  const currentTier = customCards.find(c => c.id === (cardData?.tier || activeTierId)) || 
+    activeConfigs[cardData?.tier || activeTierId] || 
+    activeConfigs[APPRECIATION_TIERS.COMMUNITY_ALLY];
 
   // Unique verified certificate token code
   const certificateId = `DCVC-AC-${currentTier.certificatePrefix || 'GEN'}-2026-${(token || 'PREVIEW').substring(0, 6).toUpperCase()}`;
@@ -694,9 +706,9 @@ export default function AppreciationCard() {
             </div>
           </div>
 
-          {/* Tier Switcher Buttons */}
+          {/* Core Tier Switcher Buttons */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {Object.values(TIER_CONFIGS).map((tier) => {
+            {Object.values(activeConfigs).map((tier) => {
               const isSelected = activeTierId === tier.id;
               return (
                 <button
@@ -725,6 +737,44 @@ export default function AppreciationCard() {
               );
             })}
           </div>
+
+          {/* Special Custom Cards Switcher */}
+          {customCards.length > 0 && (
+            <div className="pt-2 border-t border-slate-100">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-purple-900 block mb-1.5 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <span>Special Commemorative Custom Cards ({customCards.length})</span>
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {customCards.map((card) => {
+                  const isSelected = activeTierId === card.id;
+                  return (
+                    <button
+                      key={card.id}
+                      type="button"
+                      onClick={() => {
+                        setActiveTierId(card.id);
+                        setIsOpened(false);
+                      }}
+                      className={`py-2 px-3 rounded-xl text-xs font-bold transition-all text-left flex items-center justify-between cursor-pointer border ${
+                        isSelected
+                          ? 'bg-[#5A1E65] text-white border-[#5A1E65] shadow-xs ring-1 ring-purple-400'
+                          : 'bg-amber-50/70 hover:bg-amber-100/70 border-amber-200 text-slate-800'
+                      }`}
+                    >
+                      <div className="truncate pr-2">
+                        <span className="block font-black text-xs truncate">{card.title}</span>
+                        <span className="block text-[10px] opacity-80">{card.circleName}</span>
+                      </div>
+                      <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-black/10 flex-shrink-0">
+                        ${card.minAmount}+
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Recipient Customizer & State Reset */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1 text-xs">
@@ -893,10 +943,10 @@ export default function AppreciationCard() {
               {/* BESPOKE TIER ARTWORK ILLUSTRATION (Original Concept)          */}
               {/* ============================================================= */}
               <div className="w-full">
-                {activeTierId === APPRECIATION_TIERS.COMMUNITY_ALLY && <CommunityAllyArtwork />}
-                {activeTierId === APPRECIATION_TIERS.PRIDE_ADVOCATE && <PrideAdvocateArtwork />}
-                {activeTierId === APPRECIATION_TIERS.RAINBOW_CHAMPION && <RainbowChampionArtwork />}
-                {activeTierId === APPRECIATION_TIERS.VISIONARY_BENEFACTOR && <VisionaryBenefactorArtwork />}
+                {(currentTier.motif === 'botanical_sunrise' || activeTierId === APPRECIATION_TIERS.COMMUNITY_ALLY) && <CommunityAllyArtwork />}
+                {(currentTier.motif === 'interconnected_rings' || activeTierId === APPRECIATION_TIERS.PRIDE_ADVOCATE) && <PrideAdvocateArtwork />}
+                {(currentTier.motif === 'pride_aurora_ribbons' || activeTierId === APPRECIATION_TIERS.RAINBOW_CHAMPION) && <RainbowChampionArtwork />}
+                {(currentTier.motif === 'sovereign_gold_crest' || activeTierId === APPRECIATION_TIERS.VISIONARY_BENEFACTOR || (!currentTier.motif && activeTierId !== APPRECIATION_TIERS.COMMUNITY_ALLY && activeTierId !== APPRECIATION_TIERS.PRIDE_ADVOCATE && activeTierId !== APPRECIATION_TIERS.RAINBOW_CHAMPION)) && <VisionaryBenefactorArtwork />}
               </div>
 
               {/* ============================================================= */}
@@ -935,22 +985,22 @@ export default function AppreciationCard() {
               {/* ============================================================= */}
               <div className="pt-6 border-t border-slate-300/40 grid grid-cols-1 sm:grid-cols-3 gap-6 items-end mt-8">
                 
-                {/* Executive Director Signature */}
+                {/* Executive Director / Primary Signee */}
                 <div className="space-y-1 text-center sm:text-left">
                   <span className="font-fraunces italic font-bold text-slate-800 text-xl block">
-                    Tess Allen
+                    {currentTier.signee1Name || 'Tess Allen'}
                   </span>
-                  <p className="text-xs font-bold text-slate-900">Tess Allen</p>
-                  <p className="text-[10px] text-slate-500">Executive Director · DCVC</p>
+                  <p className="text-xs font-bold text-slate-900">{currentTier.signee1Name || 'Tess Allen'}</p>
+                  <p className="text-[10px] text-slate-500">{currentTier.signee1Title || 'Executive Director · DCVC'}</p>
                 </div>
 
-                {/* Board President Signature */}
+                {/* Board President / Secondary Signee */}
                 <div className="space-y-1 text-center sm:text-left">
                   <span className="font-fraunces italic font-bold text-slate-800 text-xl block">
-                    Roland Catabona
+                    {currentTier.signee2Name || 'Roland Catabona'}
                   </span>
-                  <p className="text-xs font-bold text-slate-900">Roland Catabona</p>
-                  <p className="text-[10px] text-slate-500">President, Board of Directors</p>
+                  <p className="text-xs font-bold text-slate-900">{currentTier.signee2Name || 'Roland Catabona'}</p>
+                  <p className="text-[10px] text-slate-500">{currentTier.signee2Title || 'President, Board of Directors'}</p>
                 </div>
 
                 {/* Official 501(c)(3) Seal */}

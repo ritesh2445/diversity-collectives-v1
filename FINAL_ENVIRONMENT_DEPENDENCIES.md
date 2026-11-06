@@ -164,3 +164,4 @@ Before launch, obtain confirmation from DCVC Executive Director Tess Allen and B
    - Accessibility Barrier Reports: `accessibility@diversitycollective.org`
 3. **High-Resolution Photography**: Final high-res portrait headshots for the 8 Board and Staff members.
 4. **Staff & Board Training Session**: Confirm date for the 60-minute recorded virtual walkthrough of Sanity Studio and the Admin Management Portal.
+

@@ -360,31 +360,28 @@ export default function Home() {
           HERO SECTION: DYNAMIC MULTI-THEME DISPATCHER
           Vibrant Multi-Color Aurora Canvas with Rich Gradients & Eye-Catchy Aesthetics
           ==================================================================== */}
-      <section className="relative overflow-hidden pt-4 sm:pt-6 bg-gradient-to-b from-[#FFFDF9] via-[#FAF5FF] via-[#FFF5F8] to-[#FDF4FF] border-b border-purple-200/60">
+      <section className="relative overflow-hidden pt-3 sm:pt-6 bg-[#FAF7F2] border-b border-purple-200/60">
         
-        {/* Full-Bleed Ambient Radiant Multi-Color Aurora Atmosphere (z-0) */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none z-0" aria-hidden="true">
-          {/* Orb 1: Upper-Left Glowing Amethyst & Fuchsia */}
-          <div className="absolute -top-20 -left-20 w-[36rem] h-[36rem] rounded-full bg-gradient-to-br from-purple-500/25 via-fuchsia-500/18 to-transparent blur-3xl animate-pulse" style={{ animationDuration: '7s' }} />
+        {/* Full-Bleed Ambient Radiant Aurora Atmosphere & Back Ribbon Stream (z-0) */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
+          {/* Ambient Glowing Aurora Orbs */}
+          <div className="absolute -top-24 -left-20 w-[36rem] h-[36rem] rounded-full bg-gradient-to-br from-purple-500/20 via-fuchsia-500/15 to-transparent blur-3xl animate-pulse" style={{ animationDuration: '7s' }} />
+          <div className="absolute -top-20 -right-20 w-[42rem] h-[42rem] rounded-full bg-gradient-to-bl from-amber-400/30 via-rose-400/25 to-purple-400/20 blur-3xl animate-aurora-drift-1" />
+          <div className="absolute bottom-10 left-1/4 w-[36rem] h-[36rem] rounded-full bg-gradient-to-tr from-teal-400/20 via-sky-400/18 to-transparent blur-3xl animate-aurora-drift-2" />
 
-          {/* Orb 2: Upper-Right Radiant Sunburst Coral & Gold */}
-          <div className="absolute -top-16 -right-16 w-[38rem] h-[38rem] rounded-full bg-gradient-to-bl from-amber-400/30 via-rose-400/25 to-purple-400/15 blur-3xl animate-aurora-drift-1" />
-
-          {/* Orb 3: Center-Bottom Glowing Oceanic Teal & Sky Blue */}
-          <div className="absolute bottom-10 left-1/3 w-[32rem] h-[32rem] rounded-full bg-gradient-to-tr from-teal-400/20 via-sky-400/18 to-transparent blur-3xl animate-aurora-drift-2" />
-
-          {/* Unified Full-Bleed Back Aurora Stream passing smoothly behind photo */}
-          <svg className="w-full h-full min-h-[550px] opacity-75" viewBox="0 0 1440 800" fill="none" preserveAspectRatio="none">
+          {/* Sweeping Back Aurora Wave Stream looping from upper-right down behind the photo frame */}
+          <svg className="w-full h-full min-h-[700px] opacity-80" viewBox="0 0 1440 900" fill="none" preserveAspectRatio="none">
             <defs>
               <linearGradient id="aurora-stream-back" x1="100%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.45" />
-                <stop offset="30%" stopColor="#F43F5E" stopOpacity="0.4" />
-                <stop offset="65%" stopColor="#C026D3" stopOpacity="0.35" />
-                <stop offset="100%" stopColor="#38BDF8" stopOpacity="0" />
+                <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.55" />
+                <stop offset="25%" stopColor="#FB7185" stopOpacity="0.5" />
+                <stop offset="55%" stopColor="#D946EF" stopOpacity="0.45" />
+                <stop offset="80%" stopColor="#8B5CF6" stopOpacity="0.35" />
+                <stop offset="100%" stopColor="#06B6D4" stopOpacity="0.2" />
               </linearGradient>
             </defs>
             <path
-              d="M 1440,0 C 1200,180 1020,320 800,450 C 580,580 320,680 0,720 L 0,800 L 1440,800 Z"
+              d="M 1440,0 C 1200,80 1000,240 920,440 C 840,640 680,780 400,850 C 200,890 0,900 0,900 L 1440,900 Z"
               fill="url(#aurora-stream-back)"
             />
           </svg>
@@ -446,18 +443,15 @@ export default function Home() {
               <div className="lg:col-span-7 xl:col-span-6 flex flex-col justify-center gap-5 sm:gap-6 z-10 pb-2 sm:pb-4 lg:pb-8">
                 <div className="flex flex-col gap-2.5 sm:gap-3.5">
                   
-                  {/* Jewel-Toned Glowing Eyebrow Badge */}
-                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-purple-100/90 via-pink-100/90 to-amber-100/90 border border-purple-300/80 shadow-2xs self-start">
-                    <span className="w-2 h-2 rounded-full bg-gradient-to-tr from-amber-400 via-rose-500 to-purple-600 animate-pulse"></span>
-                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.22em] bg-gradient-to-r from-[#5A1E65] via-purple-800 to-rose-700 bg-clip-text text-transparent">
-                      ESTABLISHED 2014 • VENTURA COUNTY 501(C)(3) NONPROFIT
-                    </span>
+                  {/* Authentic Unboxed Eyebrow Typography Matching Reference Mockup */}
+                  <div className="text-[10.5px] sm:text-xs font-black uppercase tracking-[0.22em] text-slate-800/90 self-start">
+                    ESTABLISHED 2014 • VENTURA COUNTY 501(C)(3) NONPROFIT
                   </div>
 
                   {/* Editorial Headline with Fraunces & Living Rainbow Gradient "Always" */}
-                  <h1 className="font-fraunces text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-[4.25rem] xl:text-[4.85rem] font-black tracking-tight text-slate-950 leading-[1.05]">
+                  <h1 className="font-fraunces text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-[4.25rem] xl:text-[4.85rem] font-bold tracking-tight text-slate-950 leading-[1.05]">
                     <span className="block font-black">You Are</span>
-                    <span className="block italic font-black my-1 text-[1.12em] animate-liquid-flow select-none drop-shadow-sm">
+                    <span className="block italic font-black my-1 text-[1.12em] animate-liquid-flow select-none drop-shadow-xs">
                       Always
                     </span>
                     <span className="block font-black">Welcome Here.</span>
@@ -508,34 +502,24 @@ export default function Home() {
               {/* Right Column: Authentic Site Community Showcase */}
               <div className="lg:col-span-5 xl:col-span-6 relative flex flex-col justify-center">
                 
-                {/* Image Card Frame (Iridescent Gradient Aura + Authentic Site Photo) */}
-                <div className="relative z-10 w-full p-1 rounded-3xl bg-gradient-to-tr from-purple-500 via-pink-500 via-amber-400 to-teal-400 shadow-2xl shadow-purple-500/25 group select-none">
-                  <div className="relative w-full h-full min-h-[280px] sm:min-h-[360px] lg:min-h-[440px] rounded-[1.4rem] overflow-hidden bg-slate-950">
+                {/* Image Container with Organic Rounded Frame & Radiant Glow */}
+                <div className="relative z-10 w-full select-none">
+                  
+                  {/* Radiant Glow Atmosphere around Image Frame */}
+                  <div className="absolute -inset-4 bg-gradient-to-r from-purple-400/25 via-pink-400/25 to-amber-300/30 blur-2xl pointer-events-none rounded-3xl" />
+
+                  <div className="relative w-full rounded-3xl sm:rounded-[2.25rem] overflow-hidden bg-slate-100 shadow-xl border-2 border-white/80 group">
                     
                     {/* Authentic Site Photography from diversitycollectivevc.org */}
                     <img 
-                      src="/images/community-gathering.jpg"
-                      alt="Diversity Collective Ventura County community members gathering"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                      src="/images/volunteers.jpg"
+                      alt="Diversity Collective Ventura County community volunteers"
+                      className="w-full h-full min-h-[280px] sm:min-h-[360px] lg:min-h-[440px] object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
                       onError={(e) => {
-                        e.target.src = "/images/hero-community.jpg";
+                        e.target.src = "/images/community-gathering.jpg";
                       }}
                     />
 
-                    {/* Deep gradient vignette for contrast */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-950/10 to-transparent pointer-events-none" />
-
-                    {/* Floating In-Frame Physical Location Tag at top of photo */}
-                    <div className="absolute top-3.5 left-3.5 right-3.5 flex flex-wrap items-center justify-between gap-2 text-white text-xs pointer-events-none z-30">
-                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-950/85 backdrop-blur-md border border-white/20 shadow-lg">
-                        <MapPin className="w-3.5 h-3.5 text-amber-300 flex-shrink-0" />
-                        <span className="font-bold text-white drop-shadow-md truncate">2471 Portola Road, Suite 100, Ventura</span>
-                      </div>
-                      <span className="text-emerald-300 drop-shadow-md font-extrabold text-[11px] bg-emerald-950/90 backdrop-blur-md px-3 py-1.5 rounded-full border border-emerald-400/60 shadow-lg flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-                        Open Today
-                      </span>
-                    </div>
                   </div>
                 </div>
 
@@ -612,16 +596,15 @@ export default function Home() {
         </div>
 
         {/* ====================================================================
-            FULL-BLEED CONTINUOUS FOREGROUND WAVE CASCADE EXTENDING TILL THE BREAK LINE
-            - Spans 100% of the screen width from edge to edge (left-0 to right-0).
-            - Zero pixel clamps, zero column boundaries, zero cropping.
-            - Overlaps the lower photo area smoothly and lands flush on the first break line.
-            - Saturated, high-contrast rich pride gradients (Amber, Magenta, Oceanic Cyan).
+            FULL-BLEED FOREGROUND WAVE CROSSOVER EXTENDING FLUSH TO BREAK LINE
+            - Sweeps across the bottom of the photo frame from left to right.
+            - Saturated, high-contrast, rich Pride gradients with white luminous crest.
+            - Connects seamlessly with ZERO gaps directly to the first break line.
             ==================================================================== */}
         {activeThemeObj.category !== 'festival' && (
-          <div className="relative w-full -mt-10 sm:-mt-16 md:-mt-24 lg:-mt-28 pointer-events-none z-20 overflow-hidden leading-none select-none">
+          <div className="relative w-full -mt-16 sm:-mt-24 md:-mt-32 lg:-mt-36 pointer-events-none z-20 overflow-hidden leading-none select-none">
             <svg 
-              className="w-full h-24 sm:h-32 md:h-44 lg:h-52 block filter drop-shadow-[0_-8px_16px_rgba(217,70,239,0.22)]" 
+              className="w-full h-24 sm:h-32 md:h-44 lg:h-52 block filter drop-shadow-[0_-8px_18px_rgba(217,70,239,0.28)]" 
               viewBox="0 0 1440 220" 
               fill="none" 
               preserveAspectRatio="none"
@@ -629,43 +612,43 @@ export default function Home() {
               <defs>
                 {/* Wave Ribbon 1: Amber Gold to Sunset Rose */}
                 <linearGradient id="vibrant-wave-amber" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.8" />
-                  <stop offset="35%" stopColor="#FB7185" stopOpacity="0.75" />
-                  <stop offset="70%" stopColor="#C084FC" stopOpacity="0.7" />
-                  <stop offset="100%" stopColor="#38BDF8" stopOpacity="0.6" />
+                  <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.85" />
+                  <stop offset="35%" stopColor="#FB7185" stopOpacity="0.8" />
+                  <stop offset="70%" stopColor="#C084FC" stopOpacity="0.75" />
+                  <stop offset="100%" stopColor="#38BDF8" stopOpacity="0.65" />
                 </linearGradient>
 
                 {/* Wave Ribbon 2: Saturated Magenta to Ultraviolet (Main Crest) */}
                 <linearGradient id="vibrant-wave-magenta" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#E11D48" stopOpacity="0.88" />
-                  <stop offset="30%" stopColor="#EC4899" stopOpacity="0.85" />
-                  <stop offset="65%" stopColor="#A855F7" stopOpacity="0.88" />
-                  <stop offset="100%" stopColor="#06B6D4" stopOpacity="0.75" />
+                  <stop offset="0%" stopColor="#E11D48" stopOpacity="0.9" />
+                  <stop offset="30%" stopColor="#EC4899" stopOpacity="0.88" />
+                  <stop offset="65%" stopColor="#A855F7" stopOpacity="0.9" />
+                  <stop offset="100%" stopColor="#06B6D4" stopOpacity="0.8" />
                 </linearGradient>
 
                 {/* Wave Ribbon 3: Oceanic Emerald to Coastal Cyan */}
                 <linearGradient id="vibrant-wave-cyan" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#10B981" stopOpacity="0.82" />
-                  <stop offset="35%" stopColor="#06B6D4" stopOpacity="0.8" />
-                  <stop offset="70%" stopColor="#8B5CF6" stopOpacity="0.8" />
-                  <stop offset="100%" stopColor="#F43F5E" stopOpacity="0.7" />
+                  <stop offset="0%" stopColor="#10B981" stopOpacity="0.85" />
+                  <stop offset="35%" stopColor="#06B6D4" stopOpacity="0.82" />
+                  <stop offset="70%" stopColor="#8B5CF6" stopOpacity="0.82" />
+                  <stop offset="100%" stopColor="#F43F5E" stopOpacity="0.75" />
                 </linearGradient>
               </defs>
 
               {/* Ribbon 1: Golden Amber base flowing edge-to-edge */}
               <path
-                d="M 0,160 C 240,165 480,140 720,110 C 960,80 1200,60 1440,90 L 1440,220 L 0,220 Z"
+                d="M 0,150 C 240,160 480,130 720,105 C 960,80 1200,60 1440,90 L 1440,220 L 0,220 Z"
                 fill="url(#vibrant-wave-amber)"
               />
 
-              {/* Ribbon 2: Saturated Magenta crest sweeping over the photo with luminous stroke */}
+              {/* Ribbon 2: Saturated Magenta crest sweeping over photo with luminous white stroke */}
               <g className="animate-ribbon-undulate">
                 <path
-                  d="M 0,140 C 220,145 460,110 700,75 C 940,40 1180,35 1440,65 L 1440,220 L 0,220 Z"
+                  d="M 0,130 C 220,140 460,100 700,70 C 940,38 1180,35 1440,65 L 1440,220 L 0,220 Z"
                   fill="url(#vibrant-wave-magenta)"
                 />
                 <path
-                  d="M 0,140 C 220,145 460,110 700,75 C 940,40 1180,35 1440,65"
+                  d="M 0,130 C 220,140 460,100 700,70 C 940,38 1180,35 1440,65"
                   stroke="rgba(255, 255, 255, 0.95)"
                   strokeWidth="3.5"
                   strokeLinecap="round"
@@ -676,11 +659,11 @@ export default function Home() {
               {/* Ribbon 3: Oceanic Cyan & Emerald with flowing highlight */}
               <g className="animate-ribbon-wave-slow">
                 <path
-                  d="M 0,175 C 260,180 520,150 780,115 C 1020,80 1240,75 1440,95 L 1440,220 L 0,220 Z"
+                  d="M 0,165 C 260,175 520,140 780,110 C 1020,78 1240,75 1440,95 L 1440,220 L 0,220 Z"
                   fill="url(#vibrant-wave-cyan)"
                 />
                 <path
-                  d="M 0,175 C 260,180 520,150 780,115 C 1020,80 1240,75 1440,95"
+                  d="M 0,165 C 260,175 520,140 780,110 C 1020,78 1240,75 1440,95"
                   stroke="rgba(255, 255, 255, 0.85)"
                   strokeWidth="2.5"
                   strokeLinecap="round"
@@ -694,63 +677,55 @@ export default function Home() {
         {/* ====================================================================
             4-PILLAR ACCENT STRIP: PEOPLE • SAFETY • WELLNESS • OPPORTUNITY
             Grounded cleanly right at the first break line.
-            Spans full-width with responsive inner container.
+            Matches reference design: clean outline icons + uppercase tracking labels.
             ==================================================================== */}
-        <div className="w-full border-t-2 border-purple-200/90 bg-white/60 backdrop-blur-xs relative z-10">
-          <div className="container-clean py-4 sm:py-5">
-            <div className="grid grid-cols-4 divide-x-2 divide-purple-200/80 text-center">
+        <div className="w-full border-t border-purple-200/90 bg-white/70 backdrop-blur-xs relative z-30">
+          <div className="container-clean py-3.5 sm:py-4">
+            <div className="grid grid-cols-4 divide-x divide-purple-200/80 text-center">
               
-              {/* Pillar 1: PEOPLE (Amethyst & Fuchsia) */}
+              {/* Pillar 1: PEOPLE */}
               <Link 
                 to="/community" 
-                className="pillar-card group flex flex-col items-center justify-center gap-2 py-2 px-1 sm:px-4 rounded-2xl hover:bg-purple-50/90 transition-all cursor-pointer"
+                className="pillar-card group flex flex-col items-center justify-center gap-1.5 py-1.5 px-1 sm:px-4 hover:bg-purple-50/80 rounded-xl transition-all cursor-pointer"
                 title="People — Affirming community circles & peer gatherings"
               >
-                <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-purple-100 to-fuchsia-100 border border-purple-200 flex items-center justify-center group-hover:scale-110 group-hover:shadow-md group-hover:shadow-purple-400/20 transition-all">
-                  <Users className="w-4 h-4 sm:w-5 sm:h-5 text-[#5A1E65] stroke-[2]" />
-                </div>
+                <Users className="w-5 h-5 sm:w-6 sm:h-6 text-[#5A1E65] stroke-[1.8] group-hover:scale-110 transition-transform" />
                 <span className="text-[10px] sm:text-xs md:text-sm font-black uppercase tracking-[0.18em] sm:tracking-[0.22em] text-[#5A1E65] group-hover:text-purple-900 transition-colors">
                   PEOPLE
                 </span>
               </Link>
 
-              {/* Pillar 2: SAFETY (Oceanic Azure & Cyan) */}
+              {/* Pillar 2: SAFETY */}
               <Link 
                 to="/programs/community-resource-center" 
-                className="pillar-card group flex flex-col items-center justify-center gap-2 py-2 px-1 sm:px-4 rounded-2xl hover:bg-sky-50/90 transition-all cursor-pointer"
+                className="pillar-card group flex flex-col items-center justify-center gap-1.5 py-1.5 px-1 sm:px-4 hover:bg-sky-50/80 rounded-xl transition-all cursor-pointer"
                 title="Safety — Cultural sanctuary, crisis navigation & drop-in safe harbor"
               >
-                <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-sky-100 to-cyan-100 border border-sky-200 flex items-center justify-center group-hover:scale-110 group-hover:shadow-md group-hover:shadow-sky-400/20 transition-all">
-                  <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-sky-700 stroke-[2]" />
-                </div>
+                <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-sky-700 stroke-[1.8] group-hover:scale-110 transition-transform" />
                 <span className="text-[10px] sm:text-xs md:text-sm font-black uppercase tracking-[0.18em] sm:tracking-[0.22em] text-sky-900 group-hover:text-sky-700 transition-colors">
                   SAFETY
                 </span>
               </Link>
 
-              {/* Pillar 3: WELLNESS (Emerald & Mint) */}
+              {/* Pillar 3: WELLNESS */}
               <Link 
                 to="/programs/diversity-shines" 
-                className="pillar-card group flex flex-col items-center justify-center gap-2 py-2 px-1 sm:px-4 rounded-2xl hover:bg-emerald-50/90 transition-all cursor-pointer"
+                className="pillar-card group flex flex-col items-center justify-center gap-1.5 py-1.5 px-1 sm:px-4 hover:bg-emerald-50/80 rounded-xl transition-all cursor-pointer"
                 title="Wellness — Diversity SHINES free rapid health testing & mental health"
               >
-                <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 border border-emerald-200 flex items-center justify-center group-hover:scale-110 group-hover:shadow-md group-hover:shadow-emerald-400/20 transition-all">
-                  <LotusIcon className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-700 stroke-[2]" />
-                </div>
+                <LotusIcon className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-700 stroke-[1.8] group-hover:scale-110 transition-transform" />
                 <span className="text-[10px] sm:text-xs md:text-sm font-black uppercase tracking-[0.18em] sm:tracking-[0.22em] text-emerald-900 group-hover:text-emerald-700 transition-colors">
                   WELLNESS
                 </span>
               </Link>
 
-              {/* Pillar 4: OPPORTUNITY (Sunset Rose & Coral) */}
+              {/* Pillar 4: OPPORTUNITY */}
               <Link 
                 to="/donate" 
-                className="pillar-card group flex flex-col items-center justify-center gap-2 py-2 px-1 sm:px-4 rounded-2xl hover:bg-rose-50/90 transition-all cursor-pointer"
+                className="pillar-card group flex flex-col items-center justify-center gap-1.5 py-1.5 px-1 sm:px-4 hover:bg-rose-50/80 rounded-xl transition-all cursor-pointer"
                 title="Opportunity — Mutual aid, youth leadership & community giving"
               >
-                <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-rose-100 to-pink-100 border border-rose-200 flex items-center justify-center group-hover:scale-110 group-hover:shadow-md group-hover:shadow-rose-400/20 transition-all">
-                  <Heart className="w-4 h-4 sm:w-5 sm:h-5 text-rose-600 stroke-[2] fill-rose-500/20" />
-                </div>
+                <Heart className="w-5 h-5 sm:w-6 sm:h-6 text-rose-700 stroke-[1.8] group-hover:scale-110 transition-transform" />
                 <span className="text-[10px] sm:text-xs md:text-sm font-black uppercase tracking-[0.18em] sm:tracking-[0.22em] text-rose-900 group-hover:text-rose-700 transition-colors">
                   OPPORTUNITY
                 </span>

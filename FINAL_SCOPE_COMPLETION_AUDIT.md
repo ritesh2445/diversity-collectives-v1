@@ -234,3 +234,4 @@ TOTAL OPERATIONAL LIVE READINESS:     24.1%
    - Set Cloudflare Worker secrets (`wrangler secret put`).
    - Register Zeffy webhook endpoint in Zeffy dashboard.
    - Verify Resend DNS DKIM/SPF domain records.
+

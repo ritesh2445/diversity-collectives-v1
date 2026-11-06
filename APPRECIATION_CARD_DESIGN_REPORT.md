@@ -336,3 +336,4 @@ The redesign strictly preserves all underlying backend contracts:
    - `tests/emailTemplates.test.js`: **12 / 12 passed**.
    - Total Suite: **106 / 106 tests passed (100%)**.
 4. **Bundle Performance**: Production client builds in **1.08s** with zero regressions.
+
