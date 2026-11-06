@@ -8,8 +8,8 @@ import ScrollProgress from './components/ScrollProgress';
 import WelcomeCurtain from './components/WelcomeCurtain';
 
 import SkipNavigation from './components/accessibility/SkipNavigation';
-const ReciteToolbar = lazy(() => import('./components/accessibility/ReciteToolbar'));
-const ReciteReadingAids = lazy(() => import('./components/accessibility/ReciteReadingAids'));
+import ReciteToolbar from './components/accessibility/ReciteToolbar';
+import ReciteReadingAids from './components/accessibility/ReciteReadingAids';
 
 // Eagerly loaded for instantaneous LCP first paint
 import Home from './pages/Home';
@@ -66,11 +66,9 @@ export default function App() {
           {/* WCAG 2.4.1 Skip Navigation Links */}
           <SkipNavigation />
 
-          {/* Native DCVC Accessibility Companion Suite */}
-          <Suspense fallback={null}>
-            <ReciteReadingAids />
-            <ReciteToolbar />
-          </Suspense>
+          {/* Native DCVC Accessibility Companion Suite (Instant 0ms Launch) */}
+          <ReciteReadingAids />
+          <ReciteToolbar />
 
           <WelcomeCurtain />
           <ScrollToTop />

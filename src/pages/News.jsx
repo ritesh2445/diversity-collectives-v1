@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Search, 
@@ -9,7 +9,7 @@ import {
   Sparkles,
   BookOpen
 } from 'lucide-react';
-import { newsArticles } from '../data/dcvcData';
+import { cmsStore } from '../services/cmsStore';
 import CardSpotlight from '../components/CardSpotlight';
 import { usePageMeta } from '../utils/seo';
 
@@ -20,22 +20,30 @@ export default function News() {
     canonicalPath: '/news'
   });
 
+  const [articles, setArticles] = useState(() => cmsStore.getNews());
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
 
-  const categories = ['All', 'Community & Culture', 'Health & Wellness', 'Youth Empowerment'];
+  useEffect(() => {
+    const unsubscribe = cmsStore.subscribe((data) => {
+      if (data?.news) setArticles(data.news);
+    });
+    return unsubscribe;
+  }, []);
+
+  const categories = ['All', 'Community & Culture', 'Health & Wellness', 'Youth Empowerment', 'Advocacy & Business'];
 
   const filteredArticles = useMemo(() => {
-    return newsArticles.filter((art) => {
+    return articles.filter((art) => {
       const matchesSearch = 
         art.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         art.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCat = selectedCategory === 'All' || art.category === selectedCategory;
       return matchesSearch && matchesCat;
     });
-  }, [searchQuery, selectedCategory]);
+  }, [articles, searchQuery, selectedCategory]);
 
-  const featured = newsArticles[0];
+  const featured = articles[0] || articles[0];
 
   return (
     <div className="pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">

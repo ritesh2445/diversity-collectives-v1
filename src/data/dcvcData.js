@@ -755,7 +755,9 @@ export const galleryPhotos = [
     category: "Festivals & Pride",
     year: "2026",
     image: "/images/community-gathering.jpg",
-    description: "Community members uniting on the Ventura Promenade for celebration, music, and solidarity."
+    description: "Community members uniting on the Ventura Promenade for celebration, music, and solidarity.",
+    featured: true,
+    quote: "A coastline illuminated in rainbows, proving love is louder than hate."
   },
   {
     id: "gal-2",
@@ -763,39 +765,160 @@ export const galleryPhotos = [
     category: "Youth & Community",
     year: "2026",
     image: "/images/youth-umbrella.jpg",
-    description: "Weekly youth peer support circle exploring creative art and self-expression."
+    description: "Weekly youth peer support circle exploring creative art and self-expression.",
+    featured: true,
+    quote: "Creating an unconditional safe harbor where every young person is celebrated."
   },
   {
     id: "gal-3",
+    title: "First Countywide Youth Pride Prom",
+    category: "Youth & Community",
+    year: "2023",
+    image: "/images/pride-prom.jpeg",
+    description: "Hundreds of LGBTQ+ high schoolers across all 10 county cities dancing without judgment.",
+    featured: true,
+    quote: "The magical night we all deserved in high school."
+  },
+  {
+    id: "gal-4",
     title: "Dedicated Community Volunteers",
     category: "Volunteers & Action",
     year: "2026",
     image: "/images/volunteers.jpg",
-    description: "Passionate community members packing 'SHINE With Me' safer-sex kits at our outreach booth."
+    description: "Passionate community members packing 'SHINE With Me' safer-sex kits at our outreach booth.",
+    featured: true,
+    quote: "Grassroots mutual aid powered by over 300 passionate volunteers each year."
   },
   {
-    id: "gal-4",
+    id: "gal-5",
     title: "Community Resource Center Flagship",
     category: "Sanctuary & CRC",
     year: "2026",
     image: "/images/crc-building.jpg",
-    description: "Our physical sanctuary at 2471 Portola Road, Suite 100 in Ventura, CA."
+    description: "Our physical sanctuary at 2471 Portola Road, Suite 100 in Ventura, CA.",
+    featured: true,
+    quote: "A permanent front door for affirming care, education, and belonging."
   },
   {
-    id: "gal-5",
+    id: "gal-6",
     title: "Diversity SHINES Health Testing Clinic",
     category: "Health & Wellness",
     year: "2026",
     image: "/images/shines-screening.jpg",
-    description: "State-certified counselors administering free, confidential rapid HIV and STI screenings."
+    description: "State-certified counselors administering free, confidential rapid HIV and STI screenings.",
+    featured: true,
+    quote: "15-minute rapid results with zero judgment and zero cost."
   },
   {
-    id: "gal-6",
+    id: "gal-7",
+    title: "Pacific Coastline Sanctuary Gathering",
+    category: "Festivals & Pride",
+    year: "2025",
+    image: "/images/ventura-coast.jpg",
+    description: "Sunset community connection gathering on the Ventura shore reflecting on 10 years of progress.",
+    featured: true,
+    quote: "Where our Pacific horizon meets our enduring community strength."
+  },
+  {
+    id: "gal-8",
     title: "Little Unicorns Family & Youth Circle",
     category: "Kids & Families",
     year: "2026",
     image: "/images/little-unicorns.png",
-    description: "Monthly gentle gatherings for pre-teens ages 9–13, parents, and affirming allies."
+    description: "Monthly gentle gatherings for pre-teens ages 9–13, parents, and affirming allies.",
+    featured: true,
+    quote: "Empowering affirming families and building confidence from the very start."
+  }
+];
+
+export const memoryLaneMilestones = [
+  {
+    year: "2014",
+    title: "Grassroots Founding & 501(c)(3) Incorporation",
+    subtitle: "A Collective Vision Born from Community Need",
+    description: "In response to a severe lack of LGBTQ+ services and visible affirming spaces in Ventura County, local community leaders convened in living rooms and coffee shops to form Diversity Collective Ventura County as an official 501(c)(3) nonprofit public benefit corporation.",
+    stat: "1st Countywide LGBTQ+ Coalition",
+    badge: "Founding Era",
+    image: "/images/community-gathering.jpg",
+    quote: "We knew that Ventura County deserved a safe harbor where nobody had to travel to Los Angeles just to find affirming care and community.",
+    details: "Formed with unanimous community resolution, establishing partnerships with local civic leaders and public health advocates to lay the groundwork for countywide advocacy."
+  },
+  {
+    year: "2016",
+    title: "Rainbow Umbrella Youth Peer Support",
+    subtitle: "Opening Safe Harbor for Ages 13–23",
+    description: "Launched Rainbow Umbrella, providing weekly facilitated drop-in circles for queer, trans, questioning, and allied young people to explore identity, find solidarity, and build mental resilience in an unconditional safe harbor.",
+    stat: "1,200+ Youth Circle Hours",
+    badge: "Youth Safe Harbor",
+    image: "/images/youth-umbrella.jpg",
+    quote: "Walking into Rainbow Umbrella was the first time in my life I didn't have to explain who I was or apologize for existing.",
+    details: "Over the years, Rainbow Umbrella has graduated hundreds of young leaders, artists, and community advocates across Ventura, Oxnard, Camarillo, and beyond."
+  },
+  {
+    year: "2018",
+    title: "Ventura County Pride at the Promenade",
+    subtitle: "The Flagship Oceanside Festival",
+    description: "DCVC brought thousands of community members, families, allies, and affirming local businesses together on the Ventura Promenade overlooking the Pacific Ocean for a celebration of joy, resilience, and unity.",
+    stat: "5,000+ Pride Attendees",
+    badge: "Oceanfront Pride",
+    image: "/images/ventura-coast.jpg",
+    quote: "Standing with thousands on our coastline under the Pride rainbow flag proved our vibrant community is here to stay.",
+    details: "Featured local LGBTQ+ musicians, drag artists, youth stages, non-profit resource pavilions, and free health testing."
+  },
+  {
+    year: "2020",
+    title: "Permanent Headquarters on Portola Road",
+    subtitle: "Opening 2471 Portola Road, Suite 100",
+    description: "Secured and inaugurated DCVC's permanent Community Resource Center (CRC) in Ventura, featuring a dedicated lending library, technology lab, counseling suites, and community gathering lounge.",
+    stat: "2,500 Sq Ft Physical Sanctuary",
+    badge: "Physical Sanctuary",
+    image: "/images/crc-building.jpg",
+    quote: "A physical sanctuary with a permanent front door transforms a movement into a lasting institution.",
+    details: "Even throughout the global pandemic, our CRC served as a lifeline, coordinating emergency food deliveries, virtual peer support, and harm-reduction kits."
+  },
+  {
+    year: "2021",
+    title: "Diversity SHINES Health Clinic Launch",
+    subtitle: "Free, Confidential Rapid Clinical Testing",
+    description: "In partnership with Ventura County Public Health (VCPH), DCVC launched Diversity SHINES — delivering free rapid HIV and Hepatitis C testing with 15-minute results, PrEP/PEP navigation, and harm reduction.",
+    stat: "3,800+ Free Screenings Delivered",
+    badge: "Clinical Wellness",
+    image: "/images/shines-screening.jpg",
+    quote: "Access to healthcare is a human right. We removed every barrier — zero cost, zero ID required, 100% affirming.",
+    details: "Operates 5 days a week at the CRC with walk-in testing hours, mobile testing vans at community fairs, and free barrier contraceptives."
+  },
+  {
+    year: "2023",
+    title: "First Countywide Youth Pride Prom",
+    subtitle: "An Unapologetic Night to Remember",
+    description: "Created a formal, glamorous, and affirming prom experience for over 250 high schoolers across all 10 county school districts, allowing youth to bring whom they love and wear whatever reflects their truth.",
+    stat: "250+ High School Attendees",
+    badge: "Affirming Prom",
+    image: "/images/pride-prom.jpeg",
+    quote: "I got to wear my dream dress and slow dance with my partner without fear. It was the best night of high school.",
+    details: "Featured professional DJs, photo booths, sensory-friendly chill zones, and free chaperone-supported safe transportation."
+  },
+  {
+    year: "2024",
+    title: "10th Anniversary Decade of Impact",
+    subtitle: "A Historic Milestone at the Annual Gala",
+    description: "Celebrated 10 years of life-saving community building, raising more than $250,000 for emergency mutual aid and expanding support circles for Little Unicorns (ages 9–13) and trans/non-binary adults.",
+    stat: "10 Years of Grassroots Service",
+    badge: "Decade Milestone",
+    image: "/images/hero-community.jpg",
+    quote: "From living room meetings in 2014 to a cornerstone institution in 2024, our community has proven that love and courage prevail.",
+    details: "Honored founding board members, civic partners, and youth leaders who fought to make Ventura County welcoming for all."
+  },
+  {
+    year: "2026",
+    title: "The Next Decade of Sanctuary & Belonging",
+    subtitle: "Expanding Mobile Clinics & Digital Sanctuary",
+    description: "Launching the modernized digital sanctuary platform, multilingual health navigation, expanded trans healthcare advocacy, and mobile outreach vans reaching rural Ventura County agricultural communities.",
+    stat: "10 Cities · 1 Countywide Safe Harbor",
+    badge: "The Future of DCVC",
+    image: "/images/volunteers.jpg",
+    quote: "Our doors are open. Our hearts are ready. You are always welcome here.",
+    details: "Continuing our unwavering mission of advocacy, visibility, safety, and wellness across Ventura, Oxnard, Simi Valley, Thousand Oaks, and beyond."
   }
 ];
 

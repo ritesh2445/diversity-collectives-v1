@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Search, 
@@ -7,18 +7,28 @@ import {
   ArrowRight, 
   ArrowUpRight, 
   Sparkles,
-  Ticket
+  Ticket,
+  AlertTriangle
 } from 'lucide-react';
-import { liveEvents, annualSignatureEvents } from '../data/dcvcData';
+import { cmsStore } from '../services/cmsStore';
+import { annualSignatureEvents } from '../data/dcvcData';
 import CardSpotlight from '../components/CardSpotlight';
 
 export default function Events() {
+  const [events, setEvents] = useState(() => cmsStore.getEvents());
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
 
-  const categories = ['All', 'Health & Wellness', 'Youth', 'Adult Support', 'Seniors', 'Professional Growth', 'Signature Event'];
+  useEffect(() => {
+    const unsubscribe = cmsStore.subscribe((data) => {
+      if (data?.events) setEvents(data.events);
+    });
+    return unsubscribe;
+  }, []);
 
-  const filteredEvents = liveEvents.filter(evt => {
+  const categories = ['All', 'Health & Wellness', 'Youth', 'Adult Support', 'Seniors', 'Professional Growth', 'Signature Event', 'Festival & Celebration'];
+
+  const filteredEvents = events.filter(evt => {
     const matchesSearch = evt.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           evt.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           evt.location.toLowerCase().includes(searchQuery.toLowerCase());
@@ -134,6 +144,11 @@ export default function Events() {
                         <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-purple-50 text-[#5A1E65] border border-purple-200">
                           {evt.category}
                         </span>
+                        {evt.isCancelled && (
+                          <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-rose-600 text-white">
+                            ⚠️ Cancelled / Rescheduled
+                          </span>
+                        )}
                         <span className="text-xs text-slate-500 font-medium flex items-center gap-1">
                           <Clock className="w-3.5 h-3.5 text-[#5A1E65]" /> {evt.time}
                         </span>
@@ -144,6 +159,16 @@ export default function Events() {
                           {evt.title}
                         </Link>
                       </h2>
+
+                      {evt.isCancelled && evt.cancellationNotice && (
+                        <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold flex items-start gap-2">
+                          <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <strong className="block text-rose-950 font-bold">Important Notice:</strong>
+                            <span>{evt.cancellationNotice}</span>
+                          </div>
+                        </div>
+                      )}
 
                       <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-medium">
                         {evt.description}

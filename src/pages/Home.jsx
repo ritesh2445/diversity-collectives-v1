@@ -1197,7 +1197,7 @@ export default function Home() {
       {/* ====================================================================
           IMPACT NUMBERS: ANIMATED COUNT-UP WITH GLASS SPOTLIGHT
           ==================================================================== */}
-      <section className="py-14 md:py-20 bg-gradient-to-b from-purple-100/40 via-teal-100/30 to-amber-100/30 border-b border-purple-200/60 relative overflow-hidden">
+      <section className="py-14 md:py-20 bg-gradient-to-b from-purple-100/40 via-teal-100/30 to-amber-100/30 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
         <div className="container-clean">
           
           <div className="max-w-2xl mb-10 flex flex-col gap-3">
@@ -1251,7 +1251,7 @@ export default function Home() {
       {/* ====================================================================
           LGBTQ+ AFFIRMING BUSINESS DIRECTORY SPOTLIGHT
           ==================================================================== */}
-      <section className="py-14 md:py-20 bg-white border-b border-slate-100">
+      <section className="py-14 md:py-20 bg-white border-b border-slate-100 scroll-reveal">
         <div className="container-clean">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
             <div className="flex flex-col gap-3 max-w-2xl">
@@ -1308,7 +1308,7 @@ export default function Home() {
       {/* ====================================================================
           PROGRAMS DIRECTORY: COLLISION-PROOF EXPANDABLE CARDS
           ==================================================================== */}
-      <section className="py-14 md:py-20 bg-gradient-to-b from-amber-100/30 via-rose-100/30 to-purple-100/40 border-b border-purple-200/60 relative overflow-hidden">
+      <section className="py-14 md:py-20 bg-gradient-to-b from-amber-100/30 via-rose-100/30 to-purple-100/40 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
         <div className="container-clean">
           
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
@@ -1461,7 +1461,7 @@ export default function Home() {
       {/* ====================================================================
           RESOURCE CENTER SANCTUARY: CALM 2-COLUMN ARCHITECTURE
           ==================================================================== */}
-      <section className="py-14 md:py-20 bg-gradient-to-b from-purple-100/40 via-indigo-100/30 to-teal-100/30 border-b border-purple-200/60 relative overflow-hidden">
+      <section className="py-14 md:py-20 bg-gradient-to-b from-purple-100/40 via-indigo-100/30 to-teal-100/30 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
         <div className="container-clean">
           
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
@@ -1593,7 +1593,7 @@ export default function Home() {
       {/* ====================================================================
           FLAGSHIP COMMUNITY RESOURCE CENTER & SANCTUARY
           ==================================================================== */}
-      <section className="py-14 md:py-20 bg-gradient-to-b from-teal-100/30 via-purple-100/40 to-amber-100/30 border-b border-purple-200/60 relative overflow-hidden">
+      <section className="py-14 md:py-20 bg-gradient-to-b from-teal-100/30 via-purple-100/40 to-amber-100/30 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
         <div className="container-clean">
           <div className="p-8 sm:p-12 rounded-3xl bg-white/95 border-2 border-purple-200/80 shadow-xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-7 space-y-4">
@@ -1647,7 +1647,7 @@ export default function Home() {
       {/* ====================================================================
           HIGHLY EYE-CATCHING & BEAUTIFUL GIVING STUDIO (Addressing User Feedback)
           ==================================================================== */}
-      <section id="giving" className="py-16 md:py-24 bg-gradient-to-b from-amber-100/30 via-purple-100/50 to-purple-950/25 border-b border-purple-200/60 relative overflow-hidden">
+      <section id="giving" className="py-16 md:py-24 bg-gradient-to-b from-amber-100/30 via-purple-100/50 to-purple-950/25 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
         
         {/* Ambient Specular Backdrops */}
         <div 
@@ -1889,7 +1889,7 @@ export default function Home() {
       {/* ====================================================================
           UPCOMING EVENTS: BALANCED ROWS WITH GLASS CARDS
           ==================================================================== */}
-      <section className="py-14 md:py-20 bg-gradient-to-b from-purple-100/40 via-rose-100/30 to-amber-100/30 border-b border-purple-200/60 relative overflow-hidden">
+      <section className="py-14 md:py-20 bg-gradient-to-b from-purple-100/40 via-rose-100/30 to-amber-100/30 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
         <div className="container-clean">
           
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
@@ -1998,7 +1998,7 @@ export default function Home() {
       {/* ====================================================================
           TESTIMONIALS & COMMUNITY VOICES: 3D EDITORIAL GRID
           ==================================================================== */}
-      <section className="py-14 md:py-20 bg-gradient-to-b from-amber-100/30 via-purple-100/40 to-indigo-100/35 border-b border-purple-200/60 relative overflow-hidden">
+      <section className="py-14 md:py-20 bg-gradient-to-b from-amber-100/30 via-purple-100/40 to-indigo-100/35 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
         <div className="container-clean">
           
           <div className="max-w-2xl mx-auto text-center mb-10 flex flex-col items-center gap-3">
@@ -2102,7 +2102,7 @@ export default function Home() {
       {/* ====================================================================
           FINAL CALL TO ACTION: LUXURY 3D AURORA ARCHITECTURE
           ==================================================================== */}
-      <section className="py-20 md:py-28 aurora-bg text-white relative overflow-hidden">
+      <section className="py-20 md:py-28 aurora-bg text-white relative overflow-hidden scroll-reveal">
         
         {/* Specular Ambient Glow Orbs */}
         <div 

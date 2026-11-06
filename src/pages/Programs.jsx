@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   ArrowRight, 
@@ -10,10 +10,18 @@ import {
   Sparkles,
   ArrowUpRight
 } from 'lucide-react';
-import { programsList } from '../data/dcvcData';
+import { cmsStore } from '../services/cmsStore';
 import CardSpotlight from '../components/CardSpotlight';
 
 export default function Programs() {
+  const [programs, setPrograms] = useState(() => cmsStore.getPrograms());
+
+  useEffect(() => {
+    const unsubscribe = cmsStore.subscribe((data) => {
+      if (data?.programs) setPrograms(data.programs);
+    });
+    return unsubscribe;
+  }, []);
   return (
     <div className="pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
       
@@ -42,7 +50,7 @@ export default function Programs() {
       {/* Program Catalog */}
       <section className="container-clean py-16">
         <div className="space-y-20">
-          {programsList.map((prog, index) => {
+          {programs.map((prog, index) => {
             const isEven = index % 2 === 0;
             return (
               <div 

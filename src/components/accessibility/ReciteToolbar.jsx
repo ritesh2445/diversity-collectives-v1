@@ -44,8 +44,13 @@ export default function ReciteToolbar() {
   const [activeTrack, setActiveTrack] = useState(null); // 'focus' | 'deeper' | null
   const [musicVolume, setMusicVolume] = useState(0.5);
 
-  // Voice command state
+  // Voice command state & Live Speech HUD
   const [isListening, setIsListening] = useState(false);
+  const [speechTranscript, setSpeechTranscript] = useState('');
+  const [speechFeedback, setSpeechFeedback] = useState('');
+  const [micError, setMicError] = useState(null);
+  const recognitionRef = useRef(null);
+  const isListeningRef = useRef(false);
 
   // Dictionary state
   const [dictWord, setDictWord] = useState('');
@@ -86,11 +91,24 @@ export default function ReciteToolbar() {
         if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
           window.speechSynthesis.cancel();
         }
+        if (recognitionRef.current) {
+          try { recognitionRef.current.abort(); } catch (e) {}
+          recognitionRef.current = null;
+        }
+        isListeningRef.current = false;
+        setIsListening(false);
         clearHighlight();
         setActiveFlyout(null);
       }
     });
-    return unsubscribe;
+    return () => {
+      unsubscribe();
+      if (recognitionRef.current) {
+        try { recognitionRef.current.abort(); } catch (e) {}
+        recognitionRef.current = null;
+      }
+      isListeningRef.current = false;
+    };
   }, []);
 
   // Initialize Native US Female Voice
@@ -276,53 +294,254 @@ export default function ReciteToolbar() {
     focusAudio.setVolume(newVol);
   };
 
-  // Voice Command (Microphone)
-  const handleToggleMic = () => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      alert('Speech Recognition is not supported by your current browser.');
+  // High-Precision Hands-Free Voice Controller
+  const executeVoiceCommand = (rawText) => {
+    const text = rawText.toLowerCase().trim();
+
+    // 1. SCROLLING COMMANDS
+    if (text.includes('scroll down') || text.endsWith('down') || text.includes('page down')) {
+      window.scrollBy({ top: 450, behavior: 'smooth' });
+      setSpeechFeedback('Scrolled Down ⬇');
+      return;
+    }
+    if (text.includes('scroll up') || text.endsWith('up') || text.includes('page up')) {
+      window.scrollBy({ top: -450, behavior: 'smooth' });
+      setSpeechFeedback('Scrolled Up ⬆');
+      return;
+    }
+    if (text.includes('top') || text.includes('scroll to top') || text.includes('go to top')) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setSpeechFeedback('Scrolled to Top ⬆');
+      return;
+    }
+    if (text.includes('bottom') || text.includes('scroll to bottom')) {
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+      setSpeechFeedback('Scrolled to Bottom ⬇');
       return;
     }
 
-    if (isListening) {
+    // 2. AUDIO & READING COMMANDS
+    if (text.includes('read') || text.includes('speak') || text.includes('play')) {
+      handlePlayPause();
+      setSpeechFeedback('Playing Read Aloud ▶');
+      return;
+    }
+    if (text.includes('pause') || text.includes('hold')) {
+      handlePlayPause();
+      setSpeechFeedback('Reading Paused ⏸');
+      return;
+    }
+    if (text.includes('stop') || text.includes('silence') || text.includes('quiet')) {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+      clearHighlight();
+      setSpeechFeedback('Speech Stopped ⏹');
+      return;
+    }
+    if (text.includes('next') || text.includes('skip forward')) {
+      handleSkipForward();
+      setSpeechFeedback('Next Paragraph ⏭');
+      return;
+    }
+    if (text.includes('back') || text.includes('previous') || text.includes('rewind')) {
+      handleSkipBack();
+      setSpeechFeedback('Previous Paragraph ⏮');
+      return;
+    }
+
+    // 3. NAVIGATION COMMANDS
+    if (text.includes('home') || text.includes('go home')) {
+      setSpeechFeedback('Navigating to Home...');
+      window.location.href = '/';
+      return;
+    }
+    if (text.includes('about')) {
+      setSpeechFeedback('Navigating to About...');
+      window.location.href = '/about';
+      return;
+    }
+    if (text.includes('program') || text.includes('services')) {
+      setSpeechFeedback('Navigating to Programs...');
+      window.location.href = '/programs';
+      return;
+    }
+    if (text.includes('event') || text.includes('calendar')) {
+      setSpeechFeedback('Navigating to Events...');
+      window.location.href = '/events';
+      return;
+    }
+    if (text.includes('resource')) {
+      setSpeechFeedback('Navigating to Resources...');
+      window.location.href = '/resources';
+      return;
+    }
+    if (text.includes('directory') || text.includes('business')) {
+      setSpeechFeedback('Navigating to Directory...');
+      window.location.href = '/directory';
+      return;
+    }
+    if (text.includes('gallery') || text.includes('photo')) {
+      setSpeechFeedback('Navigating to Gallery...');
+      window.location.href = '/gallery';
+      return;
+    }
+    if (text.includes('volunteer') || text.includes('get involved')) {
+      setSpeechFeedback('Navigating to Volunteer...');
+      window.location.href = '/volunteer';
+      return;
+    }
+    if (text.includes('donate') || text.includes('giving')) {
+      setSpeechFeedback('Navigating to Donate...');
+      window.location.href = '/donate';
+      return;
+    }
+    if (text.includes('contact')) {
+      setSpeechFeedback('Navigating to Contact...');
+      window.location.href = '/contact';
+      return;
+    }
+
+    // 4. VISUAL & ACCESSIBILITY COMMANDS
+    if (text.includes('larger') || text.includes('bigger') || text.includes('increase font')) {
+      handleIncreaseFont();
+      setSpeechFeedback('Font Size Increased (+)');
+      return;
+    }
+    if (text.includes('smaller') || text.includes('decrease font')) {
+      handleDecreaseFont();
+      setSpeechFeedback('Font Size Decreased (-)');
+      return;
+    }
+    if (text.includes('contrast') || text.includes('theme') || text.includes('colors')) {
+      handleCycleTheme();
+      setSpeechFeedback('Color Theme Switched 🎨');
+      return;
+    }
+    if (text.includes('ruler')) {
+      a11yStore.toggleRuler();
+      setSpeechFeedback('Reading Ruler Toggled 📏');
+      return;
+    }
+    if (text.includes('mask')) {
+      a11yStore.toggleScreenMask();
+      setSpeechFeedback('Screen Mask Toggled 🎭');
+      return;
+    }
+    if (text.includes('music') || text.includes('ambient')) {
+      handleToggleFocusTrack('focus');
+      setSpeechFeedback('Focus Audio Toggled 🎵');
+      return;
+    }
+    if (text.includes('reset')) {
+      a11yStore.resetAll();
+      setSpeechFeedback('Settings Restored to Default 🔄');
+      return;
+    }
+    if (text.includes('close') || text.includes('exit')) {
+      a11yStore.update('toolbarOpen', false);
+      setSpeechFeedback('Toolbar Closed ✕');
+      return;
+    }
+    if (text.includes('help')) {
+      a11yStore.announce('Hands-free voice commands: scroll down, scroll up, top, read aloud, stop, programs, events, gallery, donate, contact, larger font, contrast, ruler, and close.');
+      setSpeechFeedback('Help: Commands listed');
+      return;
+    }
+  };
+
+  // Voice Command (Microphone) Handler with Persistent Auto-Resume
+  const handleToggleMic = () => {
+    const SpeechRecognition = typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition) : null;
+    if (!SpeechRecognition) {
+      alert('Speech Recognition is not supported by your current browser. For the best hands-free voice experience, please use Chrome, Edge, or Safari.');
+      return;
+    }
+
+    if (isListeningRef.current) {
+      isListeningRef.current = false;
       setIsListening(false);
-      a11yStore.announce('Voice command listening stopped.');
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.abort();
+        } catch (e) {}
+        recognitionRef.current = null;
+      }
+      a11yStore.announce('Hands-free voice listening stopped.');
+      setSpeechFeedback('Voice command listening paused.');
       return;
     }
 
     try {
       const recognition = new SpeechRecognition();
       recognition.continuous = true;
+      recognition.interimResults = true;
       recognition.lang = 'en-US';
+      recognitionRef.current = recognition;
+      isListeningRef.current = true;
+      setIsListening(true);
+      setMicError(null);
+      setSpeechTranscript('');
+      setSpeechFeedback('Listening... Speak a command');
 
       recognition.onstart = () => {
         setIsListening(true);
-        a11yStore.announce('Voice listening active. Say: scroll down, scroll up, or reset.');
+        a11yStore.announce('Hands-free voice listening active. Say: scroll down, read, programs, donate, or stop.');
       };
 
       recognition.onresult = (event) => {
-        const transcript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
-        if (transcript.includes('scroll down')) {
-          window.scrollBy({ top: 400, behavior: 'smooth' });
-        } else if (transcript.includes('scroll up')) {
-          window.scrollBy({ top: -400, behavior: 'smooth' });
-        } else if (transcript.includes('play')) {
-          handlePlayPause();
-        } else if (transcript.includes('stop')) {
-          window.speechSynthesis.cancel();
-          clearHighlight();
-        } else if (transcript.includes('close')) {
-          a11yStore.update('toolbarOpen', false);
-        } else if (transcript.includes('reset')) {
-          a11yStore.resetAll();
+        let interim = '';
+        let final = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          const piece = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            final += piece;
+          } else {
+            interim += piece;
+          }
+        }
+        const text = (final || interim).trim().toLowerCase();
+        if (text) {
+          setSpeechTranscript(text);
+          executeVoiceCommand(text);
         }
       };
 
-      recognition.onerror = () => setIsListening(false);
-      recognition.onend = () => setIsListening(false);
+      recognition.onerror = (event) => {
+        console.warn('[ReciteToolbar Mic Error]', event.error);
+        if (event.error === 'not-allowed') {
+          isListeningRef.current = false;
+          setIsListening(false);
+          setMicError('Microphone permission blocked. Please allow microphone access in your browser settings.');
+          a11yStore.announce('Microphone permission blocked. Please allow mic access in your browser.');
+        } else if (event.error !== 'no-speech') {
+          setSpeechFeedback(`Notice: ${event.error}`);
+        }
+      };
+
+      recognition.onend = () => {
+        // Auto-restart if user still wants hands-free listening active (prevents Chrome 3-sec silence drop)
+        if (isListeningRef.current) {
+          try {
+            recognition.start();
+          } catch (e) {
+            setTimeout(() => {
+              if (isListeningRef.current && recognitionRef.current) {
+                try { recognitionRef.current.start(); } catch (err) {}
+              }
+            }, 250);
+          }
+        } else {
+          setIsListening(false);
+        }
+      };
+
       recognition.start();
-    } catch {
+    } catch (err) {
+      console.error('[ReciteToolbar Mic Start Error]', err);
+      isListeningRef.current = false;
       setIsListening(false);
+      setMicError('Unable to start speech recognition.');
     }
   };
 
@@ -423,12 +642,17 @@ export default function ReciteToolbar() {
     return () => document.removeEventListener('mousedown', handleOutside);
   }, [activeFlyout]);
 
-  if (!settings.toolbarOpen) return null;
+  if (!settings.toolbarOpen && !isListening && !micError) return null;
 
   return (
-    <div
-      ref={toolbarRef}
-      id="native-accessibility-companion-ribbon"
+    <>
+      {/* ================================================================
+          TOP ACCESSIBILITY COMPANION RIBBON
+          ================================================================ */}
+      {settings.toolbarOpen && (
+        <div
+          ref={toolbarRef}
+          id="native-accessibility-companion-ribbon"
       role="region"
       aria-label="Native Accessibility Companion Toolbar"
       className="fixed top-0 left-0 right-0 z-[100000] bg-[#0B1528] text-white shadow-2xl border-b-2 border-slate-700 a11y-toolbar-isolated select-none"
@@ -1090,5 +1314,75 @@ export default function ReciteToolbar() {
 
       </div>
     </div>
+  )}
+
+  {/* ================================================================
+      FLOATING HANDS-FREE LIVE SPEECH HUD (Always active while listening)
+      ================================================================ */}
+  {isListening && (
+    <div 
+      role="status"
+      aria-live="polite"
+      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100005] bg-[#0B1528]/95 text-white border-2 border-emerald-400 px-5 py-3 rounded-2xl shadow-2xl backdrop-blur-xl flex items-center gap-4 select-none animate-in fade-in slide-in-from-bottom-4 duration-300 max-w-xl w-[94vw] sm:w-auto ring-4 ring-emerald-500/20"
+    >
+      <div className="relative flex items-center justify-center flex-shrink-0">
+        <div className="w-9 h-9 rounded-full bg-emerald-500/30 flex items-center justify-center animate-ping absolute inset-0" />
+        <div className="w-9 h-9 rounded-full bg-emerald-600 text-white flex items-center justify-center relative shadow-md">
+          <Mic className="w-5 h-5 animate-pulse" />
+        </div>
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            Hands-Free Voice Active
+          </span>
+          {speechFeedback && (
+            <span className="text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-700/60 px-2 py-0.5 rounded-full font-bold">
+              {speechFeedback}
+            </span>
+          )}
+        </div>
+        <p className="text-xs text-slate-200 font-medium truncate mt-0.5">
+          {speechTranscript ? `Heard: "${speechTranscript}"` : 'Listening... Say "scroll down", "read", "programs", "donate", or "contrast"'}
+        </p>
+      </div>
+
+      <button
+        type="button"
+        onClick={handleToggleMic}
+        className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-rose-600 text-slate-200 hover:text-white font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer flex-shrink-0 border border-slate-700"
+      >
+        <X className="w-3.5 h-3.5" />
+        <span>Stop Mic</span>
+      </button>
+    </div>
+  )}
+
+  {/* ================================================================
+      MICROPHONE PERMISSION ERROR TOAST
+      ================================================================ */}
+  {micError && (
+    <div 
+      role="alert"
+      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100005] bg-rose-950/95 text-rose-100 border-2 border-rose-500 px-5 py-3 rounded-2xl shadow-2xl backdrop-blur-xl flex items-center gap-3 select-none max-w-lg w-[92vw] sm:w-auto"
+    >
+      <div className="w-8 h-8 rounded-full bg-rose-800 text-rose-200 flex items-center justify-center flex-shrink-0 font-bold text-sm">
+        !
+      </div>
+      <p className="text-xs font-semibold flex-1">
+        {micError}
+      </p>
+      <button
+        onClick={() => setMicError(null)}
+        className="p-1 text-rose-300 hover:text-white rounded-lg cursor-pointer"
+        aria-label="Dismiss error"
+      >
+        <X className="w-4 h-4" />
+      </button>
+    </div>
+  )}
+</>
   );
 }

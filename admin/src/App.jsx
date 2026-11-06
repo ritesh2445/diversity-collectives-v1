@@ -79,10 +79,11 @@ import {
   issueCustomDonorCard
 } from './services/adminClient.js';
 import DesignEditor from './components/DesignEditor.jsx';
+import CmsStudio from './components/CmsStudio.jsx';
 
 export default function AdminApp() {
   const [currentUser, setCurrentUser] = useState(getStoredUser());
-  const [activeTab, setActiveTab] = useState('analytics');
+  const [activeTab, setActiveTab] = useState('cms');
 
   // Login form state
   const [loginEmail, setLoginEmail] = useState('');
@@ -488,6 +489,7 @@ export default function AdminApp() {
 
   // Navigation tabs configuration
   const navigationTabs = [
+    { id: 'cms', label: 'Full Site CMS', icon: LayoutGrid, badge: 'Full Control' },
     { id: 'analytics', label: 'Donation Analytics', icon: TrendingUp, badge: '$54.3k' },
     { id: 'appreciation', label: 'Appreciation Cards & Custom', icon: Heart, badge: 'Studio' },
     { id: 'designer', label: 'Page Builder Studio', icon: Palette, badge: 'Drag & Drop' },
@@ -583,6 +585,13 @@ export default function AdminApp() {
       {/* Main Body Workspace */}
       <main className="max-w-7xl mx-auto w-full px-4 py-6 flex-1">
         
+        {/* ==================================================================
+            TAB 0: FULL SITE CONTENT MANAGEMENT SYSTEM (CMS)
+            ================================================================== */}
+        {activeTab === 'cms' && (
+          <CmsStudio />
+        )}
+
         {/* ==================================================================
             TAB 1: DONATION ANALYTICS & FINANCIAL INTELLIGENCE
             ================================================================== */}
