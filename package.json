@@ -8,6 +8,7 @@
     "build": "vite build",
     "lint": "oxlint",
     "test": "node --test tests/*.test.js",
+    "test:dr": "node scripts/testRestoreIsolation.js",
     "backup": "node scripts/backup.js",
     "restore": "node scripts/restore.js",
     "preview": "vite preview"

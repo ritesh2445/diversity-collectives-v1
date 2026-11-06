@@ -64,10 +64,11 @@ Backblaze B2 Free Cloud Storage serves exclusively as the offsite backup reposit
 | Metric / Parameter | Free Tier Allocation | DCVC Production Utilization | Compliance Status |
 | :--- | :--- | :--- | :--- |
 | **Storage Capacity** | **10 GB Free Forever** | ~500 MB (14 daily encrypted backups @ ~35 MB each) | **Verified Safe** (< 5% of quota) |
-| **Class A Transactions** | **Free (Unlimited)** | Listing & bucket authorizations | **100% Free** |
-| **Class B Transactions** | **2,500 free calls / day** | ~4 calls / day (2 upload URLs + 2 file uploads) | **Verified Safe** (0.16% of daily quota) |
-| **Class C Transactions** | **2,500 free calls / day** | ~1 call / day (inventory listing) | **Verified Safe** (0.04% of daily quota) |
-| **Download / Egress** | **Free up to 3x monthly data** | Backups are write-mostly; downloads occur only during disaster drills | **100% Free** |
+| **Class A Transactions** | **100% Free (Unlimited)** | Authentication, upload URL generation, bucket lookups | **100% Free** ($0.00) |
+| **Class B Transactions** | **100% Free (Unlimited)** | File downloads during disaster recovery verification drills | **100% Free** ($0.00) |
+| **Class C Transactions** | **100% Free (Unlimited)** | Bucket inventory listing and version lookups | **100% Free** ($0.00) |
+| **Class D Transactions** | **2,500 calls / day Free** | Outbound event notifications (not utilized by DCVC) | **0% Used** ($0.00) |
+| **Download / Egress** | **Free up to 3x monthly data** | Backups are write-mostly; downloads occur only during disaster drills | **100% Free** ($0.00) |
 | **Credit Card Requirement**| **No credit card required** | Account created on zero-cost tier without payment details | **Strictly Enforced** |
 
 > [!IMPORTANT]
@@ -113,11 +114,21 @@ Every backup package produces a verifiable manifest:
    - Any single bit of the ciphertext or IV has been tampered with or corrupted.
    - The decrypted plaintext checksum does not match the verified original hash.
 
-### 4.3 Backblaze B2 Access Control & Minimum Privilege
-The Backblaze B2 account uses a dedicated Application Key (`dcvc-backup-worker`):
-- **Bucket Restriction**: Locked strictly to `dcvc-backups-production`.
-- **Capabilities Granted**: `listFiles`, `readFiles`, `writeFiles`, `deleteFiles` (for retention).
-- **Admin Capabilities Denied**: No access to create/delete buckets, modify bucket encryption, or alter account settings.
+### 4.3 Backblaze B2 Access Control, Private Bucket & Authority Separation
+To enforce zero trust and protect backups against ransomware or compromised runner environments, DCVC separates upload authority from deletion authority:
+
+1. **Private Bucket Enforced**: The backup bucket `dcvc-backups-production` must be created as **`allPrivate`** (never public). No unauthorized public HTTP access is permitted.
+2. **Dedicated Upload Application Key (`dcvc-backup-uploader`)**:
+   - **Bucket Restriction**: Locked strictly to `dcvc-backups-production`.
+   - **Capabilities Granted**: `listFiles`, `readFiles`, `writeFiles` only.
+   - **Deletion Denied**: The daily backup runner key is **NOT** granted `deleteFiles` permission. A compromised GitHub runner cannot delete historical backups.
+3. **Automated Server-Side Retention via B2 Bucket Lifecycle Rules**:
+   - Backblaze B2 native lifecycle rules manage retention automatically on the server side:
+     - `daysFromUploadingToHiding`: 14 days
+     - `daysFromHidingToDeleting`: 1 day
+   - This eliminates the need for any daily script or key to hold destructive deletion permissions.
+   - If `scripts/backup.js` attempts programmatic version pruning using a key without delete privileges, it detects the 401/403 status and logs that server-side lifecycle rules manage retention, continuing safely without failing the backup.
+4. **Master Key Exclusion**: The Backblaze account master key is **NEVER** stored in GitHub Secrets or used in CI/CD pipelines.
 
 ---
 
@@ -125,7 +136,7 @@ The Backblaze B2 account uses a dedicated Application Key (`dcvc-backup-worker`)
 
 ### 5.1 Free Scheduled Execution: GitHub Actions
 Automated backups run via **GitHub Actions Free** (`.github/workflows/backup-schedule.yml`):
-- **Schedule**: Nightly at `03:00 UTC` (`0 3 * * *`), corresponding to 8:00 PM Pacific Standard Time.
+- **Schedule**: Nightly at `03:00 UTC` (`0 3 * * *`), corresponding to **7:00 PM PST** (Standard Time) / **8:00 PM PDT** (Daylight Saving Time).
 - **Runner Allocation**: GitHub Actions Free provides **2,000 runner minutes per month**.
 - **Execution Cost**: A complete backup job finishes in **~45 seconds** (~23 minutes per month).
 - **Quota Impact**: Uses **1.15%** of the monthly free GitHub Actions allotment.
@@ -232,3 +243,4 @@ Automated disaster recovery tests pass 100% in the repository test suite ([`test
 - **Test 8**: Rejection of tampered manifest integrity checksums.
 - **Test 9**: 14-day retention enforcement staying under 10 GB limit.
 - **Test 10**: Inviolable protection guaranteeing the latest backup is never deleted.
+

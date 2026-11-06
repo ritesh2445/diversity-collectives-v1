@@ -42,9 +42,10 @@ Diversity Collective Ventura County (DCVC) is a 501(c)(3) nonprofit public chari
 
 ### Why Backblaze B2 Free Was Selected:
 1. **True Free Allocation**: Backblaze provides **10 GB of storage 100% free forever** without requiring a credit card during initial account provisioning.
-2. **Generous API Allowances**: 2,500 Class B calls per day (uploading chunks) exceeds DCVC's backup requirements by a factor of 600.
+2. **Generous API Allowances**: Class A, B, and C transactions are **100% Free** (unlimited API calls for pay-as-you-go / free tier). Class D (outbound notifications) includes 2,500 calls/day free.
 3. **Generous Free Egress**: Egress is free up to 3 times the average monthly stored data. Because backups are write-mostly and downloaded strictly during recovery drills, egress bandwidth costs remain $0.00.
-4. **Security & Ownership**: Backblaze B2 supports custom application keys restricted to a single bucket with granular permissions (`readFiles`, `writeFiles`, `deleteFiles`, `listFiles`).
+4. **Security & Ownership**: Backblaze B2 supports custom application keys restricted to a single bucket with granular permissions (`readFiles`, `writeFiles`, `listFiles`). Upload keys are strictly segregated from deletion keys, with retention managed by native B2 lifecycle rules.
+5. **Private Storage**: Buckets are enforced as `allPrivate`, preventing public unauthorized access.
 
 ---
 
@@ -82,3 +83,4 @@ All nine services listed in this register have been verified for compatibility w
 1. Verify free-tier eligibility on each platform.
 2. Confirm no automatic payment methods are enabled.
 3. Record API credentials in server-side secret stores only.
+

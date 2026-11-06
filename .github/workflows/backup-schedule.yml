@@ -2,7 +2,7 @@ name: Automated Disaster Recovery Backup (Backblaze B2 Free)
 
 on:
   schedule:
-    # Executes nightly at 03:00 UTC (8:00 PM Pacific Standard Time)
+    # Executes nightly at 03:00 UTC (7:00 PM PST / 8:00 PM PDT)
     - cron: '0 3 * * *'
   workflow_dispatch:
     inputs:
@@ -41,7 +41,9 @@ jobs:
         run: npm ci --prefer-offline --no-audit
 
       - name: Verify automated test suite integrity
-        run: npm test -- tests/backupRestore.test.js
+        run: |
+          npm test -- tests/backupRestore.test.js
+          npm run test:dr
 
       - name: Execute Automated Backup & B2 Upload
         env:
@@ -54,6 +56,7 @@ jobs:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
         run: |
+          set -eo pipefail
           echo "Starting DCVC Disaster Recovery Backup Pipeline..."
           node scripts/backup.js
 
@@ -62,3 +65,4 @@ jobs:
           echo "Disaster recovery backup executed successfully."
           echo "Backup packages are AES-256-GCM encrypted and stored in Backblaze B2 Free."
           echo "14-day retention policy applied (inviolable protection for latest backup active)."
+
