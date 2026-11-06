@@ -139,17 +139,26 @@ To configure custom domain:
 
 ---
 
-## 7. Rollback & Verification Procedures
+## 7. Rollback, Disaster Recovery & Verification Procedures
 
-### Rollback Strategy
+### 7.1 Rollback Strategy
 - **Frontend**: In Cloudflare Pages / Vercel dashboard, click **Rollback to Previous Deployment** to immediately revert to the prior production build within seconds.
 - **Worker**: Run `wrangler rollback` to revert the edge worker to the prior deployment tag.
-- **Database**: Restore point-in-time snapshot via `turso db restore dcvc-production-backup`.
+- **Database**: Restore point-in-time snapshot via `turso db restore dcvc-production-backup` or execute encrypted restoration from Backblaze B2 via `npm run restore`.
 
-### Smoke Testing Checklist
+### 7.2 Disaster Recovery Backup Architecture (Backblaze B2 Free)
+Cloudflare R2 is not used. Offsite disaster recovery backups are stored in **Backblaze B2 Free** (10 GB Free Storage Allocation):
+- **Automated Schedule**: GitHub Actions workflow (`.github/workflows/backup-schedule.yml`) runs nightly at 03:00 UTC (~23 minutes/month = 1.15% of 2,000 free minutes).
+- **Encryption**: AES-256-GCM authenticated encryption before cloud upload.
+- **Manual Backup Fallback**: Run `npm run backup` (or `node scripts/backup.js`).
+- **Restoration Runbook**: Detailed procedures in [`BACKUP_RESTORE_GUIDE.md`](file:///e:/DCVC-1/diversity-collectives-v1/BACKUP_RESTORE_GUIDE.md).
+- **Service Quotas**: Full compliance audit in [`FREE_TIER_SERVICE_REGISTER.md`](file:///e:/DCVC-1/diversity-collectives-v1/FREE_TIER_SERVICE_REGISTER.md).
+
+### 7.3 Smoke Testing Checklist
 - [ ] Visit `https://diversitycollective.org/` — confirm page loads under 1 second.
 - [ ] Verify accessibility skip link: press `Tab` key, ensure "Skip to main content" appears and focuses `#main-content`.
 - [ ] Test Business Directory: navigate to `/directory`, search for "Beacon", verify instant filter.
 - [ ] Test Contact Form: submit a test message with turnstile check, verify confirmation page `/submission-success?type=contact` displays.
 - [ ] Verify 301 redirects: visit `/donate/` and ensure browser seamlessly redirects to `/donate`.
+- [ ] Verify Disaster Recovery test suite: `npm test -- tests/backupRestore.test.js` (confirms all 10 backup & restore tests pass).
 

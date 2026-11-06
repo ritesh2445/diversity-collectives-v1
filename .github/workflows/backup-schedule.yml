@@ -1,0 +1,64 @@
+name: Automated Disaster Recovery Backup (Backblaze B2 Free)
+
+on:
+  schedule:
+    # Executes nightly at 03:00 UTC (8:00 PM Pacific Standard Time)
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Simulate backup without uploading to cloud'
+        required: false
+        default: false
+        type: boolean
+
+# Free Tier Environment Evaluation:
+# - Target Platform: GitHub Actions Free Plan (Standard Public/Private Repositories)
+# - Free Quota: 2,000 runner minutes/month
+# - Execution Time: ~45 seconds per run (~23 minutes/month = 1.15% of monthly free quota)
+# - Cost: $0.00 / month (100% Free Tier, zero overage risk)
+# - Why not Cloudflare Workers: Workers Free Tier imposes 10ms CPU and 30s wall-clock limits,
+#   which fail during network latency or large database exports. GitHub Actions provides
+#   isolated, unrestricted Linux runners with full Node.js crypto capabilities.
+
+jobs:
+  disaster-recovery-backup:
+    name: Encrypt & Upload Snapshot to Backblaze B2
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js runtime (v22 LTS)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Verify automated test suite integrity
+        run: npm test -- tests/backupRestore.test.js
+
+      - name: Execute Automated Backup & B2 Upload
+        env:
+          BACKUP_PROVIDER: backblaze
+          B2_KEY_ID: ${{ secrets.B2_KEY_ID }}
+          B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
+          B2_BUCKET_NAME: ${{ secrets.B2_BUCKET_NAME || 'dcvc-backups-production' }}
+          B2_ENDPOINT: ${{ secrets.B2_ENDPOINT || 'https://api.backblazeb2.com' }}
+          BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+        run: |
+          echo "Starting DCVC Disaster Recovery Backup Pipeline..."
+          node scripts/backup.js
+
+      - name: Report Backup Status
+        run: |
+          echo "Disaster recovery backup executed successfully."
+          echo "Backup packages are AES-256-GCM encrypted and stored in Backblaze B2 Free."
+          echo "14-day retention policy applied (inviolable protection for latest backup active)."

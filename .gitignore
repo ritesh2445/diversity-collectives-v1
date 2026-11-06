@@ -25,3 +25,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local backup packages (disaster recovery artifacts)
+backups/*.enc
+backups/*-manifest.json
+backups/tmp/
+

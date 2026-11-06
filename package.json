@@ -8,6 +8,8 @@
     "build": "vite build",
     "lint": "oxlint",
     "test": "node --test tests/*.test.js",
+    "backup": "node scripts/backup.js",
+    "restore": "node scripts/restore.js",
     "preview": "vite preview"
   },
   "dependencies": {

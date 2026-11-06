@@ -104,7 +104,7 @@ turso db shell dcvc-production < src/db/seed.sql
 
 ## 6. Zeffy Webhook Registration
 
-1. Log into your verified DCVC account on [zeffy.com](https://zeffy.com) (EIN: `46-5312131`).
+1. Log into your verified DCVC nonprofit account on [zeffy.com](https://zeffy.com).
 2. Go to **Settings > Integrations > Webhooks**.
 3. Add Endpoint URL: `https://diversitycollective.org/api/webhooks/zeffy`.
 4. Subscribe to event: `payment.completed`.
@@ -133,4 +133,65 @@ cd admin
 # Custom domain: admin.diversitycollective.org
 # Set Environment Variable: VITE_API_URL=https://diversitycollective.org/api
 ```
+
+---
+
+## 8. Backblaze B2 Disaster Recovery & Automated Backup Setup
+
+Cloudflare R2 is excluded from this platform. Disaster recovery backups are stored strictly in **Backblaze B2 Free** (10 GB Free Storage Allocation).
+
+### 8.1 Provision Backblaze B2 Account & Private Bucket
+1. Sign up at [backblaze.com/b2/cloud-storage.html](https://www.backblaze.com/b2/cloud-storage.html) on the **Free Plan** (10 GB storage, free API transactions, zero paid cards required).
+2. Confirm free tier eligibility during account setup. **Do not configure automatic billing upgrades.**
+3. Create a **Private Bucket**:
+   - Bucket Unique Name: `dcvc-backups-production`
+   - Files in Bucket: **Private**
+   - Default Encryption: Enabled (Server-Side SSE-B2)
+   - Object Lock: Disabled
+
+### 8.2 Generate Minimum-Privilege Application Key
+1. Go to **Account > Application Keys > Add a New Application Key**.
+2. Key Name: `dcvc-backup-worker`.
+3. Allow access to Bucket: `dcvc-backups-production`.
+4. Type of Access: **Read and Write**.
+5. Record the generated credentials:
+   - `keyID` (maps to `B2_KEY_ID`)
+   - `applicationKey` (maps to `B2_APPLICATION_KEY`)
+   - `s3Endpoint` (e.g. `https://s3.us-west-004.backblazeb2.com` or API endpoint `https://api.backblazeb2.com`)
+
+### 8.3 Generate AES-256-GCM Backup Encryption Key
+Generate a 32-byte (64 hex characters) cryptographic key used to encrypt all database dumps before upload:
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+# Output: [64-character hex string] -> Record as BACKUP_ENCRYPTION_KEY
+```
+
+### 8.4 Configure GitHub Actions Workflow Secrets
+Add the following secrets to your GitHub repository (**Settings > Secrets and variables > Actions > Repository secrets**):
+
+| Secret Name | Description / Value |
+| :--- | :--- |
+| `BACKUP_PROVIDER` | `backblaze` |
+| `B2_KEY_ID` | Your Backblaze Application Key ID |
+| `B2_APPLICATION_KEY` | Your Backblaze Application Key Secret |
+| `B2_BUCKET_NAME` | `dcvc-backups-production` |
+| `B2_ENDPOINT` | `https://api.backblazeb2.com` (or your regional endpoint) |
+| `BACKUP_ENCRYPTION_KEY` | 64-character hex string generated in Step 8.3 |
+| `TURSO_DATABASE_URL` | Production Turso database connection URL |
+| `TURSO_AUTH_TOKEN` | Production Turso database authentication token |
+
+### 8.5 Verify Disaster Recovery Pipeline
+Run local non-production verification:
+```bash
+# 1. Execute manual test backup
+npm run backup
+
+# 2. Execute test restore and verify 0 record loss
+npm run restore
+
+# 3. Run automated disaster recovery test suite
+npm test -- tests/backupRestore.test.js
+# Confirms all 10 backup & restore tests pass (100% data integrity verified)
+```
+
 

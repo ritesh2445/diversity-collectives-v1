@@ -23,7 +23,7 @@ In accordance with Phase 2 specifications, **all code, integrations, adapters, s
 | **Ask DCVC Chatbot** | **YES** | **YES** | Deferred | Enabling Worker AI binding (`[ai] binding = "AI"`) and setting `CHATBOT_ENABLED="true"` in Cloudflare. |
 | **Analytics** | **YES** | **YES** | Deferred | Cloudflare Web Analytics site token / snippet placement on domain. |
 | **Security & RBAC** | **YES** | **YES** | Deferred | Production HTTPS enforcement, rate limiting, and staff password setup for admin users. |
-| **Backups & Recovery** | **YES** | **YES** | Deferred | Production cron trigger / backup bucket configuration for Turso snapshots. |
+| **Backups & Recovery** | **YES** | **YES** | Ready / Deferred Setup | Backblaze B2 Free (10 GB) automated nightly workflow and manual CLI scripts implemented; awaits B2 account creation during collaborative setup. |
 | **Accessibility (WCAG 2.2)** | **YES** | **YES** | **YES** | Live assistive tech verification by community members with screen readers. |
 | **Performance (CWV)** | **YES** | **YES** | **YES** | Production CDN edge caching verification upon DNS cutover. |
 | **Handover Documentation** | **YES** | **YES** | **YES** | Final staff and board training walkthrough. |
@@ -82,5 +82,5 @@ In accordance with Phase 2 specifications, **all code, integrations, adapters, s
 ### 2.10 Security, Privacy & Backups
 * **Implementation**: Automated disaster recovery snapshots in [`src/utils/backupRestore.js`](file:///e:/DCVC-1/diversity-collectives-v1/src/utils/backupRestore.js).
 * **Mock Verification**: Non-production backup and restore verified in [`tests/backupRestore.test.js`](file:///e:/DCVC-1/diversity-collectives-v1/tests/backupRestore.test.js) with SHA-256 archive validation and zero record loss.
-* **Remaining Dependency**: Setting up scheduled backup storage in Cloudflare R2 or S3.
+* **Remaining Dependency**: Provisioning Backblaze B2 Free bucket (`dcvc-backups-production`) and dedicated application key during final collaborative setup. (Cloudflare R2 is completely removed).
 
