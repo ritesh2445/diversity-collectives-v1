@@ -473,12 +473,30 @@ export default function Home() {
                   <h1 className="font-display text-4xl sm:text-6xl md:text-7xl xl:text-[5.15rem] font-black tracking-tight text-slate-950 leading-[1.08] sm:leading-[1.04]">
                     <span className="block">You Are</span>
                     <span className="block mt-1 sm:mt-1.5">
-                      <span className="font-serif italic font-normal bg-gradient-to-r from-[#4A0E4E] via-[#8B1A8F] via-[#D91B5C] via-[#E11D48] via-[#EA580C] via-[#F97316] to-[#F59E0B] bg-clip-text text-transparent relative inline-block mr-2.5 sm:mr-3.5 pb-1 sm:pb-1.5">
+                      <span className="font-serif italic font-semibold tracking-[-0.015em] bg-gradient-to-r from-[#4A0E4E] via-[#8B1A8F] via-[#D91B5C] via-[#E11D48] via-[#EA580C] via-[#F97316] to-[#F59E0B] bg-clip-text text-transparent relative inline-block mr-2.5 sm:mr-3.5 pb-1 sm:pb-1.5">
                         Always Welcome
-                        <span 
-                          className="absolute bottom-0 left-0 w-full h-[2.5px] sm:h-[3.5px] bg-gradient-to-r from-[#C026D3]/85 via-[#E11D48]/90 via-[#F97316]/85 to-[#F59E0B]/85 rounded-full" 
+                        <svg 
+                          className="absolute -bottom-1 sm:-bottom-1.5 left-0 w-full h-2 sm:h-3 overflow-visible pointer-events-none" 
+                          viewBox="0 0 100 8" 
+                          preserveAspectRatio="none"
                           aria-hidden="true"
-                        />
+                        >
+                          <defs>
+                            <linearGradient id="headline-bend-gradient-2" x1="0%" y1="0%" x2="100%" y2="0%">
+                              <stop offset="0%" stopColor="#C026D3" stopOpacity="0.9" />
+                              <stop offset="28%" stopColor="#E11D48" stopOpacity="0.95" />
+                              <stop offset="70%" stopColor="#F97316" stopOpacity="0.9" />
+                              <stop offset="100%" stopColor="#F59E0B" stopOpacity="0.85" />
+                            </linearGradient>
+                          </defs>
+                          <path 
+                            d="M 1 2 Q 50 7, 99 2" 
+                            stroke="url(#headline-bend-gradient-2)" 
+                            strokeWidth="2.5" 
+                            strokeLinecap="round" 
+                            fill="none" 
+                          />
+                        </svg>
                       </span>
                       <span className="font-display font-black text-slate-950 inline-block">Here.</span>
                     </span>
@@ -731,16 +749,34 @@ export default function Home() {
                     ESTABLISHED 2014 • VENTURA COUNTY 501(C)(3) NONPROFIT
                   </div>
 
-                  {/* Editorial Headline: Bold Sans "You Are", Italic Serif Gradient "Always Welcome" with Accent Line, and Bold Sans "Here." */}
+                  {/* Editorial Headline: Bold Sans "You Are", Enhanced Italic Serif Gradient "Always Welcome" with Gentle Curved Bend Underline, and Bold Sans "Here." */}
                   <h1 className="font-display text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-[4.25rem] xl:text-[4.85rem] font-black tracking-tight text-slate-950 leading-[1.08] sm:leading-[1.04]">
                     <span className="block">You Are</span>
                     <span className="block mt-1 sm:mt-1.5">
-                      <span className="font-serif italic font-normal bg-gradient-to-r from-[#4A0E4E] via-[#8B1A8F] via-[#D91B5C] via-[#E11D48] via-[#EA580C] via-[#F97316] to-[#F59E0B] bg-clip-text text-transparent relative inline-block mr-2.5 sm:mr-3.5 pb-1 sm:pb-1.5">
+                      <span className="font-serif italic font-semibold tracking-[-0.015em] bg-gradient-to-r from-[#4A0E4E] via-[#8B1A8F] via-[#D91B5C] via-[#E11D48] via-[#EA580C] via-[#F97316] to-[#F59E0B] bg-clip-text text-transparent relative inline-block mr-2.5 sm:mr-3.5 pb-1 sm:pb-1.5">
                         Always Welcome
-                        <span 
-                          className="absolute bottom-0 left-0 w-full h-[2.5px] sm:h-[3.5px] bg-gradient-to-r from-[#C026D3]/85 via-[#E11D48]/90 via-[#F97316]/85 to-[#F59E0B]/85 rounded-full" 
+                        <svg 
+                          className="absolute -bottom-1 sm:-bottom-1.5 left-0 w-full h-2 sm:h-3 overflow-visible pointer-events-none" 
+                          viewBox="0 0 100 8" 
+                          preserveAspectRatio="none"
                           aria-hidden="true"
-                        />
+                        >
+                          <defs>
+                            <linearGradient id="headline-bend-gradient-1" x1="0%" y1="0%" x2="100%" y2="0%">
+                              <stop offset="0%" stopColor="#C026D3" stopOpacity="0.9" />
+                              <stop offset="28%" stopColor="#E11D48" stopOpacity="0.95" />
+                              <stop offset="70%" stopColor="#F97316" stopOpacity="0.9" />
+                              <stop offset="100%" stopColor="#F59E0B" stopOpacity="0.85" />
+                            </linearGradient>
+                          </defs>
+                          <path 
+                            d="M 1 2 Q 50 7, 99 2" 
+                            stroke="url(#headline-bend-gradient-1)" 
+                            strokeWidth="2.5" 
+                            strokeLinecap="round" 
+                            fill="none" 
+                          />
+                        </svg>
                       </span>
                       <span className="font-display font-black text-slate-950 inline-block">Here.</span>
                     </span>

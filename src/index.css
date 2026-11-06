@@ -33,7 +33,7 @@
   /* Typography Stacks: Modern Professional Neo-Grotesk & Editorial Accents */
   --font-display: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-sans: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-serif: 'Lora', 'Playfair Display', 'Fraunces', 'Newsreader', Georgia, serif;
+  --font-serif: 'Playfair Display', 'Lora', 'Fraunces', 'Newsreader', Georgia, serif;
   --font-script: 'Caveat', cursive, sans-serif;
 
   /* Layout Max Width - Expansive Full Widescreen */
