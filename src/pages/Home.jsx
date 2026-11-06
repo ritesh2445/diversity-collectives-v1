@@ -470,14 +470,18 @@ export default function Home() {
                     ESTABLISHED 2014 · VENTURA COUNTY 501(C)(3) NONPROFIT
                   </span>
 
-                  <h1 className="font-display text-4xl sm:text-6xl md:text-7xl xl:text-[5.15rem] font-black tracking-tight text-slate-950 leading-[1.06] sm:leading-[1.02]">
-                    You Are <br className="hidden sm:inline" />
-                    <span className="font-serif italic font-normal bg-gradient-to-r from-[#F43F5E] via-[#FB923C] to-[#FBBF24] bg-clip-text text-transparent relative inline-block">
-                      Always Welcome
-                      <svg className="absolute -bottom-1 left-0 w-full h-2.5 text-rose-500/50" viewBox="0 0 100 10" preserveAspectRatio="none">
-                        <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="3" fill="transparent" />
-                      </svg>
-                    </span> Here.
+                  <h1 className="font-display text-4xl sm:text-6xl md:text-7xl xl:text-[5.15rem] font-black tracking-tight text-slate-950 leading-[1.08] sm:leading-[1.04]">
+                    <span className="block">You Are</span>
+                    <span className="block mt-1 sm:mt-1.5">
+                      <span className="font-serif italic font-normal bg-gradient-to-r from-[#4A0E4E] via-[#8B1A8F] via-[#D91B5C] via-[#E11D48] via-[#EA580C] via-[#F97316] to-[#F59E0B] bg-clip-text text-transparent relative inline-block mr-2.5 sm:mr-3.5 pb-1 sm:pb-1.5">
+                        Always Welcome
+                        <span 
+                          className="absolute bottom-0 left-0 w-full h-[2.5px] sm:h-[3.5px] bg-gradient-to-r from-[#C026D3]/85 via-[#E11D48]/90 via-[#F97316]/85 to-[#F59E0B]/85 rounded-full" 
+                          aria-hidden="true"
+                        />
+                      </span>
+                      <span className="font-display font-black text-slate-950 inline-block">Here.</span>
+                    </span>
                   </h1>
 
                   <p className="text-sm sm:text-base md:text-lg text-slate-600 leading-relaxed font-normal max-w-xl pt-0.5">
@@ -727,13 +731,19 @@ export default function Home() {
                     ESTABLISHED 2014 • VENTURA COUNTY 501(C)(3) NONPROFIT
                   </div>
 
-                  {/* Editorial Headline with Fraunces & Living Rainbow Gradient "Always" */}
-                  <h1 className="font-fraunces text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-[4.25rem] xl:text-[4.85rem] font-bold tracking-tight text-slate-950 leading-[1.05]">
-                    <span className="block font-black">You Are</span>
-                    <span className="block italic font-black my-1 text-[1.12em] animate-liquid-flow select-none drop-shadow-xs">
-                      Always
+                  {/* Editorial Headline: Bold Sans "You Are", Italic Serif Gradient "Always Welcome" with Accent Line, and Bold Sans "Here." */}
+                  <h1 className="font-display text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-[4.25rem] xl:text-[4.85rem] font-black tracking-tight text-slate-950 leading-[1.08] sm:leading-[1.04]">
+                    <span className="block">You Are</span>
+                    <span className="block mt-1 sm:mt-1.5">
+                      <span className="font-serif italic font-normal bg-gradient-to-r from-[#4A0E4E] via-[#8B1A8F] via-[#D91B5C] via-[#E11D48] via-[#EA580C] via-[#F97316] to-[#F59E0B] bg-clip-text text-transparent relative inline-block mr-2.5 sm:mr-3.5 pb-1 sm:pb-1.5">
+                        Always Welcome
+                        <span 
+                          className="absolute bottom-0 left-0 w-full h-[2.5px] sm:h-[3.5px] bg-gradient-to-r from-[#C026D3]/85 via-[#E11D48]/90 via-[#F97316]/85 to-[#F59E0B]/85 rounded-full" 
+                          aria-hidden="true"
+                        />
+                      </span>
+                      <span className="font-display font-black text-slate-950 inline-block">Here.</span>
                     </span>
-                    <span className="block font-black">Welcome Here.</span>
                   </h1>
 
                   {/* Verified Non-AI Authentic DCVC Mission Copy with Highlighted Accents */}
