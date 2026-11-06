@@ -50,7 +50,7 @@ export default function Sponsors() {
 
       {/* Main Sponsors by Tier */}
       <section className="container-clean py-16 space-y-16">
-        {sponsorshipTiers.map((tierGroup, idx) => (
+        {sponsorshipTiers.filter(t => t.sponsors.filter(Boolean).length > 0).map((tierGroup, idx) => (
           <div key={idx} className="space-y-6">
             <div className="border-b border-slate-200 pb-4">
               <span className="text-[11px] font-black uppercase tracking-wider text-[#5A1E65] bg-purple-50 px-3 py-1 rounded-full border border-purple-200 inline-block mb-2">
@@ -64,7 +64,7 @@ export default function Sponsors() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl">
               {tierGroup.sponsors.filter(Boolean).map((sponsor) => (
                 <a
                   key={sponsor.shortName}

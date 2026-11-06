@@ -190,14 +190,14 @@ export default function About() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto perspective-1000">
+          <div className="flex flex-wrap justify-center items-stretch gap-6 max-w-4xl mx-auto perspective-1000">
             {sponsorsList.map((sponsor) => (
               <a
                 key={sponsor.shortName}
                 href={sponsor.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-white p-7 rounded-2xl border-2 border-slate-200/80 hover:border-[#5A1E65] transition-all text-center shadow-md hover:shadow-2xl interactive-card-3d group cursor-pointer"
+                className="w-full sm:w-[320px] md:w-[360px] bg-white p-7 rounded-2xl border-2 border-slate-200/80 hover:border-[#5A1E65] transition-all text-center shadow-md hover:shadow-2xl interactive-card-3d group cursor-pointer flex flex-col justify-between"
               >
                 <div className="h-20 flex items-center justify-center mb-5">
                   <img 
@@ -206,11 +206,13 @@ export default function About() {
                     className="max-h-full max-w-[80%] object-contain group-hover:scale-108 transition-transform duration-300"
                   />
                 </div>
-                <h3 className="font-display text-base font-black text-slate-900 group-hover:text-[#5A1E65] transition-colors flex items-center justify-center gap-1.5">
-                  <span>{sponsor.name}</span>
-                  <ArrowUpRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#5A1E65]" />
-                </h3>
-                <p className="text-xs text-slate-500 mt-1 font-medium">{sponsor.role}</p>
+                <div>
+                  <h3 className="font-display text-base font-black text-slate-900 group-hover:text-[#5A1E65] transition-colors flex items-center justify-center gap-1.5">
+                    <span>{sponsor.name}</span>
+                    <ArrowUpRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#5A1E65]" />
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1 font-medium">{sponsor.role}</p>
+                </div>
               </a>
             ))}
           </div>
