@@ -1945,10 +1945,9 @@ export default function Home() {
               return (
                 <CardSpotlight
                   key={evt.id}
-                  className="card-vibrant-purple p-5 sm:p-6 md:p-7 interactive-card-3d shadow-sm hover:shadow-xl"
-                  tilt={true}
-                  maxTilt={4}
-                  glare={true}
+                  className="card-vibrant-purple p-5 sm:p-6 md:p-7 shadow-sm hover:shadow-xl transition-all duration-200"
+                  tilt={false}
+                  glare={false}
                 >
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
                     
@@ -1976,7 +1975,7 @@ export default function Home() {
                       </p>
                     </div>
 
-                    <div className="md:col-span-3 flex md:justify-end">
+                    <div className="md:col-span-3 flex md:justify-end relative z-20">
                       <Link 
                         to={`/events/${evt.slug}`}
                         className="btn-secondary text-xs py-2.5 px-5 w-full md:w-auto text-center font-bold"

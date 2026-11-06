@@ -34,6 +34,7 @@ import {
 import ImagePicker from './ImagePicker.jsx';
 import PictureFolderManager from './PictureFolderManager.jsx';
 import StyleCustomizer from './StyleCustomizer.jsx';
+import NewsWritingPad from './NewsWritingPad.jsx';
 import {
   getLiveCmsData,
   saveLiveCmsData,
@@ -1649,6 +1650,18 @@ export default function CmsStudio() {
                       value={formData.tags || ''}
                       onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
                       className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                      <span>Article Full Body & Layout (Blogspot Writing Pad)</span>
+                      <span className="text-[10px] text-purple-700 font-semibold">Supports Rich Text, Images, Callouts & HTML</span>
+                    </label>
+                    <NewsWritingPad
+                      value={formData.body || formData.content || ''}
+                      onChange={(html) => setFormData(prev => ({ ...prev, body: html }))}
+                      onReadTimeCalculated={(time) => setFormData(prev => ({ ...prev, readTime: time }))}
                     />
                   </div>
                 </>

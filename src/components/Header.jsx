@@ -15,9 +15,9 @@ import {
   Compass, 
   HeartHandshake, 
   MapPin,
-  ChevronRight,
-  Accessibility
+  ChevronRight
 } from 'lucide-react';
+import TraditionalAccessibilityIcon from './icons/TraditionalAccessibilityIcon';
 import { orgInfo } from '../data/dcvcData';
 import { a11yStore } from '../accessibility/a11yStore';
 
@@ -167,7 +167,7 @@ export default function Header() {
                 title="Launch DCVC Accessibility Companion (Alt + A)"
                 aria-label="Launch Accessibility & Audio Tools"
               >
-                <Accessibility className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#5A1E65] flex-shrink-0" />
+                <TraditionalAccessibilityIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#5A1E65] flex-shrink-0" />
               </button>
 
               {/* Quick Exit Shield Button (Always visible on mobile & desktop for crisis safety) */}
@@ -341,7 +341,7 @@ export default function Header() {
               >
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-lg bg-amber-100 text-[#5A1E65] flex items-center justify-center flex-shrink-0">
-                    <Accessibility className="w-4 h-4 text-[#5A1E65]" />
+                    <TraditionalAccessibilityIcon className="w-4 h-4 text-[#5A1E65]" />
                   </div>
                   <div>
                     <span className="font-bold text-slate-900 group-hover:text-[#5A1E65] text-sm block">Accessibility Companion</span>

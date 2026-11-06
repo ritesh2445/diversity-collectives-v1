@@ -222,11 +222,11 @@ export default function Resources() {
           </div>
           <a
             href={`mailto:${orgInfo.email}?subject=Resource%20Directory%20Addition%20Inquiry`}
-            className="py-3.5 px-7 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-400 text-slate-950 font-black text-sm shadow-[0_10px_25px_-5px_rgba(245,158,11,0.5)] hover:scale-103 transition-all flex-shrink-0 cursor-pointer flex items-center gap-2 relative z-10"
+            className="py-3.5 px-7 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-400 !text-slate-950 font-black text-sm shadow-[0_10px_25px_-5px_rgba(245,158,11,0.5)] hover:scale-103 transition-all flex-shrink-0 cursor-pointer flex items-center gap-2 relative z-10"
           >
-            <PlusCircle className="w-4 h-4 text-slate-950" />
-            <span>Submit a Resource</span>
-            <ArrowUpRight className="w-4 h-4" />
+            <PlusCircle className="w-4 h-4 !text-slate-950 stroke-current" />
+            <span className="!text-slate-950 font-black">Submit a Resource</span>
+            <ArrowUpRight className="w-4 h-4 !text-slate-950 stroke-current" />
           </a>
         </div>
       </section>

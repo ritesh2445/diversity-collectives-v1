@@ -122,10 +122,9 @@ export default function Events() {
               return (
                 <CardSpotlight 
                   key={evt.id}
-                  className="glass-card p-6 sm:p-8 rounded-3xl border-2 border-slate-200/90 hover:border-[#5A1E65]/80 transition-all duration-300 shadow-sm hover:shadow-2xl interactive-card-3d"
-                  tilt={true}
-                  maxTilt={5}
-                  glare={true}
+                  className="glass-card p-6 sm:p-8 rounded-3xl border-2 border-slate-200/90 hover:border-[#5A1E65]/80 transition-all duration-200 shadow-sm hover:shadow-xl"
+                  tilt={false}
+                  glare={false}
                 >
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
                     
@@ -181,7 +180,7 @@ export default function Events() {
                     </div>
 
                     {/* Actions: 100% Active */}
-                    <div className="md:col-span-3 flex flex-col md:items-end gap-2.5">
+                    <div className="md:col-span-3 flex flex-col md:items-end gap-2.5 relative z-20">
                       <Link
                         to={`/events/${evt.slug}`}
                         className="btn-primary py-3 px-6 text-xs font-bold w-full md:w-auto text-center shadow-md hover:shadow-xl inline-flex items-center justify-center gap-1.5"

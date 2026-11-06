@@ -416,6 +416,60 @@ img {
   color: #7F1D1D;
 }
 
+/* ==========================================================================
+   BUTTON & LINK ACCESSIBILITY CONTRAST ENFORCEMENT (WCAG 2.2 AAA)
+   - Yellow/Amber action buttons: Strict black/charcoal text (#020617)
+   - Purple/Gradient/Dark action buttons: Strict crisp white text (#FFFFFF)
+   ========================================================================== */
+.btn-amber,
+.btn-yellow,
+[class*="bg-amber-400"],
+[class*="bg-amber-300"],
+[class*="bg-yellow-400"],
+[class*="bg-yellow-300"],
+[class*="from-amber-400"],
+[class*="from-yellow-400"] {
+  color: #020617 !important;
+}
+
+.btn-amber *,
+.btn-yellow *,
+[class*="bg-amber-400"] span,
+[class*="bg-amber-400"] svg,
+[class*="bg-amber-300"] span,
+[class*="bg-amber-300"] svg,
+[class*="from-amber-400"] span,
+[class*="from-amber-400"] svg,
+[class*="from-yellow-400"] span,
+[class*="from-yellow-400"] svg {
+  color: #020617 !important;
+  stroke: #020617 !important;
+}
+
+.btn-primary,
+.btn-primary *,
+[class*="bg-[#5A1E65]"],
+[class*="bg-purple-900"],
+[class*="bg-purple-800"],
+[class*="from-purple-900"],
+[class*="from-rose-600"] {
+  color: #FFFFFF !important;
+}
+
+.btn-primary span,
+.btn-primary svg:not(.text-amber-300):not(.text-amber-400):not(.text-rose-300):not(.text-emerald-300),
+[class*="bg-[#5A1E65]"] span,
+[class*="bg-[#5A1E65]"] svg:not(.text-amber-300):not(.text-amber-400):not(.text-rose-300):not(.text-emerald-300),
+[class*="bg-purple-900"] span,
+[class*="bg-purple-900"] svg,
+[class*="bg-purple-800"] span,
+[class*="bg-purple-800"] svg,
+[class*="from-rose-600"] span,
+[class*="from-rose-600"] svg:not(.text-rose-300):not(.fill-current) {
+  color: #FFFFFF !important;
+  stroke: #FFFFFF !important;
+}
+
 /* Focus States */
 a:focus-visible, button:focus-visible {
   outline: 2px solid var(--accent-primary);

@@ -90,14 +90,21 @@ export default function NewsArticle() {
           />
         </div>
 
-        {/* Article Body */}
-        <div className="prose prose-lg max-w-none text-slate-700 space-y-6 leading-relaxed font-medium">
-          {article.body.map((para, i) => (
-            <p key={i} className="text-base sm:text-lg">
-              {para}
-            </p>
-          ))}
-        </div>
+        {/* Article Body: Supports both rich HTML from Blogspot Writing Pad & traditional paragraphs */}
+        {typeof article.body === 'string' ? (
+          <div 
+            className="prose prose-lg max-w-none text-slate-700 leading-relaxed font-medium news-rich-content"
+            dangerouslySetInnerHTML={{ __html: article.body }}
+          />
+        ) : (
+          <div className="prose prose-lg max-w-none text-slate-700 space-y-6 leading-relaxed font-medium">
+            {(Array.isArray(article.body) ? article.body : [article.body || article.excerpt]).map((para, i) => (
+              <p key={i} className="text-base sm:text-lg">
+                {para}
+              </p>
+            ))}
+          </div>
+        )}
 
         {/* Article Footer Callout */}
         <div className="mt-12 p-8 rounded-3xl bg-purple-50/70 border-2 border-purple-200 flex flex-col sm:flex-row items-center justify-between gap-6">

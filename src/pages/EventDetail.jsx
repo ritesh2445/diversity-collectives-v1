@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
-import { 
-  ArrowLeft, 
-  MapPin, 
-  Mail, 
-  Ticket, 
-  ArrowUpRight, 
-  Share2, 
+import {
+  ArrowLeft,
+  MapPin,
+  Mail,
+  Ticket,
+  ArrowUpRight,
+  Share2,
   ShieldCheck,
   Check,
   Calendar,
@@ -48,11 +48,11 @@ export default function EventDetail() {
 
   return (
     <div className="pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
-      
+
       {/* Back button and Share */}
       <div className="container-clean mb-6 flex items-center justify-between">
-        <Link 
-          to="/events" 
+        <Link
+          to="/events"
           className="inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-[#5A1E65] transition-colors py-1.5 px-3.5 rounded-full bg-slate-100 hover:bg-purple-50"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
@@ -70,7 +70,7 @@ export default function EventDetail() {
 
       {/* Main Event Article */}
       <article className="container-clean">
-        
+
         {/* Cancellation Alert Banner */}
         {event.isCancelled && (
           <div className="mb-8 p-5 rounded-2xl bg-rose-50 border-2 border-rose-300 text-rose-900 flex items-center gap-3">
@@ -83,7 +83,7 @@ export default function EventDetail() {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start pb-16 border-b border-slate-100">
-          
+
           {/* Main Info */}
           <div className="lg:col-span-8 space-y-8">
             <div className="space-y-3">
@@ -110,8 +110,8 @@ export default function EventDetail() {
             {/* Image Banner */}
             {event.image && (
               <div className="rounded-3xl overflow-hidden aspect-[16/9] shadow-xl border-2 border-slate-200">
-                <img 
-                  src={event.image} 
+                <img
+                  src={event.image}
                   alt={event.title}
                   className="w-full h-full object-cover"
                   onError={(e) => {
@@ -154,11 +154,11 @@ export default function EventDetail() {
                   href={getGoogleCalendarUrl(event)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="py-2.5 px-4 rounded-xl bg-[#5A1E65] text-white text-xs font-bold shadow-xs hover:shadow-md transition-all inline-flex items-center gap-2"
+                  className="py-2.5 px-4 rounded-xl bg-[#5A1E65] !text-white text-xs font-bold shadow-xs hover:shadow-md transition-all inline-flex items-center gap-2 hover:bg-[#43144A]"
                 >
                   <Calendar className="w-3.5 h-3.5 text-amber-300" />
-                  <span>Add to Google Calendar</span>
-                  <ArrowUpRight className="w-3 h-3" />
+                  <span className="!text-white font-bold">Add to Google Calendar</span>
+                  <ArrowUpRight className="w-3 h-3 !text-white" />
                 </a>
               </div>
             </div>
@@ -201,7 +201,7 @@ export default function EventDetail() {
               maxTilt={5}
               glare={true}
             >
-              
+
               {/* Date Box */}
               <div className="flex items-center gap-4 pb-6 border-b border-slate-200">
                 <div className="flex flex-col items-center justify-center min-w-[76px] p-3 rounded-2xl bg-gradient-to-b from-[#5A1E65] to-purple-900 text-white shadow-md">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Accessibility } from 'lucide-react';
+import TraditionalAccessibilityIcon from '../icons/TraditionalAccessibilityIcon';
 import { a11yStore } from '../../accessibility/a11yStore';
 
 export default function ReciteLauncher() {
@@ -38,10 +38,10 @@ export default function ReciteLauncher() {
       aria-controls="native-accessibility-companion-ribbon"
       aria-label="Launch Accessibility & Audio Companion Toolbar (Alt + A)"
       title="Accessibility & Audio Tools (Alt + A)"
-      className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[99990] flex items-center gap-2.5 p-3 sm:px-4 sm:py-3 rounded-full bg-[#5A1E65] text-white shadow-2xl border-2 border-amber-300 hover:bg-[#43144A] hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer select-none a11y-toolbar-isolated focus:outline-none focus:ring-4 focus:ring-amber-400"
+      className="fixed bottom-4 left-4 sm:bottom-6 sm:left-6 z-[99990] flex items-center gap-2.5 p-3 sm:px-4 sm:py-3 rounded-full bg-[#5A1E65] text-white shadow-2xl border-2 border-amber-300 hover:bg-[#43144A] hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer select-none a11y-toolbar-isolated focus:outline-none focus:ring-4 focus:ring-amber-400"
     >
       <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center font-bold shadow-xs flex-shrink-0">
-        <Accessibility className="w-4 h-4 sm:w-5 sm:h-5 fill-current" aria-hidden="true" />
+        <TraditionalAccessibilityIcon className="w-4 h-4 sm:w-5 sm:h-5 text-slate-950" />
       </div>
       <div className="hidden sm:flex flex-col text-left">
         <span className="font-extrabold text-xs tracking-wide text-white leading-tight">

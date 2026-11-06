@@ -200,3 +200,4 @@ export async function uploadAndStoreImage(file, category = 'media') {
     note: 'Optimized and saved locally. Set GitHub token in Settings for direct repo commits.'
   };
 }
+

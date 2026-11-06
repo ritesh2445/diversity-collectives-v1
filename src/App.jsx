@@ -10,6 +10,7 @@ import WelcomeCurtain from './components/WelcomeCurtain';
 import SkipNavigation from './components/accessibility/SkipNavigation';
 import ReciteToolbar from './components/accessibility/ReciteToolbar';
 import ReciteReadingAids from './components/accessibility/ReciteReadingAids';
+import ReciteLauncher from './components/accessibility/ReciteLauncher';
 
 // Eagerly loaded for instantaneous LCP first paint
 import Home from './pages/Home';
@@ -67,6 +68,7 @@ export default function App() {
           <SkipNavigation />
 
           {/* Native DCVC Accessibility Companion Suite (Instant 0ms Launch) */}
+          <ReciteLauncher />
           <ReciteReadingAids />
           <ReciteToolbar />
 

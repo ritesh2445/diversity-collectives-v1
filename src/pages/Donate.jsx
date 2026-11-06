@@ -229,11 +229,11 @@ export default function Donate() {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={handleConfetti}
-                className="w-full py-4 px-8 rounded-2xl bg-gradient-to-r from-rose-600 via-[#5A1E65] to-purple-800 text-white font-black text-base tracking-wide flex items-center justify-center gap-2 shadow-xl hover:shadow-2xl hover:scale-102 transition-all cursor-pointer text-center"
+                className="w-full py-4 px-8 rounded-2xl bg-gradient-to-r from-rose-600 via-[#5A1E65] to-purple-800 !text-white font-black text-base tracking-wide flex items-center justify-center gap-2 shadow-xl hover:shadow-2xl hover:scale-102 transition-all cursor-pointer text-center"
               >
                 <Heart className="w-5 h-5 fill-current text-rose-300 animate-bounce" />
-                <span>Give ${effectiveAmount} {frequency === 'monthly' ? 'Monthly' : 'Now'} Securely via Zeffy</span>
-                <ArrowUpRight className="w-5 h-5" />
+                <span className="!text-white font-black">Give ${effectiveAmount} {frequency === 'monthly' ? 'Monthly' : 'Now'} Securely via Zeffy</span>
+                <ArrowUpRight className="w-5 h-5 !text-white stroke-white" />
               </a>
 
               <p className="text-[11px] text-center text-slate-400 flex items-center justify-center gap-1.5 font-medium">
@@ -290,10 +290,10 @@ export default function Donate() {
               </div>
               <Link
                 to="/appreciation-card/preview"
-                className="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-xl bg-purple-900 text-white text-xs font-bold hover:bg-purple-800 transition-colors"
+                className="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-xl bg-purple-900 !text-white text-xs font-bold hover:bg-purple-800 transition-colors shadow-sm"
               >
-                <Eye className="w-4 h-4" />
-                <span>Explore Interactive Card Preview</span>
+                <Eye className="w-4 h-4 !text-white stroke-white" />
+                <span className="!text-white font-bold">Explore Interactive Card Preview</span>
               </Link>
             </div>
 
