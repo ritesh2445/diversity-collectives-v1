@@ -15,13 +15,14 @@ import {
   Repeat
 } from 'lucide-react';
 import { liveEvents, orgInfo } from '../data/dcvcData';
+import { cmsStore } from '../services/cmsStore';
 import CardSpotlight from '../components/CardSpotlight';
 import { getGoogleCalendarUrl, downloadIcsFile } from '../utils/calendar';
 import { usePageMeta } from '../utils/seo';
 
 export default function EventDetail() {
   const { slug } = useParams();
-  const event = liveEvents.find(e => e.slug === slug);
+  const event = liveEvents.find(e => e.slug === slug) || cmsStore.getEvents().find(e => e.slug === slug || e.id === slug);
   const [copied, setCopied] = useState(false);
 
   usePageMeta({

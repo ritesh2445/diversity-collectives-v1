@@ -78,12 +78,25 @@ import {
   deleteAdminCustomCard,
   issueCustomDonorCard
 } from './services/adminClient.js';
+import { getGitHubStorageConfig, saveGitHubStorageConfig } from './services/imageService.js';
 import DesignEditor from './components/DesignEditor.jsx';
 import CmsStudio from './components/CmsStudio.jsx';
 
 export default function AdminApp() {
   const [currentUser, setCurrentUser] = useState(getStoredUser());
-  const [activeTab, setActiveTab] = useState('cms');
+  const [activeTab, setActiveTab] = useState('overview');
+  const [donationsSubTab, setDonationsSubTab] = useState('analytics'); // 'analytics' | 'cards'
+  const [settingsSubTab, setSettingsSubTab] = useState('github'); // 'github' | 'staff' | 'exports' | 'audit' | 'system'
+
+  // GitHub storage & CDN state
+  const [ghConfig, setGhConfig] = useState(getGitHubStorageConfig);
+  const [ghOwner, setGhOwner] = useState(getGitHubStorageConfig().owner || 'diversity-collective');
+  const [ghRepo, setGhRepo] = useState(getGitHubStorageConfig().repo || 'diversity-collectives-v1');
+  const [ghBranch, setGhBranch] = useState(getGitHubStorageConfig().branch || 'main');
+  const [ghToken, setGhToken] = useState(getGitHubStorageConfig().token || '');
+  const [ghCdn, setGhCdn] = useState(getGitHubStorageConfig().cdnProvider || 'jsdelivr');
+  const [ghTesting, setGhTesting] = useState(false);
+  const [ghStatusMsg, setGhStatusMsg] = useState('');
 
   // Login form state
   const [loginEmail, setLoginEmail] = useState('');
@@ -177,31 +190,37 @@ export default function AdminApp() {
   const loadData = async () => {
     if (!currentUser) return;
     try {
-      if (activeTab === 'analytics') {
+      if (activeTab === 'analytics' || activeTab === 'donations' || activeTab === 'overview') {
         setAnalyticsLoading(true);
         const data = await getDonationAnalytics(analyticsRange);
         setAnalyticsData(data);
         setAnalyticsLoading(false);
-      } else if (activeTab === 'appreciation') {
+      }
+      if (activeTab === 'appreciation' || activeTab === 'donations' || activeTab === 'overview') {
         setCardTiers(getAdminCardTiers());
         setCustomCards(getAdminCustomCards());
-      } else if (activeTab === 'directory') {
+      }
+      if (activeTab === 'directory' || activeTab === 'overview') {
         const bizList = await getDirectorySubmissions(directoryStatusFilter);
         setBusinesses(bizList);
         const corrList = await getBusinessCorrections();
         setCorrections(corrList);
-      } else if (activeTab === 'inquiries') {
+      }
+      if (activeTab === 'inquiries' || activeTab === 'overview') {
         const inqList = await getInquiries(inquiryType);
         setInquiries(inqList);
-      } else if (activeTab === 'users') {
+      }
+      if (activeTab === 'users' || activeTab === 'settings') {
         const users = await getStaffUsers();
         setStaffUsers(users);
-      } else if (activeTab === 'system') {
+      }
+      if (activeTab === 'system' || activeTab === 'settings') {
         setHealthLoading(true);
         const health = await getSystemHealth();
         setSystemHealth(health);
         setHealthLoading(false);
-      } else if (activeTab === 'audit') {
+      }
+      if (activeTab === 'audit' || activeTab === 'settings') {
         const logs = await getAuditLogs();
         setAuditLogs(logs);
       }
@@ -487,19 +506,57 @@ export default function AdminApp() {
     );
   }
 
-  // Navigation tabs configuration
+  const handleSaveGitHubConfig = async (e) => {
+    e?.preventDefault?.();
+    const updated = {
+      owner: ghOwner.trim(),
+      repo: ghRepo.trim(),
+      branch: ghBranch.trim(),
+      token: ghToken.trim(),
+      cdnProvider: ghCdn
+    };
+    saveGitHubStorageConfig(updated);
+    setGhConfig(updated);
+
+    if (updated.token) {
+      setGhTesting(true);
+      setGhStatusMsg('Testing GitHub API connection...');
+      try {
+        const res = await fetch(`https://api.github.com/repos/${updated.owner}/${updated.repo}`, {
+          headers: {
+            'Authorization': `Bearer ${updated.token}`,
+            'Accept': 'application/vnd.github+json'
+          }
+        });
+        if (res.ok) {
+          const repoData = await res.json();
+          setGhStatusMsg(`✓ Connected to ${repoData.full_name} (${repoData.default_branch} branch). CDN: ${updated.cdnProvider}`);
+        } else {
+          setGhStatusMsg(`⚠️ GitHub returned HTTP ${res.status}. Verify repository name and token permissions.`);
+        }
+      } catch (err) {
+        setGhStatusMsg(`⚠️ Connection failed: ${err.message}`);
+      } finally {
+        setGhTesting(false);
+      }
+    } else {
+      setGhStatusMsg('Saved. Offline Local Optimizer is active. Enter a personal access token for automated repository commits.');
+    }
+    setFeedbackMsg('GitHub Storage & CDN settings successfully updated.');
+    setTimeout(() => setFeedbackMsg(''), 4000);
+  };
+
+  // Streamlined 6 core navigation tabs
+  const pendingBizCount = businesses.filter(b => b.status === 'pending').length;
+  const newInqCount = inquiries.filter(i => i.status === 'new').length;
+
   const navigationTabs = [
-    { id: 'cms', label: 'Full Site CMS', icon: LayoutGrid, badge: 'Full Control' },
-    { id: 'analytics', label: 'Donation Analytics', icon: TrendingUp, badge: '$54.3k' },
-    { id: 'appreciation', label: 'Appreciation Cards & Custom', icon: Heart, badge: 'Studio' },
-    { id: 'designer', label: 'Page Builder Studio', icon: Palette, badge: 'Drag & Drop' },
-    { id: 'themes', label: 'Hero Switcher & Themes', icon: Sparkles, badge: 'Design 1 / 2' },
-    { id: 'directory', label: 'Directory Moderation', icon: Building2 },
-    { id: 'inquiries', label: 'Inquiries & Triage', icon: Mail },
-    { id: 'users', label: 'Staff & RBAC', icon: Users },
-    { id: 'system', label: 'System Health', icon: Activity },
-    { id: 'exports', label: 'Data Exports', icon: Download },
-    { id: 'audit', label: 'Audit Trail', icon: History }
+    { id: 'overview', label: 'Overview', icon: LayoutGrid, badge: 'Home' },
+    { id: 'cms', label: 'Site Content', icon: Sparkles, badge: 'Live CMS' },
+    { id: 'directory', label: 'Directory', icon: Building2, badge: pendingBizCount > 0 ? `${pendingBizCount} Pending` : null },
+    { id: 'donations', label: 'Donations & Cards', icon: Heart, badge: '$54.3k' },
+    { id: 'inquiries', label: 'Inquiries', icon: Mail, badge: newInqCount > 0 ? `${newInqCount} New` : null },
+    { id: 'settings', label: 'Settings & Team', icon: Users, badge: 'Config' }
   ];
 
   return (
@@ -515,7 +572,7 @@ export default function AdminApp() {
               <h1 className="font-extrabold text-sm tracking-wide text-white flex items-center gap-2">
                 <span>DCVC Management Portal</span>
                 <span className="text-[10px] bg-purple-500/30 text-amber-300 px-2 py-0.5 rounded-full font-mono border border-purple-400/30">
-                  v2.7 Enterprise Suite
+                  Live Admin
                 </span>
               </h1>
               <p className="text-[11px] text-purple-200">
@@ -543,6 +600,29 @@ export default function AdminApp() {
           </div>
         </div>
       </header>
+
+      {/* Client Demo Walkthrough Banner */}
+      <div className="bg-amber-400 text-slate-950 px-4 py-2 text-xs font-bold flex flex-wrap items-center justify-between gap-2 shadow-xs border-b border-amber-500">
+        <div className="flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-700 animate-pulse" />
+          <span className="font-black uppercase tracking-wider">CLIENT DEMO ENVIRONMENT</span>
+          <span className="hidden sm:inline font-normal text-slate-800">· Safe for client walkthrough with Celia. Zero risk of breaking production.</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-[11px] bg-slate-900/10 px-2 py-0.5 rounded text-slate-900 font-mono">
+            Hero: {currentThemeId === 'spotlight' || currentThemeId === 'default' ? 'Design 2 (Vibrant)' : 'Design 1 (Mosaic)'}
+          </span>
+          <a
+            href="/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-2.5 py-1 rounded-md bg-slate-900 text-white text-[11px] font-bold hover:bg-slate-800 transition-colors inline-flex items-center gap-1 cursor-pointer"
+          >
+            <Eye className="w-3 h-3 text-amber-300" />
+            <span>Open Public Site</span>
+          </a>
+        </div>
+      </div>
 
       {/* Main Tab Navigation Bar */}
       <nav className="bg-white border-b border-slate-200 sticky top-[57px] z-30 shadow-2xs">
@@ -586,16 +666,281 @@ export default function AdminApp() {
       <main className="max-w-7xl mx-auto w-full px-4 py-6 flex-1">
         
         {/* ==================================================================
-            TAB 0: FULL SITE CONTENT MANAGEMENT SYSTEM (CMS)
+            TAB 0: EXECUTIVE OVERVIEW DASHBOARD & HERO DESIGN SWITCHER
+            ================================================================== */}
+        {activeTab === 'overview' && (
+          <div className="space-y-6">
+            {/* Welcome & System Status Card */}
+            <div className="p-6 rounded-3xl bg-gradient-to-r from-purple-950 via-[#5A1E65] to-indigo-950 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6 border border-purple-800/60">
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-[11px] font-black uppercase tracking-widest text-amber-300">
+                    EXECUTIVE CONTROL SUITE
+                  </span>
+                  <span className="text-[10px] bg-purple-800/80 text-purple-200 px-2 py-0.5 rounded-full font-mono border border-purple-700">
+                    Offline Sandbox Active
+                  </span>
+                </div>
+                <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-white">
+                  Welcome, {currentUser.name}
+                </h2>
+                <p className="text-xs sm:text-sm text-purple-200 max-w-2xl leading-relaxed">
+                  Full control over Diversity Collective's public website, clinical programs, event cancellations, affirming business directory, donor cards, and media assets.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('cms')}
+                  className="px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-black flex items-center gap-1.5 shadow-md transition-all cursor-pointer"
+                >
+                  <Sparkles className="w-4 h-4 text-[#5A1E65]" />
+                  <span>Manage Content</span>
+                </button>
+                <a
+                  href="/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold flex items-center gap-1.5 transition-colors border border-white/20"
+                >
+                  <Eye className="w-4 h-4 text-amber-300" />
+                  <span>View Public Site</span>
+                </a>
+              </div>
+            </div>
+
+            {/* QUICK CONTROL: 1-Click Hero Design Switcher */}
+            <div className="bg-gradient-to-r from-purple-50 via-white to-amber-50 rounded-3xl p-6 border-2 border-purple-200 shadow-sm space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-amber-600" />
+                    <h3 className="font-display text-base font-black text-slate-950">
+                      Homepage Hero Section Design Switcher
+                    </h3>
+                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-purple-100 text-purple-900 border border-purple-200">
+                      1-Click Switch
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-600 mt-0.5">
+                    Switch between Design 1 (Community Mosaic / Original) and Design 2 (Vibrant Coastal Sanctuary). Changes update the public website immediately.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-500">Active Design:</span>
+                  <span className="px-3 py-1 rounded-full bg-[#5A1E65] text-amber-300 font-extrabold text-xs shadow-xs">
+                    {currentThemeId === 'spotlight' || currentThemeId === 'default' ? 'Design 2 (Vibrant Coastal)' : 'Design 1 (Community Mosaic)'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Design 1 Card */}
+                <div 
+                  onClick={() => handleApplyTheme('aurora')}
+                  className={`p-5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between gap-3 ${
+                    currentThemeId === 'aurora'
+                      ? 'bg-purple-50/80 border-[#5A1E65] shadow-md ring-2 ring-purple-600/30'
+                      : 'bg-white border-slate-200 hover:border-purple-300 hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <span className="text-[10px] font-black uppercase text-purple-800 tracking-wider">Design 1</span>
+                      <h4 className="font-display text-base font-extrabold text-slate-950">Community Mosaic Hero</h4>
+                      <p className="text-xs text-slate-500 mt-1">Original flagship layout with aurora community gradient ribbon and quick navigation.</p>
+                    </div>
+                    {currentThemeId === 'aurora' ? (
+                      <span className="px-2.5 py-1 rounded-full bg-emerald-600 text-white text-[10px] font-black flex items-center gap-1 shadow-xs">
+                        <Check className="w-3 h-3" /> Active
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 text-[10px] font-bold">
+                        Activate
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Design 2 Card */}
+                <div 
+                  onClick={() => handleApplyTheme('spotlight')}
+                  className={`p-5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between gap-3 ${
+                    currentThemeId === 'spotlight' || currentThemeId === 'default'
+                      ? 'bg-emerald-50/80 border-emerald-700 shadow-md ring-2 ring-emerald-600/30'
+                      : 'bg-white border-slate-200 hover:border-emerald-300 hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <span className="text-[10px] font-black uppercase text-emerald-800 tracking-wider">Design 2 (Vibrant)</span>
+                      <h4 className="font-display text-base font-extrabold text-slate-950">Vibrant Coastal Sanctuary Hero</h4>
+                      <p className="text-xs text-slate-500 mt-1">Modern editorial typography with curved underline and sanctuary pathfinder card.</p>
+                    </div>
+                    {currentThemeId === 'spotlight' || currentThemeId === 'default' ? (
+                      <span className="px-2.5 py-1 rounded-full bg-emerald-600 text-white text-[10px] font-black flex items-center gap-1 shadow-xs">
+                        <Check className="w-3 h-3" /> Active
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 text-[10px] font-bold">
+                        Activate
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* KEY METRIC SUMMARY CARDS */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div 
+                onClick={() => { setActiveTab('donations'); setDonationsSubTab('analytics'); }}
+                className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs hover:border-purple-300 transition-all cursor-pointer space-y-2"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-500">Donations Raised</span>
+                  <div className="w-8 h-8 rounded-xl bg-purple-50 text-[#5A1E65] flex items-center justify-center font-bold">
+                    $
+                  </div>
+                </div>
+                <div className="font-display text-2xl font-black text-slate-950">
+                  {analyticsData ? `$${analyticsData.summary.totalRaised.toLocaleString()}` : '$54,320'}
+                </div>
+                <p className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
+                  <TrendingUp className="w-3 h-3" />
+                  <span>+18.4% vs previous period</span>
+                </p>
+              </div>
+
+              <div 
+                onClick={() => setActiveTab('cms')}
+                className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs hover:border-purple-300 transition-all cursor-pointer space-y-2"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-500">Clinical & Peer Programs</span>
+                  <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="font-display text-2xl font-black text-slate-950">
+                  6 Active
+                </div>
+                <p className="text-[11px] text-purple-700 font-semibold">
+                  CRC, RU, SHINES, Little Unicorns
+                </p>
+              </div>
+
+              <div 
+                onClick={() => setActiveTab('directory')}
+                className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs hover:border-purple-300 transition-all cursor-pointer space-y-2"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-500">Affirming Directory</span>
+                  <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center">
+                    <Building2 className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="font-display text-2xl font-black text-slate-950">
+                  {businesses.length || 12} Verified
+                </div>
+                <p className="text-[11px] text-amber-800 font-semibold">
+                  {pendingBizCount} submissions pending review
+                </p>
+              </div>
+
+              <div 
+                onClick={() => setActiveTab('inquiries')}
+                className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs hover:border-purple-300 transition-all cursor-pointer space-y-2"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-500">Community Inquiries</span>
+                  <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center">
+                    <Mail className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="font-display text-2xl font-black text-slate-950">
+                  {inquiries.length || 14} Logged
+                </div>
+                <p className="text-[11px] text-blue-700 font-semibold">
+                  {newInqCount} new contact & volunteer inquiries
+                </p>
+              </div>
+            </div>
+
+            {/* GITHUB STORAGE & CDN STATUS BANNER */}
+            <div className="p-5 rounded-2xl bg-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white flex-shrink-0">
+                  <ExternalLink className="w-5 h-5 text-amber-300" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-sm font-bold text-white">GitHub Repository & CDN Media Storage</h4>
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-mono border border-emerald-500/30">
+                      {ghConfig.token ? 'GitHub Commits Active' : 'Offline Optimization Active'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-300 mt-0.5">
+                    Target Repo: <code className="text-amber-300">{ghConfig.owner}/{ghConfig.repo}</code> · Branch: <code className="text-amber-300">{ghConfig.branch}</code> · CDN: <code className="text-purple-300">{ghConfig.cdnProvider}</code>
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => { setActiveTab('settings'); setSettingsSubTab('github'); }}
+                className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-colors border border-white/20 whitespace-nowrap cursor-pointer"
+              >
+                Configure GitHub Token & CDN
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ==================================================================
+            TAB 1: FULL SITE CONTENT MANAGEMENT SYSTEM (CMS)
             ================================================================== */}
         {activeTab === 'cms' && (
           <CmsStudio />
         )}
 
         {/* ==================================================================
-            TAB 1: DONATION ANALYTICS & FINANCIAL INTELLIGENCE
+            TAB: DONATIONS & APPRECIATION CARDS
             ================================================================== */}
-        {activeTab === 'analytics' && (
+        {(activeTab === 'donations' || activeTab === 'analytics' || activeTab === 'appreciation') && (
+          <div className="space-y-6">
+            {/* Top Sub-Tab Switcher */}
+            <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
+              <button
+                type="button"
+                onClick={() => setDonationsSubTab('analytics')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  donationsSubTab === 'analytics'
+                    ? 'bg-[#5A1E65] text-white shadow-xs'
+                    : 'bg-white text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                <TrendingUp className="w-3.5 h-3.5" />
+                <span>Donation Analytics & Trends</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setDonationsSubTab('cards')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  donationsSubTab === 'cards'
+                    ? 'bg-[#5A1E65] text-white shadow-xs'
+                    : 'bg-white text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                <Heart className="w-3.5 h-3.5" />
+                <span>Appreciation Cards Studio</span>
+              </button>
+            </div>
+
+            {donationsSubTab === 'analytics' && (
           <div className="space-y-6">
             {/* Top Bar with Time Filter and CSV Export */}
             <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -870,10 +1215,7 @@ export default function AdminApp() {
           </div>
         )}
 
-        {/* ==================================================================
-            TAB 2: APPRECIATION CARDS & CUSTOM STUDIO
-            ================================================================== */}
-        {activeTab === 'appreciation' && (
+        {donationsSubTab === 'cards' && (
           <div className="space-y-6">
             <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
@@ -1552,6 +1894,8 @@ export default function AdminApp() {
             )}
           </div>
         )}
+      </div>
+    )}
 
         {/* ==================================================================
             TAB 3: DRAG & DROP DESIGN EDITOR (Visual Studio)
@@ -1948,9 +2292,188 @@ export default function AdminApp() {
         )}
 
         {/* ==================================================================
-            TAB 7: STAFF & RBAC TEAM MANAGEMENT
+            TAB: SETTINGS, TEAM & GITHUB STORAGE
             ================================================================== */}
-        {activeTab === 'users' && (
+        {(activeTab === 'settings' || activeTab === 'users' || activeTab === 'system' || activeTab === 'exports' || activeTab === 'audit') && (
+          <div className="space-y-6">
+            {/* Top Sub-Tab Switcher */}
+            <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-3">
+              <button
+                type="button"
+                onClick={() => setSettingsSubTab('github')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  settingsSubTab === 'github'
+                    ? 'bg-[#5A1E65] text-white shadow-xs'
+                    : 'bg-white text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>GitHub Storage & CDN</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSettingsSubTab('staff')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  settingsSubTab === 'staff'
+                    ? 'bg-[#5A1E65] text-white shadow-xs'
+                    : 'bg-white text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span>Staff & RBAC</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSettingsSubTab('exports')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  settingsSubTab === 'exports'
+                    ? 'bg-[#5A1E65] text-white shadow-xs'
+                    : 'bg-white text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>CSV Data Exports</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSettingsSubTab('audit')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  settingsSubTab === 'audit'
+                    ? 'bg-[#5A1E65] text-white shadow-xs'
+                    : 'bg-white text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                <History className="w-3.5 h-3.5" />
+                <span>Audit Log</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSettingsSubTab('system')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  settingsSubTab === 'system'
+                    ? 'bg-[#5A1E65] text-white shadow-xs'
+                    : 'bg-white text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                <Activity className="w-3.5 h-3.5" />
+                <span>System Health</span>
+              </button>
+            </div>
+
+            {/* Sub-tab 1: GitHub Storage & CDN Form */}
+            {settingsSubTab === 'github' && (
+              <form onSubmit={handleSaveGitHubConfig} className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-6">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-[11px] font-black uppercase tracking-wider text-purple-700">
+                      MEDIA ASSET INFRASTRUCTURE
+                    </span>
+                  </div>
+                  <h3 className="font-display text-xl font-bold text-slate-950 mt-1">
+                    GitHub Direct Storage & Global CDN Configuration
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
+                    Uploaded photographs are automatically compressed into optimized WebP/JPEG formats in your browser (max 1600px) and stored directly into your GitHub repository under <code>public/images/</code>. Images are distributed globally via high-speed CDN edges with zero layout collisions.
+                  </p>
+                </div>
+
+                {ghStatusMsg && (
+                  <div className={`p-4 rounded-2xl text-xs font-semibold ${
+                    ghStatusMsg.startsWith('✓') ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' :
+                    ghStatusMsg.startsWith('⚠️') ? 'bg-amber-50 text-amber-800 border border-amber-200' :
+                    'bg-purple-50 text-purple-800 border border-purple-200'
+                  }`}>
+                    {ghStatusMsg}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">GitHub Organization / Owner</label>
+                    <input
+                      type="text"
+                      required
+                      value={ghOwner}
+                      onChange={(e) => setGhOwner(e.target.value)}
+                      placeholder="diversity-collective"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Repository Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={ghRepo}
+                      onChange={(e) => setGhRepo(e.target.value)}
+                      placeholder="diversity-collectives-v1"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Target Branch</label>
+                    <input
+                      type="text"
+                      required
+                      value={ghBranch}
+                      onChange={(e) => setGhBranch(e.target.value)}
+                      placeholder="main"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">CDN Delivery Service</label>
+                    <select
+                      value={ghCdn}
+                      onChange={(e) => setGhCdn(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold bg-white"
+                    >
+                      <option value="jsdelivr">jsDelivr Global Edge CDN (Recommended - Fast & Free)</option>
+                      <option value="github_raw">GitHub Raw Content</option>
+                      <option value="relative">Relative Local Path (/images/...)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    GitHub Personal Access Token (PAT)
+                  </label>
+                  <input
+                    type="password"
+                    value={ghToken}
+                    onChange={(e) => setGhToken(e.target.value)}
+                    placeholder="ghp_xxxxxxxxxxxxxxxxxxxx (Requires 'repo' or contents:write scope)"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-mono"
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Token is stored exclusively in your browser's private localStorage and used directly from the client. It is never logged. If left blank, uploads are automatically optimized and cached locally.
+                  </p>
+                </div>
+
+                <div className="pt-4 border-t border-slate-200 flex items-center justify-between">
+                  <div className="text-xs text-slate-500">
+                    Target path: <code className="text-purple-700 font-mono">public/images/{'{filename}'}</code>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={ghTesting}
+                    className="px-6 py-2.5 rounded-xl bg-[#5A1E65] hover:bg-[#43144A] text-white text-xs font-extrabold shadow-md cursor-pointer transition-colors disabled:opacity-50"
+                  >
+                    {ghTesting ? 'Testing Connection...' : 'Save & Verify GitHub Storage'}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Sub-tab 2: Staff & RBAC */}
+            {settingsSubTab === 'staff' && (
           <div className="space-y-6">
             <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
@@ -2137,10 +2660,8 @@ export default function AdminApp() {
           </div>
         )}
 
-        {/* ==================================================================
-            TAB 8: SYSTEM DIAGNOSTICS & SERVICE HEALTH
-            ================================================================== */}
-        {activeTab === 'system' && (
+            {/* Sub-tab 5: System Diagnostics & Health */}
+            {settingsSubTab === 'system' && (
           <div className="space-y-6">
             <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
@@ -2198,10 +2719,8 @@ export default function AdminApp() {
           </div>
         )}
 
-        {/* ==================================================================
-            TAB 9: DATA EXPORTS (CSV)
-            ================================================================== */}
-        {activeTab === 'exports' && (
+            {/* Sub-tab 3: CSV Operational Data Exports */}
+            {settingsSubTab === 'exports' && (
           <div className="bg-white rounded-2xl p-6 border border-slate-200 space-y-6">
             <div>
               <h2 className="text-xl font-extrabold text-slate-900">Operational Data Exports (CSV)</h2>
@@ -2238,32 +2757,33 @@ export default function AdminApp() {
           </div>
         )}
 
-        {/* ==================================================================
-            TAB 10: ACTIVITY AUDIT TRAIL
-            ================================================================== */}
-        {activeTab === 'audit' && (
-          <div className="bg-white rounded-2xl p-6 border border-slate-200 space-y-4">
-            <div>
-              <h2 className="text-xl font-extrabold text-slate-900">Administrative Audit Log</h2>
-              <p className="text-xs text-slate-500">Immutable ledger of administrative actions, theme updates, and moderation events</p>
-            </div>
+            {/* Sub-tab 4: Activity Audit Trail */}
+            {settingsSubTab === 'audit' && (
+              <div className="bg-white rounded-2xl p-6 border border-slate-200 space-y-4">
+                <div>
+                  <h2 className="text-xl font-extrabold text-slate-900">Administrative Audit Log</h2>
+                  <p className="text-xs text-slate-500">Immutable ledger of administrative actions, theme updates, and moderation events</p>
+                </div>
 
-            <div className="space-y-2">
-              {auditLogs.length === 0 ? (
-                <p className="text-xs text-slate-400 py-4 text-center">No audit records recorded yet.</p>
-              ) : (
-                auditLogs.map((log) => (
-                  <div key={log.id} className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs flex items-center justify-between">
-                    <div>
-                      <span className="font-bold text-purple-900 uppercase tracking-wider text-[10px]">[{log.action}]</span>
-                      <span className="text-slate-700 ml-2 font-medium">{log.user_email}</span>
-                      <span className="text-slate-400 ml-2">({log.target_type} ID: {log.target_id || 'N/A'})</span>
-                    </div>
-                    <span className="text-slate-400 text-[10px]">{log.created_at}</span>
-                  </div>
-                ))
-              )}
-            </div>
+                <div className="space-y-2">
+                  {auditLogs.length === 0 ? (
+                    <p className="text-xs text-slate-400 py-4 text-center">No audit records recorded yet.</p>
+                  ) : (
+                    auditLogs.map((log) => (
+                      <div key={log.id} className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs flex items-center justify-between">
+                        <div>
+                          <span className="font-bold text-purple-900 uppercase tracking-wider text-[10px]">[{log.action}]</span>
+                          <span className="text-slate-700 ml-2 font-medium">{log.user_email}</span>
+                          <span className="text-slate-400 ml-2">({log.target_type} ID: {log.target_id || 'N/A'})</span>
+                        </div>
+                        <span className="text-slate-400 text-[10px]">{log.created_at}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
           </div>
         )}
 

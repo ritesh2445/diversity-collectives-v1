@@ -96,7 +96,16 @@ export default function Programs() {
                     <span className="text-xs font-black tracking-wider text-purple-700 bg-purple-50 px-3 py-1 rounded-full border border-purple-200 uppercase inline-block mb-2">
                       {prog.audience}
                     </span>
-                    <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-black text-slate-950 tracking-tight">
+                    <h2 
+                      style={{
+                        color: prog.fontColor || undefined,
+                        fontSize: prog.fontSize === '2xl' ? '2rem' :
+                                  prog.fontSize === '3xl' ? '2.5rem' :
+                                  prog.fontSize === 'xl' ? '1.75rem' :
+                                  prog.fontSize === 'sm' ? '1.25rem' : undefined
+                      }}
+                      className="font-display text-3xl sm:text-4xl md:text-5xl font-black text-slate-950 tracking-tight leading-[1.12]"
+                    >
                       {prog.title}
                     </h2>
                     <p className="font-serif italic text-lg text-[#5A1E65] mt-1.5 font-medium">

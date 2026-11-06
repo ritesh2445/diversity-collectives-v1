@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Search, 
@@ -17,6 +17,36 @@ import { businessDirectorySeed } from '../data/dcvcData';
 import CardSpotlight from '../components/CardSpotlight';
 import { usePageMeta } from '../utils/seo';
 
+function getLiveBusinesses() {
+  if (typeof localStorage === 'undefined') return businessDirectorySeed;
+  try {
+    const raw = localStorage.getItem('dcvc_admin_mock_biz');
+    if (!raw) return businessDirectorySeed;
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return businessDirectorySeed;
+
+    const approved = parsed.filter(b => b.status === 'approved').map(b => ({
+      id: b.id,
+      name: b.name,
+      category: b.category,
+      city: b.city,
+      address: b.address,
+      phone: b.phone,
+      website: b.website,
+      description: b.description,
+      tags: b.tags || ['Affirming Business', b.city, b.category],
+      featured: b.featured || false,
+      pledgeDate: b.affirming_pledge_signed_at?.slice(0, 10) || '2026-03-01'
+    }));
+
+    const existingNames = new Set(businessDirectorySeed.map(b => b.name.toLowerCase()));
+    const newAdditions = approved.filter(b => !existingNames.has(b.name.toLowerCase()));
+    return [...businessDirectorySeed, ...newAdditions];
+  } catch {
+    return businessDirectorySeed;
+  }
+}
+
 export default function Directory() {
   usePageMeta({
     title: 'LGBTQ+ Affirming Business Directory',
@@ -24,11 +54,22 @@ export default function Directory() {
     canonicalPath: '/directory'
   });
 
+  const [businessesList, setBusinessesList] = useState(getLiveBusinesses);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedCity, setSelectedCity] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 6;
+
+  useEffect(() => {
+    const handleSync = () => setBusinessesList(getLiveBusinesses());
+    window.addEventListener('storage', handleSync);
+    window.addEventListener('dcvc-directory-updated', handleSync);
+    return () => {
+      window.removeEventListener('storage', handleSync);
+      window.removeEventListener('dcvc-directory-updated', handleSync);
+    };
+  }, []);
 
   const categories = [
     'All',
@@ -51,7 +92,7 @@ export default function Directory() {
   ];
 
   const filteredBusinesses = useMemo(() => {
-    return businessDirectorySeed.filter((biz) => {
+    return businessesList.filter((biz) => {
       const matchesSearch = 
         biz.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         biz.description.toLowerCase().includes(searchQuery.toLowerCase()) ||

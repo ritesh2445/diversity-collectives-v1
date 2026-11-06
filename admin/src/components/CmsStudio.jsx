@@ -28,8 +28,12 @@ import {
   ShieldAlert,
   Heart,
   Layers,
-  ArrowRight
+  ArrowRight,
+  FolderOpen
 } from 'lucide-react';
+import ImagePicker from './ImagePicker.jsx';
+import PictureFolderManager from './PictureFolderManager.jsx';
+import StyleCustomizer from './StyleCustomizer.jsx';
 import {
   getLiveCmsData,
   saveLiveCmsData,
@@ -134,6 +138,8 @@ export default function CmsStudio() {
         chapter: `0${(cmsData.programs?.length || 0) + 1}`,
         heroImage: '/images/crc-building.jpg',
         accent: '#5A1E65',
+        fontSize: 'base',
+        fontColor: '#5A1E65',
         audience: 'All LGBTQ+ community members and affirming allies',
         schedule: 'Monday – Friday, 1:00 PM – 5:00 PM',
         location: '2471 Portola Road, Suite 100, Ventura, CA 93003',
@@ -151,6 +157,9 @@ export default function CmsStudio() {
         location: 'Ventura County, CA',
         category: 'Community Celebration',
         description: '',
+        image: '/images/community-gathering.jpg',
+        fontSize: 'base',
+        fontColor: '#0F172A',
         rsvpUrl: '/events',
         isCancelled: false,
         cancellationNotice: '',
@@ -165,6 +174,8 @@ export default function CmsStudio() {
         author: 'Diversity Collective Team',
         readTime: '3 min read',
         image: '/images/community-gathering.jpg',
+        fontSize: 'base',
+        fontColor: '#0F172A',
         excerpt: '',
         tags: 'Advocacy, Community, Ventura'
       });
@@ -206,6 +217,9 @@ export default function CmsStudio() {
         stat: '100% Community-Powered',
         badge: 'Sanctuary Era',
         image: '/images/community-gathering.jpg',
+        pictureFolder: [],
+        fontSize: 'base',
+        fontColor: '#5A1E65',
         quote: '',
         details: ''
       });
@@ -219,6 +233,11 @@ export default function CmsStudio() {
       setFormData({
         ...item,
         tags: Array.isArray(item.tags) ? item.tags.join(', ') : (item.tags || '')
+      });
+    } else if (type === 'milestone') {
+      setFormData({
+        ...item,
+        pictureFolder: item.pictureFolder || []
       });
     } else {
       setFormData({ ...item });
@@ -458,6 +477,10 @@ export default function CmsStudio() {
                       src={prog.heroImage}
                       alt={prog.title}
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = '/images/crc-building.jpg';
+                      }}
                     />
                   </div>
 
@@ -676,6 +699,10 @@ export default function CmsStudio() {
                       src={art.image}
                       alt={art.title}
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = '/images/community-gathering.jpg';
+                      }}
                     />
                     <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full bg-slate-950/80 backdrop-blur-md text-white text-[10px] font-bold">
                       {art.category}
@@ -861,6 +888,10 @@ export default function CmsStudio() {
                       src={member.photo}
                       alt={member.name}
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = '/images/volunteers.jpg';
+                      }}
                     />
                     <span className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-slate-950/80 backdrop-blur-md text-white text-[10px] font-black uppercase">
                       {member.category === 'board' ? 'Board of Directors' : 'Operational Staff'}
@@ -947,7 +978,15 @@ export default function CmsStudio() {
                 >
                   <div className="space-y-2.5">
                     <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-slate-900 relative">
-                      <img src={photo.image} alt={photo.title} className="w-full h-full object-cover" />
+                      <img 
+                        src={photo.image} 
+                        alt={photo.title} 
+                        className="w-full h-full object-cover" 
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = '/images/community-gathering.jpg';
+                        }}
+                      />
                       <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-slate-950/80 text-white text-[10px] font-bold">
                         {photo.year}
                       </span>
@@ -1015,27 +1054,55 @@ export default function CmsStudio() {
                   key={m.year}
                   className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-purple-300 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4"
                 >
-                  <div className="space-y-1 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-display text-xl font-black text-purple-900">
-                        {m.year}
-                      </span>
-                      <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-900 font-bold text-[10px]">
-                        {m.badge}
-                      </span>
-                      <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-bold text-[10px]">
-                        {m.stat}
-                      </span>
+                  <div className="flex items-start gap-4 flex-1">
+                    <div className="w-24 h-18 sm:w-28 sm:h-20 rounded-xl overflow-hidden bg-slate-900 flex-shrink-0 relative">
+                      <img
+                        src={m.image || '/images/community-gathering.jpg'}
+                        alt={m.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = '/images/community-gathering.jpg';
+                        }}
+                      />
+                      {m.pictureFolder && m.pictureFolder.length > 0 && (
+                        <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-slate-950/80 text-[9px] font-bold text-amber-300 flex items-center gap-0.5">
+                          <FolderOpen className="w-2.5 h-2.5" />
+                          <span>+{m.pictureFolder.length}</span>
+                        </span>
+                      )}
                     </div>
-                    <h4 className="font-display text-base font-black text-slate-950">
-                      {m.title}
-                    </h4>
-                    <p className="text-xs font-semibold text-slate-500">
-                      {m.subtitle}
-                    </p>
-                    <p className="text-xs text-slate-600 line-clamp-2 max-w-3xl pt-1">
-                      {m.description}
-                    </p>
+                    <div className="space-y-1 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-display text-xl font-black text-purple-900">
+                          {m.year}
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-900 font-bold text-[10px]">
+                          {m.badge}
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-bold text-[10px]">
+                          {m.stat}
+                        </span>
+                        {m.pictureFolder && m.pictureFolder.length > 0 && (
+                          <span className="px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 font-bold text-[10px] border border-purple-200 flex items-center gap-1">
+                            <FolderOpen className="w-3 h-3 text-purple-600" />
+                            <span>{m.pictureFolder.length} Album Photos</span>
+                          </span>
+                        )}
+                      </div>
+                      <h4 
+                        style={{ color: m.fontColor || undefined }}
+                        className="font-display text-base font-black text-slate-950"
+                      >
+                        {m.title}
+                      </h4>
+                      <p className="text-xs font-semibold text-slate-500">
+                        {m.subtitle}
+                      </p>
+                      <p className="text-xs text-slate-600 line-clamp-2 max-w-3xl pt-1">
+                        {m.description}
+                      </p>
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-2 self-start md:self-center">
@@ -1316,7 +1383,7 @@ export default function CmsStudio() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1">Chapter</label>
                       <input
@@ -1335,16 +1402,22 @@ export default function CmsStudio() {
                         className="w-full px-3 py-2 border rounded-xl text-xs font-mono"
                       />
                     </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">Image Path</label>
-                      <input
-                        type="text"
-                        value={formData.heroImage || ''}
-                        onChange={(e) => setFormData({ ...formData, heroImage: e.target.value })}
-                        className="w-full px-3 py-2 border rounded-xl text-xs font-mono"
-                      />
-                    </div>
                   </div>
+
+                  <ImagePicker
+                    value={formData.heroImage}
+                    onChange={(url) => setFormData({ ...formData, heroImage: url })}
+                    label="Program Header / Sanctuary Picture"
+                    aspectRatio="aspect-[16/9]"
+                  />
+
+                  <StyleCustomizer
+                    fontSize={formData.fontSize || 'base'}
+                    fontColor={formData.fontColor || '#5A1E65'}
+                    onFontSizeChange={(size) => setFormData({ ...formData, fontSize: size })}
+                    onFontColorChange={(color) => setFormData({ ...formData, fontColor: color })}
+                    label="Title & Header Typography"
+                  />
 
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">Audience</label>
@@ -1459,6 +1532,21 @@ export default function CmsStudio() {
                     />
                   </div>
 
+                  <ImagePicker
+                    value={formData.image || '/images/community-gathering.jpg'}
+                    onChange={(url) => setFormData({ ...formData, image: url })}
+                    label="Event Cover Picture"
+                    aspectRatio="aspect-[16/9]"
+                  />
+
+                  <StyleCustomizer
+                    fontSize={formData.fontSize || 'base'}
+                    fontColor={formData.fontColor || '#0F172A'}
+                    onFontSizeChange={(size) => setFormData({ ...formData, fontSize: size })}
+                    onFontColorChange={(color) => setFormData({ ...formData, fontColor: color })}
+                    label="Event Title Typography"
+                  />
+
                   <div className="flex items-center gap-4">
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input
@@ -1528,15 +1616,20 @@ export default function CmsStudio() {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Cover Image Path</label>
-                    <input
-                      type="text"
-                      value={formData.image || '/images/community-gathering.jpg'}
-                      onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-xl text-xs font-mono"
-                    />
-                  </div>
+                  <ImagePicker
+                    value={formData.image || '/images/community-gathering.jpg'}
+                    onChange={(url) => setFormData({ ...formData, image: url })}
+                    label="Article Feature Picture"
+                    aspectRatio="aspect-[16/9]"
+                  />
+
+                  <StyleCustomizer
+                    fontSize={formData.fontSize || 'base'}
+                    fontColor={formData.fontColor || '#0F172A'}
+                    onFontSizeChange={(size) => setFormData({ ...formData, fontSize: size })}
+                    onFontColorChange={(color) => setFormData({ ...formData, fontColor: color })}
+                    label="Article Headline Typography"
+                  />
 
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">Excerpt</label>
@@ -1701,15 +1794,13 @@ export default function CmsStudio() {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Photo Path</label>
-                    <input
-                      type="text"
-                      value={formData.photo || '/images/volunteers.jpg'}
-                      onChange={(e) => setFormData({ ...formData, photo: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-xl text-xs font-mono"
-                    />
-                  </div>
+                  <ImagePicker
+                    value={formData.photo || '/images/volunteers.jpg'}
+                    onChange={(url) => setFormData({ ...formData, photo: url })}
+                    label="Staff / Board Member Portrait"
+                    aspectRatio="aspect-[4/3]"
+                    helpText="Upload a professional headshot or portrait photo."
+                  />
 
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">Biography</label>
@@ -1760,16 +1851,12 @@ export default function CmsStudio() {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Image Path</label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.image || '/images/community-gathering.jpg'}
-                      onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-xl text-xs font-mono"
-                    />
-                  </div>
+                  <ImagePicker
+                    value={formData.image || '/images/community-gathering.jpg'}
+                    onChange={(url) => setFormData({ ...formData, image: url })}
+                    label="3D Carousel Spotlight Picture"
+                    aspectRatio="aspect-[16/9]"
+                  />
 
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">Description</label>
@@ -1849,15 +1936,25 @@ export default function CmsStudio() {
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Archival Image Path</label>
-                    <input
-                      type="text"
-                      value={formData.image || '/images/community-gathering.jpg'}
-                      onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-xl text-xs font-mono"
-                    />
-                  </div>
+                  <ImagePicker
+                    value={formData.image || '/images/community-gathering.jpg'}
+                    onChange={(url) => setFormData({ ...formData, image: url })}
+                    label="Featured Milestone Picture"
+                    aspectRatio="aspect-[16/9]"
+                  />
+
+                  <PictureFolderManager
+                    photos={formData.pictureFolder || []}
+                    onChange={(newFolder) => setFormData({ ...formData, pictureFolder: newFolder })}
+                  />
+
+                  <StyleCustomizer
+                    fontSize={formData.fontSize || 'base'}
+                    fontColor={formData.fontColor || '#5A1E65'}
+                    onFontSizeChange={(size) => setFormData({ ...formData, fontSize: size })}
+                    onFontColorChange={(color) => setFormData({ ...formData, fontColor: color })}
+                    label="Milestone Title Typography"
+                  />
 
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">Narrative Description</label>

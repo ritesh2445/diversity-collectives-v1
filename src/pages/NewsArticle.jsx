@@ -2,11 +2,12 @@ import React from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { ArrowLeft, Calendar, Clock, User, Share2, Check, ArrowRight } from 'lucide-react';
 import { newsArticles } from '../data/dcvcData';
+import { cmsStore } from '../services/cmsStore';
 import { usePageMeta } from '../utils/seo';
 
 export default function NewsArticle() {
   const { slug } = useParams();
-  const article = newsArticles.find(a => a.slug === slug);
+  const article = newsArticles.find(a => a.slug === slug) || (cmsStore.data?.news || []).find(a => a.slug === slug || a.id === slug);
   const [copied, setCopied] = React.useState(false);
 
   usePageMeta({

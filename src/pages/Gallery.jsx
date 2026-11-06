@@ -18,7 +18,8 @@ import {
   Info,
   ChevronDown,
   ChevronUp,
-  Volume2
+  Volume2,
+  FolderOpen
 } from 'lucide-react';
 import { galleryPhotos, memoryLaneMilestones } from '../data/dcvcData';
 import { cmsStore } from '../services/cmsStore';
@@ -701,7 +702,16 @@ export default function Gallery() {
 
                       {/* Title & Subtitle */}
                       <div>
-                        <h3 className="font-display text-xl sm:text-2xl font-black text-slate-950 group-hover:text-[#5A1E65] transition-colors leading-tight">
+                        <h3 
+                          style={{
+                            color: milestone.fontColor || undefined,
+                            fontSize: milestone.fontSize === '2xl' ? '1.75rem' :
+                                      milestone.fontSize === '3xl' ? '2.1rem' :
+                                      milestone.fontSize === 'xl' ? '1.45rem' :
+                                      milestone.fontSize === 'sm' ? '1.1rem' : undefined
+                          }}
+                          className="font-display text-xl sm:text-2xl font-black text-slate-950 group-hover:text-[#5A1E65] transition-colors leading-tight"
+                        >
                           {milestone.title}
                         </h3>
                         <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-0.5">
@@ -716,9 +726,60 @@ export default function Gallery() {
                           alt={milestone.title}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                           loading="lazy"
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = '/images/community-gathering.jpg';
+                          }}
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
                       </div>
+
+                      {/* Milestone Picture Folder / Archival Photo Album */}
+                      {milestone.pictureFolder && milestone.pictureFolder.length > 0 && (
+                        <div className="pt-2 border-t border-purple-100/70">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[11px] font-black uppercase tracking-wider text-[#5A1E65] flex items-center gap-1.5">
+                              <FolderOpen className="w-3.5 h-3.5 text-amber-600" />
+                              <span>Archival Picture Folder ({milestone.pictureFolder.length} Photos)</span>
+                            </span>
+                            <span className="text-[10px] text-slate-400">Click photo to view full size</span>
+                          </div>
+                          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                            {milestone.pictureFolder.map((pic, pIdx) => (
+                              <button
+                                key={pic.id || pIdx}
+                                type="button"
+                                onClick={() => setExpandedPhoto({
+                                  id: `ml-${milestone.year}-${pIdx}`,
+                                  title: `${milestone.year}: ${pic.caption || milestone.title}`,
+                                  image: pic.url,
+                                  category: 'Historical Archive',
+                                  year: milestone.year,
+                                  description: pic.caption || milestone.description
+                                })}
+                                className="aspect-[4/3] rounded-xl overflow-hidden bg-slate-100 border border-purple-200 cursor-pointer group/album relative shadow-2xs hover:shadow-md transition-all hover:scale-105"
+                                title={pic.caption || `Milestone ${milestone.year} Photo`}
+                              >
+                                <img
+                                  src={getOptimizedImageUrl(pic.url, { width: 400 })}
+                                  alt={pic.caption || milestone.title}
+                                  className="w-full h-full object-cover group-hover/album:scale-110 transition-transform duration-300"
+                                  loading="lazy"
+                                  onError={(e) => {
+                                    e.currentTarget.onerror = null;
+                                    e.currentTarget.src = '/images/community-gathering.jpg';
+                                  }}
+                                />
+                                {pic.caption && (
+                                  <div className="absolute inset-x-0 bottom-0 bg-black/70 text-white text-[9px] px-1 py-0.5 truncate text-center opacity-0 group-hover/album:opacity-100 transition-opacity">
+                                    {pic.caption}
+                                  </div>
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
                       {/* Narrative */}
                       <p className="text-sm text-slate-700 leading-relaxed">

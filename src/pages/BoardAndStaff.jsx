@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Award, Users, Mail, ArrowRight, ShieldCheck, Heart } from 'lucide-react';
 import { boardMembers, staffMembers } from '../data/dcvcData';
+import { cmsStore } from '../services/cmsStore';
 import CardSpotlight from '../components/CardSpotlight';
 import { usePageMeta } from '../utils/seo';
 
@@ -11,6 +12,23 @@ export default function BoardAndStaff() {
     description: 'Meet the dedicated board of directors and operational staff stewarding Diversity Collective Ventura County.',
     canonicalPath: '/board-and-staff'
   });
+
+  const [allStaff, setAllStaff] = useState(() => cmsStore.getStaff?.() || []);
+
+  useEffect(() => {
+    const unsub = cmsStore.subscribe((data) => {
+      if (data?.staff) setAllStaff(data.staff);
+    });
+    return unsub;
+  }, []);
+
+  const operationalStaff = (allStaff.filter(s => s.category === 'staff').length > 0)
+    ? allStaff.filter(s => s.category === 'staff')
+    : staffMembers;
+
+  const boardTeam = (allStaff.filter(s => s.category === 'board').length > 0)
+    ? allStaff.filter(s => s.category === 'board')
+    : boardMembers;
 
   return (
     <div className="pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
@@ -51,15 +69,15 @@ export default function BoardAndStaff() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {staffMembers.map((staff, idx) => (
+          {operationalStaff.map((staff, idx) => (
             <div 
-              key={idx}
+              key={staff.id || idx}
               className="p-6 rounded-3xl bg-white border-2 border-slate-200 shadow-md flex flex-col justify-between gap-4"
             >
               <div className="space-y-3">
                 <div className="h-44 rounded-2xl overflow-hidden bg-purple-50 border border-slate-100">
                   <img 
-                    src={staff.image || "/images/volunteers.jpg"} 
+                    src={staff.image || staff.photo || "/images/volunteers.jpg"} 
                     alt={staff.name} 
                     className="w-full h-full object-cover"
                     onError={(e) => { e.target.src = "/images/volunteers.jpg"; }}
@@ -67,10 +85,10 @@ export default function BoardAndStaff() {
                 </div>
                 <div>
                   <span className="text-[10px] font-black uppercase tracking-wider text-[#5A1E65] bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
-                    {staff.role}
+                    {staff.role || staff.title || 'Staff'}
                   </span>
                   <h3 className="font-display text-lg font-black text-slate-900 mt-2">{staff.name}</h3>
-                  <span className="text-xs text-slate-500 font-medium block">{staff.department}</span>
+                  <span className="text-xs text-slate-500 font-medium block">{staff.department || 'Community Resource Center'}</span>
                 </div>
                 <p className="text-xs text-slate-600 leading-relaxed font-medium">
                   {staff.bio}
@@ -83,7 +101,7 @@ export default function BoardAndStaff() {
               </div>
 
               <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-[#5A1E65]">
-                <a href={`mailto:${staff.email}`} className="hover:underline flex items-center gap-1.5">
+                <a href={`mailto:${staff.email || 'info@diversitycollective.org'}`} className="hover:underline flex items-center gap-1.5">
                   <Mail className="w-3.5 h-3.5" />
                   <span>Contact Lead</span>
                 </a>
@@ -108,9 +126,9 @@ export default function BoardAndStaff() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {boardMembers.map((member) => (
+          {boardTeam.map((member, idx) => (
             <CardSpotlight 
-              key={member.name}
+              key={member.id || member.name || idx}
               className="glass-card p-7 rounded-2xl border-2 border-slate-200/80 hover:border-purple-300 flex flex-col justify-between"
               tilt={true}
               maxTilt={5}
@@ -119,7 +137,7 @@ export default function BoardAndStaff() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
-                    {member.role}
+                    {member.role || member.title || 'Board Member'}
                   </span>
                   <Award className="w-4 h-4 text-purple-600" />
                 </div>

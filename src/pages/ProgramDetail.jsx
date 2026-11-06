@@ -13,11 +13,12 @@ import {
   Heart
 } from 'lucide-react';
 import { programsList, orgInfo } from '../data/dcvcData';
+import { cmsStore } from '../services/cmsStore';
 import CardSpotlight from '../components/CardSpotlight';
 
 export default function ProgramDetail() {
   const { slug } = useParams();
-  const program = programsList.find(p => p.slug === slug);
+  const program = programsList.find(p => p.slug === slug) || cmsStore.getPrograms().find(p => p.slug === slug || p.id === slug);
 
   if (!program) {
     return <Navigate to="/programs" replace />;
