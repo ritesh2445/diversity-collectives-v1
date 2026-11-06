@@ -102,8 +102,8 @@ Tier 4: Visionary Benefactor ($500+)   -> Archival Sovereign Gold Crest & Coasta
 |    | safer-sex kits, welcoming computer access, and warm hospitality.  |    |
 |    +-------------------------------------------------------------------+    |
 |                                                                             |
-|      Tess Allen                 Roland Catabona            [ 501(c)(3) ]    |
-|   Executive Director          Board President, DCVC        EIN: 47-1903673  |
+|  WITH DEEPEST GRATITUDE:                                  [ 501(c)(3) SEAL ]|
+|  Diversity Collective Ventura County · Board & Community    Ventura County, CA|
 +-----------------------------------------------------------------------------+
 ```
 
@@ -157,8 +157,8 @@ Tier 4: Visionary Benefactor ($500+)   -> Archival Sovereign Gold Crest & Coasta
 |    | testing clinics and stigma-free clinical healthcare navigation.   |    |
 |    +-------------------------------------------------------------------+    |
 |                                                                             |
-|      Tess Allen                 Roland Catabona            [ 501(c)(3) ]    |
-|   Executive Director          Board President, DCVC        EIN: 47-1903673  |
+|  WITH DEEPEST GRATITUDE:                                  [ 501(c)(3) SEAL ]|
+|  Diversity Collective Ventura County · Board & Community    Ventura County, CA|
 +-----------------------------------------------------------------------------+
 ```
 
@@ -210,8 +210,8 @@ Tier 4: Visionary Benefactor ($500+)   -> Archival Sovereign Gold Crest & Coasta
 |    | and Pride Prom, ensuring safe harbor for tomorrow's leaders.      |    |
 |    +-------------------------------------------------------------------+    |
 |                                                                             |
-|      Tess Allen                 Roland Catabona            [ 501(c)(3) ]    |
-|   Executive Director          Board President, DCVC        EIN: 47-1903673  |
+|  WITH DEEPEST GRATITUDE:                                  [ 501(c)(3) SEAL ]|
+|  Diversity Collective Ventura County · Board & Community    Ventura County, CA|
 +-----------------------------------------------------------------------------+
 ```
 
@@ -267,8 +267,8 @@ Tier 4: Visionary Benefactor ($500+)   -> Archival Sovereign Gold Crest & Coasta
 |    | Community Resource Center and sustains year-round civic advocacy. |    |
 |    +-------------------------------------------------------------------+    |
 |                                                                             |
-|      Tess Allen                 Roland Catabona            [ 501(c)(3) ]    |
-|   Executive Director          Board President, DCVC        EIN: 47-1903673  |
+|  WITH DEEPEST GRATITUDE:                                  [ 501(c)(3) SEAL ]|
+|  Diversity Collective Ventura County · Board & Community    Ventura County, CA|
 +=============================================================================+
 ```
 
@@ -300,27 +300,55 @@ When donors receive their unique link (`/appreciation-card/:token`), they encoun
    - Formats the certificate to fill an 8.5" × 11" page at 300 DPI, ready for framing or digital archiving.
 2. **Copy Clean Share Link**:
    - Copies clean URL to clipboard with immediate "Link Copied!" badge feedback.
-3. **Replay Keepsake Seal**:
+### 3.3 High-Resolution Download & Print Architecture
+
+To guarantee authentic keepsake fidelity, export quality has been elevated well beyond simple browser window printing:
+
+1. **High-Resolution 300 DPI Canvas Renderer (`handleDownloadHighRes`)**:
+   - Executes offscreen rendering directly at **2400 × 1500 pixels** (equivalent to 300 DPI on an 8" × 5" luxury art card).
+   - Draws bespoke tier background gradients, double-ruled gold/accent borders, high-contrast typography, donor name with prismatic underline, tier insignia, and community impact narrative.
+   - Encodes verified Certificate ID and official collective community gratitude.
+   - Exports directly as a lossless PNG (`DCVC-Appreciation-Card-[Tier]-[Donor].png`) matching on-screen card appearance 100%.
+
+2. **Dedicated Landscape Print / PDF Stylesheet (`@media print`)**:
+   - Enforces `@page { size: landscape; margin: 8mm; }`.
+   - Strips away web headers, footers, navigation, accessibility toolbars, and preview controls (`display: none !important`).
+   - Centers the card canvas, prevents page breaks, and locks high-contrast color reproduction via `-webkit-print-color-adjust: exact`.
+
+3. **Copy Clean Share Link**:
+   - Copies clean URL to clipboard with immediate "Link Copied!" badge feedback.
+
+4. **Replay Keepsake Seal**:
    - Allows users to re-seal the envelope and experience the opening sequence repeatedly.
-4. **Donor Privacy Safeguards**:
-   - Donation dollar amounts are **strictly omitted** from public view unless explicitly agreed.
-   - Anonymous gifts default to *"Affirming Community Supporter"*.
+
+5. **Organizational Accuracy & Separation from Tax Receipts**:
+   - **Unverified EIN Removal**: All unverified EIN numbers (`46-5312131`, `47-1903673`) have been removed from all card artwork and seals until DCVC verifies the official legal identifier.
+   - **No Unauthorized Endorsements**: Formal digital signatures and personal titles attributed to Tess Allen and Roland Catabona have been removed, replaced by collective community gratitude: *"With Deepest Gratitude from Diversity Collective Ventura County — Board of Directors, Staff, Volunteers & Community Sanctuary"*.
+   - **Clear Receipt Separation**: The card explicitly carries a prominent notice: *"This appreciation card is an expressive cultural keepsake honoring your generous partnership. It does not serve as an official IRS tax receipt. Official tax-deductible donation receipts are issued independently and securely via Zeffy."*
 
 ---
 
-## 4. LOCAL PREVIEW INSTRUCTIONS
+## 4. SECURE PREVIEW STUDIO & EMAIL EXPERIENCE
 
-Reviewers and QA engineers can preview all four designs immediately in local development without waiting for live donations:
+### 4.1 Production Security on Preview Route (`/appreciation-card/preview`)
+- **Restricted Access**: The preview studio is protected by environment and authentication gates:
+  ```javascript
+  const isDev = Boolean(import.meta.env.DEV);
+  const isStaffAuthenticated = typeof window !== 'undefined' && Boolean(
+    localStorage.getItem('dcvc_admin_token') || 
+    sessionStorage.getItem('dcvc_admin_token') ||
+    localStorage.getItem('dcvc_cms_auth')
+  );
+  const canAccessPreview = isDev || isStaffAuthenticated;
+  ```
+- **Staff Access Gate**: In production environments, unauthenticated visitors accessing `/appreciation-card/preview` or `/appreciation-card` encounter a clean "Staff Access Required" lock screen, directing them to the Admin Portal.
+- **Zero Real Data Exposure**: Previews strictly utilize synthetic demonstration names (*"Jordan Rivers"*, *"Casey Miller"*, *"Dr. Maya Lin"*), preventing any leak of donor identities, payment details, or PII. Real donor cards are served strictly via unguessable, cryptographically generated tokens (`/appreciation-card/:token`).
 
-1. **Navigate to the Dedicated Preview Route**:
-   ```
-   http://localhost:5173/appreciation-card/preview
-   ```
-2. **Interactive Preview Toolbar Controls**:
-   - **Tier Switcher**: Click between *Community Ally*, *Pride Advocate*, *Rainbow Champion*, and *Visionary Benefactor* to see the illustrations and palettes transform instantaneously.
-   - **Device Viewport Toggle**: Toggle between **Desktop** (full width) and **Mobile (390px)** to test responsiveness on smartphone form factors.
-   - **Recipient Name Customizer**: Type any name into the "Recipient Name" input to preview dynamic typography adjustments in real time.
-   - **State Toggle**: Switch back and forth between the Sealed Keepsake Envelope and Opened Revealed Card.
+### 4.2 Email Keepsake Delivery Experience
+- **Static Preview Embed**: Donor emails rendered via [`worker/src/emailTemplates.js`](file:///e:/DCVC-1/diversity-collectives-v1/worker/src/emailTemplates.js) feature a responsive, table-based keepsake preview card with clean typography, tier badge, and direct call-to-action button (*"Open & Unwrap Your Interactive Card ✨"*).
+- **Mobile-First Layout**: Fully tested across mobile email clients with table containers, inline CSS styles, and graceful fallbacks.
+- **Plain-Text Alternative**: Comprehensive plain-text email version included for donors using text-only or accessibility readers.
+- **Unguessable Private URLs**: Tokens are 32-byte cryptographic hashes that cannot be enumerated or scraped.
 
 ---
 

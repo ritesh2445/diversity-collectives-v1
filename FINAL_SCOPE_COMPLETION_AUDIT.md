@@ -13,26 +13,51 @@ This independent technical audit evaluates the Diversity Collective Ventura Coun
 
 Previous completion reports claiming "100% finished" conflated **architectural implementation** with **live operational deployment**. While the engineering architecture, offline fixtures, component code, and test suites are exceptionally mature, true operational readiness requires live credentials and external platform authorizations that are intentionally deferred to the final stage.
 
-### Quantified Baseline SOW Metrics
+### Quantified Baseline SOW Metrics (Exact Breakdown)
 
-| Metric Category | Count | Percentage of Total Baseline (58 Items) |
-| :--- | :---: | :---: |
-| **Total Baseline SOW Requirements** | **58** | **100.0%** |
-| **COMPLETE** (Fully implemented, local/offline validated & tested) | **41** | **70.7%** |
-| **PARTIAL** (Partially implemented; missing secondary features/refinements) | **8** | **13.8%** |
-| **NOT IMPLEMENTED** (Code not written or wholly omitted) | **1** | **1.7%** |
-| **CREDENTIAL-BLOCKED** (Code complete; awaiting final live credentials) | **6** | **10.3%** |
-| **CLIENT-INPUT-BLOCKED** (Awaiting real copy, photos, or decisions from DCVC) | **2** | **3.5%** |
-| **OPTIONAL / NOT APPROVED** (Out-of-scope or unapproved extras) | **3** | *N/A (Supplementary)* |
+Every requirement in the 6-page Scope of Work (58 total baseline items) has been evaluated and assigned to exactly one mutually exclusive status category:
 
-### Dual Completion Metrics
+| Category # | Metric Category | Count | Strict % of Total (58 Items) | Status Definition & Scope Treatment |
+| :---: | :--- | :---: | :---: | :--- |
+| **1** | **FULLY IMPLEMENTED** | **41** | **70.7%** (70.69%) | Fully written, local/offline validated, tests passing, zero pending code. |
+| **2** | **PARTIALLY IMPLEMENTED** | **8** | **13.8%** (13.79%) | Core functionality exists; secondary polish or edge-cases remaining. |
+| **3** | **CREDENTIAL-BLOCKED** | **6** | **10.3%** (10.34%) | Code 100% written and mock-tested; awaits live third-party keys. |
+| **4** | **CLIENT-INPUT-BLOCKED** | **2** | **3.5%** (3.45%) | Architectural templates ready; awaits DCVC copy, photography, or decision. |
+| **5** | **UNIMPLEMENTED** | **1** | **1.7%** (1.72%) | Standalone resource detail permalink not yet built (`/resources/:slug`). |
+| **TOTAL** | **Baseline SOW Requirements** | **58** | **100.0%** | Comprehensive baseline total across all 6 SOW sections. |
 
-1. **Implementation Completion (Code & Architectural Readiness): 91.4%**
-   * Measures how much of the required code, database schemas, responsive UI templates, API clients, webhook processors, and test suites exist in the repository.
-   * Calculation: $(41 \text{ Complete} + 8 \times 0.5 \text{ Partial} + 6 \text{ Credential-Blocked} + 2 \text{ Client-Blocked}) / 58 = 91.4\%$.
-2. **Operational Readiness (Live Verified Production Status): 24.1%**
-   * Measures how much of the platform has been verified against live third-party services, real DNS records, live database replicas, production webhooks, and real assistive-technology user panels.
-   * Currently, **0 production credentials have been injected**, meaning 75.9% of live operational verification remains to be conducted during the final environment configuration stage.
+---
+
+### Precise Calculation Methodologies & Progress Metrics
+
+To eliminate ambiguity between strict unweighted completion and weighted engineering readiness, three distinct calculation models are reported below:
+
+#### Model 1: Strict Unweighted Full Implementation (Binary Complete Only)
+$$\text{Strict Full Completion} = \frac{41 \text{ Fully Implemented}}{58 \text{ Total Baseline}} = \mathbf{70.7\%} \quad (70.69\%)$$
+* Evaluates **only** items that are 100% finished with zero remaining code, zero pending credentials, and zero pending client inputs.
+* Does not grant partial credit to partially implemented features (0%) and does not count credential-blocked code as complete.
+
+#### Model 2: Total Code-Ready Implementation (Complete + Ready-for-Credentials)
+$$\text{Code-Ready Baseline} = \frac{41 \text{ Fully Implemented} + 6 \text{ Credential-Blocked}}{58 \text{ Total Baseline}} = \frac{47}{58} = \mathbf{81.0\%} \quad (81.03\%)$$
+* Reflects the reality that the 6 credential-blocked items (Cloudflare Turnstile, Resend email dispatch, Cloudinary upload signing, Zeffy webhook HMAC verification, Google Sheets sync, Sanity Studio live client) have **100% of their application code, database migrations, and unit/integration tests fully implemented** and verified against offline mocks, and are blocked solely by the intentional deferral of live production secrets until the final stage.
+
+#### Model 3: Transparent Weighted Implementation Score (Engineering Progress Index)
+$$\text{Weighted Progress Score} = \frac{(41 \times 1.0) + (6 \times 1.0) + (8 \times 0.5) + (2 \times 0.5) + (1 \times 0.0)}{58} = \frac{41.0 + 6.0 + 4.0 + 1.0 + 0.0}{58} = \frac{52.0}{58} = \mathbf{89.7\%} \quad (89.66\%)$$
+
+**Disclosed Weighting Formula & Rationale:**
+- **Fully Implemented (Weight: 1.0)**: 41 items $\times 1.0 = 41.0$ points. 100% functional, verified in repository and test suite.
+- **Credential-Blocked (Weight: 1.0 Code Readiness)**: 6 items $\times 1.0 = 6.0$ points. Code is 100% authored, structured, and tested; no remaining development required.
+- **Partially Implemented (Weight: 0.5)**: 8 items $\times 0.5 = 4.0$ points. Core features function, but secondary refinements or CMS controls remain.
+- **Client-Input-Blocked (Weight: 0.5)**: 2 items $\times 0.5 = 1.0$ point. Page templates and layout scaffolding complete, awaiting client copy and authentic leadership photos.
+- **Unimplemented (Weight: 0.0)**: 1 item $\times 0.0 = 0.0$ points. No code written.
+
+*(Methodology Note on Prior 91.4% Metric: A prior draft calculation reported 91.4% by applying $(41 + 6 + 8 \times 0.5 + 2 \times 1.0) / 58 = 53 / 58 = 91.38\%$, which credited full 1.0 weight to the 2 client-input-blocked items. Under strict conservative engineering discipline where client-input-blocked items receive 0.5 weight, the weighted implementation index is exactly **89.7%**, while strict code readiness is **81.0%** and raw binary completion is **70.7%**).*
+
+---
+
+### Operational Readiness (Live Verified Production Status): 24.1%
+Measures how much of the platform has been verified against live third-party services, real DNS records, live database replicas, production webhooks, and real assistive-technology user panels.
+Currently, **0 production credentials have been injected**, meaning 75.9% of live operational verification remains to be conducted during the final environment configuration stage.
 
 ---
 
@@ -41,7 +66,7 @@ Previous completion reports claiming "100% finished" conflated **architectural i
 | Requirement | Status | Concrete Repository Evidence | Associated Tests & Validation | Limitations & Remaining Work |
 | :--- | :---: | :--- | :--- | :--- |
 | **1. Homepage** | **COMPLETE** | [`src/pages/Home.jsx`](file:///e:/DCVC-1/diversity-collectives-v1/src/pages/Home.jsx), [`src/components/Header.jsx`](file:///e:/DCVC-1/diversity-collectives-v1/src/components/Header.jsx) | Manual layout inspection; 0 console errors; responsive across 390px to 1720px. | Public images use local assets. Hero wave meets mobile design. |
-| **2. About** | **COMPLETE** | [`src/pages/About.jsx`](file:///e:/DCVC-1/diversity-collectives-v1/src/pages/About.jsx) | Verified 10-year historical timeline (2014–2024), 501(c)(3) EIN: 47-1903673, core values. | Board list links to Board & Staff page. |
+| **2. About** | **COMPLETE** | [`src/pages/About.jsx`](file:///e:/DCVC-1/diversity-collectives-v1/src/pages/About.jsx) | Verified 10-year historical timeline (2014–2024), 501(c)(3) public charity status verified (legal EIN pending client verification), core values. | Board list links to Board & Staff page. |
 | **3. Board and Staff** | **COMPLETE** | [`src/pages/BoardAndStaff.jsx`](file:///e:/DCVC-1/diversity-collectives-v1/src/pages/BoardAndStaff.jsx), [`studio/schemas/boardMember.js`](file:///e:/DCVC-1/diversity-collectives-v1/studio/schemas/boardMember.js) | Verified biographies for Executive Director Tess Allen, Board President Roland Catabona, officers. | Headshots use local placeholders awaiting high-res client photography. |
 | **4. Contact** | **COMPLETE** | [`src/pages/Contact.jsx`](file:///e:/DCVC-1/diversity-collectives-v1/src/pages/Contact.jsx), [`src/services/api.js`](file:///e:/DCVC-1/diversity-collectives-v1/src/services/api.js) | Tested in `tests/api.test.js` (validates empty name, invalid email, short messages). | Turnstile bypass active in dev mode until production site keys injected. |
 | **5. Sponsors & Partners** | **COMPLETE** | [`src/pages/Sponsors.jsx`](file:///e:/DCVC-1/diversity-collectives-v1/src/pages/Sponsors.jsx), [`studio/schemas/sponsor.js`](file:///e:/DCVC-1/diversity-collectives-v1/studio/schemas/sponsor.js) | Verified partner tiers: Public Health (VCBH, VCPH), Foundations, Community Alliances. | Sponsor packet PDF download link currently points to email request. |

@@ -1,38 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Building2, 
-  Users, 
-  Mail, 
-  BookOpen, 
-  Calendar, 
-  FileText, 
-  Camera, 
-  Settings, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Eye, 
-  Check, 
-  X, 
-  AlertTriangle, 
-  Sparkles, 
-  Download, 
-  Upload, 
-  RotateCcw, 
-  Search, 
-  ExternalLink, 
-  Phone, 
-  MapPin, 
-  Clock, 
-  Award, 
-  ShieldAlert, 
+import {
+  Building2,
+  Users,
+  Mail,
+  BookOpen,
+  Calendar,
+  FileText,
+  Camera,
+  Settings,
+  Plus,
+  Edit,
+  Trash2,
+  Eye,
+  Check,
+  X,
+  AlertTriangle,
+  Sparkles,
+  Download,
+  Upload,
+  RotateCcw,
+  Search,
+  ExternalLink,
+  Phone,
+  MapPin,
+  Clock,
+  Award,
+  ShieldAlert,
   Heart,
   Layers,
   ArrowRight
 } from 'lucide-react';
-import { 
-  getLiveCmsData, 
-  saveLiveCmsData, 
+import {
+  getLiveCmsData,
+  saveLiveCmsData,
   resetCmsToDefault,
   saveCmsProgram,
   deleteCmsProgram,
@@ -304,7 +304,7 @@ export default function CmsStudio() {
 
   return (
     <div className="space-y-6">
-      
+
       {/* Toast Notification */}
       {feedbackMsg && (
         <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center justify-between shadow-sm animate-in fade-in duration-200">
@@ -391,18 +391,16 @@ export default function CmsStudio() {
                 setActiveSubTab(tab.id);
                 setSearchQuery('');
               }}
-              className={`px-4 py-3 rounded-2xl font-bold text-xs flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap border ${
-                isActive
+              className={`px-4 py-3 rounded-2xl font-bold text-xs flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap border ${isActive
                   ? 'bg-[#5A1E65] text-white border-purple-800 shadow-md shadow-purple-950/15 ring-2 ring-purple-400/30'
                   : 'bg-white text-slate-700 hover:text-slate-950 border-slate-200 hover:bg-slate-50'
-              }`}
+                }`}
             >
               <Icon className={`w-4 h-4 ${isActive ? 'text-amber-300' : 'text-slate-500'}`} />
               <span>{tab.label}</span>
               {tab.count !== null && (
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono ${
-                  isActive ? 'bg-purple-800 text-amber-300' : 'bg-slate-100 text-slate-600'
-                }`}>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono ${isActive ? 'bg-purple-800 text-amber-300' : 'bg-slate-100 text-slate-600'
+                  }`}>
                   {tab.count}
                 </span>
               )}
@@ -437,21 +435,20 @@ export default function CmsStudio() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {cmsData.programs?.map((prog) => (
-              <div 
+              <div
                 key={prog.id || prog.slug}
                 className="p-5 rounded-3xl bg-white border-2 border-slate-200/80 hover:border-purple-300 shadow-xs hover:shadow-lg transition-all flex flex-col justify-between space-y-4"
               >
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span 
+                    <span
                       className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase text-white shadow-2xs"
                       style={{ backgroundColor: prog.accent || '#5A1E65' }}
                     >
                       Chapter {prog.chapter || '01'}
                     </span>
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                      prog.active !== false ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
-                    }`}>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${prog.active !== false ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
+                      }`}>
                       {prog.active !== false ? '● Active' : '○ Draft'}
                     </span>
                   </div>
@@ -551,11 +548,10 @@ export default function CmsStudio() {
 
           <div className="space-y-4">
             {cmsData.events?.map((evt) => (
-              <div 
+              <div
                 key={evt.id || evt.slug}
-                className={`p-6 rounded-3xl bg-white border-2 transition-all flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-xs ${
-                  evt.isCancelled ? 'border-rose-300 bg-rose-50/30' : 'border-slate-200/80 hover:border-purple-300'
-                }`}
+                className={`p-6 rounded-3xl bg-white border-2 transition-all flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-xs ${evt.isCancelled ? 'border-rose-300 bg-rose-50/30' : 'border-slate-200/80 hover:border-purple-300'
+                  }`}
               >
                 <div className="space-y-2 flex-1">
                   <div className="flex items-center gap-2">
@@ -612,11 +608,10 @@ export default function CmsStudio() {
                   <button
                     type="button"
                     onClick={() => openCancelModal(evt)}
-                    className={`px-3 py-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${
-                      evt.isCancelled 
+                    className={`px-3 py-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${evt.isCancelled
                         ? 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100'
                         : 'bg-rose-50 text-rose-700 border-rose-300 hover:bg-rose-100'
-                    }`}
+                      }`}
                   >
                     {evt.isCancelled ? '✓ Mark as Active' : '⚠️ Post Cancellation Notice'}
                   </button>
@@ -671,7 +666,7 @@ export default function CmsStudio() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {cmsData.news?.map((art) => (
-              <div 
+              <div
                 key={art.id || art.slug}
                 className="p-5 rounded-3xl bg-white border-2 border-slate-200/80 hover:border-purple-300 shadow-xs hover:shadow-lg transition-all flex flex-col justify-between space-y-4"
               >
@@ -765,7 +760,7 @@ export default function CmsStudio() {
 
           <div className="space-y-3">
             {cmsData.resources?.map((res) => (
-              <div 
+              <div
                 key={res.id}
                 className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-purple-300 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4"
               >
@@ -856,7 +851,7 @@ export default function CmsStudio() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {cmsData.staff?.map((member) => (
-              <div 
+              <div
                 key={member.id}
                 className="p-5 rounded-3xl bg-white border border-slate-200 hover:border-purple-300 shadow-xs flex flex-col justify-between space-y-4"
               >
@@ -919,7 +914,7 @@ export default function CmsStudio() {
           ====================================================================== */}
       {activeSubTab === 'gallery' && (
         <div className="space-y-10">
-          
+
           {/* SECTION A: 3D SPOTLIGHT CARDS */}
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -946,7 +941,7 @@ export default function CmsStudio() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {cmsData.gallery?.map((photo) => (
-                <div 
+                <div
                   key={photo.id}
                   className="p-4 rounded-3xl bg-white border border-slate-200 hover:border-purple-300 shadow-xs flex flex-col justify-between space-y-3"
                 >
@@ -1016,7 +1011,7 @@ export default function CmsStudio() {
 
             <div className="space-y-3">
               {cmsData.memoryLane?.map((m) => (
-                <div 
+                <div
                   key={m.year}
                   className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-purple-300 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4"
                 >
@@ -1273,20 +1268,20 @@ export default function CmsStudio() {
           CREATE / EDIT CONTENT MODAL
           ====================================================================== */}
       {modalType && (
-        <div 
+        <div
           role="dialog"
           aria-modal="true"
           className="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200"
         >
           <div className="max-w-2xl w-full bg-white rounded-3xl overflow-hidden shadow-2xl border border-purple-200 flex flex-col max-h-[90vh]">
-            
+
             <div className="p-5 bg-gradient-to-r from-purple-950 via-[#5A1E65] to-indigo-950 text-white flex items-center justify-between">
               <h3 className="font-display text-lg font-bold">
                 {editingItem ? `Edit ${modalType}` : `Create New ${modalType}`}
               </h3>
-              <button 
-                type="button" 
-                onClick={() => setModalType(null)} 
+              <button
+                type="button"
+                onClick={() => setModalType(null)}
                 className="text-white/80 hover:text-white p-1"
               >
                 <X className="w-5 h-5" />
@@ -1294,7 +1289,7 @@ export default function CmsStudio() {
             </div>
 
             <form onSubmit={handleSaveModal} className="p-6 overflow-y-auto space-y-4 flex-1">
-              
+
               {/* Program Form Fields */}
               {modalType === 'program' && (
                 <>
@@ -1902,7 +1897,7 @@ export default function CmsStudio() {
           CANCELLATION NOTICE MODAL
           ====================================================================== */}
       {cancelModalEvent && (
-        <div 
+        <div
           role="dialog"
           aria-modal="true"
           className="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4"
@@ -1947,9 +1942,8 @@ export default function CmsStudio() {
               <button
                 type="button"
                 onClick={handleConfirmCancelToggle}
-                className={`px-4 py-2 rounded-xl text-white font-bold text-xs ${
-                  cancelModalEvent.isCancelled ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700'
-                }`}
+                className={`px-4 py-2 rounded-xl text-white font-bold text-xs ${cancelModalEvent.isCancelled ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700'
+                  }`}
               >
                 {cancelModalEvent.isCancelled ? 'Confirm: Mark Event Active' : 'Confirm: Post Cancellation'}
               </button>
@@ -1962,7 +1956,7 @@ export default function CmsStudio() {
           RESET TO FACTORY CONFIRMATION MODAL
           ====================================================================== */}
       {showResetModal && (
-        <div 
+        <div
           role="dialog"
           aria-modal="true"
           className="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4"
@@ -2004,3 +1998,4 @@ export default function CmsStudio() {
     </div>
   );
 }
+

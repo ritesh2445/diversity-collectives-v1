@@ -175,10 +175,8 @@ export function getCustomSpecialCards() {
       quote: '"Your visionary sponsorship transforms our community gathering into an enduring beacon of queer joy and safety."',
       insignia: 'Prismatic Starlight & 24K Gala Laurel',
       motif: 'sovereign_gold_crest',
-      signee1Name: 'Tess Allen',
-      signee1Title: 'Executive Director · DCVC',
-      signee2Name: 'Roland Catabona',
-      signee2Title: 'President, Board of Directors',
+      signee1Name: 'Diversity Collective Ventura County',
+      signee1Title: 'Board of Directors, Staff & Community',
       createdAt: '2026-02-15'
     },
     {
@@ -195,10 +193,8 @@ export function getCustomSpecialCards() {
       quote: '"Because you stood up for our youth, hundreds of young people found a community where they can thrive without fear."',
       insignia: 'Emerald Laurel & Guiding Beacon',
       motif: 'pride_aurora_ribbons',
-      signee1Name: 'Tess Allen',
-      signee1Title: 'Executive Director · DCVC',
-      signee2Name: 'Sofia Rodriguez',
-      signee2Title: 'Youth & Sanctuary Programs Lead',
+      signee1Name: 'Diversity Collective Ventura County',
+      signee1Title: 'Board of Directors, Staff & Community',
       createdAt: '2026-03-01'
     }
   ];

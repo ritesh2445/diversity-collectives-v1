@@ -355,6 +355,48 @@ export function templateDonorAppreciationEmail({ donorDisplayName, formattedAmou
       We are deeply moved by your generous gift of <strong>${formattedAmount}</strong> ${frequency === 'monthly' ? '(Monthly Sustainer)' : ''}. Your kindness powers our safe harbor for LGBTQ+ individuals and families across Ventura County.
     </p>
 
+    <!-- Static Keepsake Card Preview Block -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 24px 0; border: 2px solid #e9d5ff; border-radius: 20px; overflow: hidden; background: linear-gradient(135deg, #fdf4ff 0%, #faf5ff 50%, #f5f3ff 100%);">
+      <tr>
+        <td style="padding: 24px; text-align: center;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td align="center">
+                <div style="display: inline-block; padding: 6px 14px; background-color: #ffffff; border-radius: 999px; border: 1px solid #cbd5e1; font-size: 10px; font-weight: 800; letter-spacing: 1px; color: #581c87; text-transform: uppercase; margin-bottom: 12px;">
+                  Official 501(c)(3) Keepsake Card
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td align="center">
+                <h3 style="margin: 4px 0 8px 0; font-family: Georgia, serif; font-size: 20px; font-weight: 700; color: #1e1b4b;">
+                  With Heartfelt Thanks To
+                </h3>
+                <p style="margin: 0 0 16px 0; font-family: Georgia, serif; font-size: 24px; font-weight: 800; color: #581c87;">
+                  ${donorDisplayName}
+                </p>
+                <div style="width: 60px; height: 3px; background: linear-gradient(90deg, #f59e0b, #ec4899); margin: 0 auto 16px auto; border-radius: 2px;"></div>
+              </td>
+            </tr>
+            <tr>
+              <td align="center">
+                <p style="margin: 0 0 20px 0; font-size: 13px; font-style: italic; color: #475569; max-width: 440px; line-height: 1.5;">
+                  "${tagline}"
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td align="center">
+                <a href="${cardUrl}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #e11d48 0%, ${DCVC_PURPLE} 50%, #6b21a8 100%); color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 800; padding: 14px 32px; border-radius: 14px; box-shadow: 0 6px 16px rgba(90, 30, 101, 0.25);">
+                  Open & Unwrap Your Interactive Card ✨
+                </a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+
     <div style="background-color: #faf5ff; border: 1px solid #e9d5ff; border-radius: 16px; padding: 20px; margin: 24px 0;">
       <h4 style="margin: 0 0 8px 0; color: #581c87; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">What Your Gift Makes Possible</h4>
       <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #4c1d95;">
@@ -362,24 +404,28 @@ export function templateDonorAppreciationEmail({ donorDisplayName, formattedAmou
       </p>
     </div>
 
-    <div style="text-align: center; margin: 32px 0;">
-      <a href="${cardUrl}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #e11d48 0%, ${DCVC_PURPLE} 50%, #6b21a8 100%); color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 800; padding: 16px 36px; border-radius: 16px; box-shadow: 0 8px 20px rgba(90, 30, 101, 0.25);">
-        Open Your Personalized Card ✨
-      </a>
-      <p style="font-size: 12px; color: #64748b; margin-top: 10px;">
-        Interactive digital card · Shareable keepsake · Downloadable PDF
-      </p>
-    </div>
-
-    <p style="font-size: 12px; line-height: 1.5; color: #64748b; margin: 0;">
-      <strong>Tax Receipt Notice:</strong> This appreciation card is an expressive cultural keepsake from our community. Your official 501(c)(3) tax receipt (EIN: 46-5312131) has been issued separately by our giving partner, Zeffy.
+    <p style="font-size: 12px; line-height: 1.5; color: #64748b; margin: 20px 0 0 0;">
+      <strong>Tax Receipt Notice:</strong> This appreciation card is a cultural keepsake honoring your generous partnership. It is not an official IRS tax receipt. Official tax-deductible donation receipts are issued independently and securely via our nonprofit giving partner, Zeffy.
     </p>
   `;
 
   return {
     subject: `Your DCVC Appreciation Card has arrived! 💜 (${tierName})`,
     html: baseEmailWrapper({ title, headerSubtitle: `"${tagline}"`, contentHtml }),
-    text: `Thank you, ${donorDisplayName}! Your gift of ${formattedAmount} powers vital LGBTQ+ programs in Ventura County. Open your card: ${cardUrl}`
+    text: `Thank you, ${donorDisplayName}!
+
+We are deeply grateful for your generous gift of ${formattedAmount} ${frequency === 'monthly' ? '(Monthly Sustainer)' : ''} to Diversity Collective Ventura County.
+
+Tier: ${tierName} (${badge})
+"${tagline}"
+
+What Your Gift Makes Possible:
+${impact}
+
+Open & Unwrap Your Interactive Keepsake Card:
+${cardUrl}
+
+(Notice: This appreciation card is a cultural keepsake honoring your community support. It does not serve as an official IRS tax receipt. Official tax-deductible donation receipts are issued independently via Zeffy.)`
   };
 }
 
