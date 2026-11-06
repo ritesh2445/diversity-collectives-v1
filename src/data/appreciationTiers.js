@@ -24,65 +24,77 @@ export const TIER_CONFIGS = {
     id: APPRECIATION_TIERS.COMMUNITY_ALLY,
     title: 'Community Ally',
     circleName: 'Friend of Sanctuary',
+    certificatePrefix: 'CA',
     minAmount: 1,
     accentColor: '#D97706', // Amber-600
     themeGradient: 'from-amber-500 via-rose-500 to-purple-600',
-    cardBackground: 'bg-gradient-to-br from-amber-50 via-rose-50/50 to-purple-50',
+    cardBackground: 'bg-gradient-to-br from-amber-50/90 via-[#FCF9F2] to-rose-50/60',
     borderStyle: 'border-amber-300 shadow-amber-900/10',
     badgeText: 'COMMUNITY ALLY',
     tagline: 'Lifting Each Other Up, One Step at a Time',
-    impactNarrative: 'Your generous contribution provides vital safer-sex supplies, harm reduction kits, and welcoming computer access for local community members finding sanctuary at our Ventura Community Resource Center.',
+    impactNarrative: 'Your generous contribution provides vital safer-sex supplies, harm reduction kits, welcoming computer access, and warm hospitality for local community members finding sanctuary at our Ventura Community Resource Center.',
     quote: '"Thank you for believing that everyone deserves a space where they are welcomed without reservation."',
     insignia: 'Warm Amber Sunrise & Prismatic Leaf',
-    envelopeAccent: 'from-amber-400 to-rose-400'
+    envelopeAccent: 'from-amber-400 to-rose-400',
+    envelopeBg: 'bg-gradient-to-br from-[#FFFDF9] via-[#FAF5EE] to-[#FDF2F4]',
+    motif: 'botanical_sunrise'
   },
   [APPRECIATION_TIERS.PRIDE_ADVOCATE]: {
     id: APPRECIATION_TIERS.PRIDE_ADVOCATE,
     title: 'Pride Advocate',
     circleName: 'Advocate Circle',
+    certificatePrefix: 'PA',
     minAmount: 50,
     accentColor: '#5A1E65', // Brand Deep Purple
     themeGradient: 'from-purple-600 via-fuchsia-500 to-amber-500',
-    cardBackground: 'bg-gradient-to-br from-purple-50 via-fuchsia-50/40 to-slate-50',
+    cardBackground: 'bg-gradient-to-br from-purple-50/90 via-[#FAF5FF] to-sky-50/60',
     borderStyle: 'border-purple-300 shadow-purple-900/15',
     badgeText: 'PRIDE ADVOCATE',
     tagline: 'Championing Health, Visibility & Dignity',
-    impactNarrative: 'Your gift directly funds free, confidential rapid HIV and STI testing clinics, PrEP/PEP healthcare navigation, and stigma-free education through Diversity SHINES.',
+    impactNarrative: 'Your gift directly funds free, confidential rapid HIV and STI testing clinics, PrEP/PEP healthcare navigation, and stigma-free education through Diversity SHINES across all 10 Ventura County cities.',
     quote: '"Because of your advocacy, community members have immediate, compassionate access to the care they need to stay healthy and thrive."',
     insignia: 'Deep Amethyst Heart & Radiant Stars',
-    envelopeAccent: 'from-purple-600 to-indigo-600'
+    envelopeAccent: 'from-purple-600 to-indigo-600',
+    envelopeBg: 'bg-gradient-to-br from-[#FAF5FF] via-[#F3E8FF] to-[#EDE9FE]',
+    motif: 'interconnected_rings'
   },
   [APPRECIATION_TIERS.RAINBOW_CHAMPION]: {
     id: APPRECIATION_TIERS.RAINBOW_CHAMPION,
     title: 'Rainbow Champion',
     circleName: 'Champion Circle',
+    certificatePrefix: 'RC',
     minAmount: 150,
     accentColor: '#1E5A44', // Forest Emerald
     themeGradient: 'from-emerald-600 via-teal-500 to-purple-700',
-    cardBackground: 'bg-gradient-to-br from-emerald-50 via-teal-50/40 to-purple-50/50',
+    cardBackground: 'bg-gradient-to-br from-emerald-50/90 via-[#F0FDF4] to-purple-50/60',
     borderStyle: 'border-emerald-300 shadow-emerald-900/15',
     badgeText: 'RAINBOW CHAMPION',
     tagline: 'Fostering Resilience & Youth Leadership',
     impactNarrative: 'Your partnership underwrites weekly Rainbow Umbrella and Little Unicorns youth peer circles, creating lifelong friendships, mental health resilience, and affirming spaces where young people can be their authentic selves.',
     quote: '"Research proves having even one affirming adult reduces youth suicide risk by 40%. Your support ensures that sanctuary is always open."',
     insignia: 'Prismatic Crystal & Emerald Laurel',
-    envelopeAccent: 'from-emerald-600 to-teal-700'
+    envelopeAccent: 'from-emerald-600 to-teal-700',
+    envelopeBg: 'bg-gradient-to-br from-[#ECFDF5] via-[#E0F2FE] to-[#F5F3FF]',
+    motif: 'pride_aurora_ribbons'
   },
   [APPRECIATION_TIERS.VISIONARY_BENEFACTOR]: {
     id: APPRECIATION_TIERS.VISIONARY_BENEFACTOR,
     title: 'Visionary Benefactor',
     circleName: 'Visionary Circle',
+    certificatePrefix: 'VB',
     minAmount: 500,
     accentColor: '#B45309', // Deep Gold / Amber-700
     themeGradient: 'from-amber-400 via-purple-700 to-indigo-900',
-    cardBackground: 'bg-gradient-to-br from-amber-50 via-purple-50/60 to-indigo-50/50',
-    borderStyle: 'border-amber-400 ring-2 ring-amber-300/60 shadow-amber-900/25',
+    cardBackground: 'bg-gradient-to-br from-[#0F0D22] via-[#1B1238] to-[#0D1527] text-white',
+    borderStyle: 'border-amber-400/90 ring-2 ring-amber-300/60 shadow-2xl shadow-amber-900/30',
     badgeText: 'VISIONARY BENEFACTOR',
     tagline: 'Transforming Lives Across Ventura County',
     impactNarrative: 'As a Visionary Benefactor, your profound investment anchors the operational foundation of Diversity Collective Ventura County. You empower the flagship Community Resource Center, sustain year-round advocacy, and ensure Ventura County Pride and the Youth Pride Prom remain forever free, affirming, and accessible to all.',
     quote: '"Your leadership transforms our community from surviving to thriving. We honor your extraordinary commitment to LGBTQ+ equality and dignity."',
     insignia: 'Sovereign Gold Crest & Diamond Prism',
-    envelopeAccent: 'from-amber-500 via-yellow-400 to-purple-900'
+    envelopeAccent: 'from-amber-500 via-yellow-400 to-purple-900',
+    envelopeBg: 'bg-gradient-to-br from-[#1E1635] via-[#2D1B4E] to-[#0F0D22]',
+    motif: 'sovereign_gold_crest'
   }
 };
 
