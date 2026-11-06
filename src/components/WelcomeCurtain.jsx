@@ -1,34 +1,45 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Sparkles, Heart, X } from 'lucide-react';
 
 export default function WelcomeCurtain() {
-  const [animating, setAnimating] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    try {
-      return !sessionStorage.getItem('dcvc_welcome_seen');
-    } catch {
-      return true;
-    }
-  });
+  // Always trigger the loading animation on every page refresh / load
+  const [animating, setAnimating] = useState(true);
+  const [fadingOut, setFadingOut] = useState(false);
   const [key, setKey] = useState(0);
 
-  const handleDismiss = () => {
-    setAnimating(false);
+  // Clean up any legacy session flags so refresh always shows the animation
+  useEffect(() => {
     try {
-      sessionStorage.setItem('dcvc_welcome_seen', 'true');
+      sessionStorage.removeItem('dcvc_welcome_seen');
+      localStorage.removeItem('dcvc_welcome_seen');
     } catch {
       // Graceful fallback
     }
-  };
+  }, []);
 
-  // Always listen for replay requests regardless of initial session state
+  const handleDismiss = useCallback(() => {
+    setFadingOut(true);
+    setTimeout(() => {
+      setAnimating(false);
+      setFadingOut(false);
+    }, 350);
+  }, []);
+
+  // Escape key dismisses instantly
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && animating) {
+        handleDismiss();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [animating, handleDismiss]);
+
+  // Always listen for replay requests
   useEffect(() => {
     const handleReplay = () => {
-      try {
-        sessionStorage.removeItem('dcvc_welcome_seen');
-      } catch {
-        // Graceful fallback
-      }
+      setFadingOut(false);
       setKey((prev) => prev + 1);
       setAnimating(true);
     };
@@ -39,27 +50,16 @@ export default function WelcomeCurtain() {
     };
   }, []);
 
-  // Manage animation auto-dismissal timer
+  // Manage animation auto-dismissal timer (~2.4s)
   useEffect(() => {
-    if (!animating) return;
-
-    const isPaused = typeof window !== 'undefined' && (
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
-      document.documentElement.getAttribute('data-a11y-pause-animations') === 'true'
-    );
-
-    // If reduced-motion is active and not an explicit replay button press
-    if (isPaused && key === 0) {
-      setAnimating(false);
-      return;
-    }
+    if (!animating || fadingOut) return;
 
     const timer = setTimeout(() => {
       handleDismiss();
-    }, 2500);
+    }, 2400);
 
     return () => clearTimeout(timer);
-  }, [animating, key]);
+  }, [animating, fadingOut, key, handleDismiss]);
 
   if (!animating) return null;
 
@@ -99,7 +99,9 @@ export default function WelcomeCurtain() {
     <aside 
       key={key}
       aria-label="Welcome to Diversity Collective Ventura County"
-      className="fixed inset-0 z-[99999] pointer-events-none overflow-hidden flex flex-col justify-end animate-curtain-fade"
+      className={`fixed inset-0 z-[99999] pointer-events-none overflow-hidden flex flex-col justify-end animate-curtain-fade ${
+        fadingOut ? 'opacity-0 transition-opacity duration-350 ease-out' : ''
+      }`}
       style={{
         contain: 'strict',
         isolation: 'isolate',
