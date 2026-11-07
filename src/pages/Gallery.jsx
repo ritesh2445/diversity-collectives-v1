@@ -281,6 +281,50 @@ export default function Gallery() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedPhotoIndex, expandedPhoto, filteredPhotos.length, carouselPhotos.length]);
 
+  // Lock background body scroll whenever Archival Record modal or Lightbox is active
+  useEffect(() => {
+    const isModalOpen = Boolean(expandedPhoto || selectedPhotoIndex !== null);
+    if (isModalOpen) {
+      const originalOverflow = document.body.style.overflow;
+      const originalPaddingRight = document.body.style.paddingRight;
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+
+      document.body.style.overflow = 'hidden';
+      if (scrollbarWidth > 0) {
+        document.body.style.paddingRight = `${scrollbarWidth}px`;
+      }
+
+      return () => {
+        document.body.style.overflow = originalOverflow;
+        document.body.style.paddingRight = originalPaddingRight;
+      };
+    }
+  }, [expandedPhoto, selectedPhotoIndex]);
+
+  // Convert vertical mouse wheel into horizontal scroll when hovering over Memory Lane archival cards
+  useEffect(() => {
+    const el = laneScrollRef.current;
+    if (!el) return;
+
+    const onWheel = (e) => {
+      if (Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return;
+
+      const maxScroll = el.scrollWidth - el.clientWidth;
+      if (maxScroll <= 0) return;
+
+      const canScrollLeft = el.scrollLeft > 0 && e.deltaY < 0;
+      const canScrollRight = el.scrollLeft < maxScroll - 1 && e.deltaY > 0;
+
+      if (canScrollLeft || canScrollRight) {
+        e.preventDefault();
+        el.scrollLeft += e.deltaY;
+      }
+    };
+
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, []);
+
   // Touch Swipe for 3D Carousel on Mobile
   const touchStartXRef = useRef(0);
   const handleTouchStart = (e) => {
@@ -545,11 +589,12 @@ export default function Gallery() {
           role="dialog"
           aria-modal="true"
           aria-label={expandedPhoto.title}
-          className="fixed inset-0 z-[120] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-300"
+          className="fixed inset-0 z-[120] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-300 overscroll-contain"
           onClick={() => setExpandedPhoto(null)}
+          onTouchMove={(e) => e.stopPropagation()}
         >
           <div 
-            className="max-w-4xl w-full max-h-[88vh] bg-white text-slate-900 rounded-3xl overflow-hidden shadow-2xl flex flex-col border border-purple-200/80 animate-in zoom-in-95 duration-200"
+            className="max-w-4xl w-full max-h-[88vh] bg-white text-slate-900 rounded-3xl overflow-hidden shadow-2xl flex flex-col border border-purple-200/80 animate-in zoom-in-95 duration-200 overscroll-contain"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Top Bar */}
@@ -594,7 +639,7 @@ export default function Gallery() {
               <div className="md:col-span-6 lg:col-span-5 flex flex-col justify-between overflow-hidden bg-slate-50/60 border-l border-purple-100">
                 
                 {/* Scrollable Content Container */}
-                <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
+                <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4 overscroll-contain">
                   <div>
                     <div className="inline-block px-2.5 py-0.5 rounded-full bg-purple-100 text-[#5A1E65] font-black text-[11px] mb-2">
                       Verified Archival Record
@@ -1042,7 +1087,7 @@ export default function Gallery() {
             <div
               ref={laneScrollRef}
               onScroll={handleLaneScroll}
-              className="flex items-center gap-4 sm:gap-6 overflow-x-auto snap-x snap-mandatory scroll-smooth py-6 px-[calc(50vw-42.5vw)] sm:px-[calc(50vw-210px)] md:px-[calc(50vw-240px)] relative z-10 no-scrollbar"
+              className="flex items-center gap-4 sm:gap-6 overflow-x-auto snap-x snap-mandatory scroll-smooth py-6 px-[calc(50vw-42.5vw)] sm:px-[calc(50vw-210px)] md:px-[calc(50vw-240px)] relative z-10 no-scrollbar overscroll-contain"
               tabIndex={0}
               aria-label="DCVC Historical Milestones Scrollable Lane"
             >
