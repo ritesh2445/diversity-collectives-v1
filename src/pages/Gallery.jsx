@@ -14,7 +14,6 @@ import {
   Award,
   Compass,
   Share2,
-  Download,
   Info,
   ChevronDown,
   ChevronUp,
@@ -684,16 +683,15 @@ export default function Gallery() {
                   </div>
                 </div>
 
-                {/* Fixed Action Footer - Always Accessible */}
-                <div className="p-4 bg-white border-t border-slate-200 flex items-center gap-2.5 flex-shrink-0">
-                  <a
-                    href={expandedPhoto.image}
-                    download={`${expandedPhoto.title}.jpg`}
-                    className="flex-1 py-2.5 px-3 rounded-xl bg-[#5A1E65] hover:bg-[#43144A] text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
+                {/* Fixed Action Footer - Responsive & Accessible (Zero Download Option) */}
+                <div className="p-3.5 sm:p-4 bg-white border-t border-slate-200 flex items-center justify-between gap-2.5 flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setExpandedPhoto(null)}
+                    className="py-2.5 px-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-colors cursor-pointer"
                   >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>Download Photo</span>
-                  </a>
+                    Close Record
+                  </button>
                   <button
                     type="button"
                     onClick={() => {
@@ -705,13 +703,14 @@ export default function Gallery() {
                         }).catch(() => {});
                       } else {
                         navigator.clipboard.writeText(window.location.href);
-                        alert('Link copied to clipboard!');
+                        alert('Archival record link copied to clipboard!');
                       }
                     }}
-                    className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 transition-colors cursor-pointer"
-                    title="Share this moment"
+                    className="flex-1 py-2.5 px-3.5 rounded-xl bg-[#5A1E65] hover:bg-[#43144A] text-white font-bold text-xs flex items-center justify-center gap-2 transition-colors shadow-2xs cursor-pointer"
+                    title="Share this archival moment"
                   >
-                    <Share2 className="w-4 h-4" />
+                    <Share2 className="w-3.5 h-3.5" />
+                    <span>Share Archival Record</span>
                   </button>
                 </div>
 
@@ -787,7 +786,7 @@ export default function Gallery() {
               <div
                 key={photo.id}
                 onClick={() => setSelectedPhotoIndex(index)}
-                className="w-80 sm:w-96 flex-shrink-0 snap-center p-3 rounded-3xl bg-white border-2 border-slate-200 hover:border-purple-300 shadow-md hover:shadow-xl transition-all cursor-pointer group space-y-3"
+                className="w-[82vw] sm:w-80 md:w-96 flex-shrink-0 snap-center p-3 rounded-3xl bg-white border-2 border-slate-200 hover:border-purple-300 shadow-md hover:shadow-xl transition-all cursor-pointer group space-y-3"
               >
                 <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-slate-100 relative">
                   <img
@@ -1064,30 +1063,30 @@ export default function Gallery() {
               aria-hidden="true" 
             />
 
-            {/* Floating Navigation Chevrons on Left and Right edges */}
+            {/* Floating Navigation Chevrons on Left and Right edges (Optimized for all viewports) */}
             <button
               type="button"
               onClick={handlePrevMilestone}
-              className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white text-[#5A1E65] border-2 border-purple-300 shadow-2xl flex items-center justify-center hover:scale-115 active:scale-95 transition-all cursor-pointer hover:bg-purple-50 group hover:border-[#5A1E65]"
+              className="absolute left-1.5 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-13 sm:h-13 rounded-full bg-white text-[#5A1E65] border-2 border-purple-300 shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all cursor-pointer hover:bg-purple-50 group hover:border-[#5A1E65]"
               aria-label="Scroll to Previous Milestone"
             >
-              <ChevronLeft className="w-6 h-6 sm:w-7 sm:h-7 group-hover:-translate-x-0.5 transition-transform" />
+              <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 group-hover:-translate-x-0.5 transition-transform" />
             </button>
 
             <button
               type="button"
               onClick={handleNextMilestone}
-              className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white text-[#5A1E65] border-2 border-purple-300 shadow-2xl flex items-center justify-center hover:scale-115 active:scale-95 transition-all cursor-pointer hover:bg-purple-50 group hover:border-[#5A1E65]"
+              className="absolute right-1.5 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-13 sm:h-13 rounded-full bg-white text-[#5A1E65] border-2 border-purple-300 shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all cursor-pointer hover:bg-purple-50 group hover:border-[#5A1E65]"
               aria-label="Scroll to Next Milestone"
             >
-              <ChevronRight className="w-6 h-6 sm:w-7 sm:h-7 group-hover:translate-x-0.5 transition-transform" />
+              <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-x-0.5 transition-transform" />
             </button>
 
-            {/* The Continuous Scrollable Stream (Compact, Fits Screen Without Blank Space) */}
+            {/* The Continuous Scrollable Stream (Centered & Responsive for Phone, Tablet, Laptop, Desktop) */}
             <div
               ref={laneScrollRef}
               onScroll={handleLaneScroll}
-              className="flex items-center gap-4 sm:gap-6 overflow-x-auto snap-x snap-mandatory scroll-smooth py-6 px-[calc(50vw-42.5vw)] sm:px-[calc(50vw-210px)] md:px-[calc(50vw-240px)] relative z-10 no-scrollbar overscroll-contain"
+              className="flex items-center gap-3.5 sm:gap-6 overflow-x-auto snap-x snap-mandatory scroll-smooth py-6 px-[calc(50vw-42vw)] sm:px-[calc(50vw-190px)] md:px-[calc(50vw-210px)] lg:px-[calc(50vw-220px)] relative z-10 no-scrollbar overscroll-contain"
               tabIndex={0}
               aria-label="DCVC Historical Milestones Scrollable Lane"
             >
@@ -1103,7 +1102,7 @@ export default function Gallery() {
                   <div
                     key={milestone.year}
                     ref={el => (cardRefs.current[idx] = el)}
-                    className={`w-[85vw] sm:w-[380px] md:w-[420px] lg:w-[440px] h-fit self-center flex-shrink-0 snap-center rounded-3xl bg-white border-2 p-3.5 sm:p-4 transition-all duration-500 relative flex flex-col items-center text-center overflow-hidden opacity-100 ${
+                    className={`w-[84vw] sm:w-[380px] md:w-[420px] lg:w-[440px] h-fit self-center flex-shrink-0 snap-center rounded-3xl bg-white border-2 p-3.5 sm:p-4 transition-all duration-500 relative flex flex-col items-center text-center overflow-hidden opacity-100 ${
                       isActive 
                         ? 'scale-100 border-[#5A1E65] ring-4 ring-amber-300/80 shadow-2xl z-20' 
                         : 'scale-95 border-purple-200/90 shadow-md hover:scale-98 hover:border-purple-300 z-10'
@@ -1429,54 +1428,54 @@ export default function Gallery() {
       </section>
 
       {/* ================================================================
-          ACCESSIBLE FULL-SCREEN LIGHTBOX MODAL
+          ACCESSIBLE FULL-SCREEN LIGHTBOX MODAL (Responsive for All Devices)
           ================================================================ */}
       {activeLightboxPhoto && (
         <div
           role="dialog"
           aria-modal="true"
           aria-label={activeLightboxPhoto.title}
-          className="fixed inset-0 z-[130] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 sm:p-8 animate-in fade-in duration-200"
+          className="fixed inset-0 z-[130] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-6 animate-in fade-in duration-200 overscroll-contain"
         >
           {/* Close button */}
           <button
             type="button"
             onClick={() => setSelectedPhotoIndex(null)}
-            className="absolute top-5 right-5 p-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+            className="absolute top-3 right-3 sm:top-5 sm:right-5 p-2 sm:p-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer z-30"
             aria-label="Close image lightbox (Esc)"
           >
-            <X className="w-6 h-6" />
+            <X className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
 
           {/* Previous image */}
           <button
             type="button"
             onClick={() => setSelectedPhotoIndex((prev) => (prev - 1 + filteredPhotos.length) % filteredPhotos.length)}
-            className="absolute left-4 sm:left-8 p-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+            className="absolute left-2 sm:left-6 p-2 sm:p-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer z-30"
             aria-label="Previous image (Left Arrow)"
           >
-            <ChevronLeft className="w-6 h-6" />
+            <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
 
           {/* Lightbox Card */}
-          <div className="max-w-4xl w-full max-h-[90vh] bg-slate-900 text-white rounded-3xl overflow-hidden shadow-2xl flex flex-col border border-slate-700">
-            <div className="flex-1 overflow-hidden flex items-center justify-center bg-black min-h-[300px] max-h-[65vh]">
+          <div className="max-w-4xl w-full max-h-[92vh] sm:max-h-[90vh] bg-slate-900 text-white rounded-3xl overflow-hidden shadow-2xl flex flex-col border border-slate-700">
+            <div className="flex-1 overflow-hidden flex items-center justify-center bg-black min-h-[220px] max-h-[60vh] sm:max-h-[65vh]">
               <img
                 src={getOptimizedImageUrl(activeLightboxPhoto.image, { width: 1200 })}
                 alt={activeLightboxPhoto.title}
-                className="max-h-[65vh] w-auto max-w-full object-contain"
+                className="max-h-[60vh] sm:max-h-[65vh] w-auto max-w-full object-contain"
               />
             </div>
 
-            <div className="p-6 bg-slate-900 border-t border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="p-4 sm:p-6 bg-slate-900 border-t border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
               <div>
                 <span className="text-[10px] font-black uppercase tracking-wider text-amber-300">
                   {activeLightboxPhoto.category} · {activeLightboxPhoto.year}
                 </span>
-                <h3 className="font-display text-xl font-bold text-white mt-1">
+                <h3 className="font-display text-lg sm:text-xl font-bold text-white mt-0.5">
                   {activeLightboxPhoto.title}
                 </h3>
-                <p className="text-xs text-slate-300 mt-1 max-w-xl">
+                <p className="text-xs text-slate-300 mt-0.5 max-w-xl">
                   {activeLightboxPhoto.description}
                 </p>
               </div>
@@ -1491,10 +1490,10 @@ export default function Gallery() {
           <button
             type="button"
             onClick={() => setSelectedPhotoIndex((prev) => (prev + 1) % filteredPhotos.length)}
-            className="absolute right-4 sm:right-8 p-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+            className="absolute right-2 sm:right-6 p-2 sm:p-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer z-30"
             aria-label="Next image (Right Arrow)"
           >
-            <ChevronRight className="w-6 h-6" />
+            <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         </div>
       )}
