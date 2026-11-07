@@ -57,7 +57,7 @@ export const VOICE_COMMAND_CATEGORIES = [
   {
     name: 'Search & Chatbot',
     icon: '🔍',
-    examples: ['search for counseling', 'clear search', 'open chat', 'close chat']
+    examples: ['search for counseling', 'clear search', 'ask alba', 'open chat', 'close chat']
   },
   {
     name: 'Display & Contrast',
@@ -192,6 +192,9 @@ export function parseVoiceIntent(rawText) {
   if (
     text === 'open chat' ||
     text === 'open chatbot' ||
+    text === 'ask alba' ||
+    text === 'open alba' ||
+    text === 'talk to alba' ||
     text === 'ask dcvc' ||
     text === 'talk to ai' ||
     text === 'ask ai' ||
@@ -200,7 +203,13 @@ export function parseVoiceIntent(rawText) {
     return { type: 'CHATBOT', action: 'open' };
   }
 
-  if (text === 'close chat' || text === 'close chatbot' || text === 'hide chat') {
+  if (
+    text === 'close chat' ||
+    text === 'close chatbot' ||
+    text === 'close alba' ||
+    text === 'hide alba' ||
+    text === 'hide chat'
+  ) {
     return { type: 'CHATBOT', action: 'close' };
   }
 

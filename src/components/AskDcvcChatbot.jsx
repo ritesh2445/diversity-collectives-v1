@@ -26,7 +26,7 @@ const SUGGESTED_QUESTIONS = [
 ];
 
 /**
- * Ask DCVC — Free Community AI Chatbot
+ * Alba — Free Community AI Chatbot
  * Powered by Cloudflare Workers AI (@cf/meta/llama-3.1-8b-instruct-fp8)
  * $0 recurring cost, 100% free community assistant
  */
@@ -39,7 +39,7 @@ export default function AskDcvcChatbot() {
     {
       id: 'welcome',
       role: 'assistant',
-      text: "Hello! I'm **Ask DCVC**, your free community guide. Ask me about our free health testing, youth groups, center hours, events, or volunteer opportunities.",
+      text: "Hello! I'm Alba, your free community guide. Ask me about our free health testing, youth groups, center hours, events, or volunteer opportunities.",
       citations: [
         { title: "Programs", url: "/programs" },
         { title: "Contact Us", url: "/contact" }
@@ -302,8 +302,8 @@ export default function AskDcvcChatbot() {
           onClick={() => setIsOpen(true)}
           aria-expanded={false}
           aria-haspopup="dialog"
-          aria-label="Open Ask DCVC Free AI Community Assistant (Alt + C)"
-          title="Ask DCVC (Alt + C)"
+          aria-label="Open Alba Free AI Community Assistant (Alt + C)"
+          title="Ask Alba (Alt + C)"
           className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[9990] flex items-center gap-2.5 px-4 py-3 rounded-full bg-gradient-to-r from-[#5A1E65] via-purple-900 to-[#43144A] text-white shadow-xl hover:shadow-2xl border border-amber-300/60 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer select-none focus:outline-none focus:ring-4 focus:ring-amber-300 print:hidden"
         >
           <div className="w-6 h-6 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center font-bold shadow-xs">
@@ -311,7 +311,7 @@ export default function AskDcvcChatbot() {
           </div>
           <div className="flex flex-col text-left">
             <span className="font-extrabold text-xs tracking-wide text-white leading-tight flex items-center gap-1.5">
-              <span>Ask DCVC</span>
+              <span>Ask Alba</span>
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             </span>
             <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider leading-none">
@@ -326,7 +326,7 @@ export default function AskDcvcChatbot() {
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Ask DCVC Community Assistant"
+          aria-label="Alba • DCVC Community Guide"
           className="fixed bottom-3 right-3 sm:bottom-6 sm:right-6 z-[9999] w-[calc(100vw-24px)] sm:w-[420px] max-h-[85vh] sm:max-h-[640px] h-[580px] bg-white rounded-3xl shadow-2xl border border-purple-200 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200 print:hidden"
         >
           {/* Header Bar */}
@@ -338,7 +338,7 @@ export default function AskDcvcChatbot() {
               <div>
                 <div className="flex items-center gap-1.5">
                   <h3 className="font-display font-extrabold text-sm tracking-wide text-white">
-                    Ask DCVC
+                    Alba
                   </h3>
                   <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -346,7 +346,7 @@ export default function AskDcvcChatbot() {
                   </span>
                 </div>
                 <p className="text-[11px] text-purple-200">
-                  Verified Ventura County Community Guide
+                  DCVC Community Guide • Ventura County
                 </p>
               </div>
             </div>
