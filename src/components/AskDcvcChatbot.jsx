@@ -157,53 +157,136 @@ export default function AskDcvcChatbot() {
     ]);
   };
 
-  // Render markdown links cleanly inside text
-  const renderMessageContent = (text) => {
-    const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
-    const parts = [];
-    let lastIndex = 0;
-    let match;
+  // Comprehensive markdown formatter for chatbot messages (renders bold, links, lists; zero raw asterisks)
+  const renderMessageContent = (rawText, isUser = false) => {
+    if (!rawText) return null;
 
-    while ((match = linkRegex.exec(text)) !== null) {
-      if (match.index > lastIndex) {
-        parts.push(text.slice(lastIndex, match.index));
+    // Split text into lines to preserve structured line breaks and handle lists
+    const lines = rawText.split('\n');
+
+    const renderInline = (str, lineKey) => {
+      // Regex matching:
+      // 1. [Link text](url) -> group 1: full link, group 2: text, group 3: url
+      // 2. **bold** or __bold__ -> group 4: bold text
+      // 3. *italic* or _italic_ -> group 5: italic text
+      // 4. `code` -> group 6: code text
+      const tokenRegex = /(\[([^\]]+)\]\(([^)]+)\))|(?:\*\*|__)([^*_]+?)(?:\*\*|__)|(?:\*|_)([^*_]+?)(?:\*|_)|`([^`]+)`/g;
+
+      const elements = [];
+      let lastIndex = 0;
+      let match;
+      let tokenIdx = 0;
+
+      while ((match = tokenRegex.exec(str)) !== null) {
+        // Preceding plain text (strip any stray asterisks)
+        if (match.index > lastIndex) {
+          const plain = str.slice(lastIndex, match.index).replace(/\*+/g, '');
+          if (plain) {
+            elements.push(<span key={`${lineKey}-txt-${tokenIdx++}`}>{plain}</span>);
+          }
+        }
+
+        if (match[1]) {
+          // It's a markdown link [text](url)
+          const linkText = match[2];
+          const linkUrl = match[3];
+
+          if (linkUrl.startsWith('/')) {
+            elements.push(
+              <Link
+                key={`${lineKey}-lnk-${tokenIdx++}`}
+                to={linkUrl}
+                onClick={() => setIsOpen(false)}
+                className={isUser ? "text-amber-200 font-bold underline" : "text-[#5A1E65] font-bold underline hover:text-purple-800 transition-colors"}
+              >
+                {linkText}
+              </Link>
+            );
+          } else {
+            elements.push(
+              <a
+                key={`${lineKey}-ext-${tokenIdx++}`}
+                href={linkUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={isUser ? "text-amber-200 font-bold underline inline-flex items-center gap-0.5" : "text-[#5A1E65] font-bold underline hover:text-purple-800 transition-colors inline-flex items-center gap-0.5"}
+              >
+                <span>{linkText}</span>
+                <ExternalLink className="w-3 h-3 inline" />
+              </a>
+            );
+          }
+        } else if (match[4]) {
+          // Bold text: **text**
+          elements.push(
+            <strong
+              key={`${lineKey}-bld-${tokenIdx++}`}
+              className={isUser ? "font-black text-white" : "font-extrabold text-slate-950"}
+            >
+              {match[4]}
+            </strong>
+          );
+        } else if (match[5]) {
+          // Italic text: *text*
+          elements.push(
+            <em
+              key={`${lineKey}-em-${tokenIdx++}`}
+              className={isUser ? "italic text-purple-100" : "italic font-medium text-slate-700"}
+            >
+              {match[5]}
+            </em>
+          );
+        } else if (match[6]) {
+          // Inline code: `code`
+          elements.push(
+            <code
+              key={`${lineKey}-code-${tokenIdx++}`}
+              className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 font-mono text-[11px]"
+            >
+              {match[6]}
+            </code>
+          );
+        }
+
+        lastIndex = tokenRegex.lastIndex;
       }
-      const linkText = match[1];
-      const linkUrl = match[2];
 
-      if (linkUrl.startsWith('/')) {
-        parts.push(
-          <Link
-            key={match.index}
-            to={linkUrl}
-            onClick={() => setIsOpen(false)}
-            className="text-[#5A1E65] font-bold underline hover:text-purple-800 transition-colors"
-          >
-            {linkText}
-          </Link>
-        );
-      } else {
-        parts.push(
-          <a
-            key={match.index}
-            href={linkUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[#5A1E65] font-bold underline hover:text-purple-800 transition-colors inline-flex items-center gap-0.5"
-          >
-            <span>{linkText}</span>
-            <ExternalLink className="w-3 h-3 inline" />
-          </a>
+      // Trailing plain text (strip any stray asterisks)
+      if (lastIndex < str.length) {
+        const trailing = str.slice(lastIndex).replace(/\*+/g, '');
+        if (trailing) {
+          elements.push(<span key={`${lineKey}-tail`}>{trailing}</span>);
+        }
+      }
+
+      return elements;
+    };
+
+    return lines.map((line, idx) => {
+      const trimmed = line.trim();
+      if (!trimmed) {
+        return <div key={`empty-${idx}`} className="h-1.5" />;
+      }
+
+      // Check for bullet list item: starts with •, *, or -
+      const listMatch = trimmed.match(/^(?:•|\*|-)\s+(.+)$/);
+      if (listMatch) {
+        return (
+          <div key={`li-${idx}`} className="flex items-start gap-2 pl-1 py-0.5">
+            <span className={isUser ? "text-amber-300 font-bold leading-tight" : "text-[#5A1E65] font-bold leading-tight"}>•</span>
+            <div className="flex-1 leading-relaxed">
+              {renderInline(listMatch[1], `li-${idx}`)}
+            </div>
+          </div>
         );
       }
-      lastIndex = linkRegex.lastIndex;
-    }
 
-    if (lastIndex < text.length) {
-      parts.push(text.slice(lastIndex));
-    }
-
-    return parts;
+      return (
+        <div key={`p-${idx}`} className="leading-relaxed">
+          {renderInline(line, `p-${idx}`)}
+        </div>
+      );
+    });
   };
 
   if (!isEnabled) {
@@ -324,7 +407,7 @@ export default function AskDcvcChatbot() {
                     }`}
                   >
                     <div className="leading-relaxed whitespace-pre-wrap break-words font-normal">
-                      {renderMessageContent(msg.text)}
+                      {renderMessageContent(msg.text, isUser)}
                     </div>
 
                     {/* Official Verified Citations */}
