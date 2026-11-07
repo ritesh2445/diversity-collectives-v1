@@ -1017,11 +1017,11 @@ export default function Gallery() {
               <ChevronRight className="w-6 h-6 sm:w-7 sm:h-7 group-hover:translate-x-0.5 transition-transform" />
             </button>
 
-            {/* The Continuous Scrollable Stream */}
+            {/* The Continuous Scrollable Stream (Compact, Fits Screen) */}
             <div
               ref={laneScrollRef}
               onScroll={handleLaneScroll}
-              className="flex items-stretch gap-6 sm:gap-10 overflow-x-auto snap-x snap-mandatory scroll-smooth py-12 px-6 sm:px-20 md:px-[calc(50vw-360px)] relative z-10 no-scrollbar"
+              className="flex items-stretch gap-4 sm:gap-6 overflow-x-auto snap-x snap-mandatory scroll-smooth py-6 px-[calc(50vw-42.5vw)] sm:px-[calc(50vw-210px)] md:px-[calc(50vw-240px)] relative z-10 no-scrollbar"
               tabIndex={0}
               aria-label="DCVC Historical Milestones Scrollable Lane"
             >
@@ -1037,7 +1037,7 @@ export default function Gallery() {
                   <div
                     key={milestone.year}
                     ref={el => (cardRefs.current[idx] = el)}
-                    className={`w-[85vw] sm:w-[560px] md:w-[680px] flex-shrink-0 snap-center rounded-3xl bg-white/95 backdrop-blur-md border-2 p-6 sm:p-8 transition-all duration-500 relative flex flex-col items-center text-center shadow-xl ${
+                    className={`w-[85vw] sm:w-[380px] md:w-[420px] lg:w-[440px] flex-shrink-0 snap-center rounded-3xl bg-white/95 backdrop-blur-md border-2 p-3.5 sm:p-4 transition-all duration-500 relative flex flex-col items-center text-center shadow-lg ${
                       isActive 
                         ? 'scale-100 opacity-100 border-[#5A1E65] ring-4 ring-amber-300/80 shadow-2xl z-20' 
                         : 'scale-95 opacity-55 border-purple-100 shadow-md hover:opacity-85 hover:scale-98 z-10'
@@ -1061,41 +1061,41 @@ export default function Gallery() {
                     )}
 
                     {/* Year & Badge Header: CENTER-ALIGNED */}
-                    <div className="flex items-center justify-center gap-2.5 flex-wrap mx-auto z-10">
-                      <span className={`font-display text-5xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r ${theme.gradientText}`}>
+                    <div className="flex items-center justify-center gap-2 flex-wrap mx-auto z-10">
+                      <span className={`font-display text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r ${theme.gradientText}`}>
                         {milestone.year}
                       </span>
-                      <span className="px-3 py-1 rounded-full bg-purple-100 text-[#5A1E65] font-black text-xs uppercase tracking-wider">
+                      <span className="px-2.5 py-0.5 rounded-full bg-purple-100 text-[#5A1E65] font-black text-[10px] uppercase tracking-wider">
                         {milestone.badge}
                       </span>
-                      <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-900 font-bold text-xs border border-amber-200">
+                      <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 font-bold text-[10px] border border-amber-200">
                         {milestone.stat}
                       </span>
                     </div>
 
                     {/* Title & Subtitle: CENTER-ALIGNED */}
-                    <div className="space-y-1 max-w-xl mx-auto mt-2 z-10">
+                    <div className="space-y-0.5 max-w-sm mx-auto mt-1 z-10">
                       <h3 
                         style={{
                           color: milestone.fontColor || undefined,
-                          fontSize: milestone.fontSize === '2xl' ? '1.85rem' :
-                                    milestone.fontSize === '3xl' ? '2.25rem' :
-                                    milestone.fontSize === 'xl' ? '1.5rem' :
-                                    milestone.fontSize === 'sm' ? '1.2rem' : undefined
+                          fontSize: milestone.fontSize === '2xl' ? '1.25rem' :
+                                    milestone.fontSize === '3xl' ? '1.35rem' :
+                                    milestone.fontSize === 'xl' ? '1.15rem' :
+                                    milestone.fontSize === 'sm' ? '1rem' : undefined
                         }}
-                        className="font-display text-2xl sm:text-3xl font-black text-slate-950 leading-tight text-center"
+                        className="font-display text-base sm:text-lg font-black text-slate-950 leading-snug text-center"
                       >
                         {milestone.title}
                       </h3>
-                      <p className="text-xs font-bold text-[#5A1E65] uppercase tracking-wider text-center">
+                      <p className="text-[10px] font-bold text-[#5A1E65] uppercase tracking-wider text-center">
                         {milestone.subtitle}
                       </p>
                     </div>
 
                     {/* MILESTONE PHOTOGRAPH: PROMINENTLY CENTER-ALIGNED */}
-                    <div className="w-full max-w-xl mx-auto rounded-3xl overflow-hidden aspect-[16/10] bg-slate-950 shadow-2xl border-2 border-purple-200/90 group/img relative my-4 z-10">
+                    <div className="w-full max-w-sm sm:max-w-md mx-auto rounded-2xl overflow-hidden aspect-[16/9] max-h-44 sm:max-h-48 bg-slate-950 shadow-xl border-2 border-purple-200/90 group/img relative my-2 z-10">
                       <img
-                        src={getOptimizedImageUrl(currentImage, { width: 900 })}
+                        src={getOptimizedImageUrl(currentImage, { width: 800 })}
                         alt={milestone.title}
                         className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-700 mx-auto cursor-pointer"
                         loading="lazy"
@@ -1126,21 +1126,21 @@ export default function Gallery() {
                           year: milestone.year,
                           description: milestone.description
                         })}
-                        className="absolute top-3 right-3 p-2 rounded-xl bg-black/60 hover:bg-black/80 text-white backdrop-blur-md transition-all cursor-pointer shadow-md"
+                        className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/60 hover:bg-black/80 text-white backdrop-blur-md transition-all cursor-pointer shadow-md"
                         title="Open Fullscreen Archival View"
                         aria-label="Open Fullscreen Archival View"
                       >
-                        <Maximize2 className="w-4 h-4" />
+                        <Maximize2 className="w-3.5 h-3.5" />
                       </button>
 
                       {/* Viewport Caption Bar */}
-                      <div className="absolute inset-x-0 bottom-0 p-3.5 text-white flex items-center justify-between text-xs">
-                        <span className="font-extrabold truncate pr-2">
+                      <div className="absolute inset-x-0 bottom-0 p-2.5 text-white flex items-center justify-between text-[11px]">
+                        <span className="font-extrabold truncate pr-2 text-[10px] sm:text-[11px]">
                           {selectedPicIdx !== undefined && milestone.pictureFolder?.[selectedPicIdx]?.caption
                             ? milestone.pictureFolder[selectedPicIdx].caption
                             : `${milestone.year} Archive Photograph`}
                         </span>
-                        <span className="text-[10px] text-amber-300 font-mono font-bold flex-shrink-0">
+                        <span className="text-[9px] text-amber-300 font-mono font-bold flex-shrink-0">
                           TAP TO EXPAND
                         </span>
                       </div>
@@ -1148,18 +1148,18 @@ export default function Gallery() {
 
                     {/* ARCHIVAL PICTURE FOLDER: CENTER-ALIGNED */}
                     {milestone.pictureFolder && milestone.pictureFolder.length > 0 && (
-                      <div className="w-full max-w-xl mx-auto p-3 rounded-2xl bg-purple-50/70 border border-purple-200/80 my-2 z-10">
-                        <div className="flex items-center justify-between mb-2 px-1">
-                          <span className="text-[11px] font-black uppercase tracking-wider text-[#5A1E65] flex items-center gap-1.5">
-                            <FolderOpen className="w-3.5 h-3.5 text-amber-600" />
-                            <span>Archival Picture Folder ({milestone.pictureFolder.length} Photos)</span>
+                      <div className="w-full max-w-sm sm:max-w-md mx-auto p-2 rounded-xl bg-purple-50/70 border border-purple-200/80 my-1 z-10">
+                        <div className="flex items-center justify-between mb-1.5 px-1">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-[#5A1E65] flex items-center gap-1">
+                            <FolderOpen className="w-3 h-3 text-amber-600" />
+                            <span>Archival Folder ({milestone.pictureFolder.length})</span>
                           </span>
                           <button
                             type="button"
                             onClick={() => {
                               setActiveFolderPics(prev => ({ ...prev, [milestone.year]: undefined }));
                             }}
-                            className={`text-[10px] font-bold cursor-pointer ${
+                            className={`text-[9px] font-bold cursor-pointer ${
                               selectedPicIdx === undefined ? 'text-[#5A1E65] underline' : 'text-slate-500 hover:text-slate-800'
                             }`}
                           >
@@ -1167,7 +1167,7 @@ export default function Gallery() {
                           </button>
                         </div>
 
-                        <div className="flex flex-wrap items-center justify-center gap-2">
+                        <div className="flex flex-wrap items-center justify-center gap-1.5">
                           {milestone.pictureFolder.map((pic, pIdx) => {
                             const isSelected = selectedPicIdx === pIdx;
                             return (
@@ -1178,7 +1178,7 @@ export default function Gallery() {
                                   setActiveFolderPics(prev => ({ ...prev, [milestone.year]: pIdx }));
                                   playMilestoneChime(1.3);
                                 }}
-                                className={`w-16 h-12 rounded-xl overflow-hidden bg-slate-900 border-2 cursor-pointer transition-all shadow-2xs ${
+                                className={`w-11 h-8 rounded-lg overflow-hidden bg-slate-900 border-2 cursor-pointer transition-all shadow-2xs ${
                                   isSelected
                                     ? 'border-amber-400 ring-2 ring-amber-300 scale-105 z-10'
                                     : 'border-purple-200 hover:border-purple-400 hover:scale-102'
@@ -1186,7 +1186,7 @@ export default function Gallery() {
                                 title={pic.caption || `Photo ${pIdx + 1}`}
                               >
                                 <img
-                                  src={getOptimizedImageUrl(pic.url, { width: 200 })}
+                                  src={getOptimizedImageUrl(pic.url, { width: 160 })}
                                   alt={pic.caption || milestone.title}
                                   className="w-full h-full object-cover"
                                   loading="lazy"
@@ -1199,32 +1199,32 @@ export default function Gallery() {
                     )}
 
                     {/* Narrative Story: CENTER-ALIGNED */}
-                    <p className="font-serif text-slate-700 text-sm sm:text-base leading-relaxed text-center max-w-xl mx-auto mt-2 z-10">
+                    <p className="font-serif text-slate-700 text-xs sm:text-sm leading-snug text-center max-w-sm sm:max-w-md mx-auto mt-1.5 line-clamp-3 z-10">
                       {milestone.description}
                     </p>
 
                     {/* Historical Quote Box: CENTER-ALIGNED */}
                     {milestone.quote && (
-                      <blockquote className="max-w-lg mx-auto text-center p-4 rounded-2xl bg-gradient-to-r from-purple-50 via-pink-50 to-amber-50/50 border-y-2 border-purple-300 font-serif italic text-purple-950 text-xs sm:text-sm leading-relaxed mt-3 shadow-2xs z-10">
+                      <blockquote className="max-w-sm sm:max-w-md mx-auto text-center p-2 rounded-xl bg-gradient-to-r from-purple-50 via-pink-50 to-amber-50/50 border-y border-purple-300 font-serif italic text-purple-950 text-[11px] leading-snug mt-1.5 shadow-2xs z-10 line-clamp-2">
                         "{milestone.quote}"
                       </blockquote>
                     )}
 
                     {/* Archival Context & Field Notes Toggle: CENTER-ALIGNED */}
-                    <div className="pt-3 w-full max-w-xl mx-auto z-10">
+                    <div className="pt-2 w-full max-w-sm sm:max-w-md mx-auto z-10">
                       <button
                         type="button"
                         onClick={() => toggleMilestone(milestone.year)}
-                        className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-slate-100 hover:bg-purple-100/70 text-slate-800 hover:text-[#5A1E65] font-bold text-xs transition-colors cursor-pointer mx-auto"
+                        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-purple-100/70 text-slate-800 hover:text-[#5A1E65] font-bold text-[11px] transition-colors cursor-pointer mx-auto"
                       >
-                        <Info className="w-4 h-4 text-[#5A1E65]" />
-                        <span>{expandedMilestones[milestone.year] ? 'Hide Archival Impact Notes' : 'Explore Archival Impact Notes'}</span>
-                        {expandedMilestones[milestone.year] ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                        <Info className="w-3.5 h-3.5 text-[#5A1E65]" />
+                        <span>{expandedMilestones[milestone.year] ? 'Hide Impact Notes' : 'Archival Notes'}</span>
+                        {expandedMilestones[milestone.year] ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                       </button>
 
                       {expandedMilestones[milestone.year] && (
-                        <div className="mt-3 p-4 rounded-2xl bg-slate-50 border border-purple-100 text-xs text-slate-700 leading-relaxed text-center space-y-1.5 animate-in fade-in duration-200">
-                          <span className="font-black text-[#5A1E65] uppercase tracking-wider block text-[10px]">
+                        <div className="mt-2 p-3 rounded-xl bg-slate-50 border border-purple-100 text-[11px] text-slate-700 leading-snug text-center space-y-1 animate-in fade-in duration-200">
+                          <span className="font-black text-[#5A1E65] uppercase tracking-wider block text-[9px]">
                             Archival Context & County Impact
                           </span>
                           <p>{milestone.details}</p>
