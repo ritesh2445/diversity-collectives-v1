@@ -1088,7 +1088,7 @@ export default function ReciteToolbar() {
               <div className="absolute top-full left-0 mt-2 w-64 p-3 bg-[#0B1528] text-white rounded-2xl shadow-2xl border-2 border-slate-700 z-[100002] space-y-2 max-h-72 overflow-y-auto no-scrollbar">
                 <div className="flex items-center justify-between pb-1 border-b border-slate-800">
                   <span className="font-extrabold text-xs text-purple-400 uppercase tracking-wider block">Translate Page</span>
-                  <span className="text-[10px] text-slate-400 font-mono">10 Languages</span>
+                  <span className="text-[10px] text-slate-400 font-mono">{SUPPORTED_LANGUAGES.length} Languages</span>
                 </div>
                 {SUPPORTED_LANGUAGES.map(l => (
                   <button

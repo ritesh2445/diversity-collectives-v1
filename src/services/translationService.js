@@ -16,6 +16,22 @@ export const SUPPORTED_LANGUAGES = [
   { code: 'ar', label: 'Arabic', nativeName: 'العربية', flag: '🇸🇦', dir: 'rtl' },
   { code: 'ko', label: 'Korean', nativeName: '한국어', flag: '🇰🇷' },
   { code: 'ja', label: 'Japanese', nativeName: '日本語', flag: '🇯🇵' },
+  // 15 additional global & community languages
+  { code: 'pt', label: 'Portuguese', nativeName: 'Português', flag: '🇧🇷' },
+  { code: 'hi', label: 'Hindi', nativeName: 'हिन्दी', flag: '🇮🇳' },
+  { code: 'ru', label: 'Russian', nativeName: 'Русский', flag: '🇷🇺' },
+  { code: 'it', label: 'Italian', nativeName: 'Italiano', flag: '🇮🇹' },
+  { code: 'uk', label: 'Ukrainian', nativeName: 'Українська', flag: '🇺🇦' },
+  { code: 'fa', label: 'Persian', nativeName: 'فارسی', flag: '🇮🇷', dir: 'rtl' },
+  { code: 'he', label: 'Hebrew', nativeName: 'עברית', flag: '🇮🇱', dir: 'rtl' },
+  { code: 'th', label: 'Thai', nativeName: 'ไทย', flag: '🇹🇭' },
+  { code: 'pl', label: 'Polish', nativeName: 'Polski', flag: '🇵🇱' },
+  { code: 'nl', label: 'Dutch', nativeName: 'Nederlands', flag: '🇳🇱' },
+  { code: 'tr', label: 'Turkish', nativeName: 'Türkçe', flag: '🇹🇷' },
+  { code: 'el', label: 'Greek', nativeName: 'Ελληνικά', flag: '🇬🇷' },
+  { code: 'hy', label: 'Armenian', nativeName: 'Հայերեն', flag: '🇦🇲' },
+  { code: 'id', label: 'Indonesian', nativeName: 'Bahasa Indonesia', flag: '🇮🇩' },
+  { code: 'bn', label: 'Bengali', nativeName: 'বাংলা', flag: '🇧🇩' },
 ];
 
 const UI_DICTIONARY = {
@@ -345,3 +361,4 @@ class TranslationEngine {
 }
 
 export const translationService = new TranslationEngine();
+
