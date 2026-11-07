@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, Heart, MapPin, Phone, Mail, ShieldCheck } from 'lucide-react';
+import LanguageSelector from './LanguageSelector';
 import { orgInfo, sponsorsList } from '../data/dcvcData';
 
 export default function Footer() {
@@ -241,6 +242,10 @@ export default function Footer() {
               <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
               Accessibility (WCAG 2.2 AA)
             </Link>
+            <span>·</span>
+            <div className="inline-flex items-center">
+              <LanguageSelector variant="header" />
+            </div>
             <span>·</span>
             <Link 
               to="/privacy" 

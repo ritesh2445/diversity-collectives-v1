@@ -227,7 +227,8 @@ class NativeAccessibilityStore {
     const html = document.documentElement;
     const s = this.state;
 
-    // Toolbar status
+    // Toolbar status & Language
+    html.setAttribute('lang', s.currentLanguage || 'en');
     html.setAttribute('data-recite-toolbar-open', s.toolbarOpen ? 'true' : 'false');
     html.setAttribute('data-a11y-toolbar-open', s.toolbarOpen ? 'true' : 'false');
 

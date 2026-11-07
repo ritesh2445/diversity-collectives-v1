@@ -18,13 +18,23 @@ import {
   ChevronRight
 } from 'lucide-react';
 import TraditionalAccessibilityIcon from './icons/TraditionalAccessibilityIcon';
+import LanguageSelector from './LanguageSelector';
 import { orgInfo } from '../data/dcvcData';
 import { a11yStore } from '../accessibility/a11yStore';
+import { translationService } from '../services/translationService';
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [currentLang, setCurrentLang] = useState(() => translationService.getLanguage());
   const location = useLocation();
+
+  useEffect(() => {
+    const unsub = translationService.subscribe((lang) => {
+      setCurrentLang(lang);
+    });
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -71,15 +81,15 @@ export default function Header() {
   };
 
   const navItems = [
-    { label: "About", to: "/about", icon: Info, desc: "Mission, history & 10-year leadership" },
-    { label: "Programs", to: "/programs", icon: Sparkles, desc: "Free HIV/STI testing & youth groups" },
-    { label: "Directory", to: "/directory", icon: Compass, desc: "LGBTQ+ affirming business network" },
-    { label: "Training", to: "/training", icon: Sparkles, desc: "P.R.I.D.E. cultural competency" },
-    { label: "Community", to: "/community", icon: Users, desc: "Affirming peer circles & gatherings" },
-    { label: "Events", to: "/events", icon: Calendar, desc: "Pride prom, galas & workshops" },
-    { label: "Resources", to: "/resources", icon: Compass, desc: "Crisis lines & regional mutual aid" },
-    { label: "News", to: "/news", icon: Info, desc: "Stories, updates & advocacy" },
-    { label: "Gallery", to: "/gallery", icon: Sparkles, desc: "Celebration & memories" }
+    { label: translationService.t('nav_about', 'About'), to: "/about", icon: Info, desc: "Mission, history & 10-year leadership" },
+    { label: translationService.t('nav_programs', 'Programs'), to: "/programs", icon: Sparkles, desc: "Free HIV/STI testing & youth groups" },
+    { label: translationService.t('nav_directory', 'Directory'), to: "/directory", icon: Compass, desc: "LGBTQ+ affirming business network" },
+    { label: translationService.t('nav_training', 'Training'), to: "/training", icon: Sparkles, desc: "P.R.I.D.E. cultural competency" },
+    { label: translationService.t('nav_community', 'Community'), to: "/community", icon: Users, desc: "Affirming peer circles & gatherings" },
+    { label: translationService.t('nav_events', 'Events'), to: "/events", icon: Calendar, desc: "Pride prom, galas & workshops" },
+    { label: translationService.t('nav_resources', 'Resources'), to: "/resources", icon: Compass, desc: "Crisis lines & regional mutual aid" },
+    { label: translationService.t('nav_news', 'News'), to: "/news", icon: Info, desc: "Stories, updates & advocacy" },
+    { label: translationService.t('nav_gallery', 'Gallery'), to: "/gallery", icon: Sparkles, desc: "Celebration & memories" }
   ];
 
   return (
@@ -159,6 +169,9 @@ export default function Header() {
 
             {/* Right CTAs - Guaranteed zero cropping */}
             <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 min-w-fit">
+              {/* Language Selector Dropdown (Desktop & Tablet) */}
+              <LanguageSelector variant="header" />
+
               {/* Accessibility Companion Launcher Button - Circular icon matching mockup */}
               <button
                 type="button"
@@ -177,7 +190,7 @@ export default function Header() {
                 title="Quickly exit to Google for your privacy and safety"
               >
                 <Shield className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-rose-600 flex-shrink-0" />
-                <span className="hidden min-[380px]:inline">Quick Exit</span>
+                <span className="hidden min-[380px]:inline">{translationService.t('nav_quick_exit', 'Quick Exit')}</span>
                 <span className="min-[380px]:hidden">Exit</span>
               </button>
 
@@ -187,7 +200,7 @@ export default function Header() {
                 className="hidden 2xl:inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-slate-700 hover:text-[#5A1E65] border border-slate-200 hover:border-purple-300 rounded-full transition-colors bg-white shadow-2xs flex-shrink-0 whitespace-nowrap"
               >
                 <LifeBuoy className="w-3.5 h-3.5 text-[#5A1E65]" />
-                <span>Get Support</span>
+                <span>{translationService.t('nav_get_support', 'Get Support')}</span>
               </Link>
 
               {/* Official Donate Action - Warm Gold Pill (Never Cropped) */}
@@ -196,7 +209,7 @@ export default function Header() {
                 className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 text-xs font-extrabold tracking-wide text-slate-950 bg-[#FDE047] hover:bg-[#FACC15] active:bg-[#EAB308] border border-amber-300/80 rounded-full shadow-xs hover:shadow-md transition-all flex-shrink-0 whitespace-nowrap z-10"
               >
                 <Heart className="w-3.5 h-3.5 fill-current text-slate-950 flex-shrink-0" />
-                <span className="font-extrabold">Donate</span>
+                <span className="font-extrabold">{translationService.t('nav_donate', 'Donate')}</span>
               </Link>
 
               {/* Mobile & Tablet Menu Toggle Button */}
@@ -261,12 +274,15 @@ export default function Header() {
             </div>
 
             {/* Scrollable Navigation List */}
-            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-2 divide-y divide-slate-100">
+            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 divide-y divide-slate-100">
               
+              {/* Mobile Language Selector Chips */}
+              <LanguageSelector variant="mobile" className="pb-3" />
+
               <Link 
                 to="/" 
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-purple-50/60 transition-colors group"
+                className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-purple-50/60 transition-colors group pt-3"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-lg bg-purple-100/80 text-[#5A1E65] flex items-center justify-center flex-shrink-0">

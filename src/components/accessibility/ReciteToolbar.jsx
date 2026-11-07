@@ -32,6 +32,7 @@ import {
 import { a11yStore } from '../../accessibility/a11yStore';
 import { focusAudio } from '../../accessibility/focusAudio';
 import { getOptimalNativeUSFemaleVoice, createAccessibleUtterance } from '../../accessibility/voiceHelper';
+import { translationService, SUPPORTED_LANGUAGES } from '../../services/translationService';
 import { 
   parseVoiceIntent, 
   tapElementByVoice, 
@@ -1084,28 +1085,30 @@ export default function ReciteToolbar() {
             </button>
 
             {activeFlyout === 'lang' && (
-              <div className="absolute top-full left-0 mt-2 w-56 p-3 bg-[#0B1528] text-white rounded-2xl shadow-2xl border-2 border-slate-700 z-[100002] space-y-2">
-                <span className="font-extrabold text-xs text-purple-400 uppercase tracking-wider block">Language</span>
-                {[
-                  { code: 'en', label: 'English (US)' },
-                  { code: 'es', label: 'Español (Spanish)' },
-                  { code: 'tl', label: 'Tagalog' },
-                  { code: 'vi', label: 'Tiếng Việt' },
-                  { code: 'zh', label: '中文 (Chinese)' },
-                ].map(l => (
+              <div className="absolute top-full left-0 mt-2 w-64 p-3 bg-[#0B1528] text-white rounded-2xl shadow-2xl border-2 border-slate-700 z-[100002] space-y-2 max-h-72 overflow-y-auto no-scrollbar">
+                <div className="flex items-center justify-between pb-1 border-b border-slate-800">
+                  <span className="font-extrabold text-xs text-purple-400 uppercase tracking-wider block">Translate Page</span>
+                  <span className="text-[10px] text-slate-400 font-mono">10 Languages</span>
+                </div>
+                {SUPPORTED_LANGUAGES.map(l => (
                   <button
                     key={l.code}
                     onClick={() => {
+                      translationService.setLanguage(l.code);
                       a11yStore.update('currentLanguage', l.code);
-                      a11yStore.announce(`Language set to ${l.label}`);
+                      a11yStore.announce(`Language set to ${l.nativeName}`);
                       setActiveFlyout(null);
                     }}
-                    className={`w-full p-2 text-xs font-bold rounded-lg text-left flex items-center justify-between cursor-pointer ${
+                    className={`w-full p-2 text-xs font-bold rounded-lg text-left flex items-center justify-between cursor-pointer transition-colors ${
                       settings.currentLanguage === l.code ? 'bg-[#5A1E65] text-white' : 'hover:bg-slate-800 text-slate-300'
                     }`}
                   >
-                    <span>{l.label}</span>
-                    {settings.currentLanguage === l.code && <Check className="w-3.5 h-3.5" />}
+                    <div className="flex items-center gap-2 truncate">
+                      <span className="text-base leading-none">{l.flag}</span>
+                      <span className="truncate">{l.nativeName}</span>
+                      <span className="text-[10px] text-slate-400 font-normal">({l.label})</span>
+                    </div>
+                    {settings.currentLanguage === l.code && <Check className="w-3.5 h-3.5 text-amber-300 flex-shrink-0" />}
                   </button>
                 ))}
               </div>
