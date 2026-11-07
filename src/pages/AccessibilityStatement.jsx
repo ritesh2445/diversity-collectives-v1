@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   ShieldCheck, 
   HelpCircle, 
@@ -214,12 +215,12 @@ export default function AccessibilityStatement() {
             <span className="text-xs text-slate-300">
               Encountered a digital barrier or need materials in an alternative format?
             </span>
-            <a
-              href="/accessibility-feedback"
+            <Link
+              to="/accessibility-feedback"
               className="btn-primary py-2.5 px-5 text-xs font-bold inline-flex items-center gap-2 shadow-sm"
             >
               Submit Accessibility Feedback
-            </a>
+            </Link>
           </div>
 
           <p className="text-xs text-slate-400 pt-2 border-t border-slate-800">

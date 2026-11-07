@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   Sparkles, 
   X, 
@@ -593,19 +594,20 @@ export default function Gallery() {
             {/* Modal Body: Split Layout */}
             <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-12 overflow-hidden">
               
-              {/* Photo Area with Ambient Backdrop (No Black Bars, Pure Color Harmony) */}
-              <div className="md:col-span-6 lg:col-span-7 bg-slate-950 flex items-center justify-center relative overflow-hidden min-h-[220px] md:min-h-0">
+              {/* Photo Area with Ambient Dynamic Aura (Framed Archival Showcase) */}
+              <div className="md:col-span-6 lg:col-span-7 bg-gradient-to-br from-slate-900 via-purple-950/70 to-slate-900 flex items-center justify-center relative overflow-hidden min-h-[240px] md:min-h-0 p-3 sm:p-5">
                 <div 
-                  className="absolute inset-0 bg-cover bg-center filter blur-3xl opacity-35 scale-110 pointer-events-none"
+                  className="absolute inset-0 bg-cover bg-center filter blur-3xl opacity-60 scale-125 pointer-events-none"
                   style={{ backgroundImage: `url(${getOptimizedImageUrl(expandedPhoto.image, { width: 400 })})` }}
                   aria-hidden="true" 
                 />
+                <div className="absolute inset-0 bg-slate-950/25 pointer-events-none" aria-hidden="true" />
                 <img
                   src={getOptimizedImageUrl(expandedPhoto.image, { width: 1200 })}
                   alt={expandedPhoto.title}
-                  className="w-full h-full object-contain relative z-10 max-h-[35vh] md:max-h-full p-3"
+                  className="w-full h-full object-contain relative z-10 max-h-[38vh] md:max-h-[50vh] rounded-2xl shadow-2xl drop-shadow-lg"
                 />
-                <span className="absolute bottom-3 left-3 px-3 py-1 rounded-full bg-slate-950/80 backdrop-blur-md text-white text-[10px] font-bold z-20">
+                <span className="absolute bottom-3 left-3 px-3 py-1 rounded-full bg-slate-950/80 backdrop-blur-md text-white text-[10px] font-bold z-20 shadow-md">
                   📍 Ventura County, CA
                 </span>
               </div>
@@ -1385,18 +1387,18 @@ export default function Gallery() {
               Help us write the next decade of affirming care, LGBTQ+ youth sanctuary, and countywide advocacy.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-              <a
-                href="/donate"
+              <Link
+                to="/donate"
                 className="px-5 py-2.5 rounded-xl bg-[#5A1E65] hover:bg-[#43144A] text-white font-black text-xs shadow-md transition-all cursor-pointer"
               >
                 Sustain Our Future (Zeffy)
-              </a>
-              <a
-                href="/volunteer"
-                className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-colors"
+              </Link>
+              <Link
+                to="/volunteer"
+                className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-colors cursor-pointer"
               >
                 Join as Volunteer
-              </a>
+              </Link>
             </div>
           </div>
         </div>

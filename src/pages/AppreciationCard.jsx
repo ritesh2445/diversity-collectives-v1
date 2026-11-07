@@ -889,19 +889,19 @@ export default function AppreciationCard() {
             </p>
           </div>
           <div className="pt-2 flex flex-col gap-2.5">
-            <a
-              href="/admin"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[#5A1E65] hover:bg-purple-900 text-white text-xs font-bold transition-all shadow-md"
+            <Link
+              to="/admin"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[#5A1E65] hover:bg-purple-900 text-white text-xs font-bold transition-all shadow-md cursor-pointer"
             >
               <span>Sign In via Admin Portal</span>
               <ArrowRight className="w-4 h-4" />
-            </a>
-            <a
-              href="/"
-              className="inline-flex items-center justify-center px-6 py-2.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all"
+            </Link>
+            <Link
+              to="/"
+              className="inline-flex items-center justify-center px-6 py-2.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer"
             >
               Return to Homepage
-            </a>
+            </Link>
           </div>
           <p className="text-[11px] text-slate-400">
             Diversity Collective Ventura County · 501(c)(3) Nonprofit
