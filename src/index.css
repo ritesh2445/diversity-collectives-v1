@@ -1232,6 +1232,65 @@ a:focus-visible, button:focus-visible {
 .scroll-reveal-stagger > *:nth-child(5) { transition-delay: 320ms; }
 .scroll-reveal-stagger > *:nth-child(6) { transition-delay: 390ms; }
 
+/* ==========================================================================
+   MEMORY LANE GAME ARCADE & CINEMATIC MOTION GRAPHICS
+   ========================================================================== */
+@keyframes memoryLaneFlare {
+  0% {
+    transform: translateX(-150%) skewX(-25deg);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.9;
+  }
+  70% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateX(250%) skewX(-25deg);
+    opacity: 0;
+  }
+}
+
+@keyframes radarPing {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+@keyframes auroraBorealis {
+  0% {
+    background-position: 0% 50%;
+    filter: hue-rotate(0deg);
+  }
+  50% {
+    background-position: 100% 50%;
+    filter: hue-rotate(25deg);
+  }
+  100% {
+    background-position: 0% 50%;
+    filter: hue-rotate(0deg);
+  }
+}
+
+.memory-lane-flare {
+  animation: memoryLaneFlare 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.checkpoint-radar-ring {
+  animation: radarPing 2.2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.milestone-aurora-glow {
+  background-size: 200% 200%;
+  animation: auroraBorealis 12s ease-in-out infinite alternate;
+}
+
 /* Respect Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
   .hero-gradient-italic,
@@ -1246,7 +1305,10 @@ a:focus-visible, button:focus-visible {
   .animate-aurora-drift-2,
   .btn-shimmer::after,
   .pillar-card,
-  .pillar-card .pillar-icon {
+  .pillar-card .pillar-icon,
+  .memory-lane-flare,
+  .checkpoint-radar-ring,
+  .milestone-aurora-glow {
     animation: none !important;
     transition: none !important;
     transform: none !important;
