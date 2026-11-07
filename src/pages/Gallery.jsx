@@ -545,16 +545,16 @@ export default function Gallery() {
           role="dialog"
           aria-modal="true"
           aria-label={expandedPhoto.title}
-          className="fixed inset-0 z-[120] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-300"
+          className="fixed inset-0 z-[120] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-300"
           onClick={() => setExpandedPhoto(null)}
         >
           <div 
-            className="max-w-4xl w-full bg-white text-slate-900 rounded-3xl overflow-hidden shadow-2xl flex flex-col border border-purple-200/80 animate-in zoom-in-95 duration-200"
+            className="max-w-4xl w-full max-h-[88vh] bg-white text-slate-900 rounded-3xl overflow-hidden shadow-2xl flex flex-col border border-purple-200/80 animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Top Bar */}
-            <div className="px-6 py-4 bg-gradient-to-r from-purple-950 via-[#5A1E65] to-indigo-950 text-white flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
+            <div className="px-5 py-3.5 bg-gradient-to-r from-purple-950 via-[#5A1E65] to-indigo-950 text-white flex items-center justify-between flex-shrink-0">
+              <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
                 <span className="text-xs font-black uppercase tracking-wider text-amber-300">
                   {expandedPhoto.category} · {expandedPhoto.year} Archive
@@ -566,47 +566,56 @@ export default function Gallery() {
                 className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer"
                 aria-label="Close Spotlight"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Modal Body: Split Layout */}
-            <div className="grid grid-cols-1 md:grid-cols-12 max-h-[80vh] overflow-y-auto">
+            <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-12 overflow-hidden">
               
-              {/* Photo Area */}
-              <div className="md:col-span-7 bg-slate-950 flex items-center justify-center relative min-h-[300px] md:min-h-[460px]">
+              {/* Photo Area with Ambient Backdrop (No Black Bars, Pure Color Harmony) */}
+              <div className="md:col-span-6 lg:col-span-7 bg-slate-950 flex items-center justify-center relative overflow-hidden min-h-[220px] md:min-h-0">
+                <div 
+                  className="absolute inset-0 bg-cover bg-center filter blur-3xl opacity-35 scale-110 pointer-events-none"
+                  style={{ backgroundImage: `url(${getOptimizedImageUrl(expandedPhoto.image, { width: 400 })})` }}
+                  aria-hidden="true" 
+                />
                 <img
                   src={getOptimizedImageUrl(expandedPhoto.image, { width: 1200 })}
                   alt={expandedPhoto.title}
-                  className="w-full h-full max-h-[500px] object-cover"
+                  className="w-full h-full object-contain relative z-10 max-h-[35vh] md:max-h-full p-3"
                 />
-                <span className="absolute bottom-3 left-3 px-3 py-1 rounded-full bg-slate-950/80 backdrop-blur-md text-white text-[11px] font-bold">
+                <span className="absolute bottom-3 left-3 px-3 py-1 rounded-full bg-slate-950/80 backdrop-blur-md text-white text-[10px] font-bold z-20">
                   📍 Ventura County, CA
                 </span>
               </div>
 
-              {/* Story & Metadata */}
-              <div className="md:col-span-5 p-6 flex flex-col justify-between bg-slate-50/60 space-y-6">
-                <div>
-                  <div className="inline-block px-3 py-1 rounded-full bg-purple-100 text-[#5A1E65] font-black text-xs mb-3">
-                    Verified Archival Record
+              {/* Story & Metadata: Smooth Scrollable Column */}
+              <div className="md:col-span-6 lg:col-span-5 flex flex-col justify-between overflow-hidden bg-slate-50/60 border-l border-purple-100">
+                
+                {/* Scrollable Content Container */}
+                <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
+                  <div>
+                    <div className="inline-block px-2.5 py-0.5 rounded-full bg-purple-100 text-[#5A1E65] font-black text-[11px] mb-2">
+                      Verified Archival Record
+                    </div>
+                    <h3 className="font-display text-xl sm:text-2xl font-black text-slate-950 leading-tight">
+                      {expandedPhoto.title}
+                    </h3>
                   </div>
-                  <h3 className="font-display text-2xl font-black text-slate-950 leading-tight">
-                    {expandedPhoto.title}
-                  </h3>
                   
                   {expandedPhoto.quote && (
-                    <blockquote className="my-4 p-4 rounded-2xl bg-white border-l-4 border-amber-400 shadow-xs italic font-serif text-slate-700 text-sm leading-relaxed">
+                    <blockquote className="p-3 rounded-xl bg-white border-l-4 border-amber-400 shadow-2xs italic font-serif text-slate-800 text-xs sm:text-sm leading-relaxed">
                       "{expandedPhoto.quote}"
                     </blockquote>
                   )}
 
-                  <p className="text-sm text-slate-600 leading-relaxed mt-3">
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-serif">
                     {expandedPhoto.description}
                   </p>
 
                   {expandedPhoto.details && (
-                    <div className="mt-4 p-3.5 rounded-2xl bg-purple-50/80 border border-purple-200/80 text-xs text-slate-700 leading-relaxed text-left">
+                    <div className="p-3 rounded-xl bg-purple-50/80 border border-purple-200/80 text-xs text-slate-700 leading-relaxed text-left">
                       <span className="font-extrabold text-[#5A1E65] uppercase tracking-wider block text-[10px] mb-1">
                         Archival Context & County Impact
                       </span>
@@ -614,29 +623,30 @@ export default function Gallery() {
                     </div>
                   )}
 
-                  <div className="mt-6 space-y-2 pt-4 border-t border-slate-200/90 text-xs text-slate-600">
+                  <div className="space-y-1.5 pt-3 border-t border-slate-200 text-xs text-slate-600">
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-500">Program Area:</span>
-                      <span className="font-bold text-slate-900">{expandedPhoto.category}</span>
+                      <span className="font-bold text-slate-500 text-[11px]">Program Area:</span>
+                      <span className="font-bold text-slate-900 text-[11px]">{expandedPhoto.category}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-500">Documented Year:</span>
-                      <span className="font-bold text-slate-900">{expandedPhoto.year}</span>
+                      <span className="font-bold text-slate-500 text-[11px]">Documented Year:</span>
+                      <span className="font-bold text-slate-900 text-[11px]">{expandedPhoto.year}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-500">Sanctuary License:</span>
-                      <span className="font-bold text-purple-700">Community Commons</span>
+                      <span className="font-bold text-slate-500 text-[11px]">Sanctuary License:</span>
+                      <span className="font-bold text-purple-700 text-[11px]">Community Commons</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 pt-4 border-t border-slate-200">
+                {/* Fixed Action Footer - Always Accessible */}
+                <div className="p-4 bg-white border-t border-slate-200 flex items-center gap-2.5 flex-shrink-0">
                   <a
                     href={expandedPhoto.image}
                     download={`${expandedPhoto.title}.jpg`}
-                    className="flex-1 py-3 px-4 rounded-xl bg-[#5A1E65] hover:bg-[#43144A] text-white font-bold text-xs flex items-center justify-center gap-2 transition-colors shadow-xs"
+                    className="flex-1 py-2.5 px-3 rounded-xl bg-[#5A1E65] hover:bg-[#43144A] text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
                   >
-                    <Download className="w-4 h-4" />
+                    <Download className="w-3.5 h-3.5" />
                     <span>Download Photo</span>
                   </a>
                   <button
@@ -653,12 +663,13 @@ export default function Gallery() {
                         alert('Link copied to clipboard!');
                       }
                     }}
-                    className="p-3 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 transition-colors"
+                    className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 transition-colors cursor-pointer"
                     title="Share this moment"
                   >
                     <Share2 className="w-4 h-4" />
                   </button>
                 </div>
+
               </div>
 
             </div>
