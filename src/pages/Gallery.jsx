@@ -604,6 +604,15 @@ export default function Gallery() {
                     {expandedPhoto.description}
                   </p>
 
+                  {expandedPhoto.details && (
+                    <div className="mt-4 p-3.5 rounded-2xl bg-purple-50/80 border border-purple-200/80 text-xs text-slate-700 leading-relaxed text-left">
+                      <span className="font-extrabold text-[#5A1E65] uppercase tracking-wider block text-[10px] mb-1">
+                        Archival Context & County Impact
+                      </span>
+                      <p>{expandedPhoto.details}</p>
+                    </div>
+                  )}
+
                   <div className="mt-6 space-y-2 pt-4 border-t border-slate-200/90 text-xs text-slate-600">
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-slate-500">Program Area:</span>
@@ -1017,11 +1026,11 @@ export default function Gallery() {
               <ChevronRight className="w-6 h-6 sm:w-7 sm:h-7 group-hover:translate-x-0.5 transition-transform" />
             </button>
 
-            {/* The Continuous Scrollable Stream (Compact, Fits Screen) */}
+            {/* The Continuous Scrollable Stream (Compact, Fits Screen Without Blank Space) */}
             <div
               ref={laneScrollRef}
               onScroll={handleLaneScroll}
-              className="flex items-stretch gap-4 sm:gap-6 overflow-x-auto snap-x snap-mandatory scroll-smooth py-6 px-[calc(50vw-42.5vw)] sm:px-[calc(50vw-210px)] md:px-[calc(50vw-240px)] relative z-10 no-scrollbar"
+              className="flex items-center gap-4 sm:gap-6 overflow-x-auto snap-x snap-mandatory scroll-smooth py-6 px-[calc(50vw-42.5vw)] sm:px-[calc(50vw-210px)] md:px-[calc(50vw-240px)] relative z-10 no-scrollbar"
               tabIndex={0}
               aria-label="DCVC Historical Milestones Scrollable Lane"
             >
@@ -1037,7 +1046,7 @@ export default function Gallery() {
                   <div
                     key={milestone.year}
                     ref={el => (cardRefs.current[idx] = el)}
-                    className={`w-[85vw] sm:w-[380px] md:w-[420px] lg:w-[440px] flex-shrink-0 snap-center rounded-3xl bg-white/95 backdrop-blur-md border-2 p-3.5 sm:p-4 transition-all duration-500 relative flex flex-col items-center text-center shadow-lg ${
+                    className={`w-[85vw] sm:w-[380px] md:w-[420px] lg:w-[440px] h-fit self-center flex-shrink-0 snap-center rounded-3xl bg-white/95 backdrop-blur-md border-2 p-3.5 sm:p-4 transition-all duration-500 relative flex flex-col items-center text-center shadow-lg ${
                       isActive 
                         ? 'scale-100 opacity-100 border-[#5A1E65] ring-4 ring-amber-300/80 shadow-2xl z-20' 
                         : 'scale-95 opacity-55 border-purple-100 shadow-md hover:opacity-85 hover:scale-98 z-10'
@@ -1105,7 +1114,9 @@ export default function Gallery() {
                           image: currentImage,
                           category: 'Historical Archive',
                           year: milestone.year,
-                          description: milestone.description
+                          description: milestone.description,
+                          quote: milestone.quote,
+                          details: milestone.details
                         })}
                         onError={(e) => {
                           e.currentTarget.onerror = null;
@@ -1124,7 +1135,9 @@ export default function Gallery() {
                           image: currentImage,
                           category: 'Historical Archive',
                           year: milestone.year,
-                          description: milestone.description
+                          description: milestone.description,
+                          quote: milestone.quote,
+                          details: milestone.details
                         })}
                         className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/60 hover:bg-black/80 text-white backdrop-blur-md transition-all cursor-pointer shadow-md"
                         title="Open Fullscreen Archival View"
@@ -1210,26 +1223,27 @@ export default function Gallery() {
                       </blockquote>
                     )}
 
-                    {/* Archival Context & Field Notes Toggle: CENTER-ALIGNED */}
+                    {/* Archival Context & Field Notes: CENTER-ALIGNED */}
                     <div className="pt-2 w-full max-w-sm sm:max-w-md mx-auto z-10">
                       <button
                         type="button"
-                        onClick={() => toggleMilestone(milestone.year)}
-                        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-purple-100/70 text-slate-800 hover:text-[#5A1E65] font-bold text-[11px] transition-colors cursor-pointer mx-auto"
+                        onClick={() => setExpandedPhoto({
+                          id: `ml-${milestone.year}-${selectedPicIdx ?? 'main'}`,
+                          title: `${milestone.year}: ${milestone.title}`,
+                          image: currentImage,
+                          category: 'Historical Archive',
+                          year: milestone.year,
+                          description: milestone.description,
+                          quote: milestone.quote,
+                          details: milestone.details
+                        })}
+                        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-50 hover:bg-purple-100/90 text-[#5A1E65] font-bold text-[11px] transition-colors cursor-pointer mx-auto shadow-2xs border border-purple-200/80"
+                        title="Explore Archival Context & County Impact"
                       >
                         <Info className="w-3.5 h-3.5 text-[#5A1E65]" />
-                        <span>{expandedMilestones[milestone.year] ? 'Hide Impact Notes' : 'Archival Notes'}</span>
-                        {expandedMilestones[milestone.year] ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                        <span>Archival Notes</span>
+                        <ExternalLink className="w-3 h-3 text-[#5A1E65]/70" />
                       </button>
-
-                      {expandedMilestones[milestone.year] && (
-                        <div className="mt-2 p-3 rounded-xl bg-slate-50 border border-purple-100 text-[11px] text-slate-700 leading-snug text-center space-y-1 animate-in fade-in duration-200">
-                          <span className="font-black text-[#5A1E65] uppercase tracking-wider block text-[9px]">
-                            Archival Context & County Impact
-                          </span>
-                          <p>{milestone.details}</p>
-                        </div>
-                      )}
                     </div>
 
                   </div>
