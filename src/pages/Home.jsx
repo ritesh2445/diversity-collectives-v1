@@ -2151,18 +2151,18 @@ export default function Home() {
             Diversity Collective of Ventura County is solely dedicated to advocating for and caring for our local LGBTQ+ community. Your generosity ensures our doors remain open, safe, and free for all.
           </p>
 
-          <div className="pt-3 flex flex-wrap items-center justify-center gap-4">
+          <div className="pt-3 flex flex-wrap items-center justify-center gap-3 sm:gap-4 w-full">
             <Link
               to="/donate"
-              className="py-4 px-8 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-400 text-slate-950 font-black text-sm sm:text-base tracking-wide flex items-center justify-center gap-2 shadow-[0_10px_30px_-5px_rgba(245,158,11,0.5)] hover:shadow-[0_15px_40px_-5px_rgba(245,158,11,0.7)] hover:scale-103 transition-all cursor-pointer"
+              className="w-full sm:w-auto py-3.5 sm:py-4 px-5 sm:px-8 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-400 text-slate-950 font-black text-xs sm:text-base tracking-wide flex items-center justify-center gap-2 shadow-[0_10px_30px_-5px_rgba(245,158,11,0.5)] hover:shadow-[0_15px_40px_-5px_rgba(245,158,11,0.7)] hover:scale-103 transition-all cursor-pointer text-center"
             >
-              <Heart className="w-4 h-4 fill-current text-rose-700 animate-bounce" />
+              <Heart className="w-4 h-4 fill-current text-rose-700 animate-bounce flex-shrink-0" />
               <span>Make a Community Gift Online</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-4 h-4 flex-shrink-0" />
             </Link>
             <Link
               to="/volunteer"
-              className="py-4 px-8 rounded-2xl border-2 border-white/20 hover:border-white/50 bg-white/10 hover:bg-white/15 text-white text-sm font-bold transition-all backdrop-blur-md interactive-card-3d"
+              className="w-full sm:w-auto py-3.5 sm:py-4 px-5 sm:px-8 rounded-2xl border-2 border-white/20 hover:border-white/50 bg-white/10 hover:bg-white/15 text-white text-xs sm:text-sm font-bold transition-all backdrop-blur-md interactive-card-3d flex items-center justify-center text-center"
             >
               <span>Explore Volunteer Roles</span>
             </Link>

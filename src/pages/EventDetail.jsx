@@ -50,7 +50,7 @@ export default function EventDetail() {
     <div className="pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
 
       {/* Back button and Share */}
-      <div className="container-clean mb-6 flex items-center justify-between">
+      <div className="container-clean mb-6 flex flex-wrap items-center justify-between gap-3">
         <Link
           to="/events"
           className="inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-[#5A1E65] transition-colors py-1.5 px-3.5 rounded-full bg-slate-100 hover:bg-purple-50"

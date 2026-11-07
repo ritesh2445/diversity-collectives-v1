@@ -168,15 +168,17 @@ export default function Header() {
             </nav>
 
             {/* Right CTAs - Guaranteed zero cropping */}
-            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 min-w-fit">
-              {/* Language Selector Dropdown (Desktop & Tablet) */}
-              <LanguageSelector variant="header" />
+            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0 min-w-0">
+              {/* Language Selector Dropdown (Desktop & Tablet: hidden on mobile < sm, available in mobile drawer) */}
+              <div className="hidden sm:block">
+                <LanguageSelector variant="header" />
+              </div>
 
-              {/* Accessibility Companion Launcher Button - Circular icon matching mockup */}
+              {/* Accessibility Companion Launcher Button (Desktop & Tablet: hidden on mobile < sm, floating ReciteLauncher is present) */}
               <button
                 type="button"
                 onClick={() => a11yStore.toggleToolbar()}
-                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-slate-300/90 bg-white hover:bg-purple-50 flex items-center justify-center text-slate-800 hover:text-[#5A1E65] transition-all flex-shrink-0 cursor-pointer shadow-2xs"
+                className="hidden sm:flex w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-slate-300/90 bg-white hover:bg-purple-50 items-center justify-center text-slate-800 hover:text-[#5A1E65] transition-all flex-shrink-0 cursor-pointer shadow-2xs"
                 title="Launch DCVC Accessibility Companion (Alt + A)"
                 aria-label="Launch Accessibility & Audio Tools"
               >
@@ -190,8 +192,8 @@ export default function Header() {
                 title="Quickly exit to Google for your privacy and safety"
               >
                 <Shield className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-rose-600 flex-shrink-0" />
-                <span className="hidden min-[380px]:inline">{translationService.t('nav_quick_exit', 'Quick Exit')}</span>
-                <span className="min-[380px]:hidden">Exit</span>
+                <span className="hidden min-[400px]:inline">{translationService.t('nav_quick_exit', 'Quick Exit')}</span>
+                <span className="min-[400px]:hidden">Exit</span>
               </button>
 
               {/* Get Support (Large desktop screens) */}
@@ -206,9 +208,9 @@ export default function Header() {
               {/* Official Donate Action - Warm Gold Pill (Never Cropped) */}
               <Link
                 to="/donate"
-                className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 text-xs font-extrabold tracking-wide text-slate-950 bg-[#FDE047] hover:bg-[#FACC15] active:bg-[#EAB308] border border-amber-300/80 rounded-full shadow-xs hover:shadow-md transition-all flex-shrink-0 whitespace-nowrap z-10"
+                className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-4 py-1.5 sm:py-2 text-[11px] sm:text-xs font-extrabold tracking-wide text-slate-950 bg-[#FDE047] hover:bg-[#FACC15] active:bg-[#EAB308] border border-amber-300/80 rounded-full shadow-xs hover:shadow-md transition-all flex-shrink-0 whitespace-nowrap z-10"
               >
-                <Heart className="w-3.5 h-3.5 fill-current text-slate-950 flex-shrink-0" />
+                <Heart className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-current text-slate-950 flex-shrink-0" />
                 <span className="font-extrabold">{translationService.t('nav_donate', 'Donate')}</span>
               </Link>
 
@@ -218,7 +220,7 @@ export default function Header() {
                 onClick={() => setMobileMenuOpen(true)}
                 aria-expanded={mobileMenuOpen}
                 aria-controls="mobile-nav-drawer"
-                className="xl:hidden w-8 h-8 flex items-center justify-center text-slate-800 hover:text-slate-950 focus:outline-none rounded-lg hover:bg-purple-100/60 active:scale-95 transition-all flex-shrink-0 cursor-pointer"
+                className="xl:hidden w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-slate-800 hover:text-slate-950 focus:outline-none rounded-lg hover:bg-purple-100/60 active:scale-95 transition-all flex-shrink-0 cursor-pointer"
                 aria-label="Open Navigation Menu"
               >
                 <Menu className="w-5 h-5 text-slate-900" />
@@ -278,6 +280,32 @@ export default function Header() {
               
               {/* Mobile Language Selector Chips */}
               <LanguageSelector variant="mobile" className="pb-3" />
+
+              {/* Chat with Alba (AI Community Guide) Quick Action */}
+              <button 
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  window.dispatchEvent(new CustomEvent('openAskDcvc'));
+                }}
+                className="flex items-center justify-between py-2.5 px-3 rounded-xl bg-gradient-to-r from-purple-50 via-fuchsia-50/40 to-amber-50/50 border border-purple-200/90 hover:border-purple-400 transition-all group w-full text-left cursor-pointer shadow-2xs pt-3"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#5A1E65] to-purple-800 text-amber-300 flex items-center justify-center flex-shrink-0 shadow-xs">
+                    <Sparkles className="w-4 h-4 fill-current" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-bold text-slate-900 group-hover:text-[#5A1E65] text-sm block">Ask Alba</span>
+                      <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                        Free AI Guide
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-slate-500">Ask about testing, hours, youth circles & resources</span>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-[#5A1E65] group-hover:translate-x-0.5 transition-transform" />
+              </button>
 
               <Link 
                 to="/" 

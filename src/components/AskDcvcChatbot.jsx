@@ -31,8 +31,8 @@ const SUGGESTED_QUESTIONS = [
  * $0 recurring cost, 100% free community assistant
  */
 export default function AskDcvcChatbot() {
-  // Feature flag check (disabled by default until final environment configuration)
-  const isEnabled = import.meta.env.VITE_ENABLE_CHATBOT === 'true' || import.meta.env.DEV;
+  // Alba is enabled by default (set VITE_ENABLE_CHATBOT=false to explicitly disable)
+  const isEnabled = import.meta.env.VITE_ENABLE_CHATBOT !== 'false';
 
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
@@ -304,17 +304,17 @@ export default function AskDcvcChatbot() {
           aria-haspopup="dialog"
           aria-label="Open Alba Free AI Community Assistant (Alt + C)"
           title="Ask Alba (Alt + C)"
-          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[9990] flex items-center gap-2.5 px-4 py-3 rounded-full bg-gradient-to-r from-[#5A1E65] via-purple-900 to-[#43144A] text-white shadow-xl hover:shadow-2xl border border-amber-300/60 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer select-none focus:outline-none focus:ring-4 focus:ring-amber-300 print:hidden"
+          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[9995] flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-3 rounded-full bg-gradient-to-r from-[#5A1E65] via-purple-900 to-[#43144A] text-white shadow-xl hover:shadow-2xl border-2 border-amber-300 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer select-none focus:outline-none focus:ring-4 focus:ring-amber-300 print:hidden"
         >
-          <div className="w-6 h-6 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center font-bold shadow-xs">
+          <div className="w-6 h-6 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center font-bold shadow-xs flex-shrink-0">
             <Sparkles className="w-3.5 h-3.5 fill-current" />
           </div>
           <div className="flex flex-col text-left">
-            <span className="font-extrabold text-xs tracking-wide text-white leading-tight flex items-center gap-1.5">
+            <span className="font-extrabold text-xs tracking-wide text-white leading-tight flex items-center gap-1.5 whitespace-nowrap">
               <span>Ask Alba</span>
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             </span>
-            <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider leading-none">
+            <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider leading-none whitespace-nowrap">
               Free AI Guide
             </span>
           </div>
@@ -327,7 +327,7 @@ export default function AskDcvcChatbot() {
           role="dialog"
           aria-modal="true"
           aria-label="Alba • DCVC Community Guide"
-          className="fixed bottom-3 right-3 sm:bottom-6 sm:right-6 z-[9999] w-[calc(100vw-24px)] sm:w-[420px] max-h-[85vh] sm:max-h-[640px] h-[580px] bg-white rounded-3xl shadow-2xl border border-purple-200 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200 print:hidden"
+          className="fixed inset-x-3 bottom-3 sm:inset-x-auto sm:right-6 sm:bottom-6 sm:w-[420px] max-h-[85vh] sm:max-h-[640px] h-[min(580px,85vh)] bg-white rounded-3xl shadow-2xl border-2 border-purple-200 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200 print:hidden z-[9999]"
         >
           {/* Header Bar */}
           <div className="p-4 bg-gradient-to-r from-[#5A1E65] via-purple-900 to-[#3b0764] text-white flex items-center justify-between shadow-md">
