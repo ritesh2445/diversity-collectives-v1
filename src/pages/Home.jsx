@@ -388,8 +388,8 @@ export default function Home() {
           </svg>
         </div>
 
-        {/* Content Container (z-10) */}
-        <div className="container-clean relative z-10 flex flex-col gap-5 sm:gap-6 md:gap-7">
+        {/* Content Container (z-20) */}
+        <div className="container-clean relative z-20 flex flex-col gap-5 sm:gap-6 md:gap-7">
           
           {/* Top Command Bar: Dual Ribbon for Design 2, Single Alert for Design 1 */}
           {isDesign2 ? (
@@ -929,9 +929,9 @@ export default function Home() {
             - Connects seamlessly with ZERO gaps directly to the first break line.
             ==================================================================== */}
         {activeThemeObj.category !== 'festival' && (
-          <div className="relative w-full mt-0 pointer-events-none z-0 overflow-hidden leading-none select-none">
+          <div className="relative w-full -mt-6 sm:-mt-8 md:-mt-12 lg:-mt-16 pointer-events-none z-10 overflow-hidden leading-none select-none">
             <svg 
-              className="w-full h-20 sm:h-28 md:h-36 lg:h-44 block filter drop-shadow-[0_-6px_14px_rgba(217,70,239,0.22)]" 
+              className="w-full h-28 sm:h-36 md:h-48 lg:h-56 xl:h-64 block filter drop-shadow-[0_-10px_25px_rgba(217,70,239,0.35)]" 
               viewBox="0 0 1440 220" 
               fill="none" 
               preserveAspectRatio="none"
@@ -939,45 +939,47 @@ export default function Home() {
               <defs>
                 {/* Wave Ribbon 1: Amber Gold to Sunset Rose */}
                 <linearGradient id="vibrant-wave-amber" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.85" />
-                  <stop offset="35%" stopColor="#FB7185" stopOpacity="0.8" />
-                  <stop offset="70%" stopColor="#C084FC" stopOpacity="0.75" />
-                  <stop offset="100%" stopColor="#38BDF8" stopOpacity="0.65" />
+                  <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.88" />
+                  <stop offset="35%" stopColor="#FB7185" stopOpacity="0.85" />
+                  <stop offset="70%" stopColor="#C084FC" stopOpacity="0.80" />
+                  <stop offset="100%" stopColor="#38BDF8" stopOpacity="0.75" />
                 </linearGradient>
 
                 {/* Wave Ribbon 2: Saturated Magenta to Ultraviolet (Main Crest) */}
                 <linearGradient id="vibrant-wave-magenta" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#E11D48" stopOpacity="0.9" />
-                  <stop offset="30%" stopColor="#EC4899" stopOpacity="0.88" />
-                  <stop offset="65%" stopColor="#A855F7" stopOpacity="0.9" />
-                  <stop offset="100%" stopColor="#06B6D4" stopOpacity="0.8" />
+                  <stop offset="0%" stopColor="#E11D48" stopOpacity="0.95" />
+                  <stop offset="30%" stopColor="#EC4899" stopOpacity="0.92" />
+                  <stop offset="65%" stopColor="#A855F7" stopOpacity="0.92" />
+                  <stop offset="100%" stopColor="#06B6D4" stopOpacity="0.88" />
                 </linearGradient>
 
                 {/* Wave Ribbon 3: Oceanic Emerald to Coastal Cyan */}
                 <linearGradient id="vibrant-wave-cyan" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#10B981" stopOpacity="0.85" />
-                  <stop offset="35%" stopColor="#06B6D4" stopOpacity="0.82" />
-                  <stop offset="70%" stopColor="#8B5CF6" stopOpacity="0.82" />
-                  <stop offset="100%" stopColor="#F43F5E" stopOpacity="0.75" />
+                  <stop offset="0%" stopColor="#10B981" stopOpacity="0.90" />
+                  <stop offset="35%" stopColor="#06B6D4" stopOpacity="0.88" />
+                  <stop offset="70%" stopColor="#8B5CF6" stopOpacity="0.88" />
+                  <stop offset="100%" stopColor="#F43F5E" stopOpacity="0.82" />
                 </linearGradient>
               </defs>
 
               {/* Ribbon 1: Golden Amber base flowing edge-to-edge */}
-              <path
-                d="M 0,210 C 360,210 680,185 960,165 C 1200,150 1340,155 1440,160 L 1440,220 L 0,220 Z"
-                fill="url(#vibrant-wave-amber)"
-              />
+              <g className="animate-ribbon-base">
+                <path
+                  d="M 0,165 C 260,175 520,140 760,105 C 1020,70 1240,65 1440,95 L 1440,220 L 0,220 Z"
+                  fill="url(#vibrant-wave-amber)"
+                />
+              </g>
 
-              {/* Ribbon 2: Saturated Magenta crest grounded cleanly below hero image */}
+              {/* Ribbon 2: Saturated Magenta crest sweeping edge-to-edge with luminous crest line */}
               <g className="animate-ribbon-undulate">
                 <path
-                  d="M 0,202 C 360,202 660,175 940,150 C 1180,135 1320,140 1440,148 L 1440,220 L 0,220 Z"
+                  d="M 0,140 C 240,150 490,110 730,75 C 970,42 1200,40 1440,70 L 1440,220 L 0,220 Z"
                   fill="url(#vibrant-wave-magenta)"
                 />
                 <path
-                  d="M 0,202 C 360,202 660,175 940,150 C 1180,135 1320,140 1440,148"
+                  d="M 0,140 C 240,150 490,110 730,75 C 970,42 1200,40 1440,70"
                   stroke="rgba(255, 255, 255, 0.95)"
-                  strokeWidth="3"
+                  strokeWidth="3.5"
                   strokeLinecap="round"
                   fill="none"
                 />
@@ -986,13 +988,13 @@ export default function Home() {
               {/* Ribbon 3: Oceanic Cyan & Emerald with flowing highlight */}
               <g className="animate-ribbon-wave-slow">
                 <path
-                  d="M 0,212 C 380,212 690,190 970,170 C 1210,155 1350,158 1440,165 L 1440,220 L 0,220 Z"
+                  d="M 0,175 C 280,185 540,150 780,115 C 1040,82 1260,78 1440,105 L 1440,220 L 0,220 Z"
                   fill="url(#vibrant-wave-cyan)"
                 />
                 <path
-                  d="M 0,212 C 380,212 690,190 970,170 C 1210,155 1350,158 1440,165"
+                  d="M 0,175 C 280,185 540,150 780,115 C 1040,82 1260,78 1440,105"
                   stroke="rgba(255, 255, 255, 0.85)"
-                  strokeWidth="2"
+                  strokeWidth="2.5"
                   strokeLinecap="round"
                   fill="none"
                 />
