@@ -28,7 +28,8 @@ import {
   Gamepad2,
   LayoutGrid,
   Tv,
-  CheckCircle2
+  CheckCircle2,
+  ExternalLink
 } from 'lucide-react';
 import { galleryPhotos, memoryLaneMilestones } from '../data/dcvcData';
 import { cmsStore } from '../services/cmsStore';
