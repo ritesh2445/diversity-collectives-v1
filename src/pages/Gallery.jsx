@@ -1011,7 +1011,7 @@ export default function Gallery() {
             <button
               type="button"
               onClick={handlePrevMilestone}
-              className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/95 backdrop-blur-md text-[#5A1E65] border-2 border-purple-300 shadow-2xl flex items-center justify-center hover:scale-115 active:scale-95 transition-all cursor-pointer hover:bg-purple-50 group hover:border-[#5A1E65]"
+              className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white text-[#5A1E65] border-2 border-purple-300 shadow-2xl flex items-center justify-center hover:scale-115 active:scale-95 transition-all cursor-pointer hover:bg-purple-50 group hover:border-[#5A1E65]"
               aria-label="Scroll to Previous Milestone"
             >
               <ChevronLeft className="w-6 h-6 sm:w-7 sm:h-7 group-hover:-translate-x-0.5 transition-transform" />
@@ -1020,7 +1020,7 @@ export default function Gallery() {
             <button
               type="button"
               onClick={handleNextMilestone}
-              className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/95 backdrop-blur-md text-[#5A1E65] border-2 border-purple-300 shadow-2xl flex items-center justify-center hover:scale-115 active:scale-95 transition-all cursor-pointer hover:bg-purple-50 group hover:border-[#5A1E65]"
+              className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white text-[#5A1E65] border-2 border-purple-300 shadow-2xl flex items-center justify-center hover:scale-115 active:scale-95 transition-all cursor-pointer hover:bg-purple-50 group hover:border-[#5A1E65]"
               aria-label="Scroll to Next Milestone"
             >
               <ChevronRight className="w-6 h-6 sm:w-7 sm:h-7 group-hover:translate-x-0.5 transition-transform" />
@@ -1046,12 +1046,16 @@ export default function Gallery() {
                   <div
                     key={milestone.year}
                     ref={el => (cardRefs.current[idx] = el)}
-                    className={`w-[85vw] sm:w-[380px] md:w-[420px] lg:w-[440px] h-fit self-center flex-shrink-0 snap-center rounded-3xl bg-white/95 backdrop-blur-md border-2 p-3.5 sm:p-4 transition-all duration-500 relative flex flex-col items-center text-center shadow-lg ${
+                    className={`w-[85vw] sm:w-[380px] md:w-[420px] lg:w-[440px] h-fit self-center flex-shrink-0 snap-center rounded-3xl bg-white border-2 p-3.5 sm:p-4 transition-all duration-500 relative flex flex-col items-center text-center overflow-hidden opacity-100 ${
                       isActive 
-                        ? 'scale-100 opacity-100 border-[#5A1E65] ring-4 ring-amber-300/80 shadow-2xl z-20' 
-                        : 'scale-95 opacity-55 border-purple-100 shadow-md hover:opacity-85 hover:scale-98 z-10'
+                        ? 'scale-100 border-[#5A1E65] ring-4 ring-amber-300/80 shadow-2xl z-20' 
+                        : 'scale-95 border-purple-200/90 shadow-md hover:scale-98 hover:border-purple-300 z-10'
                     }`}
                   >
+                    {/* Subtle Dimmer Overlay for Inactive Cards (Does NOT affect solid white backing) */}
+                    {!isActive && (
+                      <div className="absolute inset-0 bg-slate-900/[0.04] pointer-events-none z-20 rounded-3xl" aria-hidden="true" />
+                    )}
                     {/* Cinematic Lens Flare Streak Wipe on Active Card */}
                     {isActive && (
                       <div 
