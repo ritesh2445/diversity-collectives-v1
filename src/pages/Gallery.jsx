@@ -160,47 +160,58 @@ export default function Gallery() {
     }
   };
 
-  const jumpToMilestone = (idx, direction = null) => {
+  const laneScrollRef = useRef(null);
+  const cardRefs = useRef([]);
+  const [activeFolderPics, setActiveFolderPics] = useState({});
+
+  const scrollToMilestone = (idx) => {
     if (idx < 0 || idx >= milestones.length) return;
-    const newDir = direction || (idx >= activeMilestoneIdx ? 'forward' : 'backward');
-    setSlideDirection(newDir);
     setActiveMilestoneIdx(idx);
-    setActiveFolderPhotoIdx(null);
     setFlareKey(k => k + 1);
     setAutoPlayProgress(0);
     playMilestoneChime(1 + (idx * 0.08));
+
+    const card = cardRefs.current[idx];
+    if (card && laneScrollRef.current) {
+      card.scrollIntoView({
+        behavior: 'smooth',
+        inline: 'center',
+        block: 'nearest'
+      });
+    }
   };
 
   const handleNextMilestone = () => {
     const nextIdx = (activeMilestoneIdx + 1) % milestones.length;
-    jumpToMilestone(nextIdx, 'forward');
+    scrollToMilestone(nextIdx);
   };
 
   const handlePrevMilestone = () => {
     const prevIdx = (activeMilestoneIdx - 1 + milestones.length) % milestones.length;
-    jumpToMilestone(prevIdx, 'backward');
+    scrollToMilestone(prevIdx);
   };
 
-  const handleMlTouchStart = (e) => {
-    mlTouchStartXRef.current = e.targetTouches[0].clientX;
-    mlTouchEndXRef.current = e.targetTouches[0].clientX;
-  };
+  const handleLaneScroll = () => {
+    if (!laneScrollRef.current) return;
+    const container = laneScrollRef.current;
+    const containerCenter = container.scrollLeft + container.clientWidth / 2;
 
-  const handleMlTouchMove = (e) => {
-    mlTouchEndXRef.current = e.targetTouches[0].clientX;
-  };
+    let closestIdx = 0;
+    let minDistance = Infinity;
 
-  const handleMlTouchEnd = () => {
-    if (!mlTouchStartXRef.current || !mlTouchEndXRef.current) return;
-    const distance = mlTouchStartXRef.current - mlTouchEndXRef.current;
-    const minSwipeDistance = 45;
-    if (distance > minSwipeDistance) {
-      handleNextMilestone();
-    } else if (distance < -minSwipeDistance) {
-      handlePrevMilestone();
+    cardRefs.current.forEach((el, i) => {
+      if (!el) return;
+      const elCenter = el.offsetLeft + el.clientWidth / 2;
+      const distance = Math.abs(containerCenter - elCenter);
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestIdx = i;
+      }
+    });
+
+    if (closestIdx !== activeMilestoneIdx) {
+      setActiveMilestoneIdx(closestIdx);
     }
-    mlTouchStartXRef.current = 0;
-    mlTouchEndXRef.current = 0;
   };
 
   // Auto-play timeline progression
@@ -898,13 +909,13 @@ export default function Gallery() {
               </div>
             </div>
 
-            {/* Checkpoint Timeline Track (Fast Jump) */}
-            <div className="relative pt-2 pb-1">
-              {/* Highway progress line background */}
-              <div className="absolute top-1/2 left-4 right-4 -translate-y-1/2 h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+            {/* Checkpoint Timeline Track (Electric Wire Master Lane) */}
+            <div className="relative pt-3 pb-1">
+              {/* Electric Wire Highway Track */}
+              <div className="absolute top-1/2 left-4 right-4 -translate-y-1/2 h-2.5 rounded-full overflow-hidden bg-slate-900/10 border border-purple-200">
                 <div 
-                  className="h-full bg-gradient-to-r from-[#5A1E65] via-[#D91B5C] to-[#EA580C] transition-all duration-500 ease-out rounded-full"
-                  style={{ width: `${(activeMilestoneIdx / (milestones.length - 1)) * 100}%` }}
+                  className="h-full electric-wire-track transition-all duration-500 ease-out rounded-full shadow-[0_0_12px_rgba(217,27,92,0.8)]"
+                  style={{ width: `${Math.max(12, ((activeMilestoneIdx) / (milestones.length - 1)) * 100)}%` }}
                 />
               </div>
 
@@ -918,14 +929,14 @@ export default function Gallery() {
                     <button
                       key={m.year}
                       type="button"
-                      onClick={() => jumpToMilestone(idx)}
+                      onClick={() => scrollToMilestone(idx)}
                       className={`group relative flex flex-col items-center cursor-pointer transition-all duration-300 focus:outline-none ${
-                        isActive ? 'scale-110 z-10' : 'hover:scale-105'
+                        isActive ? 'scale-115 z-10' : 'hover:scale-105'
                       }`}
                       aria-label={`Jump to Milestone ${m.year}: ${m.title}`}
                       aria-current={isActive ? 'step' : undefined}
                     >
-                      {/* Node Circle */}
+                      {/* Node Circle with Electric Ping */}
                       <div className="relative">
                         {isActive && (
                           <div 
@@ -933,9 +944,9 @@ export default function Gallery() {
                             aria-hidden="true" 
                           />
                         )}
-                        <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-black text-xs transition-all duration-300 shadow-md ${
+                        <div className={`w-8 h-8 sm:w-11 sm:h-11 rounded-full flex items-center justify-center font-black text-xs transition-all duration-300 shadow-md ${
                           isActive
-                            ? 'bg-gradient-to-tr from-[#5A1E65] via-rose-500 to-amber-400 text-white ring-4 ring-amber-300/80 shadow-lg'
+                            ? 'bg-gradient-to-tr from-[#5A1E65] via-rose-500 to-amber-400 text-white ring-4 ring-amber-300/80 shadow-xl electric-node-glow'
                             : isPassed
                             ? 'bg-purple-900 text-white hover:bg-purple-800'
                             : 'bg-white text-slate-600 border-2 border-slate-300 hover:border-purple-400'
@@ -977,275 +988,264 @@ export default function Gallery() {
           </div>
         </div>
 
-        {/* VIEW 1: CINEMATIC STAGE (GAME CONSOLE WITH ZERO GAPS) */}
+        {/* VIEW 1: SCROLLABLE FLOW WITH WIRE-LIKE LANE & CENTER-ALIGNED IMAGES */}
         {memoryLaneViewMode === 'stage' && (
-          <div 
-            className="relative max-w-6xl mx-auto z-10"
-            onTouchStart={handleMlTouchStart}
-            onTouchMove={handleMlTouchMove}
-            onTouchEnd={handleMlTouchEnd}
-          >
-            {/* The Main Stage Terminal Card */}
+          <div className="relative w-full overflow-hidden my-6 z-10">
+
+            {/* THE CONTINUOUS ELECTRIC WIRE THREADING HORIZONTALLY THROUGH THE CARDS */}
             <div 
-              key={`stage-${activeMilestone.year}-${flareKey}`}
-              className={`relative rounded-3xl bg-white/95 backdrop-blur-md border-2 border-purple-200/90 shadow-2xl p-6 sm:p-8 md:p-10 overflow-hidden ${
-                slideDirection === 'forward' 
-                  ? 'animate-in fade-in slide-in-from-right-8 duration-300' 
-                  : 'animate-in fade-in slide-in-from-left-8 duration-300'
-              }`}
+              className="absolute top-1/2 left-0 right-0 -translate-y-1/2 h-2.5 electric-wire-track pointer-events-none rounded-full z-0 opacity-80"
+              aria-hidden="true" 
+            />
+
+            {/* Floating Navigation Chevrons on Left and Right edges */}
+            <button
+              type="button"
+              onClick={handlePrevMilestone}
+              className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/95 backdrop-blur-md text-[#5A1E65] border-2 border-purple-300 shadow-2xl flex items-center justify-center hover:scale-115 active:scale-95 transition-all cursor-pointer hover:bg-purple-50 group hover:border-[#5A1E65]"
+              aria-label="Scroll to Previous Milestone"
             >
-              {/* Cinematic Lens Flare Streak Wipe */}
-              <div 
-                key={`flare-${flareKey}`}
-                className="absolute inset-y-0 w-32 bg-gradient-to-r from-transparent via-white/80 to-transparent pointer-events-none z-40 memory-lane-flare -skew-x-12"
-                aria-hidden="true" 
-              />
+              <ChevronLeft className="w-6 h-6 sm:w-7 sm:h-7 group-hover:-translate-x-0.5 transition-transform" />
+            </button>
 
-              {/* Ambient internal soft gradient glow */}
-              <div 
-                className={`absolute -top-32 -right-32 w-96 h-96 rounded-full bg-gradient-to-br ${currentTheme.aura} blur-3xl pointer-events-none opacity-60`}
-                aria-hidden="true" 
-              />
+            <button
+              type="button"
+              onClick={handleNextMilestone}
+              className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/95 backdrop-blur-md text-[#5A1E65] border-2 border-purple-300 shadow-2xl flex items-center justify-center hover:scale-115 active:scale-95 transition-all cursor-pointer hover:bg-purple-50 group hover:border-[#5A1E65]"
+              aria-label="Scroll to Next Milestone"
+            >
+              <ChevronRight className="w-6 h-6 sm:w-7 sm:h-7 group-hover:translate-x-0.5 transition-transform" />
+            </button>
 
-              {/* Top Navigation Chevron Paddles (Floating Edge Controls) */}
-              <div className="flex items-center justify-between mb-6 pb-4 border-b border-purple-100/80">
-                <button
-                  type="button"
-                  onClick={handlePrevMilestone}
-                  className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-2xl bg-purple-50 hover:bg-purple-100 text-[#5A1E65] font-black text-xs border border-purple-200 hover:border-purple-300 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95"
-                  aria-label="Previous Milestone"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                  <span>Prev Chapter</span>
-                  <span className="hidden sm:inline font-mono text-[10px] text-purple-400 font-bold">[←]</span>
-                </button>
+            {/* The Continuous Scrollable Stream */}
+            <div
+              ref={laneScrollRef}
+              onScroll={handleLaneScroll}
+              className="flex items-stretch gap-6 sm:gap-10 overflow-x-auto snap-x snap-mandatory scroll-smooth py-12 px-6 sm:px-20 md:px-[calc(50vw-360px)] relative z-10 no-scrollbar"
+              tabIndex={0}
+              aria-label="DCVC Historical Milestones Scrollable Lane"
+            >
+              {milestones.map((milestone, idx) => {
+                const isActive = idx === activeMilestoneIdx;
+                const theme = milestoneThemes[idx % milestoneThemes.length];
+                const selectedPicIdx = activeFolderPics[milestone.year];
+                const currentImage = (selectedPicIdx !== undefined && milestone.pictureFolder?.[selectedPicIdx])
+                  ? milestone.pictureFolder[selectedPicIdx].url
+                  : milestone.image;
 
-                {/* Center Badge & Milestone Status */}
-                <div className="flex items-center gap-2 text-center">
-                  <span className="px-3 py-1 rounded-full bg-gradient-to-r from-purple-100 to-pink-100 border border-purple-200 text-[#5A1E65] font-black text-xs uppercase tracking-wider">
-                    {activeMilestone.badge || 'Historic Checkpoint'}
-                  </span>
-                  <span className="hidden sm:inline-flex px-3 py-1 rounded-full bg-amber-100 text-amber-900 font-bold text-xs border border-amber-200">
-                    {activeMilestone.stat}
-                  </span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleNextMilestone}
-                  className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-2xl bg-purple-50 hover:bg-purple-100 text-[#5A1E65] font-black text-xs border border-purple-200 hover:border-purple-300 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95"
-                  aria-label="Next Milestone"
-                >
-                  <span className="hidden sm:inline font-mono text-[10px] text-purple-400 font-bold">[→]</span>
-                  <span>Next Chapter</span>
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* 2-Column Responsive Layout: ZERO DEAD SPACE */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                
-                {/* LEFT COLUMN: Narrative Lore, Year, Stat, Quote (7 cols) */}
-                <div className="lg:col-span-7 space-y-5">
-                  
-                  {/* Year Holographic Title */}
-                  <div className="flex items-baseline gap-3">
-                    <span className={`font-display text-5xl sm:text-7xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r ${currentTheme.gradientText}`}>
-                      {activeMilestone.year}
-                    </span>
-                    <span className="text-xs font-mono font-bold text-slate-400 uppercase tracking-widest">
-                      CHRONICLE LEVEL {activeMilestoneIdx + 1}
-                    </span>
-                  </div>
-
-                  {/* Headline & Subtitle */}
-                  <div>
-                    <h3 
-                      style={{
-                        color: activeMilestone.fontColor || undefined,
-                        fontSize: activeMilestone.fontSize === '2xl' ? '1.85rem' :
-                                  activeMilestone.fontSize === '3xl' ? '2.25rem' :
-                                  activeMilestone.fontSize === 'xl' ? '1.5rem' :
-                                  activeMilestone.fontSize === 'sm' ? '1.2rem' : undefined
-                      }}
-                      className="font-display text-2xl sm:text-3xl font-black text-slate-950 leading-tight"
-                    >
-                      {activeMilestone.title}
-                    </h3>
-                    <p className="text-sm font-bold text-[#5A1E65] uppercase tracking-wider mt-1">
-                      {activeMilestone.subtitle}
-                    </p>
-                  </div>
-
-                  {/* Primary Narrative Story */}
-                  <p className="text-base text-slate-700 leading-relaxed font-serif">
-                    {activeMilestone.description}
-                  </p>
-
-                  {/* Historical Quote Box */}
-                  {activeMilestone.quote && (
-                    <blockquote className="p-4 rounded-2xl bg-gradient-to-r from-purple-50 via-pink-50 to-amber-50/50 border-l-4 border-[#5A1E65] text-sm font-serif italic text-purple-950 leading-relaxed shadow-2xs">
-                      "{activeMilestone.quote}"
-                    </blockquote>
-                  )}
-
-                  {/* Archival Context & Field Notes Toggle */}
-                  <div className="pt-2">
-                    <button
-                      type="button"
-                      onClick={() => toggleMilestone(activeMilestone.year)}
-                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-purple-100/70 text-slate-800 hover:text-[#5A1E65] font-bold text-xs transition-colors cursor-pointer"
-                    >
-                      <Info className="w-4 h-4 text-[#5A1E65]" />
-                      <span>{expandedMilestones[activeMilestone.year] ? 'Hide Archival Impact Notes' : 'Explore Archival Impact Notes'}</span>
-                      {expandedMilestones[activeMilestone.year] ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                    </button>
-
-                    {expandedMilestones[activeMilestone.year] && (
-                      <div className="mt-3 p-4 rounded-2xl bg-slate-50 border border-purple-100 text-xs text-slate-700 leading-relaxed space-y-1.5 animate-in fade-in duration-200">
-                        <span className="font-black text-[#5A1E65] uppercase tracking-wider block text-[10px]">
-                          Archival Context & County Impact
-                        </span>
-                        <p>{activeMilestone.details}</p>
-                      </div>
+                return (
+                  <div
+                    key={milestone.year}
+                    ref={el => (cardRefs.current[idx] = el)}
+                    className={`w-[85vw] sm:w-[560px] md:w-[680px] flex-shrink-0 snap-center rounded-3xl bg-white/95 backdrop-blur-md border-2 p-6 sm:p-8 transition-all duration-500 relative flex flex-col items-center text-center shadow-xl ${
+                      isActive 
+                        ? 'scale-100 opacity-100 border-[#5A1E65] ring-4 ring-amber-300/80 shadow-2xl z-20' 
+                        : 'scale-95 opacity-55 border-purple-100 shadow-md hover:opacity-85 hover:scale-98 z-10'
+                    }`}
+                  >
+                    {/* Cinematic Lens Flare Streak Wipe on Active Card */}
+                    {isActive && (
+                      <div 
+                        key={`flare-${flareKey}`}
+                        className="absolute inset-y-0 w-32 bg-gradient-to-r from-transparent via-white/80 to-transparent pointer-events-none z-40 memory-lane-flare -skew-x-12"
+                        aria-hidden="true" 
+                      />
                     )}
-                  </div>
 
-                </div>
+                    {/* Ambient Internal Glow for Active Milestone */}
+                    {isActive && (
+                      <div 
+                        className={`absolute -top-24 -right-24 w-80 h-80 rounded-full bg-gradient-to-br ${theme.aura} blur-3xl pointer-events-none opacity-60`}
+                        aria-hidden="true" 
+                      />
+                    )}
 
-                {/* RIGHT COLUMN: Cinematic Viewport & Archival Folder Stack (5 cols) */}
-                <div className="lg:col-span-5 space-y-4">
-                  
-                  {/* Cinematic Main Viewport */}
-                  <div className="relative rounded-3xl overflow-hidden aspect-[16/10] bg-slate-950 shadow-xl border-2 border-purple-200 group">
-                    <img
-                      src={getOptimizedImageUrl(
-                        activeFolderPhotoIdx !== null && activeMilestone.pictureFolder?.[activeFolderPhotoIdx]
-                          ? activeMilestone.pictureFolder[activeFolderPhotoIdx].url
-                          : activeMilestone.image,
-                        { width: 900 }
-                      )}
-                      alt={activeMilestone.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 cursor-pointer"
-                      onClick={() => setExpandedPhoto({
-                        id: `ml-${activeMilestone.year}-${activeFolderPhotoIdx ?? 'main'}`,
-                        title: `${activeMilestone.year}: ${activeMilestone.title}`,
-                        image: activeFolderPhotoIdx !== null && activeMilestone.pictureFolder?.[activeFolderPhotoIdx]
-                          ? activeMilestone.pictureFolder[activeFolderPhotoIdx].url
-                          : activeMilestone.image,
-                        category: 'Historical Archive',
-                        year: activeMilestone.year,
-                        description: activeFolderPhotoIdx !== null && activeMilestone.pictureFolder?.[activeFolderPhotoIdx]?.caption
-                          ? activeMilestone.pictureFolder[activeFolderPhotoIdx].caption
-                          : activeMilestone.description
-                      })}
-                      loading="lazy"
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src = '/images/community-gathering.jpg';
-                      }}
-                    />
+                    {/* Year & Badge Header: CENTER-ALIGNED */}
+                    <div className="flex items-center justify-center gap-2.5 flex-wrap mx-auto z-10">
+                      <span className={`font-display text-5xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r ${theme.gradientText}`}>
+                        {milestone.year}
+                      </span>
+                      <span className="px-3 py-1 rounded-full bg-purple-100 text-[#5A1E65] font-black text-xs uppercase tracking-wider">
+                        {milestone.badge}
+                      </span>
+                      <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-900 font-bold text-xs border border-amber-200">
+                        {milestone.stat}
+                      </span>
+                    </div>
 
-                    {/* Gradient Overlay & Caption */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none" />
+                    {/* Title & Subtitle: CENTER-ALIGNED */}
+                    <div className="space-y-1 max-w-xl mx-auto mt-2 z-10">
+                      <h3 
+                        style={{
+                          color: milestone.fontColor || undefined,
+                          fontSize: milestone.fontSize === '2xl' ? '1.85rem' :
+                                    milestone.fontSize === '3xl' ? '2.25rem' :
+                                    milestone.fontSize === 'xl' ? '1.5rem' :
+                                    milestone.fontSize === 'sm' ? '1.2rem' : undefined
+                        }}
+                        className="font-display text-2xl sm:text-3xl font-black text-slate-950 leading-tight text-center"
+                      >
+                        {milestone.title}
+                      </h3>
+                      <p className="text-xs font-bold text-[#5A1E65] uppercase tracking-wider text-center">
+                        {milestone.subtitle}
+                      </p>
+                    </div>
 
-                    {/* Fullscreen Magnifier pill */}
-                    <button
-                      type="button"
-                      onClick={() => setExpandedPhoto({
-                        id: `ml-${activeMilestone.year}-${activeFolderPhotoIdx ?? 'main'}`,
-                        title: `${activeMilestone.year}: ${activeMilestone.title}`,
-                        image: activeFolderPhotoIdx !== null && activeMilestone.pictureFolder?.[activeFolderPhotoIdx]
-                          ? activeMilestone.pictureFolder[activeFolderPhotoIdx].url
-                          : activeMilestone.image,
-                        category: 'Historical Archive',
-                        year: activeMilestone.year,
-                        description: activeMilestone.description
-                      })}
-                      className="absolute top-3 right-3 p-2 rounded-xl bg-black/50 hover:bg-black/80 text-white backdrop-blur-md transition-all cursor-pointer shadow-md"
-                      title="Open Fullscreen Archival View"
-                      aria-label="Open Fullscreen Archival View"
-                    >
-                      <Maximize2 className="w-4 h-4" />
-                    </button>
+                    {/* MILESTONE PHOTOGRAPH: PROMINENTLY CENTER-ALIGNED */}
+                    <div className="w-full max-w-xl mx-auto rounded-3xl overflow-hidden aspect-[16/10] bg-slate-950 shadow-2xl border-2 border-purple-200/90 group/img relative my-4 z-10">
+                      <img
+                        src={getOptimizedImageUrl(currentImage, { width: 900 })}
+                        alt={milestone.title}
+                        className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-700 mx-auto cursor-pointer"
+                        loading="lazy"
+                        onClick={() => setExpandedPhoto({
+                          id: `ml-${milestone.year}-${selectedPicIdx ?? 'main'}`,
+                          title: `${milestone.year}: ${milestone.title}`,
+                          image: currentImage,
+                          category: 'Historical Archive',
+                          year: milestone.year,
+                          description: milestone.description
+                        })}
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = '/images/community-gathering.jpg';
+                        }}
+                      />
 
-                    {/* Viewport Caption Bar */}
-                    <div className="absolute inset-x-0 bottom-0 p-4 text-white">
-                      <div className="flex items-center justify-between text-xs">
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none" />
+
+                      {/* Fullscreen Magnifier pill */}
+                      <button
+                        type="button"
+                        onClick={() => setExpandedPhoto({
+                          id: `ml-${milestone.year}-${selectedPicIdx ?? 'main'}`,
+                          title: `${milestone.year}: ${milestone.title}`,
+                          image: currentImage,
+                          category: 'Historical Archive',
+                          year: milestone.year,
+                          description: milestone.description
+                        })}
+                        className="absolute top-3 right-3 p-2 rounded-xl bg-black/60 hover:bg-black/80 text-white backdrop-blur-md transition-all cursor-pointer shadow-md"
+                        title="Open Fullscreen Archival View"
+                        aria-label="Open Fullscreen Archival View"
+                      >
+                        <Maximize2 className="w-4 h-4" />
+                      </button>
+
+                      {/* Viewport Caption Bar */}
+                      <div className="absolute inset-x-0 bottom-0 p-3.5 text-white flex items-center justify-between text-xs">
                         <span className="font-extrabold truncate pr-2">
-                          {activeFolderPhotoIdx !== null && activeMilestone.pictureFolder?.[activeFolderPhotoIdx]?.caption
-                            ? activeMilestone.pictureFolder[activeFolderPhotoIdx].caption
-                            : `${activeMilestone.year} Archive Photograph`}
+                          {selectedPicIdx !== undefined && milestone.pictureFolder?.[selectedPicIdx]?.caption
+                            ? milestone.pictureFolder[selectedPicIdx].caption
+                            : `${milestone.year} Archive Photograph`}
                         </span>
                         <span className="text-[10px] text-amber-300 font-mono font-bold flex-shrink-0">
                           TAP TO EXPAND
                         </span>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Archival Picture Folder / Instant Thumbnail Switcher */}
-                  {activeMilestone.pictureFolder && activeMilestone.pictureFolder.length > 0 && (
-                    <div className="p-3.5 rounded-2xl bg-purple-50/70 border border-purple-200/80">
-                      <div className="flex items-center justify-between mb-2.5">
-                        <span className="text-[11px] font-black uppercase tracking-wider text-[#5A1E65] flex items-center gap-1.5">
-                          <FolderOpen className="w-3.5 h-3.5 text-amber-600" />
-                          <span>Archival Picture Folder ({activeMilestone.pictureFolder.length} Photos)</span>
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setActiveFolderPhotoIdx(null)}
-                          className={`text-[10px] font-bold ${activeFolderPhotoIdx === null ? 'text-[#5A1E65] underline' : 'text-slate-500 hover:text-slate-800'}`}
-                        >
-                          Main Photo
-                        </button>
+                    {/* ARCHIVAL PICTURE FOLDER: CENTER-ALIGNED */}
+                    {milestone.pictureFolder && milestone.pictureFolder.length > 0 && (
+                      <div className="w-full max-w-xl mx-auto p-3 rounded-2xl bg-purple-50/70 border border-purple-200/80 my-2 z-10">
+                        <div className="flex items-center justify-between mb-2 px-1">
+                          <span className="text-[11px] font-black uppercase tracking-wider text-[#5A1E65] flex items-center gap-1.5">
+                            <FolderOpen className="w-3.5 h-3.5 text-amber-600" />
+                            <span>Archival Picture Folder ({milestone.pictureFolder.length} Photos)</span>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveFolderPics(prev => ({ ...prev, [milestone.year]: undefined }));
+                            }}
+                            className={`text-[10px] font-bold cursor-pointer ${
+                              selectedPicIdx === undefined ? 'text-[#5A1E65] underline' : 'text-slate-500 hover:text-slate-800'
+                            }`}
+                          >
+                            Main Photo
+                          </button>
+                        </div>
+
+                        <div className="flex flex-wrap items-center justify-center gap-2">
+                          {milestone.pictureFolder.map((pic, pIdx) => {
+                            const isSelected = selectedPicIdx === pIdx;
+                            return (
+                              <button
+                                key={pic.id || pIdx}
+                                type="button"
+                                onClick={() => {
+                                  setActiveFolderPics(prev => ({ ...prev, [milestone.year]: pIdx }));
+                                  playMilestoneChime(1.3);
+                                }}
+                                className={`w-16 h-12 rounded-xl overflow-hidden bg-slate-900 border-2 cursor-pointer transition-all shadow-2xs ${
+                                  isSelected
+                                    ? 'border-amber-400 ring-2 ring-amber-300 scale-105 z-10'
+                                    : 'border-purple-200 hover:border-purple-400 hover:scale-102'
+                                }`}
+                                title={pic.caption || `Photo ${pIdx + 1}`}
+                              >
+                                <img
+                                  src={getOptimizedImageUrl(pic.url, { width: 200 })}
+                                  alt={pic.caption || milestone.title}
+                                  className="w-full h-full object-cover"
+                                  loading="lazy"
+                                />
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
+                    )}
 
-                      <div className="grid grid-cols-4 gap-2">
-                        {activeMilestone.pictureFolder.map((pic, pIdx) => {
-                          const isSelected = activeFolderPhotoIdx === pIdx;
-                          return (
-                            <button
-                              key={pic.id || pIdx}
-                              type="button"
-                              onClick={() => {
-                                setActiveFolderPhotoIdx(pIdx);
-                                playMilestoneChime(1.4);
-                              }}
-                              className={`aspect-[4/3] rounded-xl overflow-hidden bg-slate-900 border-2 cursor-pointer transition-all relative shadow-2xs ${
-                                isSelected 
-                                  ? 'border-amber-400 ring-2 ring-amber-300 scale-105 z-10' 
-                                  : 'border-purple-200 hover:border-purple-400 hover:scale-102'
-                              }`}
-                              title={pic.caption || `Photo ${pIdx + 1}`}
-                            >
-                              <img
-                                src={getOptimizedImageUrl(pic.url, { width: 300 })}
-                                alt={pic.caption || activeMilestone.title}
-                                className="w-full h-full object-cover"
-                                loading="lazy"
-                              />
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Swipe Guidance Notice (Mobile/Touch) */}
-                  <div className="text-center pt-1">
-                    <p className="text-[11px] font-bold text-slate-400 flex items-center justify-center gap-1.5">
-                      <span>👈</span>
-                      <span>Swipe left or right, or use keyboard arrow keys</span>
-                      <span>👉</span>
+                    {/* Narrative Story: CENTER-ALIGNED */}
+                    <p className="font-serif text-slate-700 text-sm sm:text-base leading-relaxed text-center max-w-xl mx-auto mt-2 z-10">
+                      {milestone.description}
                     </p>
+
+                    {/* Historical Quote Box: CENTER-ALIGNED */}
+                    {milestone.quote && (
+                      <blockquote className="max-w-lg mx-auto text-center p-4 rounded-2xl bg-gradient-to-r from-purple-50 via-pink-50 to-amber-50/50 border-y-2 border-purple-300 font-serif italic text-purple-950 text-xs sm:text-sm leading-relaxed mt-3 shadow-2xs z-10">
+                        "{milestone.quote}"
+                      </blockquote>
+                    )}
+
+                    {/* Archival Context & Field Notes Toggle: CENTER-ALIGNED */}
+                    <div className="pt-3 w-full max-w-xl mx-auto z-10">
+                      <button
+                        type="button"
+                        onClick={() => toggleMilestone(milestone.year)}
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-slate-100 hover:bg-purple-100/70 text-slate-800 hover:text-[#5A1E65] font-bold text-xs transition-colors cursor-pointer mx-auto"
+                      >
+                        <Info className="w-4 h-4 text-[#5A1E65]" />
+                        <span>{expandedMilestones[milestone.year] ? 'Hide Archival Impact Notes' : 'Explore Archival Impact Notes'}</span>
+                        {expandedMilestones[milestone.year] ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                      </button>
+
+                      {expandedMilestones[milestone.year] && (
+                        <div className="mt-3 p-4 rounded-2xl bg-slate-50 border border-purple-100 text-xs text-slate-700 leading-relaxed text-center space-y-1.5 animate-in fade-in duration-200">
+                          <span className="font-black text-[#5A1E65] uppercase tracking-wider block text-[10px]">
+                            Archival Context & County Impact
+                          </span>
+                          <p>{milestone.details}</p>
+                        </div>
+                      )}
+                    </div>
+
                   </div>
-
-                </div>
-
-              </div>
-
+                );
+              })}
             </div>
+
+            {/* Scroll/Swipe Directional Guidance */}
+            <div className="text-center pt-2">
+              <p className="text-xs font-bold text-slate-400 flex items-center justify-center gap-2">
+                <span>⚡</span>
+                <span>Scroll or swipe along the electric wire lane to explore each milestone</span>
+                <span>⚡</span>
+              </p>
+            </div>
+
           </div>
         )}
 
@@ -1265,9 +1265,9 @@ export default function Gallery() {
                       : 'border-purple-100 hover:border-purple-300'
                   }`}
                 >
-                  <div className="space-y-3">
-                    {/* Top Row: Year + Badge */}
-                    <div className="flex items-center justify-between">
+                  <div className="space-y-3 text-center">
+                    {/* Top Row: Year + Badge Centered */}
+                    <div className="flex items-center justify-center gap-2 flex-wrap">
                       <span className={`font-display text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r ${theme.gradientText}`}>
                         {milestone.year}
                       </span>
@@ -1276,23 +1276,23 @@ export default function Gallery() {
                       </span>
                     </div>
 
-                    {/* Image */}
-                    <div className="rounded-2xl overflow-hidden aspect-[16/10] bg-slate-900 relative">
+                    {/* Centered Image */}
+                    <div className="rounded-2xl overflow-hidden aspect-[16/10] bg-slate-950 relative mx-auto max-w-sm">
                       <img
                         src={getOptimizedImageUrl(milestone.image, { width: 600 })}
                         alt={milestone.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 mx-auto"
                         loading="lazy"
                       />
                     </div>
 
-                    {/* Title */}
+                    {/* Title Centered */}
                     <h4 className="font-display text-lg font-black text-slate-950 group-hover:text-[#5A1E65] transition-colors leading-snug">
                       {milestone.title}
                     </h4>
 
-                    {/* Description */}
-                    <p className="text-xs text-slate-600 leading-relaxed">
+                    {/* Description Centered */}
+                    <p className="text-xs text-slate-600 leading-relaxed font-serif">
                       {milestone.description}
                     </p>
 
@@ -1308,12 +1308,12 @@ export default function Gallery() {
                   <button
                     type="button"
                     onClick={() => {
-                      jumpToMilestone(idx);
+                      scrollToMilestone(idx);
                       setMemoryLaneViewMode('stage');
                     }}
                     className="w-full py-2 px-3 rounded-xl bg-purple-50 hover:bg-[#5A1E65] text-[#5A1E65] hover:text-white font-black text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
                   >
-                    <span>Launch in Stage Mode</span>
+                    <span>Launch in Wire Lane</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
