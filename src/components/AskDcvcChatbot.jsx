@@ -81,6 +81,23 @@ export default function AskDcvcChatbot() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen]);
 
+  // External voice / programmatic triggers for hands-free mic control
+  useEffect(() => {
+    const handleOpen = () => setIsOpen(true);
+    const handleClose = () => setIsOpen(false);
+    const handleToggle = () => setIsOpen(prev => !prev);
+
+    window.addEventListener('openAskDcvc', handleOpen);
+    window.addEventListener('closeAskDcvc', handleClose);
+    window.addEventListener('toggleAskDcvc', handleToggle);
+
+    return () => {
+      window.removeEventListener('openAskDcvc', handleOpen);
+      window.removeEventListener('closeAskDcvc', handleClose);
+      window.removeEventListener('toggleAskDcvc', handleToggle);
+    };
+  }, []);
+
   const handleSend = async (questionText) => {
     const textToSend = (questionText || input).trim();
     if (!textToSend || isLoading) return;

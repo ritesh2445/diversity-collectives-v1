@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Play, 
   Pause, 
@@ -24,13 +25,21 @@ import {
   SunMoon, 
   X,
   Volume2,
-  Check
+  Check,
+  HelpCircle,
+  Compass
 } from 'lucide-react';
 import { a11yStore } from '../../accessibility/a11yStore';
 import { focusAudio } from '../../accessibility/focusAudio';
 import { getOptimalNativeUSFemaleVoice, createAccessibleUtterance } from '../../accessibility/voiceHelper';
+import { 
+  parseVoiceIntent, 
+  tapElementByVoice, 
+  VOICE_COMMAND_CATEGORIES 
+} from '../../accessibility/voiceCommands';
 
 export default function ReciteToolbar() {
+  const navigate = useNavigate();
   const [settings, setSettings] = useState(a11yStore.getState());
   const [activeFlyout, setActiveFlyout] = useState(null); // 'music' | 'font' | 'focusText' | 'lang' | 'color' | 'dict' | 'guide'
   
@@ -48,9 +57,11 @@ export default function ReciteToolbar() {
   const [isListening, setIsListening] = useState(false);
   const [speechTranscript, setSpeechTranscript] = useState('');
   const [speechFeedback, setSpeechFeedback] = useState('');
+  const [showVoiceHelp, setShowVoiceHelp] = useState(false);
   const [micError, setMicError] = useState(null);
   const recognitionRef = useRef(null);
   const isListeningRef = useRef(false);
+  const lastVoiceCommandRef = useRef({ text: '', timestamp: 0 });
 
   // Dictionary state
   const [dictWord, setDictWord] = useState('');
@@ -294,159 +305,231 @@ export default function ReciteToolbar() {
     focusAudio.setVolume(newVol);
   };
 
-  // High-Precision Hands-Free Voice Controller
-  const executeVoiceCommand = (rawText) => {
-    const text = rawText.toLowerCase().trim();
+  // Smooth programmatic route navigation by voice (keeps mic listening alive without full document reload)
+  const handleNavigateByVoice = (routePath, pageLabel) => {
+    setSpeechFeedback(`Opening ${pageLabel}... 🚀`);
+    a11yStore.announce(`Opening ${pageLabel}`);
+    navigate(routePath);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
-    // 1. SCROLLING COMMANDS
-    if (text.includes('scroll down') || text.endsWith('down') || text.includes('page down')) {
-      window.scrollBy({ top: 450, behavior: 'smooth' });
-      setSpeechFeedback('Scrolled Down ⬇');
-      return;
-    }
-    if (text.includes('scroll up') || text.endsWith('up') || text.includes('page up')) {
-      window.scrollBy({ top: -450, behavior: 'smooth' });
-      setSpeechFeedback('Scrolled Up ⬆');
-      return;
-    }
-    if (text.includes('top') || text.includes('scroll to top') || text.includes('go to top')) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      setSpeechFeedback('Scrolled to Top ⬆');
-      return;
-    }
-    if (text.includes('bottom') || text.includes('scroll to bottom')) {
-      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-      setSpeechFeedback('Scrolled to Bottom ⬇');
+  // High-Precision Hands-Free Voice Controller with Comprehensive Intent Dispatcher
+  const executeVoiceCommand = (rawText, isFinal = false) => {
+    if (!rawText) return;
+    const text = rawText.trim().toLowerCase();
+
+    // Prevent rapid double-firing of duplicate commands within 1200ms
+    const now = Date.now();
+    if (
+      lastVoiceCommandRef.current.text === text &&
+      now - lastVoiceCommandRef.current.timestamp < 1200
+    ) {
       return;
     }
 
-    // 2. AUDIO & READING COMMANDS
-    if (text.includes('read') || text.includes('speak') || text.includes('play')) {
-      handlePlayPause();
-      setSpeechFeedback('Playing Read Aloud ▶');
-      return;
-    }
-    if (text.includes('pause') || text.includes('hold')) {
-      handlePlayPause();
-      setSpeechFeedback('Reading Paused ⏸');
-      return;
-    }
-    if (text.includes('stop') || text.includes('silence') || text.includes('quiet')) {
-      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
+    const intent = parseVoiceIntent(text);
+    if (!intent) return;
+
+    lastVoiceCommandRef.current = { text, timestamp: now };
+
+    switch (intent.type) {
+      case 'HELP':
+        setShowVoiceHelp((prev) => !prev);
+        setSpeechFeedback('Voice Commands Cheat Sheet 📖');
+        a11yStore.announce('Showing voice command cheat sheet: scroll to top, tap buttons, open pages, read, or contrast.');
+        break;
+
+      case 'SCROLL':
+        if (intent.target === 'top') {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          setSpeechFeedback('Scrolled to Top ⬆');
+          a11yStore.announce('Scrolled to top of page');
+        } else if (intent.target === 'bottom') {
+          window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+          setSpeechFeedback('Scrolled to Bottom ⬇');
+          a11yStore.announce('Scrolled to bottom of page');
+        } else if (intent.target === 'halfway') {
+          window.scrollTo({ top: document.body.scrollHeight / 2, behavior: 'smooth' });
+          setSpeechFeedback('Scrolled to Middle ↕');
+          a11yStore.announce('Scrolled to middle of page');
+        } else if (intent.target === 'fast_down') {
+          window.scrollBy({ top: 850, behavior: 'smooth' });
+          setSpeechFeedback('Fast Scrolled Down ⏬');
+        } else if (intent.target === 'small_down') {
+          window.scrollBy({ top: 220, behavior: 'smooth' });
+          setSpeechFeedback('Scrolled a Bit ⬇');
+        } else if (intent.target === 'down') {
+          window.scrollBy({ top: 480, behavior: 'smooth' });
+          setSpeechFeedback('Scrolled Down ⬇');
+        } else if (intent.target === 'up') {
+          window.scrollBy({ top: -480, behavior: 'smooth' });
+          setSpeechFeedback('Scrolled Up ⬆');
+        }
+        break;
+
+      case 'TAP': {
+        const tapped = tapElementByVoice(intent.target, {
+          setSpeechFeedback,
+          announce: (msg) => a11yStore.announce(msg),
+          handleNavigate: handleNavigateByVoice
+        });
+        if (!tapped) {
+          setSpeechFeedback(`Target not found: "${intent.target}"`);
+          a11yStore.announce(`Could not find button or link for ${intent.target}`);
+        }
+        break;
       }
-      clearHighlight();
-      setSpeechFeedback('Speech Stopped ⏹');
-      return;
-    }
-    if (text.includes('next') || text.includes('skip forward')) {
-      handleSkipForward();
-      setSpeechFeedback('Next Paragraph ⏭');
-      return;
-    }
-    if (text.includes('back') || text.includes('previous') || text.includes('rewind')) {
-      handleSkipBack();
-      setSpeechFeedback('Previous Paragraph ⏮');
-      return;
-    }
 
-    // 3. NAVIGATION COMMANDS
-    if (text.includes('home') || text.includes('go home')) {
-      setSpeechFeedback('Navigating to Home...');
-      window.location.href = '/';
-      return;
-    }
-    if (text.includes('about')) {
-      setSpeechFeedback('Navigating to About...');
-      window.location.href = '/about';
-      return;
-    }
-    if (text.includes('program') || text.includes('services')) {
-      setSpeechFeedback('Navigating to Programs...');
-      window.location.href = '/programs';
-      return;
-    }
-    if (text.includes('event') || text.includes('calendar')) {
-      setSpeechFeedback('Navigating to Events...');
-      window.location.href = '/events';
-      return;
-    }
-    if (text.includes('resource')) {
-      setSpeechFeedback('Navigating to Resources...');
-      window.location.href = '/resources';
-      return;
-    }
-    if (text.includes('directory') || text.includes('business')) {
-      setSpeechFeedback('Navigating to Directory...');
-      window.location.href = '/directory';
-      return;
-    }
-    if (text.includes('gallery') || text.includes('photo')) {
-      setSpeechFeedback('Navigating to Gallery...');
-      window.location.href = '/gallery';
-      return;
-    }
-    if (text.includes('volunteer') || text.includes('get involved')) {
-      setSpeechFeedback('Navigating to Volunteer...');
-      window.location.href = '/volunteer';
-      return;
-    }
-    if (text.includes('donate') || text.includes('giving')) {
-      setSpeechFeedback('Navigating to Donate...');
-      window.location.href = '/donate';
-      return;
-    }
-    if (text.includes('contact')) {
-      setSpeechFeedback('Navigating to Contact...');
-      window.location.href = '/contact';
-      return;
-    }
+      case 'NAVIGATE':
+        handleNavigateByVoice(intent.path, intent.label);
+        break;
 
-    // 4. VISUAL & ACCESSIBILITY COMMANDS
-    if (text.includes('larger') || text.includes('bigger') || text.includes('increase font')) {
-      handleIncreaseFont();
-      setSpeechFeedback('Font Size Increased (+)');
-      return;
-    }
-    if (text.includes('smaller') || text.includes('decrease font')) {
-      handleDecreaseFont();
-      setSpeechFeedback('Font Size Decreased (-)');
-      return;
-    }
-    if (text.includes('contrast') || text.includes('theme') || text.includes('colors')) {
-      handleCycleTheme();
-      setSpeechFeedback('Color Theme Switched 🎨');
-      return;
-    }
-    if (text.includes('ruler')) {
-      a11yStore.toggleRuler();
-      setSpeechFeedback('Reading Ruler Toggled 📏');
-      return;
-    }
-    if (text.includes('mask')) {
-      a11yStore.toggleScreenMask();
-      setSpeechFeedback('Screen Mask Toggled 🎭');
-      return;
-    }
-    if (text.includes('music') || text.includes('ambient')) {
-      handleToggleFocusTrack('focus');
-      setSpeechFeedback('Focus Audio Toggled 🎵');
-      return;
-    }
-    if (text.includes('reset')) {
-      a11yStore.resetAll();
-      setSpeechFeedback('Settings Restored to Default 🔄');
-      return;
-    }
-    if (text.includes('close') || text.includes('exit')) {
-      a11yStore.update('toolbarOpen', false);
-      setSpeechFeedback('Toolbar Closed ✕');
-      return;
-    }
-    if (text.includes('help')) {
-      a11yStore.announce('Hands-free voice commands: scroll down, scroll up, top, read aloud, stop, programs, events, gallery, donate, contact, larger font, contrast, ruler, and close.');
-      setSpeechFeedback('Help: Commands listed');
-      return;
+      case 'SEARCH': {
+        const searchInput = document.querySelector(
+          'input[type="search"], input[placeholder*="search" i], input[placeholder*="Search" i], input[name*="search" i]'
+        );
+        if (searchInput) {
+          searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          searchInput.focus();
+          searchInput.value = intent.query;
+          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+          searchInput.dispatchEvent(new Event('change', { bubbles: true }));
+          setSpeechFeedback(`Searching: "${intent.query}" 🔍`);
+          a11yStore.announce(`Searching for ${intent.query}`);
+        } else {
+          setSpeechFeedback(`Searching for "${intent.query}" in Directory... 🔍`);
+          handleNavigateByVoice(`/directory?q=${encodeURIComponent(intent.query)}`, 'Directory Search');
+        }
+        break;
+      }
+
+      case 'CLEAR_SEARCH': {
+        const curSearch = document.querySelector('input[type="search"], input[placeholder*="search" i]');
+        if (curSearch) {
+          curSearch.value = '';
+          curSearch.dispatchEvent(new Event('input', { bubbles: true }));
+          setSpeechFeedback('Search Cleared ✕');
+        }
+        break;
+      }
+
+      case 'SUBMIT_FORM': {
+        const submitBtn = document.querySelector('button[type="submit"], input[type="submit"], [role="button"][data-submit="true"]');
+        if (submitBtn) {
+          submitBtn.click();
+          setSpeechFeedback('Submitted Form 📤');
+        }
+        break;
+      }
+
+      case 'CHATBOT':
+        if (intent.action === 'open') {
+          window.dispatchEvent(new CustomEvent('openAskDcvc'));
+          setSpeechFeedback('Opened Ask DCVC Chat 💬');
+          a11yStore.announce('Ask DCVC Chatbot opened');
+        } else {
+          window.dispatchEvent(new CustomEvent('closeAskDcvc'));
+          setSpeechFeedback('Closed Chatbot ✕');
+        }
+        break;
+
+      case 'READ_ALOUD':
+        if (intent.action === 'play') {
+          handlePlayPause();
+          setSpeechFeedback('Reading Aloud ▶');
+        } else if (intent.action === 'pause') {
+          handlePlayPause();
+          setSpeechFeedback('Reading Paused ⏸');
+        } else if (intent.action === 'stop') {
+          if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+          }
+          clearHighlight();
+          setSpeechFeedback('Speech Stopped ⏹');
+        } else if (intent.action === 'next') {
+          handleSkipForward();
+          setSpeechFeedback('Next Paragraph ⏭');
+        } else if (intent.action === 'prev') {
+          handleSkipBack();
+          setSpeechFeedback('Previous Paragraph ⏮');
+        }
+        break;
+
+      case 'FONT':
+        if (intent.action === 'increase') {
+          handleIncreaseFont();
+          setSpeechFeedback('Font Size Increased (+)');
+        } else if (intent.action === 'decrease') {
+          handleDecreaseFont();
+          setSpeechFeedback('Font Size Decreased (-)');
+        } else if (intent.action === 'reset') {
+          a11yStore.setFontSize('100%');
+          setSpeechFeedback('Font Size Reset (100%)');
+        }
+        break;
+
+      case 'THEME':
+        handleCycleTheme();
+        setSpeechFeedback('Color Theme Switched 🎨');
+        break;
+
+      case 'TOOL':
+        if (intent.tool === 'ruler') {
+          a11yStore.toggleRuler();
+          setSpeechFeedback('Reading Ruler Toggled 📏');
+        } else if (intent.tool === 'mask') {
+          a11yStore.toggleScreenMask();
+          setSpeechFeedback('Screen Mask Toggled 🎭');
+        }
+        break;
+
+      case 'MUSIC':
+        if (intent.action === 'toggle') {
+          handleToggleFocusTrack('focus');
+          setSpeechFeedback('Focus Audio Toggled 🎵');
+        } else if (intent.action === 'vol_up') {
+          const nextVol = Math.min(1, Math.round((musicVolume + 0.2) * 10) / 10);
+          handleVolumeChange(nextVol);
+          setSpeechFeedback(`Volume: ${Math.round(nextVol * 100)}% 🔊`);
+        } else if (intent.action === 'vol_down') {
+          const prevVol = Math.max(0, Math.round((musicVolume - 0.2) * 10) / 10);
+          handleVolumeChange(prevVol);
+          setSpeechFeedback(`Volume: ${Math.round(prevVol * 100)}% 🔉`);
+        }
+        break;
+
+      case 'TOOLBAR':
+        if (intent.action === 'open') {
+          a11yStore.update('toolbarOpen', true);
+          setSpeechFeedback('Toolbar Opened 🎛️');
+        } else {
+          a11yStore.update('toolbarOpen', false);
+          setSpeechFeedback('Toolbar Closed ✕');
+        }
+        break;
+
+      case 'RESET_ALL':
+        a11yStore.resetAll();
+        setSpeechFeedback('All Settings Restored 🔄');
+        break;
+
+      case 'QUICK_EXIT':
+        setSpeechFeedback('Emergency Quick Exit Activated 🛡️');
+        window.location.replace('https://www.google.com');
+        break;
+
+      case 'MIC':
+        handleToggleMic();
+        break;
+
+      case 'REPLAY_WELCOME':
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.dispatchEvent(new CustomEvent('replayWelcomeAnimation'));
+        setSpeechFeedback('Replaying Welcome Animation 🌈');
+        break;
+
+      default:
+        break;
     }
   };
 
@@ -486,7 +569,7 @@ export default function ReciteToolbar() {
 
       recognition.onstart = () => {
         setIsListening(true);
-        a11yStore.announce('Hands-free voice listening active. Say: scroll down, read, programs, donate, or stop.');
+        a11yStore.announce('Hands-free voice listening active. You can say: scroll to top, tap buttons, open page, search, read, or help.');
       };
 
       recognition.onresult = (event) => {
@@ -503,7 +586,7 @@ export default function ReciteToolbar() {
         const text = (final || interim).trim().toLowerCase();
         if (text) {
           setSpeechTranscript(text);
-          executeVoiceCommand(text);
+          executeVoiceCommand(text, Boolean(final));
         }
       };
 
@@ -1320,44 +1403,125 @@ export default function ReciteToolbar() {
       FLOATING HANDS-FREE LIVE SPEECH HUD (Always active while listening)
       ================================================================ */}
   {isListening && (
-    <div 
-      role="status"
-      aria-live="polite"
-      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100005] bg-[#0B1528]/95 text-white border-2 border-emerald-400 px-5 py-3 rounded-2xl shadow-2xl backdrop-blur-xl flex items-center gap-4 select-none animate-in fade-in slide-in-from-bottom-4 duration-300 max-w-xl w-[94vw] sm:w-auto ring-4 ring-emerald-500/20"
-    >
-      <div className="relative flex items-center justify-center flex-shrink-0">
-        <div className="w-9 h-9 rounded-full bg-emerald-500/30 flex items-center justify-center animate-ping absolute inset-0" />
-        <div className="w-9 h-9 rounded-full bg-emerald-600 text-white flex items-center justify-center relative shadow-md">
-          <Mic className="w-5 h-5 animate-pulse" />
-        </div>
-      </div>
+    <>
+      {/* Voice Commands Cheat Sheet Modal Popover */}
+      {showVoiceHelp && (
+        <div 
+          role="dialog"
+          aria-modal="false"
+          aria-label="Hands-free Voice Commands Cheat Sheet"
+          className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100006] bg-[#0A1220]/95 text-white border-2 border-emerald-400 p-5 rounded-3xl shadow-2xl backdrop-blur-2xl max-w-2xl w-[94vw] max-h-[72vh] overflow-y-auto animate-in fade-in slide-in-from-bottom-3 duration-200 ring-4 ring-emerald-500/20"
+        >
+          <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div className="flex items-center gap-2.5">
+              <span className="text-xl">🎙️</span>
+              <div>
+                <h3 className="font-display font-black text-sm text-white">Hands-Free Voice Commands</h3>
+                <p className="text-[11px] text-emerald-300">Speak naturally — every action across the entire website is voice-controllable.</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowVoiceHelp(false)}
+              className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer"
+              title="Close voice guide"
+              aria-label="Close voice guide"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
 
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            Hands-Free Voice Active
-          </span>
-          {speechFeedback && (
-            <span className="text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-700/60 px-2 py-0.5 rounded-full font-bold">
-              {speechFeedback}
-            </span>
-          )}
-        </div>
-        <p className="text-xs text-slate-200 font-medium truncate mt-0.5">
-          {speechTranscript ? `Heard: "${speechTranscript}"` : 'Listening... Say "scroll down", "read", "programs", "donate", or "contrast"'}
-        </p>
-      </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3.5 text-xs">
+            {VOICE_COMMAND_CATEGORIES.map((cat) => (
+              <div key={cat.name} className="p-3 bg-white/5 rounded-2xl border border-white/10 space-y-2">
+                <span className="font-black text-[11px] uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
+                  <span>{cat.icon}</span>
+                  <span>{cat.name}</span>
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {cat.examples.map((ex) => (
+                    <button
+                      key={ex}
+                      type="button"
+                      onClick={() => executeVoiceCommand(ex, true)}
+                      className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-emerald-600 hover:text-white text-slate-300 font-mono text-[10px] border border-slate-700 hover:border-emerald-500 transition-colors cursor-pointer text-left"
+                      title={`Click or say "${ex}"`}
+                    >
+                      "{ex}"
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
 
-      <button
-        type="button"
-        onClick={handleToggleMic}
-        className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-rose-600 text-slate-200 hover:text-white font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer flex-shrink-0 border border-slate-700"
+          <div className="pt-3 border-t border-slate-800 mt-3.5 flex items-center justify-between text-[11px] text-slate-400">
+            <span>💡 Say <strong>"tap [name]"</strong> or <strong>"open page [name]"</strong> anytime.</span>
+            <button
+              type="button"
+              onClick={() => setShowVoiceHelp(false)}
+              className="text-emerald-400 hover:text-emerald-300 font-bold underline cursor-pointer"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Primary Floating HUD Bar */}
+      <div 
+        role="status"
+        aria-live="polite"
+        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100005] bg-[#0B1528]/95 text-white border-2 border-emerald-400 px-4 sm:px-5 py-3 rounded-2xl shadow-2xl backdrop-blur-xl flex items-center gap-3 sm:gap-4 select-none animate-in fade-in slide-in-from-bottom-4 duration-300 max-w-2xl w-[94vw] sm:w-auto ring-4 ring-emerald-500/20"
       >
-        <X className="w-3.5 h-3.5" />
-        <span>Stop Mic</span>
-      </button>
-    </div>
+        <div className="relative flex items-center justify-center flex-shrink-0">
+          <div className="w-9 h-9 rounded-full bg-emerald-500/30 flex items-center justify-center animate-ping absolute inset-0" />
+          <div className="w-9 h-9 rounded-full bg-emerald-600 text-white flex items-center justify-center relative shadow-md">
+            <Mic className="w-5 h-5 animate-pulse" />
+          </div>
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5 whitespace-nowrap">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              Hands-Free Voice Active
+            </span>
+            {speechFeedback && (
+              <span className="text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-700/60 px-2 py-0.5 rounded-full font-bold truncate max-w-[200px]">
+                {speechFeedback}
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-slate-200 font-medium truncate mt-0.5">
+            {speechTranscript ? `Heard: "${speechTranscript}"` : 'Listening... Say "scroll to top", "tap [button]", "open page [name]", "read", or "help"'}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <button
+            type="button"
+            onClick={() => setShowVoiceHelp((prev) => !prev)}
+            className="px-2.5 py-1.5 rounded-xl bg-purple-900/80 hover:bg-purple-800 text-amber-300 hover:text-white font-bold text-xs transition-colors flex items-center gap-1 cursor-pointer border border-purple-600 shadow-sm"
+            title="View all hands-free voice commands"
+            aria-label="View all voice commands cheat sheet"
+          >
+            <HelpCircle className="w-3.5 h-3.5 text-amber-300" />
+            <span className="hidden sm:inline">Commands</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleToggleMic}
+            className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-rose-600 text-slate-200 hover:text-white font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer border border-slate-700"
+            title="Turn off voice recognition microphone"
+            aria-label="Turn off microphone"
+          >
+            <X className="w-3.5 h-3.5" />
+            <span>Stop Mic</span>
+          </button>
+        </div>
+      </div>
+    </>
   )}
 
   {/* ================================================================

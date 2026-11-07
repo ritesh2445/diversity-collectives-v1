@@ -137,7 +137,7 @@ export default function AccessibilityStatement() {
                 <li>Built-in Web Speech API text-to-speech for full page and user selections</li>
                 <li>Live DOM heading tree outline (<code className="bg-slate-100 px-1 rounded">H1</code> through <code className="bg-slate-100 px-1 rounded">H4</code>) for instant keyboard navigation</li>
                 <li>Polite ARIA live region announcing all assistive state adjustments</li>
-                <li>Experimental hands-free voice command navigation</li>
+                <li>Full hands-free voice command navigation (smooth scrolling, tapping buttons/links, open pages, text reading, search, and contrast controls)</li>
               </ul>
             </div>
           </div>
