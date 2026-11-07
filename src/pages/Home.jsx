@@ -1966,8 +1966,10 @@ export default function Home() {
                 <CardSpotlight
                   key={evt.id}
                   className="card-vibrant-purple p-5 sm:p-6 md:p-7 shadow-sm hover:shadow-xl transition-all duration-200"
-                  tilt={false}
-                  glare={false}
+                  tilt={true}
+                  maxTilt={2.2}
+                  scale={1.008}
+                  glare={true}
                 >
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
                     

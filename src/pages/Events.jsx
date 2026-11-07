@@ -123,8 +123,10 @@ export default function Events() {
                 <CardSpotlight 
                   key={evt.id}
                   className="glass-card p-6 sm:p-8 rounded-3xl border-2 border-slate-200/90 hover:border-[#5A1E65]/80 transition-all duration-200 shadow-sm hover:shadow-xl"
-                  tilt={false}
-                  glare={false}
+                  tilt={true}
+                  maxTilt={2.2}
+                  scale={1.008}
+                  glare={true}
                 >
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
                     
