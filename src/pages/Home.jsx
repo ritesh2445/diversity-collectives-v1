@@ -962,22 +962,22 @@ export default function Home() {
                 </linearGradient>
               </defs>
 
-              {/* Ribbon 1: Golden Amber base flowing edge-to-edge */}
+              {/* Ribbon 1: Golden Amber base flowing seamlessly past both edges */}
               <g className="animate-ribbon-base">
                 <path
-                  d="M 0,165 C 260,175 520,140 760,105 C 1020,70 1240,65 1440,95 L 1440,220 L 0,220 Z"
+                  d="M -100,170 C 180,180 460,140 740,105 C 1020,70 1260,65 1540,95 L 1540,225 L -100,225 Z"
                   fill="url(#vibrant-wave-amber)"
                 />
               </g>
 
-              {/* Ribbon 2: Saturated Magenta crest sweeping edge-to-edge with luminous crest line */}
+              {/* Ribbon 2: Saturated Magenta crest sweeping seamlessly past both edges with luminous crest line */}
               <g className="animate-ribbon-undulate">
                 <path
-                  d="M 0,140 C 240,150 490,110 730,75 C 970,42 1200,40 1440,70 L 1440,220 L 0,220 Z"
+                  d="M -100,145 C 160,155 430,110 710,75 C 970,42 1220,40 1540,70 L 1540,225 L -100,225 Z"
                   fill="url(#vibrant-wave-magenta)"
                 />
                 <path
-                  d="M 0,140 C 240,150 490,110 730,75 C 970,42 1200,40 1440,70"
+                  d="M -100,145 C 160,155 430,110 710,75 C 970,42 1220,40 1540,70"
                   stroke="rgba(255, 255, 255, 0.95)"
                   strokeWidth="3.5"
                   strokeLinecap="round"
@@ -988,11 +988,11 @@ export default function Home() {
               {/* Ribbon 3: Oceanic Cyan & Emerald with flowing highlight */}
               <g className="animate-ribbon-wave-slow">
                 <path
-                  d="M 0,175 C 280,185 540,150 780,115 C 1040,82 1260,78 1440,105 L 1440,220 L 0,220 Z"
+                  d="M -100,180 C 200,190 480,150 760,115 C 1040,82 1280,78 1540,105 L 1540,225 L -100,225 Z"
                   fill="url(#vibrant-wave-cyan)"
                 />
                 <path
-                  d="M 0,175 C 280,185 540,150 780,115 C 1040,82 1260,78 1440,105"
+                  d="M -100,180 C 200,190 480,150 760,115 C 1040,82 1280,78 1540,105"
                   stroke="rgba(255, 255, 255, 0.85)"
                   strokeWidth="2.5"
                   strokeLinecap="round"

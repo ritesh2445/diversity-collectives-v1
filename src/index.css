@@ -1049,55 +1049,55 @@ a:focus-visible, button:focus-visible {
   }
 }
 
-/* 2. Fluid Aurora Ribbon Wave Undulation */
+/* 2. Fluid Aurora Ribbon Wave Undulation (Pure Organic Vertical Breathing - Zero Lateral Crop) */
 .animate-ribbon-base {
-  animation: ribbonBase 7s ease-in-out infinite alternate;
-  transform-origin: center bottom;
+  animation: ribbonBase 9s ease-in-out infinite alternate;
+  transform-origin: 50% 100%;
 }
 
 @keyframes ribbonBase {
   0% {
-    transform: translateY(0px) scaleY(1);
+    transform: scaleY(1) translateY(0);
   }
   50% {
-    transform: translateY(-8px) scaleY(1.05);
+    transform: scaleY(1.08) translateY(-8px);
   }
   100% {
-    transform: translateY(4px) scaleY(0.97);
+    transform: scaleY(0.95) translateY(4px);
   }
 }
 
 .animate-ribbon-undulate {
-  animation: ribbonUndulate 6s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite alternate;
-  transform-origin: center bottom;
+  animation: ribbonUndulate 6.5s ease-in-out infinite alternate;
+  transform-origin: 50% 100%;
 }
 
 @keyframes ribbonUndulate {
   0% {
-    transform: translateY(0px) scaleY(1) scaleX(1);
+    transform: scaleY(1) translateY(0);
   }
   50% {
-    transform: translateY(-16px) scaleY(1.12) scaleX(1.02);
+    transform: scaleY(1.16) translateY(-16px);
   }
   100% {
-    transform: translateY(8px) scaleY(0.92) scaleX(0.98);
+    transform: scaleY(0.90) translateY(8px);
   }
 }
 
 .animate-ribbon-wave-slow {
-  animation: ribbonWaveSlow 8.5s ease-in-out infinite alternate;
-  transform-origin: center bottom;
+  animation: ribbonWaveSlow 8s ease-in-out infinite alternate;
+  transform-origin: 50% 100%;
 }
 
 @keyframes ribbonWaveSlow {
   0% {
-    transform: translateY(0px) translateX(0px) rotate(0deg);
+    transform: scaleY(0.92) translateY(6px);
   }
   50% {
-    transform: translateY(-14px) translateX(-10px) rotate(0.8deg);
+    transform: scaleY(1.12) translateY(-12px);
   }
   100% {
-    transform: translateY(10px) translateX(8px) rotate(-0.6deg);
+    transform: scaleY(1) translateY(0);
   }
 }
 
