@@ -429,19 +429,7 @@ img {
 button.btn-amber,
 a.btn-amber,
 button.btn-yellow,
-a.btn-yellow {
-  color: #020617 !important;
-}
-
-button.btn-amber *,
-a.btn-amber *,
-button.btn-yellow *,
-a.btn-yellow * {
-  color: #020617 !important;
-  stroke: #020617 !important;
-}
-
-/* Amber icon-pill buttons inside cards / action bars */
+a.btn-yellow,
 button[class*="bg-amber-400"],
 a[class*="bg-amber-400"],
 button[class*="bg-amber-300"],
@@ -449,10 +437,18 @@ a[class*="bg-amber-300"],
 button[class*="bg-yellow-400"],
 a[class*="bg-yellow-400"],
 button[class*="bg-yellow-300"],
-a[class*="bg-yellow-300"] {
+a[class*="bg-yellow-300"],
+button[class*="from-amber-"],
+a[class*="from-amber-"],
+button[class*="from-yellow-"],
+a[class*="from-yellow-"] {
   color: #020617 !important;
 }
 
+button.btn-amber *,
+a.btn-amber *,
+button.btn-yellow *,
+a.btn-yellow *,
 button[class*="bg-amber-400"] *,
 a[class*="bg-amber-400"] *,
 button[class*="bg-amber-300"] *,
@@ -460,37 +456,70 @@ a[class*="bg-amber-300"] *,
 button[class*="bg-yellow-400"] *,
 a[class*="bg-yellow-400"] *,
 button[class*="bg-yellow-300"] *,
-a[class*="bg-yellow-300"] * {
+a[class*="bg-yellow-300"] *,
+button[class*="from-amber-"] *,
+a[class*="from-amber-"] *,
+button[class*="from-yellow-"] *,
+a[class*="from-yellow-"] * {
   color: #020617 !important;
   stroke: #020617 !important;
 }
 
-/* --- Purple / dark CTA buttons: white text --- */
+/* --- Purple / dark CTA buttons: crisp white text --- */
 .btn-primary,
-.btn-primary * {
-  color: #FFFFFF !important;
-}
-
-/* Purple/dark icon-pill buttons only (button & a elements) */
+.btn-primary *,
 button[class*="bg-[#5A1E65]"],
 a[class*="bg-[#5A1E65]"],
 button[class*="bg-purple-900"],
 a[class*="bg-purple-900"],
 button[class*="bg-purple-800"],
-a[class*="bg-purple-800"] {
+a[class*="bg-purple-800"],
+button[class*="bg-purple-950"],
+a[class*="bg-purple-950"],
+button[class*="from-rose-600"],
+a[class*="from-rose-600"],
+button[class*="from-purple-900"],
+a[class*="from-purple-900"] {
   color: #FFFFFF !important;
 }
 
 button[class*="bg-[#5A1E65]"] span,
 a[class*="bg-[#5A1E65]"] span,
-button[class*="bg-[#5A1E65]"] svg:not(.text-amber-300):not(.text-amber-400):not(.text-rose-300):not(.text-emerald-300),
-a[class*="bg-[#5A1E65]"] svg:not(.text-amber-300):not(.text-amber-400):not(.text-rose-300):not(.text-emerald-300),
+button[class*="bg-[#5A1E65]"] strong,
+a[class*="bg-[#5A1E65]"] strong,
 button[class*="bg-purple-900"] span,
 a[class*="bg-purple-900"] span,
+button[class*="bg-purple-900"] strong,
+a[class*="bg-purple-900"] strong,
 button[class*="bg-purple-800"] span,
-a[class*="bg-purple-800"] span {
+a[class*="bg-purple-800"] span,
+button[class*="bg-purple-950"] span,
+a[class*="bg-purple-950"] span,
+button[class*="from-rose-600"] span,
+a[class*="from-rose-600"] span,
+button[class*="from-purple-900"] span,
+a[class*="from-purple-900"] span {
   color: #FFFFFF !important;
+}
+
+button[class*="bg-[#5A1E65]"] svg:not([class*="text-amber-"]):not([class*="text-rose-"]):not([class*="text-emerald-"]),
+a[class*="bg-[#5A1E65]"] svg:not([class*="text-amber-"]):not([class*="text-rose-"]):not([class*="text-emerald-"]),
+button[class*="bg-purple-900"] svg:not([class*="text-amber-"]):not([class*="text-rose-"]):not([class*="text-emerald-"]),
+a[class*="bg-purple-900"] svg:not([class*="text-amber-"]):not([class*="text-rose-"]):not([class*="text-emerald-"]),
+button[class*="from-rose-600"] svg:not([class*="text-amber-"]):not([class*="text-rose-"]):not([class*="text-emerald-"]),
+a[class*="from-rose-600"] svg:not([class*="text-amber-"]):not([class*="text-rose-"]):not([class*="text-emerald-"]) {
   stroke: #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+/* Ensure text elements inside dark containers inherit light text color instead of default --text-body */
+.bg-slate-900 p,
+.bg-slate-950 p,
+.bg-purple-950 p,
+[class*="bg-slate-900"] p,
+[class*="bg-slate-950"] p,
+[class*="bg-purple-950"] p {
+  color: inherit;
 }
 
 /* Focus States */

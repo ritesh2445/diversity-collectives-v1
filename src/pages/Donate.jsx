@@ -259,10 +259,10 @@ export default function Donate() {
                 Diversity Collective Ventura County, Inc. is recognized by the IRS as a 501(c)(3) public benefit nonprofit corporation. All donations are tax-deductible to the fullest extent permitted by California and federal law.
               </p>
 
-              <div className="pt-2 border-t border-slate-800 text-xs space-y-1.5 text-slate-300">
-                <p><strong>Federal EIN:</strong> <span className="font-mono text-amber-300">{orgInfo.ein}</span></p>
-                <p><strong>California Corp ID:</strong> <span className="font-mono text-amber-300">{orgInfo.caCorpNumber}</span></p>
-                <p><strong>Physical Address:</strong> {orgInfo.address.full}</p>
+              <div className="pt-2 border-t border-slate-800 text-xs space-y-1.5 text-slate-200">
+                <p><strong className="text-white font-bold">Federal EIN:</strong> <span className="font-mono text-amber-300 font-semibold">{orgInfo.ein}</span></p>
+                <p><strong className="text-white font-bold">California Corp ID:</strong> <span className="font-mono text-amber-300 font-semibold">{orgInfo.caCorpNumber}</span></p>
+                <p><strong className="text-white font-bold">Physical Address:</strong> <span className="text-white">{orgInfo.address.full}</span></p>
               </div>
             </div>
 

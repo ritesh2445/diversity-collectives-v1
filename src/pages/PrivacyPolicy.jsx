@@ -103,11 +103,11 @@ export default function PrivacyPolicy() {
           <p className="text-xs sm:text-sm text-slate-300">
             To update your communication preferences, unsubscribe from newsletters, or exercise your privacy rights, please reach out directly:
           </p>
-          <div className="pt-2 text-xs space-y-1 text-slate-300 border-t border-slate-800">
-            <p><strong>Diversity Collective Ventura County, Inc.</strong></p>
-            <p>Attention: Privacy & Compliance Officer</p>
-            <p>2471 Portola Road, Suite 100, Ventura, CA 93003</p>
-            <p>Email: <a href={`mailto:${orgInfo.email}`} className="text-amber-300 underline font-bold">{orgInfo.email}</a> · Telephone: {orgInfo.phone}</p>
+          <div className="pt-2 text-xs space-y-1 text-slate-200 border-t border-slate-800">
+            <p className="font-bold text-white">Diversity Collective Ventura County, Inc.</p>
+            <p className="text-slate-200">Attention: Privacy & Compliance Officer</p>
+            <p className="text-white font-medium">2471 Portola Road, Suite 100, Ventura, CA 93003</p>
+            <p className="text-slate-200">Email: <a href={`mailto:${orgInfo.email}`} className="text-amber-300 underline font-bold">{orgInfo.email}</a> · Telephone: {orgInfo.phone}</p>
           </div>
         </div>
 

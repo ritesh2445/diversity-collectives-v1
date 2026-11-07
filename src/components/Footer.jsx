@@ -27,7 +27,7 @@ export default function Footer() {
               <span className="text-xs font-bold text-amber-400 tracking-wider uppercase">
                 COMMUNITY ALLIANCES & PARTNERS
               </span>
-              <p className="text-sm text-slate-400 leading-relaxed">
+              <p className="text-sm text-slate-200 leading-relaxed">
                 Honoring the local public health agencies and sponsors who help fund our health, safety, and community outreach.
               </p>
             </div>
@@ -56,9 +56,9 @@ export default function Footer() {
                   <div className="flex flex-col">
                     <span className="text-xs font-bold text-white flex items-center gap-1">
                       {sponsor.shortName}
-                      <ArrowUpRight className="w-3 h-3 text-slate-500" />
+                      <ArrowUpRight className="w-3 h-3 text-slate-400" />
                     </span>
-                    <span className="text-[11px] text-slate-400">{sponsor.role}</span>
+                    <span className="text-[11px] text-slate-300">{sponsor.role}</span>
                   </div>
                 </a>
               ))}
@@ -79,7 +79,7 @@ export default function Footer() {
                 Diversity Collective <br className="hidden sm:block" />
                 <span className="font-serif italic font-normal bg-gradient-to-r from-purple-400 via-rose-400 to-amber-300 bg-clip-text text-transparent">Ventura County</span>
               </h2>
-              <p className="text-sm md:text-base text-slate-400 max-w-lg leading-relaxed pt-1">
+              <p className="text-sm md:text-base text-slate-200 max-w-lg leading-relaxed pt-1">
                 {orgInfo.mission} A safe, vibrant, and affirming cultural sanctuary for every intersecting LGBTQ+ identity across our coastal and inland communities.
               </p>
             </div>
@@ -104,16 +104,16 @@ export default function Footer() {
           {/* Col 2: Physical CRC Anchor & Contact */}
           <div className="lg:col-span-3 flex flex-col gap-6">
             <div className="flex flex-col gap-3">
-              <span className="text-xs font-bold tracking-wider uppercase text-slate-400">
+              <span className="text-xs font-bold tracking-wider uppercase text-white">
                 Community Resource Center
               </span>
-              <address className="not-italic text-sm text-slate-300 flex flex-col gap-2 leading-relaxed">
+              <address className="not-italic text-sm text-white flex flex-col gap-2 leading-relaxed">
                 <div className="flex items-start gap-2.5">
-                  <MapPin className="w-4 h-4 text-slate-400 flex-shrink-0 mt-1" />
+                  <MapPin className="w-4 h-4 text-amber-400 flex-shrink-0 mt-1" />
                   <div>
                     <p className="font-semibold text-white">Suite 100</p>
-                    <p>2471 Portola Road</p>
-                    <p>Ventura, CA 93003</p>
+                    <p className="text-white">2471 Portola Road</p>
+                    <p className="text-white">Ventura, CA 93003</p>
                   </div>
                 </div>
                 <div className="pt-2">
@@ -121,10 +121,10 @@ export default function Footer() {
                     href={orgInfo.address.googleMapsUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-300 hover:text-white"
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-white hover:text-amber-300 transition-colors"
                   >
                     <span>Open in Google Maps</span>
-                    <ArrowUpRight className="w-3 h-3" />
+                    <ArrowUpRight className="w-3 h-3 text-amber-400" />
                   </a>
                 </div>
               </address>
@@ -132,77 +132,77 @@ export default function Footer() {
 
             <div className="pt-4 border-t border-slate-800 flex flex-col gap-2.5 text-sm">
               <div className="flex items-center gap-2.5">
-                <Phone className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                <a href={`tel:${orgInfo.phoneRaw}`} className="text-slate-300 hover:text-white transition-colors">
+                <Phone className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                <a href={`tel:${orgInfo.phoneRaw}`} className="text-white hover:text-amber-300 transition-colors">
                   {orgInfo.phone}
                 </a>
               </div>
               <div className="flex items-center gap-2.5">
-                <Mail className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                <a href={`mailto:${orgInfo.email}`} className="text-slate-300 hover:text-white transition-colors">
+                <Mail className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                <a href={`mailto:${orgInfo.email}`} className="text-white hover:text-amber-300 transition-colors">
                   {orgInfo.email}
                 </a>
               </div>
             </div>
 
             <div className="pt-2">
-              <span className="text-xs text-slate-500 block mb-1">Center Drop-in Hours:</span>
-              <p className="text-xs text-slate-300 font-medium">{orgInfo.hours}</p>
+              <span className="text-xs text-slate-300 block mb-1">Center Drop-in Hours:</span>
+              <p className="text-xs text-white font-semibold">{orgInfo.hours}</p>
             </div>
           </div>
 
           {/* Col 3: Navigation Architecture & Socials */}
           <div className="lg:col-span-3 flex flex-col gap-6">
             <div className="flex flex-col gap-3">
-              <span className="text-xs font-bold tracking-wider uppercase text-slate-400">
+              <span className="text-xs font-bold tracking-wider uppercase text-white">
                 Index & Programs
               </span>
               <ul className="flex flex-col gap-2 text-sm">
-                <li><Link to="/about" className="text-slate-400 hover:text-white transition-colors">About Diversity Collective</Link></li>
-                <li><Link to="/board-and-staff" className="text-slate-400 hover:text-white transition-colors">Board & Staff</Link></li>
-                <li><Link to="/sponsors" className="text-slate-400 hover:text-white transition-colors">Sponsors & Partners</Link></li>
-                <li><Link to="/programs" className="text-slate-400 hover:text-white transition-colors">Programs & Health Care</Link></li>
-                <li><Link to="/directory" className="text-slate-400 hover:text-white transition-colors">LGBTQ+ Business Directory</Link></li>
-                <li><Link to="/training" className="text-slate-400 hover:text-white transition-colors">P.R.I.D.E. Training</Link></li>
-                <li><Link to="/community" className="text-slate-400 hover:text-white transition-colors">Community Peer Groups</Link></li>
-                <li><Link to="/events" className="text-slate-400 hover:text-white transition-colors">Cultural Calendar & Events</Link></li>
-                <li><Link to="/resources" className="text-slate-400 hover:text-white transition-colors">Support & Crisis Resources</Link></li>
-                <li><Link to="/news" className="text-slate-400 hover:text-white transition-colors">News & Articles</Link></li>
-                <li><Link to="/gallery" className="text-slate-400 hover:text-white transition-colors">Community Gallery</Link></li>
-                <li><Link to="/volunteer" className="text-slate-400 hover:text-white transition-colors">Volunteer Pathways</Link></li>
-                <li><Link to="/donate" className="text-slate-400 hover:text-white transition-colors">Donate & Sustainer Giving</Link></li>
-                <li><Link to="/contact" className="text-slate-400 hover:text-white transition-colors">Contact & Sanctuary</Link></li>
+                <li><Link to="/about" className="text-white/90 hover:text-amber-300 transition-colors">About Diversity Collective</Link></li>
+                <li><Link to="/board-and-staff" className="text-white/90 hover:text-amber-300 transition-colors">Board & Staff</Link></li>
+                <li><Link to="/sponsors" className="text-white/90 hover:text-amber-300 transition-colors">Sponsors & Partners</Link></li>
+                <li><Link to="/programs" className="text-white/90 hover:text-amber-300 transition-colors">Programs & Health Care</Link></li>
+                <li><Link to="/directory" className="text-white/90 hover:text-amber-300 transition-colors">LGBTQ+ Business Directory</Link></li>
+                <li><Link to="/training" className="text-white/90 hover:text-amber-300 transition-colors">P.R.I.D.E. Training</Link></li>
+                <li><Link to="/community" className="text-white/90 hover:text-amber-300 transition-colors">Community Peer Groups</Link></li>
+                <li><Link to="/events" className="text-white/90 hover:text-amber-300 transition-colors">Cultural Calendar & Events</Link></li>
+                <li><Link to="/resources" className="text-white/90 hover:text-amber-300 transition-colors">Support & Crisis Resources</Link></li>
+                <li><Link to="/news" className="text-white/90 hover:text-amber-300 transition-colors">News & Articles</Link></li>
+                <li><Link to="/gallery" className="text-white/90 hover:text-amber-300 transition-colors">Community Gallery</Link></li>
+                <li><Link to="/volunteer" className="text-white/90 hover:text-amber-300 transition-colors">Volunteer Pathways</Link></li>
+                <li><Link to="/donate" className="text-white/90 hover:text-amber-300 transition-colors">Donate & Sustainer Giving</Link></li>
+                <li><Link to="/contact" className="text-white/90 hover:text-amber-300 transition-colors">Contact & Sanctuary</Link></li>
               </ul>
             </div>
 
             <div className="pt-4 border-t border-slate-800">
-              <span className="text-xs text-slate-500 block mb-2">Connect with DCVC:</span>
+              <span className="text-xs text-slate-300 block mb-2">Connect with DCVC:</span>
               <div className="flex items-center gap-3">
                 <a 
                   href={orgInfo.socials.instagram} 
                   target="_blank" 
                   rel="noopener noreferrer" 
-                  className="text-xs text-slate-400 hover:text-white transition-colors flex items-center gap-1"
+                  className="text-xs text-white/90 hover:text-amber-300 transition-colors flex items-center gap-1"
                 >
-                  Instagram <ArrowUpRight className="w-2.5 h-2.5" />
+                  Instagram <ArrowUpRight className="w-2.5 h-2.5 text-amber-400" />
                 </a>
-                <span className="text-slate-600">·</span>
+                <span className="text-slate-500">·</span>
                 <a 
                   href={orgInfo.socials.facebook} 
                   target="_blank" 
                   rel="noopener noreferrer" 
-                  className="text-xs text-slate-400 hover:text-white transition-colors flex items-center gap-1"
+                  className="text-xs text-white/90 hover:text-amber-300 transition-colors flex items-center gap-1"
                 >
-                  Facebook <ArrowUpRight className="w-2.5 h-2.5" />
+                  Facebook <ArrowUpRight className="w-2.5 h-2.5 text-amber-400" />
                 </a>
-                <span className="text-slate-600">·</span>
+                <span className="text-slate-500">·</span>
                 <a 
                   href={orgInfo.socials.youtube} 
                   target="_blank" 
                   rel="noopener noreferrer" 
-                  className="text-xs text-slate-400 hover:text-white transition-colors flex items-center gap-1"
+                  className="text-xs text-white/90 hover:text-amber-300 transition-colors flex items-center gap-1"
                 >
-                  YouTube <ArrowUpRight className="w-2.5 h-2.5" />
+                  YouTube <ArrowUpRight className="w-2.5 h-2.5 text-amber-400" />
                 </a>
               </div>
             </div>
@@ -211,13 +211,13 @@ export default function Footer() {
         </div>
 
         {/* Bottom Legal & Nonprofit Disclosures */}
-        <div className="pt-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 text-xs text-slate-500">
+        <div className="pt-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 text-xs text-slate-300">
           <div className="flex flex-col gap-1">
-            <p>
+            <p className="text-slate-200">
               Diversity Collective Ventura County is a California 501(c)(3) nonprofit public benefit corporation.
             </p>
-            <p>
-              Federal EIN: <span className="font-mono text-slate-400">{orgInfo.ein}</span> · CA Corp Number: <span className="font-mono text-slate-400">{orgInfo.caCorpNumber}</span>
+            <p className="text-slate-300">
+              Federal EIN: <span className="font-mono text-white font-semibold">{orgInfo.ein}</span> · CA Corp Number: <span className="font-mono text-white font-semibold">{orgInfo.caCorpNumber}</span>
             </p>
           </div>
 
@@ -228,7 +228,7 @@ export default function Footer() {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
                 window.dispatchEvent(new CustomEvent('replayWelcomeAnimation'));
               }}
-              className="hover:text-amber-300 transition-colors cursor-pointer inline-flex items-center gap-1 font-bold text-slate-400"
+              className="hover:text-amber-300 transition-colors cursor-pointer inline-flex items-center gap-1 font-bold text-white"
               title="Replay vibrant color entrance animation"
             >
               <span>🌈 Replay Welcome</span>
@@ -236,7 +236,7 @@ export default function Footer() {
             <span>·</span>
             <Link 
               to="/accessibility" 
-              className="hover:text-amber-300 transition-colors flex items-center gap-1 font-semibold text-slate-300"
+              className="hover:text-amber-300 transition-colors flex items-center gap-1 font-semibold text-white"
             >
               <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
               Accessibility (WCAG 2.2 AA)
@@ -244,19 +244,19 @@ export default function Footer() {
             <span>·</span>
             <Link 
               to="/privacy" 
-              className="hover:text-slate-300 transition-colors"
+              className="text-slate-300 hover:text-white transition-colors"
             >
               Privacy Policy
             </Link>
             <span>·</span>
             <Link 
               to="/terms" 
-              className="hover:text-slate-300 transition-colors"
+              className="text-slate-300 hover:text-white transition-colors"
             >
               Terms & Conditions
             </Link>
             <span>·</span>
-            <span>© {new Date().getFullYear()} DCVC. All Rights Reserved.</span>
+            <span className="text-slate-300">© {new Date().getFullYear()} DCVC. All Rights Reserved.</span>
           </div>
         </div>
 
