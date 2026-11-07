@@ -300,30 +300,6 @@ export default function Gallery() {
     }
   }, [expandedPhoto, selectedPhotoIndex]);
 
-  // Convert vertical mouse wheel into horizontal scroll when hovering over Memory Lane archival cards
-  useEffect(() => {
-    const el = laneScrollRef.current;
-    if (!el) return;
-
-    const onWheel = (e) => {
-      if (Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return;
-
-      const maxScroll = el.scrollWidth - el.clientWidth;
-      if (maxScroll <= 0) return;
-
-      const canScrollLeft = el.scrollLeft > 0 && e.deltaY < 0;
-      const canScrollRight = el.scrollLeft < maxScroll - 1 && e.deltaY > 0;
-
-      if (canScrollLeft || canScrollRight) {
-        e.preventDefault();
-        el.scrollLeft += e.deltaY;
-      }
-    };
-
-    el.addEventListener('wheel', onWheel, { passive: false });
-    return () => el.removeEventListener('wheel', onWheel);
-  }, []);
-
   // Touch Swipe for 3D Carousel on Mobile
   const touchStartXRef = useRef(0);
   const handleTouchStart = (e) => {
@@ -1086,7 +1062,7 @@ export default function Gallery() {
             <div
               ref={laneScrollRef}
               onScroll={handleLaneScroll}
-              className="flex items-center gap-3.5 sm:gap-6 overflow-x-auto snap-x snap-mandatory scroll-smooth py-6 px-[calc(50vw-42vw)] sm:px-[calc(50vw-190px)] md:px-[calc(50vw-210px)] lg:px-[calc(50vw-220px)] relative z-10 no-scrollbar overscroll-contain"
+              className="flex items-center gap-3.5 sm:gap-6 overflow-x-auto snap-x snap-mandatory scroll-smooth py-6 px-[calc(50vw-42vw)] sm:px-[calc(50vw-190px)] md:px-[calc(50vw-210px)] lg:px-[calc(50vw-220px)] relative z-10 no-scrollbar"
               tabIndex={0}
               aria-label="DCVC Historical Milestones Scrollable Lane"
             >
