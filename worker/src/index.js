@@ -306,6 +306,48 @@ export default {
       }
 
       // =======================================================================
+      // SPEECH-TO-TEXT: UNIVERSAL NETWORK TRANSCRIPTION (POST /api/transcribe)
+      // Powered by Cloudflare Workers AI Whisper (@cf/openai/whisper)
+      // Works across Brave, Firefox, Safari, Edge, Chrome, and mobile devices
+      // =======================================================================
+      if (pathname === '/api/transcribe' && request.method === 'POST') {
+        try {
+          const contentType = request.headers.get('content-type') || '';
+          let audioBytes;
+
+          if (contentType.includes('multipart/form-data')) {
+            const formData = await request.formData();
+            const file = formData.get('file');
+            if (file && typeof file.arrayBuffer === 'function') {
+              const buffer = await file.arrayBuffer();
+              audioBytes = new Uint8Array(buffer);
+            }
+          } else {
+            const buffer = await request.arrayBuffer();
+            audioBytes = new Uint8Array(buffer);
+          }
+
+          if (env.AI && typeof env.AI.run === 'function' && audioBytes && audioBytes.length > 0) {
+            const whisperResult = await env.AI.run('@cf/openai/whisper', {
+              audio: [...audioBytes]
+            });
+            return jsonResponse({
+              success: true,
+              text: whisperResult.text ? whisperResult.text.trim() : ''
+            }, 200, cors);
+          }
+        } catch (err) {
+          console.warn('[Transcribe API] Cloudflare Workers AI Whisper error:', err);
+        }
+
+        return jsonResponse({
+          success: true,
+          text: '',
+          fallback: true
+        }, 200, cors);
+      }
+
+      // =======================================================================
       // 2. ZEFFY WEBHOOK: payment.completed & DCVC Appreciation Card Dispatch
       // =======================================================================
       if (pathname === '/api/webhooks/zeffy' && request.method === 'POST') {
