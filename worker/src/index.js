@@ -102,11 +102,9 @@ async function verifyTurnstile(token, secretKey, remoteIp) {
   }
 }
 
-// Helper: Verify Zeffy HMAC-SHA256 Webhook Signature
+// Helper: Verify Zeffy HMAC-SHA256 Webhook Signature with constant-time comparison
 async function verifyZeffySignature(rawBody, signatureHeader, secretKey) {
   if (!secretKey) {
-    // If webhook secret not configured yet, allow bypass during development/test with warning
-    console.warn('⚠️ ZEFFY_WEBHOOK_SECRET not configured. Allowing test payload.');
     return { valid: true, bypassed: true };
   }
 
@@ -130,13 +128,88 @@ async function verifyZeffySignature(rawBody, signatureHeader, secretKey) {
       .join('');
 
     const cleanHeader = signatureHeader.replace(/^sha256=/, '').trim().toLowerCase();
-    const valid = cleanHeader === computedSignature.toLowerCase();
+    
+    // Constant-time comparison
+    let diff = cleanHeader.length ^ computedSignature.length;
+    for (let i = 0; i < cleanHeader.length && i < computedSignature.length; i++) {
+      diff |= cleanHeader.charCodeAt(i) ^ computedSignature.charCodeAt(i);
+    }
 
+    const valid = diff === 0;
     return { valid, error: valid ? null : 'HMAC signature mismatch' };
   } catch (err) {
     console.error('Signature calculation failed:', err);
     return { valid: false, error: err.message };
   }
+}
+
+// Multi-Tier Zeffy Webhook Verification: HMAC -> Shared Secret (Header / Query) -> Authoritative Zeffy API Fallback
+async function verifyZeffyWebhookRequest(request, rawBody, env, payload) {
+  const secretKey = env.ZEFFY_WEBHOOK_SECRET;
+  const apiKey = env.ZEFFY_API_KEY;
+  const url = new URL(request.url);
+
+  // If neither secret nor API key is configured, allow in development/testing with warning
+  if (!secretKey && !apiKey) {
+    console.warn('⚠️ ZEFFY_WEBHOOK_SECRET and ZEFFY_API_KEY not configured. Allowing test payload in development.');
+    return { valid: true, bypassed: true, method: 'dev_bypass' };
+  }
+
+  // 1. Check HMAC-SHA256 signature header (x-zeffy-signature or x-webhook-signature)
+  const signatureHeader = request.headers.get('x-zeffy-signature') || 
+                          request.headers.get('x-webhook-signature') || '';
+  if (secretKey && signatureHeader) {
+    const hmacRes = await verifyZeffySignature(rawBody, signatureHeader, secretKey);
+    if (hmacRes.valid) {
+      return { valid: true, method: 'hmac_sha256' };
+    }
+  }
+
+  // 2. Check Shared Secret Token via header or URL query parameter
+  const headerToken = (request.headers.get('x-zeffy-secret') || 
+                       request.headers.get('x-api-key') || 
+                       request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '').trim();
+  const queryToken = (url.searchParams.get('secret') || url.searchParams.get('token') || '').trim();
+
+  if (secretKey) {
+    if (headerToken === secretKey || queryToken === secretKey) {
+      return { valid: true, method: 'shared_secret' };
+    }
+  }
+
+  // 3. Authoritative Out-of-Band Verification via Zeffy REST API
+  // If ZEFFY_API_KEY is configured, verify against Zeffy's authoritative endpoint
+  const data = payload?.data || payload || {};
+  const paymentId = data.id || data.payment_id || data.transaction_id || payload?.id;
+  if (apiKey && paymentId) {
+    try {
+      const zeffyRes = await fetch(`https://api.zeffy.com/api/v1/payments/${encodeURIComponent(paymentId)}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Accept': 'application/json'
+        }
+      });
+
+      if (zeffyRes.ok) {
+        const authoritativeData = await zeffyRes.json();
+        return { valid: true, method: 'authoritative_api', authoritativeData };
+      } else if (zeffyRes.status === 404) {
+        return { valid: false, error: 'Transaction ID not recognized by Zeffy API' };
+      }
+    } catch (apiErr) {
+      console.warn('Authoritative Zeffy API verification network attempt failed:', apiErr.message);
+    }
+  }
+
+  if (secretKey) {
+    return { valid: false, error: 'Invalid webhook signature or secret token' };
+  }
+  if (apiKey) {
+    return { valid: false, error: 'Unable to verify payment with Zeffy API' };
+  }
+
+  return { valid: false, error: 'Webhook authentication failed' };
 }
 
 // Helper: Determine Appreciation Card Tier based on amount and configurable thresholds
@@ -349,19 +422,11 @@ export default {
 
       // =======================================================================
       // 2. ZEFFY WEBHOOK: payment.completed & DCVC Appreciation Card Dispatch
+      // Registered URL: https://diversitycollective.org/api/webhooks/zeffy
       // =======================================================================
       if (pathname === '/api/webhooks/zeffy' && request.method === 'POST') {
         const rawBody = await request.text();
-        const signatureHeader = request.headers.get('x-zeffy-signature') || 
-                                request.headers.get('x-webhook-signature') || '';
-
-        // Webhook signature verification
-        const sigVerification = await verifyZeffySignature(rawBody, signatureHeader, env.ZEFFY_WEBHOOK_SECRET);
-        if (!sigVerification.valid) {
-          console.error('Zeffy webhook signature verification failed:', sigVerification.error);
-          return errorResponse('Invalid webhook signature', 401, sigVerification.error, cors);
-        }
-
+        
         let payload;
         try {
           payload = JSON.parse(rawBody);
@@ -369,10 +434,51 @@ export default {
           return errorResponse('Invalid JSON payload', 400, null, cors);
         }
 
-        // Event type normalization
-        const eventType = payload.event || payload.type || 'payment.completed';
+        // 1. Multi-tier Authentication & Signature Verification
+        const authVerification = await verifyZeffyWebhookRequest(request, rawBody, env, payload);
+        if (!authVerification.valid) {
+          console.error('Zeffy webhook authentication failed:', authVerification.error);
+          return errorResponse('Invalid webhook signature or unauthorized token', 401, authVerification.error, cors);
+        }
+
+        // 2. Event Type Normalization
+        const eventType = payload.event || payload.type || payload.event_type || 'payment.completed';
+        const data = payload.data || payload;
+        const paymentReference = String(data.id || data.payment_id || data.transaction_id || payload.id || '').trim();
+
+        if (!paymentReference) {
+          return errorResponse('Missing transaction or payment identifier', 400, null, cors);
+        }
+
+        const db = getDb(env);
+
+        // Compute payload hash for auditable, PII-free tracking
+        const payloadHash = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(rawBody))))
+          .map(b => b.toString(16).padStart(2, '0')).join('');
+
+        // 3. Handle Refund Events safely
+        if (eventType === 'payment.refunded' || eventType === 'refund.created' || data.status === 'refunded') {
+          if (db) {
+            try {
+              await db.execute({
+                sql: `UPDATE webhook_events SET status = 'refunded' WHERE event_id = ?`,
+                args: [paymentReference]
+              });
+              console.log(`[Zeffy Webhook] Payment ${paymentReference} marked as refunded.`);
+            } catch (refErr) {
+              console.warn('[Zeffy Webhook] Refund event log update skipped:', refErr.message);
+            }
+          }
+          return jsonResponse({
+            success: true,
+            status: 'refund_recorded',
+            paymentReference,
+            message: 'Refund event recorded successfully.'
+          }, 200, cors);
+        }
+
+        // 4. Ignore Non-Donation Events
         if (eventType !== 'payment.completed' && eventType !== 'donation.completed' && eventType !== 'order.completed') {
-          // Log other events politely without error
           return jsonResponse({
             success: true,
             status: 'ignored',
@@ -380,12 +486,25 @@ export default {
           }, 200, cors);
         }
 
-        // Extract donation data
-        const data = payload.data || payload;
-        const paymentReference = String(data.id || data.payment_id || data.transaction_id || payload.id || `zeffy_${Date.now()}`);
+        // 5. Strict Payment Status Check: Do not mark pending or failed payments as successful
+        const paymentStatus = String(data.status || 'succeeded').toLowerCase();
+        if (['pending', 'in_progress', 'processing'].includes(paymentStatus)) {
+          return jsonResponse({
+            success: true,
+            status: 'pending_ignored',
+            message: 'Payment is pending. Cards and confirmation emails are issued only upon completion.'
+          }, 200, cors);
+        }
 
-        // IDEMPOTENCY CHECK: Ensure we never double-issue a card or duplicate emails
-        const db = getDb(env);
+        if (['failed', 'declined', 'cancelled', 'canceled'].includes(paymentStatus)) {
+          return jsonResponse({
+            success: true,
+            status: 'failed_ignored',
+            message: 'Payment was not successful. No card issued.'
+          }, 200, cors);
+        }
+
+        // 6. IDEMPOTENCY CHECK: Ensure we never double-issue a card or duplicate emails
         if (db) {
           try {
             const existing = await db.execute({
@@ -394,7 +513,7 @@ export default {
             });
 
             if (existing.rows.length > 0) {
-              console.log(`[Idempotency] Webhook for ${paymentReference} already processed. Returning existing card.`);
+              console.log(`[Idempotency] Webhook for payment ${paymentReference} already processed.`);
               return jsonResponse({
                 success: true,
                 status: 'already_processed',
@@ -407,39 +526,61 @@ export default {
           }
         }
 
-        // Determine actual amount credited to DCVC (in dollars)
-        // Zeffy delivers amounts either in cents or dollars; we handle both cleanly:
-        let rawAmount = data.donation_amount ?? data.amount ?? data.total_amount ?? 25;
-        let amountInDollars = Number(rawAmount);
-        let amountCents = Math.round(amountInDollars * 100);
+        // 7. Determine Authoritative Amount Credited (in USD Dollars & Cents)
+        let rawAmount = data.donation_amount ?? data.amount ?? data.total_amount ?? data.totalAmount ?? 25;
+        let amountInDollars = 0;
+        let amountCents = 0;
 
-        // If amount is clearly in cents (e.g. 5000 for $50)
-        if (amountInDollars >= 100 && Number.isInteger(amountInDollars) && !data.amount_is_dollars) {
-          amountCents = amountInDollars;
-          amountInDollars = amountCents / 100;
+        if (typeof rawAmount === 'string') {
+          rawAmount = parseFloat(rawAmount.replace(/[^0-9.]/g, ''));
         }
 
-        // Donor details with anonymous donation protection
-        const isAnonymous = Boolean(data.is_anonymous || data.anonymous || data.hide_name);
-        const donorRawName = (data.donor_name || `${data.first_name || ''} ${data.last_name || ''}`.trim() || data.name || '').trim();
-        const donorDisplayName = isAnonymous || !donorRawName ? 'Affirming Friend of DCVC' : donorRawName;
-        const donorEmail = (data.donor_email || data.email || '').trim();
-        const frequency = data.frequency || (data.is_recurring ? 'monthly' : 'one-time');
+        if (data.amount_is_dollars === true) {
+          amountInDollars = Number(rawAmount);
+          amountCents = Math.round(amountInDollars * 100);
+        } else if (Number.isInteger(Number(rawAmount)) && Number(rawAmount) >= 100) {
+          // Zeffy integer amounts >= 100 are represented in cents (e.g. 5000 = $50.00)
+          amountCents = Number(rawAmount);
+          amountInDollars = amountCents / 100;
+        } else {
+          amountInDollars = Number(rawAmount);
+          amountCents = Math.round(amountInDollars * 100);
+        }
 
-        // Resolve Appreciation Tier
+        if (isNaN(amountInDollars) || amountInDollars <= 0) {
+          amountInDollars = 25;
+          amountCents = 2500;
+        }
+
+        // 8. Robust Donor Details Extraction across varied Zeffy schemas
+        const donorObj = data.contact || data.donor || data.buyer || {};
+        const isAnonymous = Boolean(
+          data.is_anonymous || data.isAnonymous || data.anonymous || 
+          donorObj.isAnonymous || donorObj.is_anonymous || data.hide_name
+        );
+        
+        const firstName = (donorObj.first_name || donorObj.firstName || data.first_name || data.firstName || '').trim();
+        const lastName = (donorObj.last_name || donorObj.lastName || data.last_name || data.lastName || '').trim();
+        const rawFullName = (donorObj.name || donorObj.fullName || data.donor_name || data.name || `${firstName} ${lastName}`).trim();
+        const donorDisplayName = isAnonymous || !rawFullName ? 'Affirming Friend of DCVC' : rawFullName;
+
+        const donorEmail = (donorObj.email || data.donor_email || data.email || '').trim().toLowerCase();
+        const frequency = data.frequency || (data.is_recurring || data.isMonthly ? 'monthly' : 'one-time');
+
+        // 9. Resolve Appreciation Tier & Message
         const tierInfo = resolveAppreciationTier(amountInDollars, env);
 
         // Generate unguessable secure card token (40 characters)
         const cardToken = 'dcvc_' + crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().substring(0, 8);
         const cardId = crypto.randomUUID();
 
-        // Hash donor email for lookup without public exposure
+        // Hash donor email for private indexing without exposing PII
         const emailHash = donorEmail 
-          ? Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(donorEmail.toLowerCase()))))
+          ? Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(donorEmail))))
               .map(b => b.toString(16).padStart(2, '0')).join('')
           : null;
 
-        // Persist to Turso Database
+        // 10. Persist to Turso Database
         if (db) {
           try {
             await db.execute({
@@ -463,19 +604,20 @@ export default {
             });
 
             await db.execute({
-              sql: `INSERT OR REPLACE INTO webhook_events (id, event_id, event_type, status) VALUES (?, ?, ?, ?)`,
-              args: [crypto.randomUUID(), paymentReference, eventType, 'processed']
+              sql: `INSERT OR REPLACE INTO webhook_events (id, event_id, event_type, payload_hash, status) VALUES (?, ?, ?, ?, ?)`,
+              args: [crypto.randomUUID(), paymentReference, eventType, payloadHash, 'processed']
             });
           } catch (dbInsertErr) {
             console.error('Failed to persist appreciation card in database:', dbInsertErr);
+            return errorResponse('Failed to record donation in database', 500, dbInsertErr.message, cors);
           }
         }
 
-        // Build Card View URL on the DCVC Domain
+        // 11. Build Card View URL on the DCVC Domain
         const frontendBase = env.FRONTEND_BASE_URL || 'https://diversitycollective.org';
         const cardUrl = `${frontendBase}/appreciation-card/${cardToken}`;
 
-        // Send Personalized Appreciation Email via Resend
+        // 12. Send Personalized Appreciation Email via Resend
         if (donorEmail && donorEmail.includes('@')) {
           const formattedAmount = `$${amountInDollars.toFixed(amountInDollars % 1 === 0 ? 0 : 2)}`;
           const emailSubject = `Your DCVC Appreciation Card has arrived! 💜 (${tierInfo.tierName})`;
@@ -570,6 +712,105 @@ export default {
           donorDisplayName,
           amountInDollars
         }, 201, cors);
+      }
+
+      // =======================================================================
+      // 2b. ZEFFY RECONCILIATION: Recover Missed Historical Webhook Events
+      // =======================================================================
+      if (pathname === '/api/webhooks/zeffy/reconcile' && request.method === 'POST') {
+        const authHeader = (request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '').trim();
+        const apiKey = env.ZEFFY_API_KEY;
+        const adminAuth = await verifyAuthToken(authHeader, env);
+        const isAuthorized = (apiKey && authHeader === apiKey) || adminAuth.valid;
+
+        if (!isAuthorized) {
+          return errorResponse('Unauthorized reconciliation request', 401, null, cors);
+        }
+
+        if (!apiKey) {
+          return errorResponse('ZEFFY_API_KEY is not configured on this environment', 500, null, cors);
+        }
+
+        try {
+          const zeffyRes = await fetch('https://api.zeffy.com/api/v1/payments?status=succeeded&limit=50', {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${apiKey}`,
+              'Accept': 'application/json'
+            }
+          });
+
+          if (!zeffyRes.ok) {
+            return errorResponse(`Zeffy API returned status ${zeffyRes.status}`, 502, null, cors);
+          }
+
+          const paymentsData = await zeffyRes.json();
+          const payments = Array.isArray(paymentsData) ? paymentsData : (paymentsData.items || paymentsData.data || []);
+
+          let reconciledCount = 0;
+          let skippedCount = 0;
+          const db = getDb(env);
+
+          if (db) {
+            for (const payment of payments) {
+              const payId = String(payment.id || '');
+              if (!payId) continue;
+
+              const existing = await db.execute({
+                sql: `SELECT id FROM donation_appreciation_cards WHERE payment_reference = ? LIMIT 1`,
+                args: [payId]
+              });
+
+              if (existing.rows.length > 0) {
+                skippedCount++;
+                continue;
+              }
+
+              // Process missing completed payment
+              let rawAmt = payment.amount ?? payment.total_amount ?? 25;
+              let amtDollars = Number(rawAmt);
+              let amtCents = Math.round(amtDollars * 100);
+              if (Number.isInteger(amtDollars) && amtDollars >= 100) {
+                amtCents = amtDollars;
+                amtDollars = amtCents / 100;
+              }
+
+              const donorObj = payment.contact || payment.donor || {};
+              const isAnon = Boolean(payment.is_anonymous || donorObj.is_anonymous);
+              const name = isAnon ? 'Affirming Friend of DCVC' : (donorObj.name || `${donorObj.first_name || ''} ${donorObj.last_name || ''}`.trim() || 'Affirming Friend of DCVC');
+              const email = (donorObj.email || '').trim().toLowerCase();
+              const tier = resolveAppreciationTier(amtDollars, env);
+              const cardTok = 'dcvc_' + crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().substring(0, 8);
+              const cardId = crypto.randomUUID();
+
+              const emailHash = email ? Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(email)))).map(b => b.toString(16).padStart(2, '0')).join('') : null;
+
+              await db.execute({
+                sql: `INSERT INTO donation_appreciation_cards 
+                      (id, card_token, payment_reference, tier, tier_name, amount_cents, donor_display_name, donor_email_hash, recipient_email, is_anonymous, impact_message, frequency)
+                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                args: [cardId, cardTok, payId, tier.tier, tier.tierName, amtCents, name, emailHash, email || null, isAnon ? 1 : 0, tier.impact, 'one-time']
+              });
+
+              await db.execute({
+                sql: `INSERT OR REPLACE INTO webhook_events (id, event_id, event_type, status) VALUES (?, ?, ?, ?)`,
+                args: [crypto.randomUUID(), payId, 'reconciliation.payment.completed', 'processed']
+              });
+
+              reconciledCount++;
+            }
+          }
+
+          return jsonResponse({
+            success: true,
+            totalFetched: payments.length,
+            reconciledCount,
+            skippedCount
+          }, 200, cors);
+        } catch (recErr) {
+          console.error('Reconciliation error:', recErr);
+          return errorResponse('Failed to execute reconciliation', 500, recErr.message, cors);
+        }
       }
 
       // =======================================================================

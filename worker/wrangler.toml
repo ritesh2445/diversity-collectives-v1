@@ -2,6 +2,11 @@ name = "dcvc-api"
 main = "src/index.js"
 compatibility_date = "2024-05-01"
 
+routes = [
+  { pattern = "diversitycollective.org/api/*", zone_name = "diversitycollective.org" },
+  { pattern = "www.diversitycollective.org/api/*", zone_name = "diversitycollective.org" }
+]
+
 [vars]
 ALLOWED_ORIGIN = "https://diversitycollective.org"
 FRONTEND_BASE_URL = "https://diversitycollective.org"
@@ -29,6 +34,7 @@ binding = "AI"
 # - RESEND_API_KEY
 # - TURNSTILE_SECRET_KEY
 # - ZEFFY_WEBHOOK_SECRET
+# - ZEFFY_API_KEY
 
 [env.preview]
 name = "dcvc-api-preview"
