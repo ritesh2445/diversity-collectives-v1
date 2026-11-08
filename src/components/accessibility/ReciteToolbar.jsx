@@ -27,7 +27,10 @@ import {
   Volume2,
   Check,
   HelpCircle,
-  Compass
+  Compass,
+  WifiOff,
+  Send,
+  RefreshCw
 } from 'lucide-react';
 import { a11yStore } from '../../accessibility/a11yStore';
 import { focusAudio } from '../../accessibility/focusAudio';
@@ -56,12 +59,16 @@ export default function ReciteToolbar() {
 
   // Voice command state & Live Speech HUD
   const [isListening, setIsListening] = useState(false);
+  const [isOfflineMode, setIsOfflineMode] = useState(false);
+  const [offlineInput, setOfflineInput] = useState('');
+  const [networkHelpOpen, setNetworkHelpOpen] = useState(false);
   const [speechTranscript, setSpeechTranscript] = useState('');
   const [speechFeedback, setSpeechFeedback] = useState('');
   const [showVoiceHelp, setShowVoiceHelp] = useState(false);
   const [micError, setMicError] = useState(null);
   const recognitionRef = useRef(null);
   const isListeningRef = useRef(false);
+  const networkErrorCountRef = useRef(0);
   const lastVoiceCommandRef = useRef({ text: '', timestamp: 0 });
 
   // Dictionary state
@@ -109,6 +116,8 @@ export default function ReciteToolbar() {
         }
         isListeningRef.current = false;
         setIsListening(false);
+        setIsOfflineMode(false);
+        networkErrorCountRef.current = 0;
         clearHighlight();
         setActiveFlyout(null);
       }
@@ -120,6 +129,8 @@ export default function ReciteToolbar() {
         recognitionRef.current = null;
       }
       isListeningRef.current = false;
+      setIsOfflineMode(false);
+      networkErrorCountRef.current = 0;
     };
   }, []);
 
@@ -534,24 +545,48 @@ export default function ReciteToolbar() {
     }
   };
 
-  // Voice Command (Microphone) Handler with Persistent Auto-Resume
+  // Offline Command Form Submission
+  const handleOfflineSubmit = (e) => {
+    if (e) e.preventDefault();
+    const cmd = offlineInput.trim();
+    if (!cmd) return;
+    setSpeechTranscript(cmd);
+    executeVoiceCommand(cmd, true);
+    setOfflineInput('');
+  };
+
+  // Retry Voice Recognition Microphone
+  const handleRetryMic = () => {
+    setIsOfflineMode(false);
+    setMicError(null);
+    networkErrorCountRef.current = 0;
+    setTimeout(() => {
+      handleToggleMic();
+    }, 120);
+  };
+
+  // Voice Command (Microphone) Handler with Persistent Auto-Resume and 100% Offline Mode Fallback
   const handleToggleMic = () => {
     const SpeechRecognition = typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition) : null;
     if (!SpeechRecognition) {
-      alert('Speech Recognition is not supported by your current browser. For the best hands-free voice experience, please use Chrome, Edge, or Safari.');
+      setIsOfflineMode(true);
+      setSpeechFeedback('Offline Mode Active');
+      a11yStore.announce('Speech recognition not supported in this browser. Offline command mode activated.');
       return;
     }
 
-    if (isListeningRef.current) {
+    if (isListeningRef.current || isOfflineMode) {
       isListeningRef.current = false;
       setIsListening(false);
+      setIsOfflineMode(false);
+      networkErrorCountRef.current = 0;
       if (recognitionRef.current) {
         try {
           recognitionRef.current.abort();
         } catch (e) {}
         recognitionRef.current = null;
       }
-      a11yStore.announce('Hands-free voice listening stopped.');
+      a11yStore.announce('Voice command mode closed.');
       setSpeechFeedback('Voice command listening paused.');
       return;
     }
@@ -564,12 +599,15 @@ export default function ReciteToolbar() {
       recognitionRef.current = recognition;
       isListeningRef.current = true;
       setIsListening(true);
+      setIsOfflineMode(false);
       setMicError(null);
       setSpeechTranscript('');
       setSpeechFeedback('Listening... Speak a command');
 
       recognition.onstart = () => {
         setIsListening(true);
+        setIsOfflineMode(false);
+        networkErrorCountRef.current = 0;
         a11yStore.announce('Hands-free voice listening active. You can say: scroll to top, tap buttons, open page, search, read, or help.');
       };
 
@@ -596,8 +634,21 @@ export default function ReciteToolbar() {
         if (event.error === 'not-allowed') {
           isListeningRef.current = false;
           setIsListening(false);
-          setMicError('Microphone permission blocked. Please allow microphone access in your browser settings.');
-          a11yStore.announce('Microphone permission blocked. Please allow mic access in your browser.');
+          setIsOfflineMode(true);
+          setMicError('Microphone permission blocked. Switched to offline command mode.');
+          a11yStore.announce('Microphone permission blocked. Switched to offline command mode.');
+        } else if (event.error === 'network') {
+          // Cloud speech endpoint unreachable (offline, Brave privacy shield, VPN/proxy, or timeout)
+          networkErrorCountRef.current += 1;
+          isListeningRef.current = false;
+          setIsListening(false);
+          setIsOfflineMode(true);
+          setSpeechFeedback('Offline Mode Active');
+          a11yStore.announce('Voice recognition network unavailable. Switched to offline command mode.');
+          if (recognitionRef.current) {
+            try { recognitionRef.current.abort(); } catch (e) {}
+            recognitionRef.current = null;
+          }
         } else if (event.error !== 'no-speech') {
           setSpeechFeedback(`Notice: ${event.error}`);
         }
@@ -605,15 +656,15 @@ export default function ReciteToolbar() {
 
       recognition.onend = () => {
         // Auto-restart if user still wants hands-free listening active (prevents Chrome 3-sec silence drop)
-        if (isListeningRef.current) {
+        if (isListeningRef.current && !isOfflineMode && networkErrorCountRef.current < 2) {
           try {
             recognition.start();
           } catch (e) {
             setTimeout(() => {
-              if (isListeningRef.current && recognitionRef.current) {
+              if (isListeningRef.current && recognitionRef.current && !isOfflineMode) {
                 try { recognitionRef.current.start(); } catch (err) {}
               }
-            }, 250);
+            }, 300);
           }
         } else {
           setIsListening(false);
@@ -625,7 +676,8 @@ export default function ReciteToolbar() {
       console.error('[ReciteToolbar Mic Start Error]', err);
       isListeningRef.current = false;
       setIsListening(false);
-      setMicError('Unable to start speech recognition.');
+      setIsOfflineMode(true);
+      setSpeechFeedback('Offline Mode Active');
     }
   };
 
@@ -726,7 +778,7 @@ export default function ReciteToolbar() {
     return () => document.removeEventListener('mousedown', handleOutside);
   }, [activeFlyout]);
 
-  if (!settings.toolbarOpen && !isListening && !micError) return null;
+  if (!settings.toolbarOpen && !isListening && !isOfflineMode && !micError) return null;
 
   return (
     <>
@@ -920,12 +972,22 @@ export default function ReciteToolbar() {
           <button
             onClick={handleToggleMic}
             className={`w-9 h-9 rounded-md flex items-center justify-center transition-all cursor-pointer ${
-              isListening ? 'bg-rose-600 text-white animate-pulse' : 'bg-[#059669] text-white hover:bg-[#047857]'
+              isListening && !isOfflineMode
+                ? 'bg-rose-600 text-white animate-pulse'
+                : isOfflineMode
+                  ? 'bg-amber-600 text-white hover:bg-amber-700'
+                  : 'bg-[#059669] text-white hover:bg-[#047857]'
             }`}
-            title={isListening ? 'Listening for voice commands...' : 'Enable hands-free voice command navigation'}
+            title={
+              isListening && !isOfflineMode
+                ? 'Listening for voice commands...'
+                : isOfflineMode
+                  ? 'Offline voice command mode active (Click to close)'
+                  : 'Enable hands-free voice command navigation'
+            }
             aria-label="Voice command microphone"
           >
-            <Mic className="w-4 h-4" />
+            {isOfflineMode ? <WifiOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
           </button>
         </div>
 
@@ -1403,9 +1465,9 @@ export default function ReciteToolbar() {
   )}
 
   {/* ================================================================
-      FLOATING HANDS-FREE LIVE SPEECH HUD (Always active while listening)
+      FLOATING HANDS-FREE LIVE SPEECH HUD (Live Mic & 100% Offline Command Mode)
       ================================================================ */}
-  {isListening && (
+  {(isListening || isOfflineMode) && (
     <>
       {/* Voice Commands Cheat Sheet Modal Popover */}
       {showVoiceHelp && (
@@ -1413,14 +1475,14 @@ export default function ReciteToolbar() {
           role="dialog"
           aria-modal="false"
           aria-label="Hands-free Voice Commands Cheat Sheet"
-          className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100006] bg-[#0A1220]/95 text-white border-2 border-emerald-400 p-5 rounded-3xl shadow-2xl backdrop-blur-2xl max-w-2xl w-[94vw] max-h-[72vh] overflow-y-auto animate-in fade-in slide-in-from-bottom-3 duration-200 ring-4 ring-emerald-500/20"
+          className="fixed bottom-28 left-1/2 -translate-x-1/2 z-[100006] bg-[#0A1220]/95 text-white border-2 border-emerald-400 p-5 rounded-3xl shadow-2xl backdrop-blur-2xl max-w-2xl w-[94vw] max-h-[72vh] overflow-y-auto animate-in fade-in slide-in-from-bottom-3 duration-200 ring-4 ring-emerald-500/20"
         >
           <div className="flex items-center justify-between pb-3 border-b border-slate-800">
             <div className="flex items-center gap-2.5">
               <span className="text-xl">🎙️</span>
               <div>
                 <h3 className="font-display font-black text-sm text-white">Hands-Free Voice Commands</h3>
-                <p className="text-[11px] text-emerald-300">Speak naturally — every action across the entire website is voice-controllable.</p>
+                <p className="text-[11px] text-emerald-300">Speak naturally or click any command below — every action runs 100% offline in client JavaScript.</p>
               </div>
             </div>
             <button
@@ -1459,7 +1521,7 @@ export default function ReciteToolbar() {
           </div>
 
           <div className="pt-3 border-t border-slate-800 mt-3.5 flex items-center justify-between text-[11px] text-slate-400">
-            <span>💡 Say <strong>"tap [name]"</strong> or <strong>"open page [name]"</strong> anytime.</span>
+            <span>💡 Say or click <strong>"tap [name]"</strong> or <strong>"open page [name]"</strong> anytime.</span>
             <button
               type="button"
               onClick={() => setShowVoiceHelp(false)}
@@ -1471,59 +1533,222 @@ export default function ReciteToolbar() {
         </div>
       )}
 
-      {/* Primary Floating HUD Bar */}
+      {/* Primary Floating HUD Bar (Voice or Offline Command Mode) */}
       <div 
         role="status"
         aria-live="polite"
-        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100005] bg-[#0B1528]/95 text-white border-2 border-emerald-400 px-4 sm:px-5 py-3 rounded-2xl shadow-2xl backdrop-blur-xl flex items-center gap-3 sm:gap-4 select-none animate-in fade-in slide-in-from-bottom-4 duration-300 max-w-2xl w-[94vw] sm:w-auto ring-4 ring-emerald-500/20"
+        className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[100005] bg-[#0B1528]/95 text-white border-2 ${
+          isOfflineMode ? 'border-amber-400 ring-amber-500/20' : 'border-emerald-400 ring-emerald-500/20'
+        } px-4 sm:px-5 py-3 rounded-2xl shadow-2xl backdrop-blur-xl flex flex-col gap-2.5 select-none animate-in fade-in slide-in-from-bottom-4 duration-300 max-w-2xl w-[94vw] ring-4`}
       >
-        <div className="relative flex items-center justify-center flex-shrink-0">
-          <div className="w-9 h-9 rounded-full bg-emerald-500/30 flex items-center justify-center animate-ping absolute inset-0" />
-          <div className="w-9 h-9 rounded-full bg-emerald-600 text-white flex items-center justify-center relative shadow-md">
-            <Mic className="w-5 h-5 animate-pulse" />
-          </div>
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5 whitespace-nowrap">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              Hands-Free Voice Active
-            </span>
-            {speechFeedback && (
-              <span className="text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-700/60 px-2 py-0.5 rounded-full font-bold truncate max-w-[200px]">
-                {speechFeedback}
-              </span>
+        <div className="flex items-center gap-3 sm:gap-4 w-full">
+          {/* Status Indicator Icon */}
+          <div className="relative flex items-center justify-center flex-shrink-0">
+            {isListening && !isOfflineMode ? (
+              <>
+                <div className="w-9 h-9 rounded-full bg-emerald-500/30 flex items-center justify-center animate-ping absolute inset-0" />
+                <div className="w-9 h-9 rounded-full bg-emerald-600 text-white flex items-center justify-center relative shadow-md">
+                  <Mic className="w-5 h-5 animate-pulse" />
+                </div>
+              </>
+            ) : (
+              <div className="w-9 h-9 rounded-full bg-amber-600 text-white flex items-center justify-center relative shadow-md" title="Offline Command Mode (Zero Network Required)">
+                <WifiOff className="w-5 h-5" />
+              </div>
             )}
           </div>
-          <p className="text-xs text-slate-200 font-medium truncate mt-0.5">
-            {speechTranscript ? `Heard: "${speechTranscript}"` : 'Listening... Say "scroll to top", "tap [button]", "open page [name]", "read", or "help"'}
-          </p>
+
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className={`text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 whitespace-nowrap ${
+                isOfflineMode ? 'text-amber-400' : 'text-emerald-400'
+              }`}>
+                <span className={`w-2 h-2 rounded-full ${isOfflineMode ? 'bg-amber-400' : 'bg-emerald-400 animate-pulse'}`} />
+                {isOfflineMode ? 'Offline Voice Mode Active' : 'Hands-Free Voice Active'}
+              </span>
+              {isOfflineMode && (
+                <button
+                  type="button"
+                  onClick={() => setNetworkHelpOpen(true)}
+                  className="text-[10px] bg-amber-950/80 text-amber-300 border border-amber-700/60 hover:bg-amber-900 px-2 py-0.5 rounded-full font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                  title="Why did offline mode activate? Click for info"
+                >
+                  <span>Offline Info</span>
+                  <HelpCircle className="w-3 h-3" />
+                </button>
+              )}
+              {speechFeedback && !isOfflineMode && (
+                <span className="text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-700/60 px-2 py-0.5 rounded-full font-bold truncate max-w-[200px]">
+                  {speechFeedback}
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-slate-200 font-medium truncate mt-0.5">
+              {speechTranscript 
+                ? `Last command: "${speechTranscript}"` 
+                : isOfflineMode 
+                  ? 'Type or click any voice command below (100% offline, zero network required)' 
+                  : 'Listening... Say "scroll to top", "tap [button]", "open page [name]", "read", or "help"'}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            {isOfflineMode && (
+              <button
+                type="button"
+                onClick={handleRetryMic}
+                className="px-2.5 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs transition-colors flex items-center gap-1 cursor-pointer shadow-sm"
+                title="Retry Live Microphone (requires active connection to browser speech services)"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Retry Mic</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setShowVoiceHelp((prev) => !prev)}
+              className="px-2.5 py-1.5 rounded-xl bg-purple-900/80 hover:bg-purple-800 text-amber-300 hover:text-white font-bold text-xs transition-colors flex items-center gap-1 cursor-pointer border border-purple-600 shadow-sm"
+              title="View all hands-free voice commands"
+              aria-label="View all voice commands cheat sheet"
+            >
+              <HelpCircle className="w-3.5 h-3.5 text-amber-300" />
+              <span className="hidden sm:inline">Commands</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleToggleMic}
+              className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-rose-600 text-slate-200 hover:text-white font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer border border-slate-700"
+              title="Close Voice HUD"
+              aria-label="Close Voice HUD"
+            >
+              <X className="w-3.5 h-3.5" />
+              <span>Close</span>
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          <button
-            type="button"
-            onClick={() => setShowVoiceHelp((prev) => !prev)}
-            className="px-2.5 py-1.5 rounded-xl bg-purple-900/80 hover:bg-purple-800 text-amber-300 hover:text-white font-bold text-xs transition-colors flex items-center gap-1 cursor-pointer border border-purple-600 shadow-sm"
-            title="View all hands-free voice commands"
-            aria-label="View all voice commands cheat sheet"
-          >
-            <HelpCircle className="w-3.5 h-3.5 text-amber-300" />
-            <span className="hidden sm:inline">Commands</span>
-          </button>
-          <button
-            type="button"
-            onClick={handleToggleMic}
-            className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-rose-600 text-slate-200 hover:text-white font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer border border-slate-700"
-            title="Turn off voice recognition microphone"
-            aria-label="Turn off microphone"
-          >
-            <X className="w-3.5 h-3.5" />
-            <span>Stop Mic</span>
-          </button>
+        {/* Offline Command Bar & 1-Tap Quick Action Pills */}
+        <div className="pt-2 border-t border-slate-800/80 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          <form onSubmit={handleOfflineSubmit} className="flex-1 flex items-center gap-1.5 min-w-0">
+            <input
+              type="text"
+              value={offlineInput}
+              onChange={(e) => setOfflineInput(e.target.value)}
+              placeholder='Type command: "scroll down", "tap donate", "open programs", "read"...'
+              className="flex-1 px-3 py-1.5 bg-slate-900/90 border border-slate-700 focus:border-amber-400 rounded-xl text-xs text-white placeholder-slate-400 focus:outline-none transition-colors"
+            />
+            <button
+              type="submit"
+              className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition-colors flex items-center gap-1 cursor-pointer flex-shrink-0"
+              title="Run command offline"
+            >
+              <Send className="w-3 h-3" />
+              <span>Run</span>
+            </button>
+          </form>
+
+          {/* Quick Action Pills for Immediate 1-Tap Control */}
+          <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0 scrollbar-none flex-shrink-0">
+            <button
+              type="button"
+              onClick={() => executeVoiceCommand('scroll down', true)}
+              className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[11px] font-semibold border border-slate-700 whitespace-nowrap cursor-pointer transition-colors"
+              title="Scroll down page"
+            >
+              Scroll ⬇
+            </button>
+            <button
+              type="button"
+              onClick={() => executeVoiceCommand('scroll to top', true)}
+              className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[11px] font-semibold border border-slate-700 whitespace-nowrap cursor-pointer transition-colors"
+              title="Scroll to top of page"
+            >
+              Top ⬆
+            </button>
+            <button
+              type="button"
+              onClick={() => executeVoiceCommand('tap donate', true)}
+              className="px-2 py-1 rounded-lg bg-purple-900/70 hover:bg-purple-800 text-purple-200 hover:text-white text-[11px] font-semibold border border-purple-700 whitespace-nowrap cursor-pointer transition-colors"
+              title="Tap Donate"
+            >
+              Donate 💜
+            </button>
+            <button
+              type="button"
+              onClick={() => executeVoiceCommand('open programs', true)}
+              className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[11px] font-semibold border border-slate-700 whitespace-nowrap cursor-pointer transition-colors"
+              title="Open Programs"
+            >
+              Programs
+            </button>
+            <button
+              type="button"
+              onClick={() => executeVoiceCommand('read page', true)}
+              className="px-2 py-1 rounded-lg bg-emerald-950 hover:bg-emerald-900 text-emerald-300 text-[11px] font-semibold border border-emerald-800 whitespace-nowrap cursor-pointer transition-colors"
+              title="Read Page Aloud"
+            >
+              Read 🔊
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Network Explanation Dialog */}
+      {networkHelpOpen && (
+        <div 
+          role="dialog"
+          aria-modal="true"
+          aria-label="Offline Voice Command Information"
+          className="fixed inset-0 z-[100010] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm"
+          onClick={() => setNetworkHelpOpen(false)}
+        >
+          <div 
+            className="bg-[#0A1220] text-white border-2 border-amber-400 p-6 rounded-3xl shadow-2xl max-w-lg w-full max-h-[85vh] overflow-y-auto space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <WifiOff className="w-5 h-5 text-amber-400" />
+                <h3 className="font-display font-black text-base text-white">Why did Offline Mode activate?</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setNetworkHelpOpen(false)}
+                className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="text-xs text-slate-300 space-y-2.5 leading-relaxed">
+              <p>
+                Browsers implement live voice transcription (<code className="text-amber-300 font-mono">SpeechRecognition</code>) by streaming microphone audio chunks to external cloud servers (Google/Microsoft cloud speech endpoints).
+              </p>
+              <p className="font-semibold text-white">
+                This triggers a <span className="text-rose-300">"Notice: network"</span> error if:
+              </p>
+              <ul className="list-disc pl-5 space-y-1.5 text-slate-300">
+                <li><strong>You are testing offline</strong> or internet connectivity is temporarily disconnected.</li>
+                <li><strong>You are using Brave Browser</strong>: Brave blocks Google cloud speech servers by default to protect privacy. (To enable in Brave, open <code className="text-amber-300 font-mono">brave://settings/extensions</code> and turn on <em>"Use Google services for speech recognition"</em>).</li>
+                <li><strong>A VPN or corporate firewall</strong> is blocking Google speech websocket endpoints.</li>
+              </ul>
+              <div className="p-3 bg-emerald-950/60 border border-emerald-700/60 rounded-xl text-emerald-200">
+                <strong>100% Offline Guarantee:</strong> All voice navigation actions (scrolling, tapping buttons, opening routes, high-contrast themes, text-to-speech reading, and 432Hz ambient focus music) run entirely in local client JavaScript and require zero external servers!
+              </div>
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setNetworkHelpOpen(false)}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl cursor-pointer"
+              >
+                Got It
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )}
 
