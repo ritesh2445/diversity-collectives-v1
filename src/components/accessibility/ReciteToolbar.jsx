@@ -30,7 +30,8 @@ import {
   Compass,
   WifiOff,
   Send,
-  RefreshCw
+  RefreshCw,
+  Copy
 } from 'lucide-react';
 import { a11yStore } from '../../accessibility/a11yStore';
 import { focusAudio } from '../../accessibility/focusAudio';
@@ -60,6 +61,8 @@ export default function ReciteToolbar() {
   // Voice command state & Live Speech HUD
   const [isListening, setIsListening] = useState(false);
   const [isOfflineMode, setIsOfflineMode] = useState(false);
+  const [isBraveBrowser, setIsBraveBrowser] = useState(false);
+  const [copiedBraveUrl, setCopiedBraveUrl] = useState(false);
   const [offlineInput, setOfflineInput] = useState('');
   const [networkHelpOpen, setNetworkHelpOpen] = useState(false);
   const [speechTranscript, setSpeechTranscript] = useState('');
@@ -132,6 +135,19 @@ export default function ReciteToolbar() {
       setIsOfflineMode(false);
       networkErrorCountRef.current = 0;
     };
+  }, []);
+
+  // Detect Brave Browser (Brave shields Google Speech cloud by default)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if (window.navigator?.brave && typeof window.navigator.brave.isBrave === 'function') {
+        window.navigator.brave.isBrave().then((val) => {
+          if (val) setIsBraveBrowser(true);
+        }).catch(() => {});
+      } else if (navigator.userAgent && navigator.userAgent.toLowerCase().includes('brave')) {
+        setIsBraveBrowser(true);
+      }
+    }
   }, []);
 
   // Initialize Native US Female Voice
@@ -565,6 +581,15 @@ export default function ReciteToolbar() {
     }, 120);
   };
 
+  // Copy Brave Settings URL to Clipboard
+  const handleCopyBraveUrl = () => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText('brave://settings/extensions');
+      setCopiedBraveUrl(true);
+      setTimeout(() => setCopiedBraveUrl(false), 2500);
+    }
+  };
+
   // Voice Command (Microphone) Handler with Persistent Auto-Resume and 100% Offline Mode Fallback
   const handleToggleMic = () => {
     const SpeechRecognition = typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition) : null;
@@ -596,6 +621,11 @@ export default function ReciteToolbar() {
       recognition.continuous = true;
       recognition.interimResults = true;
       recognition.lang = 'en-US';
+      if ('processLocally' in recognition) {
+        try {
+          recognition.processLocally = true;
+        } catch (e) {}
+      }
       recognitionRef.current = recognition;
       isListeningRef.current = true;
       setIsListening(true);
@@ -1551,8 +1581,12 @@ export default function ReciteToolbar() {
                   <Mic className="w-5 h-5 animate-pulse" />
                 </div>
               </>
+            ) : isBraveBrowser ? (
+              <div className="w-9 h-9 rounded-full bg-amber-600 text-white flex items-center justify-center relative shadow-md text-base" title="Brave Speech Shield Active">
+                🦁
+              </div>
             ) : (
-              <div className="w-9 h-9 rounded-full bg-amber-600 text-white flex items-center justify-center relative shadow-md" title="Offline Command Mode (Zero Network Required)">
+              <div className="w-9 h-9 rounded-full bg-amber-600 text-white flex items-center justify-center relative shadow-md" title="Offline or Speech Cloud Unreachable">
                 <WifiOff className="w-5 h-5" />
               </div>
             )}
@@ -1564,16 +1598,20 @@ export default function ReciteToolbar() {
                 isOfflineMode ? 'text-amber-400' : 'text-emerald-400'
               }`}>
                 <span className={`w-2 h-2 rounded-full ${isOfflineMode ? 'bg-amber-400' : 'bg-emerald-400 animate-pulse'}`} />
-                {isOfflineMode ? 'Offline Voice Mode Active' : 'Hands-Free Voice Active'}
+                {isListening && !isOfflineMode
+                  ? 'Hands-Free Voice Active'
+                  : isBraveBrowser
+                    ? 'Brave Voice Shield Blocked'
+                    : 'Voice Cloud Unreachable'}
               </span>
               {isOfflineMode && (
                 <button
                   type="button"
                   onClick={() => setNetworkHelpOpen(true)}
                   className="text-[10px] bg-amber-950/80 text-amber-300 border border-amber-700/60 hover:bg-amber-900 px-2 py-0.5 rounded-full font-bold flex items-center gap-1 cursor-pointer transition-colors"
-                  title="Why did offline mode activate? Click for info"
+                  title="How to enable microphone voice input? Click for steps"
                 >
-                  <span>Offline Info</span>
+                  <span>How to Enable</span>
                   <HelpCircle className="w-3 h-3" />
                 </button>
               )}
@@ -1584,21 +1622,32 @@ export default function ReciteToolbar() {
               )}
             </div>
             <p className="text-xs text-slate-200 font-medium truncate mt-0.5">
-              {speechTranscript 
-                ? `Last command: "${speechTranscript}"` 
-                : isOfflineMode 
-                  ? 'Type or click any voice command below (100% offline, zero network required)' 
-                  : 'Listening... Say "scroll to top", "tap [button]", "open page [name]", "read", or "help"'}
+              {isListening && !isOfflineMode 
+                ? (speechTranscript ? `Heard: "${speechTranscript}"` : 'Listening... Say "scroll to top", "tap [button]", "open page [name]", "read", or "help"')
+                : isBraveBrowser
+                  ? 'Brave blocks speech-to-text by default: enable in brave://settings/extensions or use Chrome/Edge'
+                  : 'Speech requires browser cloud access. Use Chrome/Edge with internet or use quick commands'}
             </p>
           </div>
 
           <div className="flex items-center gap-1.5 flex-shrink-0">
+            {isOfflineMode && isBraveBrowser && (
+              <button
+                type="button"
+                onClick={handleCopyBraveUrl}
+                className="px-2.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition-colors flex items-center gap-1 cursor-pointer shadow-sm"
+                title="Copy brave://settings/extensions to clipboard"
+              >
+                {copiedBraveUrl ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                <span className="hidden sm:inline">{copiedBraveUrl ? 'Copied URL!' : 'Copy Brave URL'}</span>
+              </button>
+            )}
             {isOfflineMode && (
               <button
                 type="button"
                 onClick={handleRetryMic}
                 className="px-2.5 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs transition-colors flex items-center gap-1 cursor-pointer shadow-sm"
-                title="Retry Live Microphone (requires active connection to browser speech services)"
+                title="Retry Live Microphone"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Retry Mic</span>
@@ -1720,20 +1769,51 @@ export default function ReciteToolbar() {
               </button>
             </div>
 
-            <div className="text-xs text-slate-300 space-y-2.5 leading-relaxed">
-              <p>
-                Browsers implement live voice transcription (<code className="text-amber-300 font-mono">SpeechRecognition</code>) by streaming microphone audio chunks to external cloud servers (Google/Microsoft cloud speech endpoints).
-              </p>
-              <p className="font-semibold text-white">
-                This triggers a <span className="text-rose-300">"Notice: network"</span> error if:
-              </p>
-              <ul className="list-disc pl-5 space-y-1.5 text-slate-300">
-                <li><strong>You are testing offline</strong> or internet connectivity is temporarily disconnected.</li>
-                <li><strong>You are using Brave Browser</strong>: Brave blocks Google cloud speech servers by default to protect privacy. (To enable in Brave, open <code className="text-amber-300 font-mono">brave://settings/extensions</code> and turn on <em>"Use Google services for speech recognition"</em>).</li>
-                <li><strong>A VPN or corporate firewall</strong> is blocking Google speech websocket endpoints.</li>
-              </ul>
-              <div className="p-3 bg-emerald-950/60 border border-emerald-700/60 rounded-xl text-emerald-200">
-                <strong>100% Offline Guarantee:</strong> All voice navigation actions (scrolling, tapping buttons, opening routes, high-contrast themes, text-to-speech reading, and 432Hz ambient focus music) run entirely in local client JavaScript and require zero external servers!
+            <div className="text-xs text-slate-300 space-y-3 leading-relaxed">
+              <div className="p-3 bg-amber-950/60 border border-amber-700/60 rounded-xl space-y-1.5">
+                <p className="font-bold text-amber-300 text-sm flex items-center gap-1.5">
+                  <span>🦁</span> Why Brave blocks microphone speech by default:
+                </p>
+                <p className="text-slate-300">
+                  Chromium browsers process microphone audio by streaming it to Google cloud servers. To protect privacy, <strong>Brave Browser blocks this Google connection by default</strong>, causing the browser to reject speech recognition with a <code className="text-rose-300 font-mono">network</code> error.
+                </p>
+              </div>
+
+              <div>
+                <p className="font-semibold text-white mb-2">How to get your voice microphone working:</p>
+                <div className="space-y-2.5">
+                  <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl space-y-1.5">
+                    <p className="font-bold text-white text-xs">Option 1: Enable Google Speech in Brave (10 seconds)</p>
+                    <p className="text-[11px] text-slate-400">
+                      1. Open a new tab in Brave and paste: <code className="text-amber-300 font-mono select-all">brave://settings/extensions</code>
+                    </p>
+                    <p className="text-[11px] text-slate-400">
+                      2. Turn ON: <strong>"Use Google services for speech recognition"</strong>
+                    </p>
+                    <p className="text-[11px] text-slate-400">
+                      3. Return here and click <strong>"Retry Mic"</strong>.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleCopyBraveUrl}
+                      className="mt-1 px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[11px] rounded-lg cursor-pointer flex items-center gap-1.5"
+                    >
+                      {copiedBraveUrl ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span>{copiedBraveUrl ? 'Copied brave://settings/extensions!' : 'Copy Brave Settings URL'}</span>
+                    </button>
+                  </div>
+
+                  <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl space-y-1">
+                    <p className="font-bold text-white text-xs">Option 2: Open in Google Chrome or Microsoft Edge</p>
+                    <p className="text-[11px] text-slate-400">
+                      Both Chrome and Edge have speech services enabled out of the box with zero setup required. Opening <code className="text-amber-300 font-mono">http://localhost:5173</code> in Chrome or Edge will enable voice commands immediately.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-3 bg-emerald-950/60 border border-emerald-700/60 rounded-xl text-emerald-200 text-[11px]">
+                <strong>100% Offline Guarantee:</strong> All voice actions (scrolling, tapping buttons, opening routes, contrast themes, text-to-speech reading, and 432Hz ambient focus music) run entirely in local client JavaScript and require zero external servers!
               </div>
             </div>
 
