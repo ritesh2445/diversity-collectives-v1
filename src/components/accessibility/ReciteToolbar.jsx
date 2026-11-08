@@ -31,9 +31,7 @@ import {
   WifiOff,
   Send,
   RefreshCw,
-  Copy,
-  Loader2,
-  MicOff
+  Copy
 } from 'lucide-react';
 import { a11yStore } from '../../accessibility/a11yStore';
 import { focusAudio } from '../../accessibility/focusAudio';
@@ -44,7 +42,6 @@ import {
   tapElementByVoice, 
   VOICE_COMMAND_CATEGORIES 
 } from '../../accessibility/voiceCommands';
-import { transcribeAudio } from '../../services/speechTranscription';
 
 export default function ReciteToolbar() {
   const navigate = useNavigate();
@@ -61,12 +58,8 @@ export default function ReciteToolbar() {
   const [activeTrack, setActiveTrack] = useState(null); // 'focus' | 'deeper' | null
   const [musicVolume, setMusicVolume] = useState(0.5);
 
-  // Voice command state & Live Speech HUD (Native & Network Mode)
+  // Voice command state & Live Speech HUD
   const [isListening, setIsListening] = useState(false);
-  const [isNetworkRecording, setIsNetworkRecording] = useState(false);
-  const [isTranscribing, setIsTranscribing] = useState(false);
-  const [voiceHudVisible, setVoiceHudVisible] = useState(false);
-  const [audioLevel, setAudioLevel] = useState(0);
   const [isOfflineMode, setIsOfflineMode] = useState(false);
   const [isBraveBrowser, setIsBraveBrowser] = useState(false);
   const [copiedSiteUrl, setCopiedSiteUrl] = useState(false);
@@ -79,11 +72,6 @@ export default function ReciteToolbar() {
   const recognitionRef = useRef(null);
   const isListeningRef = useRef(false);
   const networkErrorCountRef = useRef(0);
-  const mediaRecorderRef = useRef(null);
-  const audioChunksRef = useRef([]);
-  const mediaStreamRef = useRef(null);
-  const audioContextRef = useRef(null);
-  const vadIntervalRef = useRef(null);
   const lastVoiceCommandRef = useRef({ text: '', timestamp: 0 });
 
   // Dictionary state
@@ -129,18 +117,8 @@ export default function ReciteToolbar() {
           try { recognitionRef.current.abort(); } catch (e) {}
           recognitionRef.current = null;
         }
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-          try { mediaRecorderRef.current.stop(); } catch (e) {}
-        }
-        if (mediaStreamRef.current) {
-          try { mediaStreamRef.current.getTracks().forEach((t) => t.stop()); } catch (e) {}
-        }
-        clearTimeout(vadIntervalRef.current);
         isListeningRef.current = false;
         setIsListening(false);
-        setIsNetworkRecording(false);
-        setIsTranscribing(false);
-        setVoiceHudVisible(false);
         setIsOfflineMode(false);
         networkErrorCountRef.current = 0;
         clearHighlight();
@@ -153,17 +131,7 @@ export default function ReciteToolbar() {
         try { recognitionRef.current.abort(); } catch (e) {}
         recognitionRef.current = null;
       }
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-        try { mediaRecorderRef.current.stop(); } catch (e) {}
-      }
-      if (mediaStreamRef.current) {
-        try { mediaStreamRef.current.getTracks().forEach((t) => t.stop()); } catch (e) {}
-      }
-      clearTimeout(vadIntervalRef.current);
       isListeningRef.current = false;
-      setIsNetworkRecording(false);
-      setIsTranscribing(false);
-      setVoiceHudVisible(false);
       setIsOfflineMode(false);
       networkErrorCountRef.current = 0;
     };
@@ -608,14 +576,9 @@ export default function ReciteToolbar() {
     setIsOfflineMode(false);
     setMicError(null);
     networkErrorCountRef.current = 0;
-    setVoiceHudVisible(true);
-    if (isBraveBrowser || (!window.SpeechRecognition && !window.webkitSpeechRecognition)) {
-      startNetworkRecording();
-    } else {
-      setTimeout(() => {
-        handleToggleMic();
-      }, 120);
-    }
+    setTimeout(() => {
+      handleToggleMic();
+    }, 120);
   };
 
   // Copy Site URL to Clipboard (for testing in Chrome / Edge)
@@ -627,193 +590,38 @@ export default function ReciteToolbar() {
     }
   };
 
-  // Universal Network Voice Recording (Supported on 100% of browsers including Brave, Firefox & Safari)
-  const startNetworkRecording = async () => {
-    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+  // Voice Command (Microphone) Handler with Persistent Auto-Resume and 100% Offline Mode Fallback
+  const handleToggleMic = () => {
+    const SpeechRecognition = typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition) : null;
+    if (!SpeechRecognition) {
       setIsOfflineMode(true);
-      setSpeechFeedback('Microphone not supported on this device.');
+      setSpeechFeedback('Offline Mode Active');
+      a11yStore.announce('Speech recognition not supported in this browser. Offline command mode activated.');
       return;
     }
 
-    try {
-      if (recognitionRef.current) {
-        try { recognitionRef.current.abort(); } catch (e) {}
-        recognitionRef.current = null;
-      }
-      setVoiceHudVisible(true);
+    if (isListeningRef.current || isOfflineMode) {
       isListeningRef.current = false;
       setIsListening(false);
       setIsOfflineMode(false);
-      setMicError(null);
-      setSpeechTranscript('');
-      setSpeechFeedback('Listening (Network Voice)... Speak now 🎙️');
-      setIsNetworkRecording(true);
-      a11yStore.announce('Network voice listening active. Speak your command now.');
-
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaStreamRef.current = stream;
-
-      // AudioContext Analyser for live volume metering & automatic silence detection
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (AudioCtx) {
-        try {
-          const audioCtx = new AudioCtx();
-          audioContextRef.current = audioCtx;
-          const source = audioCtx.createMediaStreamSource(stream);
-          const analyser = audioCtx.createAnalyser();
-          analyser.fftSize = 256;
-          source.connect(analyser);
-
-          const dataArray = new Uint8Array(analyser.frequencyBinCount);
-          let silenceCount = 0;
-          let hasSpoken = false;
-
-          const checkVolume = () => {
-            if (!mediaRecorderRef.current || mediaRecorderRef.current.state !== 'recording') return;
-            analyser.getByteFrequencyData(dataArray);
-            let sum = 0;
-            for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
-            const avg = sum / dataArray.length;
-            setAudioLevel(Math.min(100, Math.round(avg * 2.5)));
-
-            if (avg > 14) {
-              hasSpoken = true;
-              silenceCount = 0;
-            } else if (hasSpoken) {
-              silenceCount++;
-              // Automatically stop and transcribe after 1.4s of silence
-              if (silenceCount > 14) {
-                stopNetworkRecording();
-                return;
-              }
-            }
-            vadIntervalRef.current = setTimeout(checkVolume, 100);
-          };
-          vadIntervalRef.current = setTimeout(checkVolume, 100);
-        } catch (audioErr) {
-          console.warn('[AudioContext VAD]', audioErr);
-        }
-      }
-
-      // MediaRecorder initialization
-      let mimeType = '';
-      if (typeof MediaRecorder !== 'undefined') {
-        if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
-          mimeType = 'audio/webm;codecs=opus';
-        } else if (MediaRecorder.isTypeSupported('audio/webm')) {
-          mimeType = 'audio/webm';
-        } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
-          mimeType = 'audio/mp4';
-        }
-      }
-
-      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
-      mediaRecorderRef.current = recorder;
-      audioChunksRef.current = [];
-
-      recorder.ondataavailable = (event) => {
-        if (event.data && event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
-
-      recorder.onstop = async () => {
-        clearTimeout(vadIntervalRef.current);
-        if (audioContextRef.current) {
-          try { audioContextRef.current.close(); } catch (e) {}
-          audioContextRef.current = null;
-        }
-        if (mediaStreamRef.current) {
-          mediaStreamRef.current.getTracks().forEach((track) => track.stop());
-          mediaStreamRef.current = null;
-        }
-
-        setIsNetworkRecording(false);
-        setAudioLevel(0);
-
-        const audioBlob = new Blob(audioChunksRef.current, {
-          type: recorder.mimeType || 'audio/webm'
-        });
-
-        if (audioBlob.size > 800) {
-          setIsTranscribing(true);
-          setSpeechFeedback('Transcribing voice command... ⚡');
-          try {
-            const transcript = await transcribeAudio(audioBlob);
-            setIsTranscribing(false);
-            if (transcript && transcript.trim()) {
-              setSpeechTranscript(transcript.trim());
-              setSpeechFeedback(`Heard: "${transcript.trim()}"`);
-              executeVoiceCommand(transcript.trim(), true);
-            } else {
-              setSpeechFeedback('No speech detected. Click "Speak" to try again.');
-            }
-          } catch (err) {
-            setIsTranscribing(false);
-            setSpeechFeedback('Speech transcription error. Click "Speak" to try again.');
-          }
-        } else {
-          setSpeechFeedback('Recording too short. Click "Speak" to try again.');
-        }
-      };
-
-      recorder.start(200);
-    } catch (err) {
-      console.warn('[NetworkRecording Error]', err);
-      setIsNetworkRecording(false);
-      setIsOfflineMode(true);
-      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        setMicError('Microphone permission blocked. Please allow microphone in browser address bar.');
-      } else {
-        setMicError('Could not start microphone recording.');
-      }
-    }
-  };
-
-  const stopNetworkRecording = () => {
-    clearTimeout(vadIntervalRef.current);
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-      mediaRecorderRef.current.stop();
-    }
-  };
-
-  // Voice Command (Microphone) Handler with Seamless Universal Browser Support
-  const handleToggleMic = () => {
-    if (voiceHudVisible || isListeningRef.current || isNetworkRecording || isOfflineMode) {
-      if (isNetworkRecording) {
-        stopNetworkRecording();
-      }
-      isListeningRef.current = false;
-      setIsListening(false);
-      setIsNetworkRecording(false);
-      setIsTranscribing(false);
-      setIsOfflineMode(false);
-      setVoiceHudVisible(false);
       networkErrorCountRef.current = 0;
       if (recognitionRef.current) {
-        try { recognitionRef.current.abort(); } catch (e) {}
+        try {
+          recognitionRef.current.abort();
+        } catch (e) {}
         recognitionRef.current = null;
       }
-      a11yStore.announce('Voice command listening stopped.');
-      setSpeechFeedback('Voice listening paused.');
+      a11yStore.announce('Voice command mode closed.');
+      setSpeechFeedback('Voice command listening paused.');
       return;
     }
 
-    setVoiceHudVisible(true);
-
-    // In Brave or when SpeechRecognition is absent/unsupported, start Universal Network Recording!
-    if (isBraveBrowser || (!window.SpeechRecognition && !window.webkitSpeechRecognition)) {
-      startNetworkRecording();
-      return;
-    }
-
-    // In Chrome or Edge, use native Web Speech with instant fallback to Network Recording
     try {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
       recognition.continuous = true;
       recognition.interimResults = true;
       
+      // Auto-detect browser/system language with en-US fallback
       const detectedLang = (typeof navigator !== 'undefined' && (navigator.language || (navigator.languages && navigator.languages[0]))) || 'en-US';
       recognition.lang = detectedLang;
 
@@ -829,7 +637,7 @@ export default function ReciteToolbar() {
         setIsListening(true);
         setIsOfflineMode(false);
         networkErrorCountRef.current = 0;
-        a11yStore.announce('Hands-free voice listening active.');
+        a11yStore.announce('Hands-free voice listening active. You can say: scroll to top, tap buttons, open page, search, read, or help.');
       };
 
       recognition.onresult = (event) => {
@@ -852,18 +660,49 @@ export default function ReciteToolbar() {
 
       recognition.onerror = (event) => {
         console.warn('[ReciteToolbar Mic Error]', event.error);
-        if (event.error === 'network' || event.error === 'not-allowed' || event.error === 'language-not-supported') {
-          // Immediately seamlessly fall back to Network Speech Recording!
+        if (event.error === 'not-allowed') {
           isListeningRef.current = false;
           setIsListening(false);
-          startNetworkRecording();
+          setIsOfflineMode(true);
+          setMicError('Microphone permission blocked. Switched to offline command mode.');
+          a11yStore.announce('Microphone permission blocked. Switched to offline command mode.');
+        } else if (event.error === 'network') {
+          // Cloud speech endpoint unreachable (offline, Brave privacy shield, VPN/proxy, or timeout)
+          networkErrorCountRef.current += 1;
+          isListeningRef.current = false;
+          setIsListening(false);
+          setIsOfflineMode(true);
+          setSpeechFeedback('Offline Mode Active');
+          a11yStore.announce('Voice recognition network unavailable. Switched to offline command mode.');
+          if (recognitionRef.current) {
+            try { recognitionRef.current.abort(); } catch (e) {}
+            recognitionRef.current = null;
+          }
+        } else if (event.error === 'language-not-supported') {
+          console.warn('[ReciteToolbar] Language not supported for:', recognition.lang);
+          // If specific regional dialect (e.g. en-IN, en-GB) failed, fallback to generic 'en-US' or browser default
+          if (recognition.lang !== 'en-US') {
+            recognition.lang = 'en-US';
+            try {
+              recognition.start();
+              return;
+            } catch (err) {}
+          } else {
+            recognition.lang = '';
+            try {
+              recognition.start();
+              return;
+            } catch (err) {}
+          }
+          setSpeechFeedback('Language dialect adjusted.');
         } else if (event.error !== 'no-speech') {
           setSpeechFeedback(`Notice: ${event.error}`);
         }
       };
 
       recognition.onend = () => {
-        if (isListeningRef.current && !isOfflineMode && !isNetworkRecording) {
+        // Auto-restart if user still wants hands-free listening active (prevents Chrome 3-sec silence drop)
+        if (isListeningRef.current && !isOfflineMode && networkErrorCountRef.current < 2) {
           try {
             recognition.start();
           } catch (e) {
@@ -880,7 +719,11 @@ export default function ReciteToolbar() {
 
       recognition.start();
     } catch (err) {
-      startNetworkRecording();
+      console.error('[ReciteToolbar Mic Start Error]', err);
+      isListeningRef.current = false;
+      setIsListening(false);
+      setIsOfflineMode(true);
+      setSpeechFeedback('Offline Mode Active');
     }
   };
 
@@ -981,7 +824,7 @@ export default function ReciteToolbar() {
     return () => document.removeEventListener('mousedown', handleOutside);
   }, [activeFlyout]);
 
-  if (!settings.toolbarOpen && !voiceHudVisible && !isListening && !isNetworkRecording && !isTranscribing && !isOfflineMode && !micError) return null;
+  if (!settings.toolbarOpen && !isListening && !isOfflineMode && !micError) return null;
 
   return (
     <>
@@ -1175,30 +1018,22 @@ export default function ReciteToolbar() {
           <button
             onClick={handleToggleMic}
             className={`w-9 h-9 rounded-md flex items-center justify-center transition-all cursor-pointer ${
-              isListening || isNetworkRecording || isTranscribing
+              isListening && !isOfflineMode
                 ? 'bg-rose-600 text-white animate-pulse'
                 : isOfflineMode
                   ? 'bg-amber-600 text-white hover:bg-amber-700'
-                  : voiceHudVisible
-                    ? 'bg-emerald-600 text-white ring-2 ring-emerald-400'
-                    : 'bg-[#059669] text-white hover:bg-[#047857]'
+                  : 'bg-[#059669] text-white hover:bg-[#047857]'
             }`}
             title={
-              isListening || isNetworkRecording || isTranscribing
-                ? 'Listening for voice commands (Click to stop)...'
-                : voiceHudVisible || isOfflineMode
-                  ? 'Voice command HUD active (Click to close)'
+              isListening && !isOfflineMode
+                ? 'Listening for voice commands...'
+                : isOfflineMode
+                  ? 'Offline voice command mode active (Click to close)'
                   : 'Enable hands-free voice command navigation'
             }
             aria-label="Voice command microphone"
           >
-            {isTranscribing ? (
-              <Loader2 className="w-4 h-4 animate-spin text-white" />
-            ) : isOfflineMode ? (
-              <WifiOff className="w-4 h-4" />
-            ) : (
-              <Mic className="w-4 h-4" />
-            )}
+            {isOfflineMode ? <WifiOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
           </button>
         </div>
 
@@ -1676,9 +1511,9 @@ export default function ReciteToolbar() {
   )}
 
   {/* ================================================================
-      FLOATING HANDS-FREE LIVE SPEECH HUD (Universal Network & Offline Command Mode)
+      FLOATING HANDS-FREE LIVE SPEECH HUD (Live Mic & 100% Offline Command Mode)
       ================================================================ */}
-  {(voiceHudVisible || isListening || isNetworkRecording || isTranscribing || isOfflineMode) && (
+  {(isListening || isOfflineMode) && (
     <>
       {/* Voice Commands Cheat Sheet Modal Popover */}
       {showVoiceHelp && (
@@ -1693,7 +1528,7 @@ export default function ReciteToolbar() {
               <span className="text-xl">🎙️</span>
               <div>
                 <h3 className="font-display font-black text-sm text-white">Hands-Free Voice Commands</h3>
-                <p className="text-[11px] text-emerald-300">Speak naturally or click any command below — works across all browsers with local client execution.</p>
+                <p className="text-[11px] text-emerald-300">Speak naturally or click any command below — every action runs 100% offline in client JavaScript.</p>
               </div>
             </div>
             <button
@@ -1749,41 +1584,26 @@ export default function ReciteToolbar() {
         role="status"
         aria-live="polite"
         className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[100005] bg-[#0B1528]/95 text-white border-2 ${
-          isOfflineMode 
-            ? 'border-amber-400 ring-amber-500/20' 
-            : isTranscribing 
-              ? 'border-cyan-400 ring-cyan-500/25'
-              : 'border-emerald-400 ring-emerald-500/20'
+          isOfflineMode ? 'border-amber-400 ring-amber-500/20' : 'border-emerald-400 ring-emerald-500/20'
         } px-4 sm:px-5 py-3 rounded-2xl shadow-2xl backdrop-blur-xl flex flex-col gap-2.5 select-none animate-in fade-in slide-in-from-bottom-4 duration-300 max-w-2xl w-[94vw] ring-4`}
       >
         <div className="flex items-center gap-3 sm:gap-4 w-full">
           {/* Status Indicator Icon */}
           <div className="relative flex items-center justify-center flex-shrink-0">
-            {isTranscribing ? (
-              <div className="w-9 h-9 rounded-full bg-cyan-600 text-white flex items-center justify-center relative shadow-md">
-                <Loader2 className="w-5 h-5 animate-spin text-white" />
-              </div>
-            ) : isNetworkRecording ? (
+            {isListening && !isOfflineMode ? (
               <>
                 <div className="w-9 h-9 rounded-full bg-emerald-500/30 flex items-center justify-center animate-ping absolute inset-0" />
                 <div className="w-9 h-9 rounded-full bg-emerald-600 text-white flex items-center justify-center relative shadow-md">
                   <Mic className="w-5 h-5 animate-pulse" />
                 </div>
               </>
-            ) : isListening ? (
-              <>
-                <div className="w-9 h-9 rounded-full bg-emerald-500/30 flex items-center justify-center animate-ping absolute inset-0" />
-                <div className="w-9 h-9 rounded-full bg-emerald-600 text-white flex items-center justify-center relative shadow-md">
-                  <Mic className="w-5 h-5 animate-pulse" />
-                </div>
-              </>
-            ) : isOfflineMode ? (
-              <div className="w-9 h-9 rounded-full bg-amber-600 text-white flex items-center justify-center relative shadow-md" title="Offline or Speech Cloud Unreachable">
-                <WifiOff className="w-5 h-5" />
+            ) : isBraveBrowser ? (
+              <div className="w-9 h-9 rounded-full bg-amber-600 text-white flex items-center justify-center relative shadow-md text-base" title="Brave Speech Shield Active">
+                🦁
               </div>
             ) : (
-              <div className="w-9 h-9 rounded-full bg-emerald-600 text-white flex items-center justify-center relative shadow-md" title="Voice Controller Ready">
-                <Mic className="w-5 h-5" />
+              <div className="w-9 h-9 rounded-full bg-amber-600 text-white flex items-center justify-center relative shadow-md" title="Offline or Speech Cloud Unreachable">
+                <WifiOff className="w-5 h-5" />
               </div>
             )}
           </div>
@@ -1791,48 +1611,15 @@ export default function ReciteToolbar() {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className={`text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 whitespace-nowrap ${
-                isOfflineMode 
-                  ? 'text-amber-400' 
-                  : isTranscribing 
-                    ? 'text-cyan-400' 
-                    : 'text-emerald-400'
+                isOfflineMode ? 'text-amber-400' : 'text-emerald-400'
               }`}>
-                <span className={`w-2 h-2 rounded-full ${
-                  isOfflineMode 
-                    ? 'bg-amber-400' 
-                    : isTranscribing 
-                      ? 'bg-cyan-400 animate-ping' 
-                      : (isListening || isNetworkRecording)
-                        ? 'bg-emerald-400 animate-pulse'
-                        : 'bg-emerald-400'
-                }`} />
-                {isTranscribing
-                  ? 'Transcribing Speech'
-                  : isNetworkRecording
-                    ? 'Listening (Network Voice)'
-                    : isListening
-                      ? 'Hands-Free Voice Active'
-                      : isOfflineMode
-                        ? 'Offline Voice Mode'
-                        : 'Voice Ready (Network)'}
+                <span className={`w-2 h-2 rounded-full ${isOfflineMode ? 'bg-amber-400' : 'bg-emerald-400 animate-pulse'}`} />
+                {isListening && !isOfflineMode
+                  ? 'Hands-Free Voice Active'
+                  : isBraveBrowser
+                    ? 'Brave Voice Shield Blocked'
+                    : 'Voice Cloud Unreachable'}
               </span>
-
-              {/* Live Volume Meter while Network Recording */}
-              {isNetworkRecording && (
-                <div className="flex items-center gap-0.5 h-3.5 px-1.5 bg-slate-900/80 rounded-md border border-slate-700" title={`Audio Level: ${audioLevel}%`}>
-                  {[1, 2, 3, 4, 5].map((bar) => (
-                    <div
-                      key={bar}
-                      className="w-1 bg-emerald-400 rounded-full transition-all duration-75"
-                      style={{
-                        height: `${Math.max(3, Math.min(14, (audioLevel / 100) * 14 * (1 + (bar % 2) * 0.4)))}px`,
-                        opacity: audioLevel > bar * 12 ? 1 : 0.35
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
-
               {isOfflineMode && (
                 <button
                   type="button"
@@ -1844,54 +1631,33 @@ export default function ReciteToolbar() {
                   <HelpCircle className="w-3 h-3" />
                 </button>
               )}
-
               {speechFeedback && !isOfflineMode && (
-                <span className="text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-700/60 px-2 py-0.5 rounded-full font-bold truncate max-w-[220px]">
+                <span className="text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-700/60 px-2 py-0.5 rounded-full font-bold truncate max-w-[200px]">
                   {speechFeedback}
                 </span>
               )}
             </div>
-
             <p className="text-xs text-slate-200 font-medium truncate mt-0.5">
-              {isTranscribing
-                ? 'Processing audio via Cloud AI Whisper... ⚡'
-                : isNetworkRecording
-                  ? (speechTranscript ? `"${speechTranscript}"` : 'Listening... Speak a command ("scroll down", "tap donate", "programs")')
-                  : isListening
-                    ? (speechTranscript ? `Heard: "${speechTranscript}"` : 'Listening... Say "scroll to top", "tap donate", "open page [name]", "read"')
-                    : isOfflineMode
-                      ? 'Type command below or click quick action buttons'
-                      : (speechTranscript ? `Last Heard: "${speechTranscript}"` : 'Click "Speak" to say a command, or click quick buttons')}
+              {isListening && !isOfflineMode 
+                ? (speechTranscript ? `Heard: "${speechTranscript}"` : 'Listening... Say "scroll to top", "tap [button]", "open page [name]", "read", or "help"')
+                : isBraveBrowser
+                  ? 'Brave blocks Web Speech API. Open in Chrome / Edge to speak, or use quick commands'
+                  : 'Speech requires browser cloud access. Use Chrome/Edge with internet or use quick commands'}
             </p>
           </div>
 
           <div className="flex items-center gap-1.5 flex-shrink-0">
-            {/* If currently Network Recording, provide Done button to finish speech immediately */}
-            {isNetworkRecording && (
+            {isOfflineMode && isBraveBrowser && (
               <button
                 type="button"
-                onClick={stopNetworkRecording}
-                className="px-2.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs transition-colors flex items-center gap-1 cursor-pointer shadow-sm animate-pulse"
-                title="Finish speaking and process command now"
+                onClick={handleCopySiteUrl}
+                className="px-2.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition-colors flex items-center gap-1 cursor-pointer shadow-sm"
+                title="Copy website URL to clipboard to open in Chrome or Edge"
               >
-                <Check className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Done</span>
+                {copiedSiteUrl ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                <span className="hidden sm:inline">{copiedSiteUrl ? 'Copied Site URL!' : 'Open in Chrome/Edge'}</span>
               </button>
             )}
-
-            {/* If idle in Network mode, show Speak Command button */}
-            {!isListening && !isNetworkRecording && !isTranscribing && !isOfflineMode && (
-              <button
-                type="button"
-                onClick={startNetworkRecording}
-                className="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs transition-colors flex items-center gap-1 cursor-pointer shadow-sm"
-                title="Speak a voice command"
-              >
-                <Mic className="w-3.5 h-3.5" />
-                <span>Speak</span>
-              </button>
-            )}
-
             {isOfflineMode && (
               <button
                 type="button"
@@ -1903,7 +1669,6 @@ export default function ReciteToolbar() {
                 <span className="hidden sm:inline">Retry Mic</span>
               </button>
             )}
-
             <button
               type="button"
               onClick={() => setShowVoiceHelp((prev) => !prev)}
@@ -1914,7 +1679,6 @@ export default function ReciteToolbar() {
               <HelpCircle className="w-3.5 h-3.5 text-amber-300" />
               <span className="hidden sm:inline">Commands</span>
             </button>
-
             <button
               type="button"
               onClick={handleToggleMic}
