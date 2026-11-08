@@ -83,8 +83,8 @@ export const TIER_CONFIGS = {
     circleName: 'Visionary Circle',
     certificatePrefix: 'VB',
     minAmount: 500,
-    accentColor: '#B45309', // Deep Gold / Amber-700
-    themeGradient: 'from-amber-400 via-purple-700 to-indigo-900',
+    accentColor: '#F59E0B', // Radiant Amber Gold
+    themeGradient: 'from-amber-300 via-yellow-400 to-amber-500',
     cardBackground: 'bg-gradient-to-br from-[#0F0D22] via-[#1B1238] to-[#0D1527] text-white',
     borderStyle: 'border-amber-400/90 ring-2 ring-amber-300/60 shadow-2xl shadow-amber-900/30',
     badgeText: 'VISIONARY BENEFACTOR',
@@ -92,7 +92,7 @@ export const TIER_CONFIGS = {
     impactNarrative: 'As a Visionary Benefactor, your profound investment anchors the operational foundation of Diversity Collective Ventura County. You empower the flagship Community Resource Center, sustain year-round advocacy, and ensure Ventura County Pride and the Youth Pride Prom remain forever free, affirming, and accessible to all.',
     quote: '"Your leadership transforms our community from surviving to thriving. We honor your extraordinary commitment to LGBTQ+ equality and dignity."',
     insignia: 'Sovereign Gold Crest & Diamond Prism',
-    envelopeAccent: 'from-amber-500 via-yellow-400 to-purple-900',
+    envelopeAccent: 'from-amber-400 via-yellow-300 to-amber-500',
     envelopeBg: 'bg-gradient-to-br from-[#1E1635] via-[#2D1B4E] to-[#0F0D22]',
     motif: 'sovereign_gold_crest'
   }

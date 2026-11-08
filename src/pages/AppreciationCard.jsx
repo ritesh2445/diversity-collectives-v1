@@ -862,6 +862,8 @@ export default function AppreciationCard() {
     activeConfigs[cardData?.tier || activeTierId] || 
     activeConfigs[APPRECIATION_TIERS.COMMUNITY_ALLY];
 
+  const isDark = (cardData?.tier || activeTierId) === APPRECIATION_TIERS.VISIONARY_BENEFACTOR;
+
   // Unique verified certificate token code
   const certificateId = `DCVC-AC-${currentTier.certificatePrefix || 'GEN'}-2026-${(token || 'PREVIEW').substring(0, 6).toUpperCase()}`;
 
@@ -1098,7 +1100,11 @@ export default function AppreciationCard() {
               </div>
 
               {/* Tier Circle Ribbon */}
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-black uppercase tracking-widest bg-white/90 border border-slate-200/90 shadow-2xs text-[#5A1E65]">
+              <div className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-black uppercase tracking-widest ${
+                isDark 
+                  ? 'bg-amber-950/90 border border-amber-400/80 shadow-md text-amber-300' 
+                  : 'bg-white/90 border border-slate-200/90 shadow-2xs text-[#5A1E65]'
+              }`}>
                 <Award className="w-3.5 h-3.5 text-amber-500" />
                 <span>{currentTier.circleName}</span>
               </div>
@@ -1125,11 +1131,11 @@ export default function AppreciationCard() {
 
               {/* Envelope Invitation Copy */}
               <div className="space-y-2">
-                <h1 className="text-3xl sm:text-4xl font-fraunces font-black text-slate-950">
+                <h1 className={`text-3xl sm:text-4xl font-fraunces font-black ${isDark ? 'text-white' : 'text-slate-950'}`}>
                   A Gift of Authentic Gratitude
                 </h1>
-                <p className="text-sm sm:text-base text-slate-600 max-w-md mx-auto leading-relaxed">
-                  Crafted exclusively for <strong className="text-purple-950 font-extrabold">{cardData?.donorDisplayName}</strong> in formal commemoration of your community philanthropy.
+                <p className={`text-sm sm:text-base max-w-md mx-auto leading-relaxed ${isDark ? 'text-slate-200' : 'text-slate-600'}`}>
+                  Crafted exclusively for <strong className={`${isDark ? 'text-amber-300' : 'text-purple-950'} font-extrabold`}>{cardData?.donorDisplayName}</strong> in formal commemoration of your community philanthropy.
                 </p>
               </div>
 
@@ -1198,7 +1204,9 @@ export default function AppreciationCard() {
               {/* ============================================================= */}
               {/* CARD HEADER: Official Logo + Tier Insignia + Unique Token ID  */}
               {/* ============================================================= */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-300/40 pb-6 mb-6">
+              <div className={`flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b ${
+                isDark ? 'border-amber-500/30' : 'border-slate-300/40'
+              } pb-6 mb-6`}>
                 
                 {/* Official DCVC Brand Identity */}
                 <div className="flex items-center gap-3.5">
@@ -1210,10 +1218,14 @@ export default function AppreciationCard() {
                     />
                   </div>
                   <div>
-                    <span className="font-display font-black text-sm sm:text-base tracking-tight text-slate-950 block">
+                    <span className={`font-display font-black text-sm sm:text-base tracking-tight ${
+                      isDark ? 'text-white' : 'text-slate-950'
+                    } block`}>
                       Diversity Collective
                     </span>
-                    <span className="text-[10px] sm:text-xs font-bold tracking-widest uppercase text-slate-500 block">
+                    <span className={`text-[10px] sm:text-xs font-bold tracking-widest uppercase ${
+                      isDark ? 'text-amber-300/90' : 'text-slate-500'
+                    } block`}>
                       Ventura County 501(c)(3) Nonprofit
                     </span>
                   </div>
@@ -1221,11 +1233,17 @@ export default function AppreciationCard() {
 
                 {/* Tier Badge & Verified Certificate ID */}
                 <div className="text-left sm:text-right space-y-1">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black tracking-wider bg-white/90 border border-slate-200 shadow-2xs text-[#5A1E65]">
+                  <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black tracking-wider ${
+                    isDark 
+                      ? 'bg-amber-950/90 border border-amber-400/80 shadow-md text-amber-300' 
+                      : 'bg-white/90 border border-slate-200 shadow-2xs text-[#5A1E65]'
+                  }`}>
                     <Award className="w-3.5 h-3.5 text-amber-500" />
                     <span>{currentTier.badgeText}</span>
                   </div>
-                  <div className="font-mono text-[10px] text-slate-500 tracking-wider block">
+                  <div className={`font-mono text-[10px] ${
+                    isDark ? 'text-amber-300/80 font-bold' : 'text-slate-500'
+                  } tracking-wider block`}>
                     ID: {certificateId}
                   </div>
                 </div>
@@ -1245,28 +1263,44 @@ export default function AppreciationCard() {
               {/* COMMEMORATIVE INSCRIPTION & PERSONALIZATION                   */}
               {/* ============================================================= */}
               <div className="space-y-5 text-center my-6">
-                <span className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.22em] text-[#5A1E65] block">
+                <span className={`text-[11px] sm:text-xs font-bold uppercase tracking-[0.22em] ${
+                  isDark ? 'text-amber-300' : 'text-[#5A1E65]'
+                } block`}>
                   Official 501(c)(3) Certificate of Authentic Gratitude
                 </span>
 
-                <h3 className="font-fraunces text-3xl sm:text-5xl font-black text-slate-950 tracking-tight leading-tight">
+                <h3 className={`font-fraunces text-3xl sm:text-5xl font-black ${
+                  isDark ? 'text-white' : 'text-slate-950'
+                } tracking-tight leading-tight`}>
                   With Heartfelt Thanks To <br />
-                  <span className={`bg-gradient-to-r ${currentTier.themeGradient} bg-clip-text text-transparent underline decoration-amber-400/40 decoration-2 underline-offset-8`}>
+                  <span className={`bg-gradient-to-r ${
+                    isDark ? 'from-amber-200 via-yellow-300 to-amber-400' : currentTier.themeGradient
+                  } bg-clip-text text-transparent underline decoration-amber-400/60 decoration-2 underline-offset-8 font-extrabold`}>
                     {cardData?.donorDisplayName}
                   </span>
                 </h3>
 
-                <p className="font-fraunces italic text-base sm:text-xl text-slate-700 leading-relaxed max-w-2xl mx-auto pt-1">
+                <p className={`font-fraunces italic text-base sm:text-xl ${
+                  isDark ? 'text-amber-100/95 font-medium' : 'text-slate-700'
+                } leading-relaxed max-w-2xl mx-auto pt-1`}>
                   {currentTier.quote}
                 </p>
 
                 {/* Impact Statement Box */}
-                <div className="p-5 sm:p-6 rounded-2xl bg-white/95 border border-slate-200/90 shadow-sm text-left max-w-2xl mx-auto space-y-2">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-[#5A1E65] flex items-center gap-1.5">
-                    <Heart className="w-4 h-4 text-rose-500 fill-current" />
+                <div className={`p-5 sm:p-6 rounded-2xl ${
+                  isDark 
+                    ? 'bg-slate-900/90 border border-amber-500/40 shadow-xl backdrop-blur-md' 
+                    : 'bg-white/95 border border-slate-200/90 shadow-sm'
+                } text-left max-w-2xl mx-auto space-y-2`}>
+                  <h4 className={`text-xs font-black uppercase tracking-wider ${
+                    isDark ? 'text-amber-300' : 'text-[#5A1E65]'
+                  } flex items-center gap-1.5`}>
+                    <Heart className={`w-4 h-4 ${isDark ? 'text-amber-400 fill-amber-400' : 'text-rose-500 fill-current'}`} />
                     <span>Your Ventura County Community Impact</span>
                   </h4>
-                  <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-normal">
+                  <p className={`text-xs sm:text-sm ${
+                    isDark ? 'text-slate-100' : 'text-slate-700'
+                  } leading-relaxed font-normal`}>
                     {cardData?.impactMessage || currentTier.impactNarrative}
                   </p>
                 </div>
@@ -1275,32 +1309,52 @@ export default function AppreciationCard() {
               {/* ============================================================= */}
               {/* COLLECTIVE COMMUNITY GRATITUDE & 501(C)(3) COMMEMORATIVE SEAL */}
               {/* ============================================================= */}
-              <div className="pt-6 border-t border-slate-300/40 grid grid-cols-1 sm:grid-cols-2 gap-6 items-center mt-8">
+              <div className={`pt-6 border-t ${
+                isDark ? 'border-amber-500/30' : 'border-slate-300/40'
+              } grid grid-cols-1 sm:grid-cols-2 gap-6 items-center mt-8`}>
                 
                 {/* Collective Community Gratitude */}
                 <div className="space-y-1 text-center sm:text-left">
-                  <p className="text-xs font-black uppercase tracking-wider text-[#5A1E65]">With Deepest Gratitude</p>
-                  <span className="font-fraunces italic font-bold text-slate-900 text-xl block">
+                  <p className={`text-xs font-black uppercase tracking-wider ${
+                    isDark ? 'text-amber-300' : 'text-[#5A1E65]'
+                  }`}>With Deepest Gratitude</p>
+                  <span className={`font-fraunces italic font-bold ${
+                    isDark ? 'text-white' : 'text-slate-900'
+                  } text-xl block`}>
                     Diversity Collective Ventura County
                   </span>
-                  <p className="text-xs text-slate-600">Board of Directors, Staff, Volunteers & Community Sanctuary</p>
+                  <p className={`text-xs ${
+                    isDark ? 'text-slate-200 font-medium' : 'text-slate-600'
+                  }`}>Board of Directors, Staff, Volunteers & Community Sanctuary</p>
                 </div>
 
                 {/* Official 501(c)(3) Non-Profit Commemorative Seal */}
                 <div className="text-center sm:text-right space-y-1">
-                  <div className="inline-block p-3 rounded-2xl bg-white/95 border border-purple-200 text-[#5A1E65] text-center sm:text-right shadow-2xs">
-                    <p className="text-[11px] font-bold text-slate-900">501(c)(3) Nonprofit Public Charity</p>
-                    <p className="text-[10px] text-slate-600">Ventura County, California · Established 2014</p>
-                    <p className="text-[9px] font-mono text-purple-700 font-semibold tracking-wider">CERTIFICATE: {certificateId}</p>
+                  <div className={`inline-block p-3 rounded-2xl ${
+                    isDark 
+                      ? 'bg-slate-900/90 border border-amber-500/40 shadow-lg text-amber-200' 
+                      : 'bg-white/95 border border-purple-200 text-[#5A1E65] shadow-2xs'
+                  } text-center sm:text-right`}>
+                    <p className={`text-[11px] font-bold ${isDark ? 'text-amber-200' : 'text-slate-900'}`}>501(c)(3) Nonprofit Public Charity</p>
+                    <p className={`text-[10px] ${isDark ? 'text-slate-300 font-medium' : 'text-slate-600'}`}>Ventura County, California · Established 2014</p>
+                    <p className={`text-[9px] font-mono ${
+                      isDark ? 'text-amber-400 font-bold' : 'text-purple-700 font-semibold'
+                    } tracking-wider`}>CERTIFICATE: {certificateId}</p>
                   </div>
                 </div>
 
               </div>
 
               {/* Explicit Separation from Official IRS Tax Receipt */}
-              <div className="mt-8 pt-4 border-t border-slate-200/60 text-[11px] text-slate-600 text-center bg-slate-50/70 rounded-2xl p-3.5 border border-slate-200/50">
-                <p className="font-medium text-slate-700 leading-relaxed">
-                  <strong className="text-slate-900 font-bold">Commemorative Keepsake Notice:</strong> This appreciation card is an expressive cultural keepsake honoring your generous community partnership. It does not serve as an official IRS tax receipt. Official tax-deductible donation receipts are issued independently and securely via our nonprofit giving partner, <strong>Zeffy</strong>.
+              <div className={`mt-8 pt-4 border-t ${
+                isDark 
+                  ? 'border-amber-500/30 bg-slate-900/80 text-slate-200' 
+                  : 'border-slate-200/60 bg-slate-50/70 text-slate-600'
+              } text-[11px] text-center rounded-2xl p-3.5 border ${
+                isDark ? 'border-amber-500/30' : 'border-slate-200/50'
+              }`}>
+                <p className={`font-medium ${isDark ? 'text-slate-200' : 'text-slate-700'} leading-relaxed`}>
+                  <strong className={`${isDark ? 'text-amber-300 font-bold' : 'text-slate-900 font-bold'}`}>Commemorative Keepsake Notice:</strong> This appreciation card is an expressive cultural keepsake honoring your generous community partnership. It does not serve as an official IRS tax receipt. Official tax-deductible donation receipts are issued independently and securely via our nonprofit giving partner, <strong className={isDark ? 'text-white' : ''}>Zeffy</strong>.
                 </p>
               </div>
 
