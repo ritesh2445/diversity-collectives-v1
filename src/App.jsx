@@ -1,5 +1,5 @@
 import React, { lazy, Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
@@ -145,6 +145,25 @@ export default function App() {
                 <Route path="/submission-success" element={<SubmissionSuccess />} />
                 <Route path="/submission-error" element={<SubmissionError />} />
                 <Route path="/error" element={<GeneralError />} />
+
+                {/* Canonical Legacy URL Redirects for Source Website Migration */}
+                <Route path="/crc-resources" element={<Navigate to="/resources" replace />} />
+                <Route path="/services" element={<Navigate to="/programs" replace />} />
+                <Route path="/services/youth-services" element={<Navigate to="/programs/rainbow-umbrella" replace />} />
+                <Route path="/services/gsa-resources" element={<Navigate to="/resources" replace />} />
+                <Route path="/youth-programs" element={<Navigate to="/programs" replace />} />
+                <Route path="/adult-programs" element={<Navigate to="/community" replace />} />
+                <Route path="/virtual-vendors" element={<Navigate to="/directory" replace />} />
+                <Route path="/pride-vendor" element={<Navigate to="/directory" replace />} />
+                <Route path="/sponsor" element={<Navigate to="/sponsors" replace />} />
+                <Route path="/venturapride" element={<Navigate to="/events" replace />} />
+                <Route path="/dcvc-events" element={<Navigate to="/events" replace />} />
+                <Route path="/shines" element={<Navigate to="/programs/diversity-shines" replace />} />
+                <Route path="/rainbow-umbrella" element={<Navigate to="/programs/rainbow-umbrella" replace />} />
+                <Route path="/schedule-your-appointment" element={<Navigate to="/programs/diversity-shines" replace />} />
+                <Route path="/accessibility-statement" element={<Navigate to="/accessibility" replace />} />
+                <Route path="/privacy-policy" element={<Navigate to="/privacy" replace />} />
+                <Route path="/terms-and-conditions" element={<Navigate to="/terms" replace />} />
 
                 {/* Custom 404 Not Found Catch-All */}
                 <Route path="*" element={<NotFound />} />

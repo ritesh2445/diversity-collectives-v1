@@ -546,6 +546,55 @@ export const sponsorsList = [
     logo: "/images/vcph-logo.png",
     url: "https://vchca.org/public-health/",
     role: "Public Health & STI Screening Partner"
+  },
+  {
+    name: "Planned Parenthood California Central Coast",
+    shortName: "PPCCC",
+    logo: "/images/hero-community.jpg",
+    url: "https://www.plannedparenthood.org/planned-parenthood-california-central-coast",
+    role: "Reproductive & Gender-Affirming Healthcare Partner"
+  },
+  {
+    name: "Ventura County Credit Union",
+    shortName: "VCCU",
+    logo: "/images/community-gathering.jpg",
+    url: "https://www.vccuonline.net/",
+    role: "Community Financial & Pride Sponsor"
+  },
+  {
+    name: "Ventura County Community Foundation",
+    shortName: "VCCF",
+    logo: "/images/crc-building.jpg",
+    url: "https://vccf.org/",
+    role: "Philanthropic Grantmaker & Capacity Partner"
+  },
+  {
+    name: "City of Ventura",
+    shortName: "COV",
+    logo: "/images/ventura-coast.jpg",
+    url: "https://www.cityofventura.ca.gov/",
+    role: "Civic & Community Resource Partner"
+  },
+  {
+    name: "Gilead Sciences",
+    shortName: "Gilead",
+    logo: "/images/shines-screening.jpg",
+    url: "https://www.gilead.com/",
+    role: "Healthcare Equity Grant Partner"
+  },
+  {
+    name: "Amgen",
+    shortName: "Amgen",
+    logo: "/images/volunteers.jpg",
+    url: "https://www.amgen.com/",
+    role: "Biotechnology Corporate Ally"
+  },
+  {
+    name: "McCune Foundation",
+    shortName: "McCune",
+    logo: "/images/little-unicorns.png",
+    url: "https://mccunefoundation.org/",
+    role: "Community Equity & Grassroots Grantmaker"
   }
 ];
 
@@ -553,19 +602,19 @@ export const annualSignatureEvents = [
   {
     title: "Ventura County Pride Festival",
     tagline: "The Premier LGBTQ+ Cultural Celebration on the Coast",
-    description: "Annual seaside festival celebrating community pride, local artists, performers, food, community resource vendors, and intersectional solidarity.",
+    description: "Annual seaside festival celebrating community pride, local artists, performers, food, community resource vendors, and intersectional solidarity at Plaza Park in Ventura (July 25th). All proceeds sustain the Community Resource Center.",
     link: "https://www.diversitycollectivevc.org/dcvc-events/#ventura-county-pride"
   },
   {
     title: "Diversity Gala",
     tagline: "Honoring Champions of Equity and Community Leadership",
-    description: "Our premier annual benefit evening honoring community advocates, corporate allies, and volunteers whose contributions transform lives in Ventura County.",
+    description: "Our premier annual benefit evening honoring community advocates, corporate allies, and volunteers whose contributions transform lives in Ventura County. Highlights include the Vanguard Award (One Step A La Vez), Diversity Spotlight Award (Celia Daniels), and Community Ally Award (Guidestar).",
     link: "https://www.diversitycollectivevc.org/dcvc-events/#diversity-gala"
   },
   {
     title: "Pride Prom",
     tagline: "An Unforgettable, Affirming Night for LGBTQ+ Youth",
-    description: "Hosted by Rainbow Umbrella for youth ages 13–23. A safe, magical prom where everyone can dress authentically, dance with anyone, and celebrate without fear.",
+    description: "Hosted by Rainbow Umbrella for youth ages 13–23. Held on Saturday, May 30th at The Palomino in downtown Ventura. A safe, magical prom where everyone can dress authentically, dance with anyone, and celebrate without fear.",
     link: "https://www.diversitycollectivevc.org/dcvc-events/#pride-prom"
   },
   {
@@ -573,6 +622,12 @@ export const annualSignatureEvents = [
     tagline: "Walking in Remembrance, Advocating for a Healthier Future",
     description: "Commemorating loved ones lost to HIV/AIDS, combating healthcare stigmas, and raising dedicated funding for Diversity SHINES screening and navigation.",
     link: "https://www.diversitycollectivevc.org/dcvc-events/#aids-walk-ventura"
+  },
+  {
+    title: "World AIDS Day",
+    tagline: "December 1st Global Remembrance & Stigma Reduction",
+    description: "Observed on December 1st with candlelight vigils, remembrance quilts, and community education in collaboration with Ventura County Public Health and Diversity SHINES.",
+    link: "https://www.diversitycollectivevc.org/dcvc-events/#world-aids-day"
   }
 ];
 
@@ -746,6 +801,126 @@ export const newsArticles = [
       "Growing up queer or transgender in coastal and agricultural communities can often feel isolating. For over a decade, Rainbow Umbrella has offered a safe harbor every Friday from 5:30 to 7:30 PM for youth ages 13 to 23.",
       "Beyond games, art workshops, and check-ins, the group empowers youth leadership — including organizing the annual Ventura County Youth Pride Prom, where attendees can dress authentically and dance without judgment.",
       "DCVC is deeply grateful to our monthly donors who ensure that snacks, craft supplies, and professional adult mentors remain unconditionally accessible to every young person."
+    ]
+  },
+  {
+    slug: "your-rights-in-california",
+    title: "Your Rights in California: Anti-Trans Community Fact Sheet",
+    publishedAt: "November 4, 2026",
+    readingTime: "4 min read",
+    author: "DCVC Advocacy & Legal Affairs",
+    category: "Advocacy & Civil Rights",
+    image: "/images/crc-building.jpg",
+    excerpt: "Comprehensive community fact sheet authored by California LGBTQ+, Civil Rights, and Healthcare Advocates detailing non-discrimination protections and legal resources.",
+    body: [
+      "Wondering what laws protect you and your transgender, gender-diverse, or intersex friends and family in California, and what resources you can turn to if you face discrimination? Multiple California LGBTQ+, Civil Rights, and Health Care Advocates have authored an essential Community Fact Sheet.",
+      "The resource is designed to help community members better understand their constitutional and state-level protections, combat misinformation, and advocate for themselves and others across workplace, school, housing, and healthcare settings.",
+      "While California remains a sanctuary state for transgender rights, knowing your exact administrative recourse and community reporting channels is critical. DCVC continues to provide direct navigation and referrals for local residents."
+    ]
+  },
+  {
+    slug: "transgender-day-of-remembrance-tdor",
+    title: "Transgender Day of Remembrance: Honoring Resilience at Ventura College",
+    publishedAt: "November 18, 2026",
+    readingTime: "4 min read",
+    author: "DCVC & The Transverse",
+    category: "Community & Memorial",
+    image: "/images/community-gathering.jpg",
+    excerpt: "Join Diversity Collective, The Transverse, Coalition for Family Harmony, and VC Pride Pirates at Guthrie Hall to honor lost transgender lives and celebrate community resilience.",
+    body: [
+      "Observed globally each November, Transgender Day of Remembrance honors the memory of transgender and gender non-conforming individuals whose lives were lost to anti-trans violence, while celebrating the enduring strength of our local community.",
+      "This year's observance includes multiple gathering options across Ventura County: the main live event and candlelight vigil at Ventura College's Guthrie Hall (4667 Telegraph Rd, Ventura), alongside an East County community viewing party at the Chalice Lounge in Newbury Park and California Lutheran University.",
+      "The gathering features powerful speakers, free community refreshments, mutual aid resources, and open support circles, completely free and accessible to all."
+    ]
+  },
+  {
+    slug: "have-a-sexual-health-emergency",
+    title: "Sexual Health Emergency? PEP & Immediate Clinical Resources in Ventura County",
+    publishedAt: "October 14, 2026",
+    readingTime: "3 min read",
+    author: "Diversity SHINES Clinical Team",
+    category: "Health & Wellness",
+    image: "/images/shines-screening.jpg",
+    excerpt: "Critical guidelines on Post-Exposure Prophylaxis (PEP) — an emergency treatment that must be initiated within 72 hours of potential HIV exposure.",
+    body: [
+      "Post-Exposure Prophylaxis (PEP) means taking antiretroviral medications to prevent HIV after a potential exposure. Whether through condom breakage, assault, or shared equipment, PEP must be started within 72 hours to be effective.",
+      "Diversity SHINES counselors provide immediate confidential guidance and linkage to emergency PEP providers across Ventura County, including Ventura County Public Health clinics and Planned Parenthood Central Coast.",
+      "If you believe you have had a potential exposure, do not wait. Contact our team at (805) 644-5428 or visit our Community Resource Center during weekday drop-in hours."
+    ]
+  },
+  {
+    slug: "cdc-declares-mpox-a-public-health-emergency",
+    title: "MPOX Community Health Alert: Free Jynneos Vaccines in Ventura County",
+    publishedAt: "October 2, 2026",
+    readingTime: "3 min read",
+    author: "Diversity SHINES Clinical Lead",
+    category: "Health & Wellness",
+    image: "/images/shines-screening.jpg",
+    excerpt: "Ventura County Public Health and Diversity SHINES coordinate free, stigma-free MPOX vaccinations and harm reduction guidance across the coastal region.",
+    body: [
+      "MPOX is a rare infection transmitted primarily through prolonged skin-to-skin contact. The CDC and California Department of Public Health (CDPH) recommend that individuals at higher risk receive the two-dose Jynneos vaccine.",
+      "Through our foundational partnership with Ventura County Public Health, free MPOX vaccinations and confidential consultations are available locally without insurance requirements.",
+      "Free harm reduction supplies, including 'SHINE With Me' safer-sex kits with barrier supplies and educational guides, are available for pickup at our Portola Road center or can be discreetly mailed to your home."
+    ]
+  },
+  {
+    slug: "gsa-leadership-summit",
+    title: "Ventura County GSA Leadership Summit: Uniting Student Changemakers",
+    publishedAt: "September 12, 2026",
+    readingTime: "4 min read",
+    author: "Youth Programs Team",
+    category: "Youth Empowerment",
+    image: "/images/youth-umbrella.jpg",
+    excerpt: "Middle and high school GSA leaders from all 10 Ventura County school districts gather for workshops on student rights, mental health advocacy, and peer mentorship.",
+    body: [
+      "Gender and Sexuality Alliances (GSAs) in our local schools provide essential community and safety for LGBTQ+ youth. The annual Ventura County GSA Leadership Summit brings student leaders and faculty advisors together for an inspiring day of collaboration.",
+      "Facilitated by Rainbow Umbrella mentors and community educators, students participate in breakout sessions covering California student privacy laws (AB 1266), inclusive campus campaigning, and mental health self-care.",
+      "DCVC provides ongoing support, meeting kits, and guest speakers to affirming school clubs across Ventura, Oxnard, Camarillo, Thousand Oaks, and Simi Valley year-round."
+    ]
+  },
+  {
+    slug: "pride-prom-2026",
+    title: "Ventura County Youth Pride Prom Announced for The Palomino in Downtown Ventura",
+    publishedAt: "August 30, 2026",
+    readingTime: "3 min read",
+    author: "Rainbow Umbrella Youth Facilitators",
+    category: "Youth & Community",
+    image: "/images/pride-prom.jpeg",
+    excerpt: "Tickets and sponsorships open for our annual countywide youth prom on Saturday, May 30th, celebrating authenticity, dancing, and queer joy.",
+    body: [
+      "Hosted by Rainbow Umbrella, the Ventura County Pride Prom is the premier annual celebration for LGBTQ+ youth and questioning individuals ages 13 to 23.",
+      "Scheduled for Saturday, May 30th at The Palomino in historic downtown Ventura, this year's theme invites youth to celebrate in a safe, affirming space where everyone can dress authentically, dance with anyone, and make memories without fear of judgment.",
+      "Through the generous support of community donors and gala proceeds, Pride Prom remains completely free of charge for all youth attendees."
+    ]
+  },
+  {
+    slug: "botanical-gardens-2026",
+    title: "An Evening of Community at the Ventura Botanical Gardens",
+    publishedAt: "July 18, 2026",
+    readingTime: "3 min read",
+    author: "DCVC Events Committee",
+    category: "Community & Culture",
+    image: "/images/botanical-flyer.jpg",
+    excerpt: "Supporters gathered among the oceanfront blooms overlooking Ventura's coastline for an unforgettable evening benefiting local LGBTQ+ community programs.",
+    body: [
+      "Set against the stunning Pacific panorama of the Ventura Botanical Gardens, community members, board leadership, and allies united for an evening celebrating a decade of progress.",
+      "Guests enjoyed acoustic music, local food pairings, and remarks from Executive Director Tess Allen outlining DCVC's strategic roadmap for expanding youth mutual aid and mobile healthcare clinics.",
+      "Events like these underscore how deeply woven Diversity Collective is into the cultural fabric of Ventura County."
+    ]
+  },
+  {
+    slug: "surviving-the-holidays-tips-and-resources",
+    title: "Surviving the Holidays: Affirming Mental Health & Community Care Resources",
+    publishedAt: "December 14, 2025",
+    readingTime: "4 min read",
+    author: "DCVC Peer Support Network",
+    category: "Mental Health & Wellness",
+    image: "/images/community-gathering.jpg",
+    excerpt: "Practical guidance on boundary setting, chosen family, and 24/7 crisis resources for LGBTQ+ individuals navigating winter holiday stress.",
+    body: [
+      "While the winter season is often depicted as a time of joy, it can also present acute challenges for LGBTQ+ individuals dealing with unsupportive family dynamics, misgendering, or isolation.",
+      "Our peer support coordinators recommend establishing clear emotional boundaries, connecting with chosen family, and planning downtime in affirming spaces like the DCVC Community Resource Center.",
+      "Remember that help is always available. The Trevor Project Lifeline (1-866-488-7386), Trans Lifeline (877-565-8860), and the 988 Suicide & Crisis Lifeline operate 24 hours a day, 7 days a week, completely free and confidential."
     ]
   }
 ];
@@ -1020,5 +1195,149 @@ export const businessDirectorySeed = [
     description: "Full-stack digital design, web accessibility auditing, and brand strategy studio partnering with non-profits, progressive campaigns, and queer creators.",
     image: "/images/hero-community.jpg",
     tags: ["Design", "Web Development", "Accessibility", "Branding"]
+  },
+  {
+    id: "biz-7",
+    slug: "the-fight-magazine",
+    name: "THE FIGHT Magazine",
+    category: "Media & Publications",
+    city: "Ventura",
+    address: "Serving Ventura County & Southern California",
+    phone: "(323) 297-4001",
+    email: "info@thefightmag.com",
+    website: "https://thefightmag.com",
+    isLGBTQOwned: true,
+    isVerifiedAffirming: true,
+    description: "SoCal's premier LGBTQ+ monthly publication celebrating queer culture, advocacy, politics, and grassroots community journalism across Ventura and Los Angeles counties.",
+    image: "/images/community-gathering.jpg",
+    tags: ["Media", "Journalism", "Advocacy", "Events"]
+  },
+  {
+    id: "biz-8",
+    slug: "planned-parenthood-california-central-coast",
+    name: "Planned Parenthood California Central Coast",
+    category: "Healthcare & Wellness",
+    city: "Ventura",
+    address: "5400 Ralston St, Ventura, CA 93003",
+    phone: "(888) 898-3862",
+    email: "info@ppcentralcoast.org",
+    website: "https://www.plannedparenthood.org/planned-parenthood-california-central-coast",
+    isLGBTQOwned: false,
+    isVerifiedAffirming: true,
+    description: "Comprehensive sexual and reproductive healthcare, gender-affirming hormone therapy, and STI prevention provided with unconditional respect and without judgment.",
+    image: "/images/shines-screening.jpg",
+    tags: ["Healthcare", "Gender-Affirming Care", "STI Testing", "Bilingual"]
+  },
+  {
+    id: "biz-9",
+    slug: "mitec-solutions",
+    name: "Mitec Solutions IT & VoIP",
+    category: "Professional Services",
+    city: "Ventura",
+    address: "Ventura County, CA",
+    phone: "(805) 642-1200",
+    email: "support@mitecsolutions.com",
+    website: "https://mitecsolutions.com",
+    isLGBTQOwned: false,
+    isVerifiedAffirming: true,
+    description: "Ventura County's leading I.T., Internet, and cloud VoIP provider, delivering outstanding technical support and stewarding DCVC community infrastructure for over 15 years.",
+    image: "/images/volunteers.jpg",
+    tags: ["IT Services", "VoIP", "Cybersecurity", "Corporate Ally"]
+  },
+  {
+    id: "biz-10",
+    slug: "ventura-county-roller-derby",
+    name: "Ventura County Roller Derby (VCRD)",
+    category: "Fitness & Recreation",
+    city: "Ventura",
+    address: "10 W Harbor Blvd, Ventura, CA 93001",
+    phone: "(805) 648-3376",
+    email: "info@vcderby.com",
+    website: "https://www.vcderby.com",
+    isLGBTQOwned: true,
+    isVerifiedAffirming: true,
+    description: "Ventura County's premier flat-track roller derby league. An empowering, body-positive, and fiercely inclusive athletic space for skaters and officials of all gender identities.",
+    image: "/images/community-gathering.jpg",
+    tags: ["Sports", "Roller Derby", "Empowerment", "All-Gender"]
+  },
+  {
+    id: "biz-11",
+    slug: "california-lutheran-university",
+    name: "California Lutheran University",
+    category: "Education & Campus",
+    city: "Thousand Oaks",
+    address: "60 W Olsen Rd, Thousand Oaks, CA 91360",
+    phone: "(805) 492-2411",
+    email: "admissions@callutheran.edu",
+    website: "https://www.callutheran.edu",
+    isLGBTQOwned: false,
+    isVerifiedAffirming: true,
+    description: "Liberal arts university dedicated to an inclusive academic community that honors individual differences, sponsors campus GSA initiatives, and fosters diversity, equity, and inclusion.",
+    image: "/images/crc-building.jpg",
+    tags: ["Higher Education", "GSA", "Campus Diversity", "Youth Leadership"]
+  },
+  {
+    id: "biz-12",
+    slug: "wheelhouse-dispensary",
+    name: "Wheelhouse Cannabis Dispensary & Delivery",
+    category: "Retail & Gifts",
+    city: "Port Hueneme",
+    address: "521 W Channel Islands Blvd, Port Hueneme, CA 93041",
+    phone: "(805) 382-0420",
+    email: "info@wheelhouseph.com",
+    website: "https://www.wheelhouseph.com",
+    isLGBTQOwned: false,
+    isVerifiedAffirming: true,
+    description: "Voted #1 Cannabis Dispensary and Delivery Service in Ventura County. Dedicated to patient wellness, community reinvestment, and active sponsorship of LGBTQ+ festivals and pride events.",
+    image: "/images/botanical-flyer.jpg",
+    tags: ["Cannabis", "Delivery", "Wellness", "Pride Sponsor"]
+  },
+  {
+    id: "biz-13",
+    slug: "free-mom-hugs-california",
+    name: "Free Mom Hugs — Ventura County Chapter",
+    category: "Community & Non-Profit",
+    city: "Ventura",
+    address: "Ventura County, CA",
+    phone: "(805) 644-5428",
+    email: "info@freemomhugs.org",
+    website: "https://freemomhugs.org",
+    isLGBTQOwned: false,
+    isVerifiedAffirming: true,
+    description: "Nonprofit organization of affirming parents and allies providing unconditional love, presence at Pride events, educational advocacy, and support for LGBTQIA+ youth and adults.",
+    image: "/images/youth-umbrella.jpg",
+    tags: ["Parent Advocacy", "Allies", "Youth Support", "Family Support"]
+  },
+  {
+    id: "biz-14",
+    slug: "autism-society-ventura-county",
+    name: "Autism Society Ventura County",
+    category: "Community & Non-Profit",
+    city: "Camarillo",
+    address: "Camarillo, CA",
+    phone: "(805) 496-1632",
+    email: "events@autismventura.org",
+    website: "https://autismventura.org",
+    isLGBTQOwned: false,
+    isVerifiedAffirming: true,
+    description: "Empowering individuals and families affected by autism with resources, social outings, community education, and intersectional advocacy for neurodivergent LGBTQ+ individuals.",
+    image: "/images/volunteers.jpg",
+    tags: ["Neurodiversity", "Autism Advocacy", "Family Support", "Community Outreach"]
+  },
+  {
+    id: "biz-15",
+    slug: "our-redeemer-lutheran-church-redimidos",
+    name: "Our Redeemer Lutheran Church & Redimidos",
+    category: "Faith & Spiritual",
+    city: "Oxnard",
+    address: "721 S Doris Ave, Oxnard, CA 93030",
+    phone: "(805) 486-1934",
+    email: "office@ourredeemeroxnard.org",
+    website: "https://ourredeemeroxnard.org",
+    isLGBTQOwned: false,
+    isVerifiedAffirming: true,
+    description: "Welcoming and affirming bilingual faith community committed to living the truth that every individual is wonderfully made, unconditionally valued, and embraced in fellowship.",
+    image: "/images/community-gathering.jpg",
+    tags: ["Faith Community", "Bilingual Spanish", "Affirming Church", "Community Gathering"]
   }
 ];

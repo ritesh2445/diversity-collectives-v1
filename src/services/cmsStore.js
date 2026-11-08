@@ -19,7 +19,7 @@ import {
 const CMS_STORAGE_KEY = 'dcvc_live_cms_data';
 
 export const INITIAL_CMS_DATA = {
-  version: '2.8',
+  version: '3.0',
   lastUpdated: new Date().toISOString(),
   settings: {
     name: orgInfo.name || "Diversity Collective Ventura County",
