@@ -620,12 +620,11 @@ export default function ReciteToolbar() {
       const recognition = new SpeechRecognition();
       recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.lang = 'en-US';
-      if ('processLocally' in recognition) {
-        try {
-          recognition.processLocally = true;
-        } catch (e) {}
-      }
+      
+      // Auto-detect browser/system language with en-US fallback
+      const detectedLang = (typeof navigator !== 'undefined' && (navigator.language || (navigator.languages && navigator.languages[0]))) || 'en-US';
+      recognition.lang = detectedLang;
+
       recognitionRef.current = recognition;
       isListeningRef.current = true;
       setIsListening(true);
@@ -679,6 +678,23 @@ export default function ReciteToolbar() {
             try { recognitionRef.current.abort(); } catch (e) {}
             recognitionRef.current = null;
           }
+        } else if (event.error === 'language-not-supported') {
+          console.warn('[ReciteToolbar] Language not supported for:', recognition.lang);
+          // If specific regional dialect (e.g. en-IN, en-GB) failed, fallback to generic 'en-US' or browser default
+          if (recognition.lang !== 'en-US') {
+            recognition.lang = 'en-US';
+            try {
+              recognition.start();
+              return;
+            } catch (err) {}
+          } else {
+            recognition.lang = '';
+            try {
+              recognition.start();
+              return;
+            } catch (err) {}
+          }
+          setSpeechFeedback('Language dialect adjusted.');
         } else if (event.error !== 'no-speech') {
           setSpeechFeedback(`Notice: ${event.error}`);
         }
