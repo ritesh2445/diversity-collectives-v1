@@ -62,7 +62,7 @@ export default function ReciteToolbar() {
   const [isListening, setIsListening] = useState(false);
   const [isOfflineMode, setIsOfflineMode] = useState(false);
   const [isBraveBrowser, setIsBraveBrowser] = useState(false);
-  const [copiedBraveUrl, setCopiedBraveUrl] = useState(false);
+  const [copiedSiteUrl, setCopiedSiteUrl] = useState(false);
   const [offlineInput, setOfflineInput] = useState('');
   const [networkHelpOpen, setNetworkHelpOpen] = useState(false);
   const [speechTranscript, setSpeechTranscript] = useState('');
@@ -581,12 +581,12 @@ export default function ReciteToolbar() {
     }, 120);
   };
 
-  // Copy Brave Settings URL to Clipboard
-  const handleCopyBraveUrl = () => {
+  // Copy Site URL to Clipboard (for testing in Chrome / Edge)
+  const handleCopySiteUrl = () => {
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText('brave://settings/extensions');
-      setCopiedBraveUrl(true);
-      setTimeout(() => setCopiedBraveUrl(false), 2500);
+      navigator.clipboard.writeText(window.location.href || 'http://localhost:5173');
+      setCopiedSiteUrl(true);
+      setTimeout(() => setCopiedSiteUrl(false), 2500);
     }
   };
 
@@ -1641,7 +1641,7 @@ export default function ReciteToolbar() {
               {isListening && !isOfflineMode 
                 ? (speechTranscript ? `Heard: "${speechTranscript}"` : 'Listening... Say "scroll to top", "tap [button]", "open page [name]", "read", or "help"')
                 : isBraveBrowser
-                  ? 'Brave blocks speech-to-text by default: enable in brave://settings/extensions or use Chrome/Edge'
+                  ? 'Brave blocks Web Speech API. Open in Chrome / Edge to speak, or use quick commands'
                   : 'Speech requires browser cloud access. Use Chrome/Edge with internet or use quick commands'}
             </p>
           </div>
@@ -1650,12 +1650,12 @@ export default function ReciteToolbar() {
             {isOfflineMode && isBraveBrowser && (
               <button
                 type="button"
-                onClick={handleCopyBraveUrl}
+                onClick={handleCopySiteUrl}
                 className="px-2.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition-colors flex items-center gap-1 cursor-pointer shadow-sm"
-                title="Copy brave://settings/extensions to clipboard"
+                title="Copy website URL to clipboard to open in Chrome or Edge"
               >
-                {copiedBraveUrl ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                <span className="hidden sm:inline">{copiedBraveUrl ? 'Copied URL!' : 'Copy Brave URL'}</span>
+                {copiedSiteUrl ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                <span className="hidden sm:inline">{copiedSiteUrl ? 'Copied Site URL!' : 'Open in Chrome/Edge'}</span>
               </button>
             )}
             {isOfflineMode && (
@@ -1788,41 +1788,35 @@ export default function ReciteToolbar() {
             <div className="text-xs text-slate-300 space-y-3 leading-relaxed">
               <div className="p-3 bg-amber-950/60 border border-amber-700/60 rounded-xl space-y-1.5">
                 <p className="font-bold text-amber-300 text-sm flex items-center gap-1.5">
-                  <span>🦁</span> Why Brave blocks microphone speech by default:
+                  <span>🦁</span> Why Brave blocks browser voice recognition:
                 </p>
                 <p className="text-slate-300">
-                  Chromium browsers process microphone audio by streaming it to Google cloud servers. To protect privacy, <strong>Brave Browser blocks this Google connection by default</strong>, causing the browser to reject speech recognition with a <code className="text-rose-300 font-mono">network</code> error.
+                  Chromium browsers process microphone audio by streaming it to Google speech servers. To protect privacy, <strong>Brave permanently removes and blocks Google Speech Recognition backend services</strong>, preventing Web Speech API calls from completing.
                 </p>
               </div>
 
               <div>
-                <p className="font-semibold text-white mb-2">How to get your voice microphone working:</p>
+                <p className="font-semibold text-white mb-2">How to use hands-free voice commands:</p>
                 <div className="space-y-2.5">
                   <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl space-y-1.5">
-                    <p className="font-bold text-white text-xs">Option 1: Enable Google Speech in Brave (10 seconds)</p>
+                    <p className="font-bold text-white text-xs">Option 1: Open in Google Chrome or Microsoft Edge (Instant)</p>
                     <p className="text-[11px] text-slate-400">
-                      1. Open a new tab in Brave and paste: <code className="text-amber-300 font-mono select-all">brave://settings/extensions</code>
-                    </p>
-                    <p className="text-[11px] text-slate-400">
-                      2. Turn ON: <strong>"Use Google services for speech recognition"</strong>
-                    </p>
-                    <p className="text-[11px] text-slate-400">
-                      3. Return here and click <strong>"Retry Mic"</strong>.
+                      Both Chrome and Edge have speech services enabled out of the box with zero setup required. Simply copy the URL and paste it into Google Chrome or Edge:
                     </p>
                     <button
                       type="button"
-                      onClick={handleCopyBraveUrl}
-                      className="mt-1 px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[11px] rounded-lg cursor-pointer flex items-center gap-1.5"
+                      onClick={handleCopySiteUrl}
+                      className="mt-1 px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] rounded-lg cursor-pointer flex items-center gap-1.5"
                     >
-                      {copiedBraveUrl ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                      <span>{copiedBraveUrl ? 'Copied brave://settings/extensions!' : 'Copy Brave Settings URL'}</span>
+                      {copiedSiteUrl ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span>{copiedSiteUrl ? 'Copied URL!' : 'Copy Site URL (for Chrome / Edge)'}</span>
                     </button>
                   </div>
 
                   <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl space-y-1">
-                    <p className="font-bold text-white text-xs">Option 2: Open in Google Chrome or Microsoft Edge</p>
+                    <p className="font-bold text-white text-xs">Option 2: Windows Offline Voice Typing (Win + H)</p>
                     <p className="text-[11px] text-slate-400">
-                      Both Chrome and Edge have speech services enabled out of the box with zero setup required. Opening <code className="text-amber-300 font-mono">http://localhost:5173</code> in Chrome or Edge will enable voice commands immediately.
+                      Inside Brave, click into the command input box below and press <kbd className="bg-slate-800 border border-slate-600 px-1.5 py-0.5 rounded text-amber-300 font-mono text-[10px]">Win</kbd> + <kbd className="bg-slate-800 border border-slate-600 px-1.5 py-0.5 rounded text-amber-300 font-mono text-[10px]">H</kbd> to activate Windows Voice Typing. Speak any command and press Enter!
                     </p>
                   </div>
                 </div>
