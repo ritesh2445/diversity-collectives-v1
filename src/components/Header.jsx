@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   Menu, 
@@ -15,7 +15,8 @@ import {
   Compass, 
   HeartHandshake, 
   MapPin,
-  ChevronRight
+  ChevronRight,
+  ChevronDown
 } from 'lucide-react';
 import TraditionalAccessibilityIcon from './icons/TraditionalAccessibilityIcon';
 import LanguageSelector from './LanguageSelector';
@@ -26,8 +27,10 @@ import { translationService } from '../services/translationService';
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [currentLang, setCurrentLang] = useState(() => translationService.getLanguage());
   const location = useLocation();
+  const moreDropdownRef = useRef(null);
 
   useEffect(() => {
     const unsub = translationService.subscribe((lang) => {
@@ -44,10 +47,30 @@ export default function Header() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Close mobile drawer upon route change
+  // Close mobile drawer and dropdown upon route change
   useEffect(() => {
     setMobileMenuOpen(false);
+    setMoreOpen(false);
   }, [location.pathname]);
+
+  // Close "More" dropdown when clicking outside or pressing Escape
+  useEffect(() => {
+    if (!moreOpen) return;
+    const handleClickOutside = (e) => {
+      if (moreDropdownRef.current && !moreDropdownRef.current.contains(e.target)) {
+        setMoreOpen(false);
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setMoreOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [moreOpen]);
 
   // Lock body scrolling when mobile drawer is open
   useEffect(() => {
@@ -80,17 +103,26 @@ export default function Header() {
     window.location.replace("https://www.google.com");
   };
 
-  const navItems = [
+  const primaryNavItems = [
     { label: translationService.t('nav_about', 'About'), to: "/about", icon: Info, desc: "Mission, history & 10-year leadership" },
     { label: translationService.t('nav_programs', 'Programs'), to: "/programs", icon: Sparkles, desc: "Free HIV/STI testing & youth groups" },
-    { label: translationService.t('nav_directory', 'Directory'), to: "/directory", icon: Compass, desc: "LGBTQ+ affirming business network" },
-    { label: translationService.t('nav_training', 'Training'), to: "/training", icon: Sparkles, desc: "P.R.I.D.E. cultural competency" },
     { label: translationService.t('nav_community', 'Community'), to: "/community", icon: Users, desc: "Affirming peer circles & gatherings" },
     { label: translationService.t('nav_events', 'Events'), to: "/events", icon: Calendar, desc: "Pride prom, galas & workshops" },
-    { label: translationService.t('nav_resources', 'Resources'), to: "/resources", icon: Compass, desc: "Crisis lines & regional mutual aid" },
+    { label: translationService.t('nav_resources', 'Resources'), to: "/resources", icon: Compass, desc: "Crisis lines & regional mutual aid" }
+  ];
+
+  const secondaryNavItems = [
+    { label: translationService.t('nav_directory', 'Directory'), to: "/directory", icon: Compass, desc: "LGBTQ+ affirming business network" },
+    { label: translationService.t('nav_training', 'Training'), to: "/training", icon: Sparkles, desc: "P.R.I.D.E. cultural competency" },
     { label: translationService.t('nav_news', 'News'), to: "/news", icon: Info, desc: "Stories, updates & advocacy" },
     { label: translationService.t('nav_gallery', 'Gallery'), to: "/gallery", icon: Sparkles, desc: "Celebration & memories" }
   ];
+
+  const allNavItems = [...primaryNavItems, ...secondaryNavItems];
+
+  const isSecondaryActive = secondaryNavItems.some(
+    (item) => location.pathname === item.to || (item.to !== '/' && location.pathname.startsWith(item.to))
+  );
 
   return (
     <>
@@ -102,10 +134,10 @@ export default function Header() {
         {/* Pride Rainbow Accent Ribbon integrated at header top */}
         <div className="h-0.5 sm:h-1 pride-rainbow-bar w-full" aria-hidden="true" />
 
-        <div className={`container-clean px-3 sm:px-6 md:px-8 transition-all duration-200 ${
+        <div className={`w-full max-w-[1720px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 transition-all duration-200 ${
           scrolled ? 'py-1.5 sm:py-2.5' : 'py-2 sm:py-3'
         }`}>
-          <div className="flex items-center justify-between gap-1.5 sm:gap-6">
+          <div className="flex items-center justify-between gap-1.5 sm:gap-4 lg:gap-6">
             
             {/* Logo & Brand Identity - Never truncated on mobile or desktop */}
             <Link 
@@ -146,16 +178,17 @@ export default function Header() {
               </div>
             </Link>
 
-            {/* Desktop Center Navigation */}
-            <nav id="main-navigation" className="hidden xl:flex items-center gap-1 xl:gap-2" aria-label="Main Navigation">
-              {navItems.map((item) => {
+            {/* Desktop Center Navigation - Responsive 2-Tier Architecture to Guarantee Zero Overflow */}
+            <nav id="main-navigation" className="hidden xl:flex items-center gap-1 xl:gap-1.5 2xl:gap-2 flex-shrink min-w-0" aria-label="Main Navigation">
+              {/* Primary 5 Pillars */}
+              {primaryNavItems.map((item) => {
                 const isActive = location.pathname === item.to || 
                   (item.to !== '/' && location.pathname.startsWith(item.to));
                 return (
                   <Link
                     key={item.to}
                     to={item.to}
-                    className={`px-3 py-2 text-sm font-semibold rounded-full transition-all whitespace-nowrap ${
+                    className={`px-2.5 2xl:px-3 py-1.5 2xl:py-2 text-xs 2xl:text-sm font-semibold rounded-full transition-all whitespace-nowrap ${
                       isActive 
                         ? 'text-white bg-gradient-to-r from-[#5A1E65] to-purple-700 shadow-md shadow-purple-500/20 font-bold' 
                         : 'text-slate-700 hover:text-[#5A1E65] hover:bg-purple-50/80'
@@ -165,10 +198,85 @@ export default function Header() {
                   </Link>
                 );
               })}
+
+              {/* Secondary Nav Items (Directly visible on large 2xl+ widescreen) */}
+              <div className="hidden 2xl:flex items-center gap-1.5 2xl:gap-2">
+                {secondaryNavItems.map((item) => {
+                  const isActive = location.pathname === item.to || 
+                    (item.to !== '/' && location.pathname.startsWith(item.to));
+                  return (
+                    <Link
+                      key={item.to}
+                      to={item.to}
+                      className={`px-2.5 2xl:px-3 py-1.5 2xl:py-2 text-xs 2xl:text-sm font-semibold rounded-full transition-all whitespace-nowrap ${
+                        isActive 
+                          ? 'text-white bg-gradient-to-r from-[#5A1E65] to-purple-700 shadow-md shadow-purple-500/20 font-bold' 
+                          : 'text-slate-700 hover:text-[#5A1E65] hover:bg-purple-50/80'
+                      }`}
+                    >
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </div>
+
+              {/* "More" Dropdown on standard desktop (xl to 2xl: 1280px - 1535px) */}
+              <div className="relative 2xl:hidden" ref={moreDropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setMoreOpen(!moreOpen)}
+                  onMouseEnter={() => setMoreOpen(true)}
+                  aria-expanded={moreOpen}
+                  aria-haspopup="true"
+                  className={`px-2.5 py-1.5 text-xs font-semibold rounded-full transition-all whitespace-nowrap inline-flex items-center gap-1 cursor-pointer ${
+                    isSecondaryActive || moreOpen
+                      ? 'text-white bg-gradient-to-r from-[#5A1E65] to-purple-700 shadow-md shadow-purple-500/20 font-bold'
+                      : 'text-slate-700 hover:text-[#5A1E65] hover:bg-purple-50/80'
+                  }`}
+                >
+                  <span>More</span>
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${moreOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {moreOpen && (
+                  <div
+                    onMouseLeave={() => setMoreOpen(false)}
+                    className="absolute left-0 mt-2 w-64 rounded-2xl bg-white/95 backdrop-blur-xl border border-purple-200 shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150 ring-4 ring-purple-500/10"
+                  >
+                    <div className="space-y-1">
+                      {secondaryNavItems.map((item) => {
+                        const ItemIcon = item.icon;
+                        const isActive = location.pathname === item.to || 
+                          (item.to !== '/' && location.pathname.startsWith(item.to));
+                        return (
+                          <Link
+                            key={item.to}
+                            to={item.to}
+                            onClick={() => setMoreOpen(false)}
+                            className={`flex items-start gap-2.5 p-2 rounded-xl transition-all ${
+                              isActive
+                                ? 'bg-purple-50 text-[#5A1E65] font-bold'
+                                : 'text-slate-700 hover:bg-purple-50/60 hover:text-[#5A1E65]'
+                            }`}
+                          >
+                            <div className={`p-1.5 rounded-lg shrink-0 mt-0.5 ${isActive ? 'bg-[#5A1E65] text-white' : 'bg-purple-100/70 text-[#5A1E65]'}`}>
+                              <ItemIcon className="w-3.5 h-3.5" />
+                            </div>
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-xs font-bold leading-tight">{item.label}</span>
+                              <span className="text-[10px] text-slate-500 leading-tight mt-0.5 truncate">{item.desc}</span>
+                            </div>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
             </nav>
 
             {/* Right CTAs - Guaranteed zero cropping */}
-            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0 min-w-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 min-w-fit">
               {/* Language Selector Dropdown (Desktop & Tablet: hidden on mobile < sm, available in mobile drawer) */}
               <div className="hidden sm:block">
                 <LanguageSelector variant="header" />
@@ -196,10 +304,10 @@ export default function Header() {
                 <span className="min-[400px]:hidden">Exit</span>
               </button>
 
-              {/* Get Support (Large desktop screens) */}
+              {/* Get Support (Large desktop screens 1600px+) */}
               <Link
                 to="/programs"
-                className="hidden 2xl:inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-slate-700 hover:text-[#5A1E65] border border-slate-200 hover:border-purple-300 rounded-full transition-colors bg-white shadow-2xs flex-shrink-0 whitespace-nowrap"
+                className="hidden 2xl:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-700 hover:text-[#5A1E65] border border-slate-200 hover:border-purple-300 rounded-full transition-colors bg-white shadow-2xs flex-shrink-0 whitespace-nowrap"
               >
                 <LifeBuoy className="w-3.5 h-3.5 text-[#5A1E65]" />
                 <span>{translationService.t('nav_get_support', 'Get Support')}</span>
@@ -324,7 +432,7 @@ export default function Header() {
                 <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
               </Link>
 
-              {navItems.map((item) => {
+              {allNavItems.map((item) => {
                 const ItemIcon = item.icon;
                 const isActive = location.pathname === item.to || 
                   (item.to !== '/' && location.pathname.startsWith(item.to));
