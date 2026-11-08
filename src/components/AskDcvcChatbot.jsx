@@ -81,6 +81,25 @@ export default function AskDcvcChatbot() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen]);
 
+  // Lock background scrolling on desktop and mobile when Alba chat is open
+  useEffect(() => {
+    if (isOpen) {
+      const originalOverflow = document.body.style.overflow;
+      const originalTouchAction = document.body.style.touchAction;
+      const originalOverscroll = document.body.style.overscrollBehavior;
+
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+      document.body.style.overscrollBehavior = 'none';
+
+      return () => {
+        document.body.style.overflow = originalOverflow;
+        document.body.style.touchAction = originalTouchAction;
+        document.body.style.overscrollBehavior = originalOverscroll;
+      };
+    }
+  }, [isOpen]);
+
   // External voice / programmatic triggers for hands-free mic control
   useEffect(() => {
     const handleOpen = () => setIsOpen(true);
@@ -321,13 +340,24 @@ export default function AskDcvcChatbot() {
         </button>
       )}
 
-      {/* Floating Dialog Window */}
+      {/* Backdrop overlay for mobile to lock screen touches and prevent background scroll */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 z-[9998] bg-slate-950/45 backdrop-blur-xs transition-opacity duration-200 sm:hidden overscroll-contain"
+          onClick={() => setIsOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Floating Dialog Window - Robust screen-fixed positioning */}
       {isOpen && (
         <div
           role="dialog"
           aria-modal="true"
           aria-label="Alba • DCVC Community Guide"
-          className="fixed inset-x-3 bottom-3 sm:inset-x-auto sm:right-6 sm:bottom-6 sm:w-[420px] max-h-[85vh] sm:max-h-[640px] h-[min(580px,85vh)] bg-white rounded-3xl shadow-2xl border-2 border-purple-200 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200 print:hidden z-[9999]"
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+          className="fixed inset-x-3 bottom-3 sm:inset-x-auto sm:right-6 sm:bottom-6 sm:w-[420px] max-h-[calc(100dvh-24px)] sm:max-h-[640px] h-[min(580px,calc(100dvh-24px))] bg-white rounded-3xl shadow-2xl border-2 border-purple-200 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200 print:hidden z-[9999] overscroll-contain"
         >
           {/* Header Bar */}
           <div className="p-4 bg-gradient-to-r from-[#5A1E65] via-purple-900 to-[#3b0764] text-white flex items-center justify-between shadow-md">
@@ -385,7 +415,7 @@ export default function AskDcvcChatbot() {
           </div>
 
           {/* Message Stream */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3.5 bg-slate-50/50 text-xs">
+          <div className="flex-1 overflow-y-auto p-4 space-y-3.5 bg-slate-50/50 text-xs overscroll-contain">
             {messages.map((msg) => {
               const isUser = msg.role === 'user';
               return (

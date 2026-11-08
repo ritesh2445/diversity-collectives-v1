@@ -178,8 +178,8 @@ export default function Header() {
               </div>
             </Link>
 
-            {/* Desktop Center Navigation - Responsive 2-Tier Architecture to Guarantee Zero Overflow */}
-            <nav id="main-navigation" className="hidden xl:flex items-center gap-1 xl:gap-1.5 2xl:gap-2 flex-shrink min-w-0" aria-label="Main Navigation">
+            {/* Desktop Center Navigation - Clean 5 Pillars + "More" Dropdown to Guarantee Zero Collision */}
+            <nav id="main-navigation" className="hidden xl:flex items-center gap-1 xl:gap-1.5 2xl:gap-2 flex-shrink min-w-0 mr-2 lg:mr-4" aria-label="Main Navigation">
               {/* Primary 5 Pillars */}
               {primaryNavItems.map((item) => {
                 const isActive = location.pathname === item.to || 
@@ -199,29 +199,8 @@ export default function Header() {
                 );
               })}
 
-              {/* Secondary Nav Items (Directly visible on large 2xl+ widescreen) */}
-              <div className="hidden 2xl:flex items-center gap-1.5 2xl:gap-2">
-                {secondaryNavItems.map((item) => {
-                  const isActive = location.pathname === item.to || 
-                    (item.to !== '/' && location.pathname.startsWith(item.to));
-                  return (
-                    <Link
-                      key={item.to}
-                      to={item.to}
-                      className={`px-2.5 2xl:px-3 py-1.5 2xl:py-2 text-xs 2xl:text-sm font-semibold rounded-full transition-all whitespace-nowrap ${
-                        isActive 
-                          ? 'text-white bg-gradient-to-r from-[#5A1E65] to-purple-700 shadow-md shadow-purple-500/20 font-bold' 
-                          : 'text-slate-700 hover:text-[#5A1E65] hover:bg-purple-50/80'
-                      }`}
-                    >
-                      {item.label}
-                    </Link>
-                  );
-                })}
-              </div>
-
-              {/* "More" Dropdown on standard desktop (xl to 2xl: 1280px - 1535px) */}
-              <div className="relative 2xl:hidden" ref={moreDropdownRef}>
+              {/* "More" Dropdown on desktop (Directory, Training, News, Gallery) */}
+              <div className="relative" ref={moreDropdownRef}>
                 <button
                   type="button"
                   onClick={() => setMoreOpen(!moreOpen)}
