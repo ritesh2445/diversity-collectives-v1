@@ -82,8 +82,8 @@
 
 | ID | Track | Assigned | Status | Files Affected | Verification Method | Next Action |
 |---|---|---|---|---|---|---|
-| **CMS-01** | Sanity project & dataset configuration | Track B | Project Owner | **WAITING FOR OWNER** | Sanity Dashboard | `sanity.config.js` projectId | Upcoming |
-| **CMS-02** | Resilient CMS client with fallback to `dcvcData.js` | Track A | Antigravity | **VERIFIED** | `src/lib/sanity.js`, `src/lib/cmsStore.js` | Fallback tests passing | Ready for live project ID |
+| **CMS-01** | Sanity project & dataset configuration | Track B | Project Owner | **COMPLETE** | Sanity Dashboard & `studio/` | Connected to project `6abul0sq` (`production`) | Done |
+| **CMS-02** | Resilient CMS client & automated initial content seed | Track A | Antigravity | **COMPLETE** | `src/lib/sanity.js`, `scripts/seedSanity.js` | 43 records verified live in Sanity production dataset | Done |
 | **MED-01** | Cloudinary signed upload parameters | Track A | Antigravity | **VERIFIED** | `worker/src/cloudinarySigner.js` | Signature verification tests | Ready for Cloudinary credentials |
 
 ---
