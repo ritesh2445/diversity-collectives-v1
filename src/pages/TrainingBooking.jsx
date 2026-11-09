@@ -14,6 +14,7 @@ import {
 import confetti from 'canvas-confetti';
 import { trainingCourses, orgInfo } from '../data/dcvcData';
 import { submitTrainingBooking } from '../services/api';
+import TurnstileWidget from '../components/TurnstileWidget';
 import { usePageMeta } from '../utils/seo';
 
 export default function TrainingBooking() {
@@ -38,7 +39,8 @@ export default function TrainingBooking() {
     preferredFormat: 'In-Person at Our Facility',
     requestedDate: '',
     notes: '',
-    termsConsent: false
+    termsConsent: false,
+    turnstileToken: ''
   });
 
   const handleSubmit = async (e) => {
@@ -292,9 +294,15 @@ export default function TrainingBooking() {
                   className="mt-1 h-4 w-4 rounded border-slate-300 text-[#5A1E65] focus:ring-[#5A1E65]"
                 />
                 <label htmlFor="terms" className="text-xs text-slate-700 leading-relaxed font-medium">
-                  I consent to Diversity Collective Ventura County using my contact details to coordinate this educational workshop inquiry. <span className="text-rose-600">*</span>
+                  I consent to Diversity Collective Ventura County using my contact details to coordinate this educational workshop inquiry under our <Link to="/privacy" className="text-[#5A1E65] font-bold underline hover:text-purple-900">Privacy Policy</Link>. <span className="text-rose-600">*</span>
                 </label>
               </div>
+
+              {/* Cloudflare Turnstile Spam Protection */}
+              <TurnstileWidget
+                onVerify={(token) => setFormData(prev => ({ ...prev, turnstileToken: token }))}
+                onExpire={() => setFormData(prev => ({ ...prev, turnstileToken: '' }))}
+              />
 
               <div className="pt-2">
                 <button

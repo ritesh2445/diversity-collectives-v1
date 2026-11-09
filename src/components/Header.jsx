@@ -368,7 +368,7 @@ export default function Header() {
               {/* Mobile Language Selector Chips */}
               <LanguageSelector variant="mobile" className="pb-3" />
 
-              {/* Chat with Alba (AI Community Guide) Quick Action */}
+              {/* Chat with Luna (AI Community Guide) Quick Action */}
               <button 
                 type="button"
                 onClick={() => {
@@ -383,7 +383,7 @@ export default function Header() {
                   </div>
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <span className="font-bold text-slate-900 group-hover:text-[#5A1E65] text-sm block">Ask Alba</span>
+                      <span className="font-bold text-slate-900 group-hover:text-[#5A1E65] text-sm block">Ask Luna</span>
                       <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
                         Free AI Guide
                       </span>

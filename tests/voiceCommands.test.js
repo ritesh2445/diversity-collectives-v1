@@ -110,10 +110,13 @@ test('Voice Command Engine: Search & Form Controls', async (t) => {
 test('Voice Command Engine: Chatbot, Audio & Accessibility', async (t) => {
   await t.test('parses chatbot commands', () => {
     assert.deepEqual(parseVoiceIntent('open chat'), { type: 'CHATBOT', action: 'open' });
+    assert.deepEqual(parseVoiceIntent('ask luna'), { type: 'CHATBOT', action: 'open' });
+    assert.deepEqual(parseVoiceIntent('open luna'), { type: 'CHATBOT', action: 'open' });
     assert.deepEqual(parseVoiceIntent('ask alba'), { type: 'CHATBOT', action: 'open' });
     assert.deepEqual(parseVoiceIntent('open alba'), { type: 'CHATBOT', action: 'open' });
     assert.deepEqual(parseVoiceIntent('ask dcvc'), { type: 'CHATBOT', action: 'open' });
     assert.deepEqual(parseVoiceIntent('close chat'), { type: 'CHATBOT', action: 'close' });
+    assert.deepEqual(parseVoiceIntent('close luna'), { type: 'CHATBOT', action: 'close' });
     assert.deepEqual(parseVoiceIntent('close alba'), { type: 'CHATBOT', action: 'close' });
   });
 

@@ -201,7 +201,8 @@ CREATE INDEX IF NOT EXISTS idx_event_rsvps_event_status
 CREATE TABLE IF NOT EXISTS donation_appreciation_cards (
     id TEXT PRIMARY KEY,
     card_token TEXT NOT NULL UNIQUE,
-    payment_reference TEXT NOT NULL UNIQUE,   -- Enforces idempotency against Zeffy webhook retries
+    token_hash TEXT,                          -- SHA-256 hash for secure server lookup
+    payment_reference TEXT NOT NULL UNIQUE,   -- Enforces idempotency against Zeffy payment retries
     tier TEXT NOT NULL CHECK(tier IN ('community_ally', 'pride_advocate', 'rainbow_champion', 'visionary_benefactor')),
     tier_name TEXT NOT NULL,
     amount_cents INTEGER NOT NULL,
@@ -213,17 +214,103 @@ CREATE TABLE IF NOT EXISTS donation_appreciation_cards (
     opened_at TEXT,
     impact_message TEXT NOT NULL,
     frequency TEXT DEFAULT 'one-time',
+    status TEXT DEFAULT 'active' CHECK(status IN (
+        'pending_payment', 
+        'pending_verification', 
+        'active', 
+        'manual_review', 
+        'manual_hold', 
+        'revoked_refunded', 
+        'revoked_disputed', 
+        'revoked_admin'
+    )),
+    revoked_at TEXT,
+    revocation_reason TEXT,
+    admin_notes TEXT,
     created_at TEXT DEFAULT (datetime('now'))
 );
 
 CREATE INDEX IF NOT EXISTS idx_cards_token 
     ON donation_appreciation_cards (card_token);
 
+CREATE INDEX IF NOT EXISTS idx_cards_token_hash 
+    ON donation_appreciation_cards (token_hash);
+
+CREATE INDEX IF NOT EXISTS idx_cards_status 
+    ON donation_appreciation_cards (status);
+
 CREATE INDEX IF NOT EXISTS idx_cards_payment_ref 
     ON donation_appreciation_cards (payment_reference);
 
 CREATE INDEX IF NOT EXISTS idx_cards_tier_created 
     ON donation_appreciation_cards (tier, created_at DESC);
+
+-- 9B. Donation Intents Table (Pre-Checkout Intent Tracking)
+CREATE TABLE IF NOT EXISTS donation_intents (
+    id TEXT PRIMARY KEY,
+    intent_token TEXT NOT NULL UNIQUE,
+    donor_name TEXT,
+    donor_email TEXT NOT NULL,
+    donor_email_hash TEXT NOT NULL,
+    expected_amount_cents INTEGER NOT NULL,
+    tier TEXT NOT NULL,
+    frequency TEXT DEFAULT 'one-time',
+    campaign TEXT DEFAULT 'diversity-collective-general-fund',
+    status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'matched', 'expired', 'manual_review', 'cancelled')),
+    matched_payment_reference TEXT UNIQUE,
+    card_token TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    expires_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_intents_email_status 
+    ON donation_intents (donor_email, status, created_at);
+
+CREATE INDEX IF NOT EXISTS idx_intents_token 
+    ON donation_intents (intent_token);
+
+-- 9C. Donation Reconciliations Queue (Audit Queue for Ambiguous, Refunded, or Disputed Payments)
+CREATE TABLE IF NOT EXISTS donation_reconciliations (
+    id TEXT PRIMARY KEY,
+    payment_reference TEXT NOT NULL UNIQUE,
+    donor_name TEXT,
+    donor_email TEXT,
+    amount_cents INTEGER NOT NULL,
+    currency TEXT DEFAULT 'usd',
+    payment_status TEXT NOT NULL,
+    refund_status TEXT,
+    dispute_status TEXT,
+    reconciliation_type TEXT NOT NULL CHECK(reconciliation_type IN (
+        'unmatched_direct_donor', 
+        'ambiguous_match', 
+        'refund_detected', 
+        'dispute_detected', 
+        'manual_request'
+    )),
+    status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'approved', 'rejected', 'resolved', 'dismissed')),
+    assigned_intent_id TEXT,
+    assigned_card_id TEXT,
+    raw_payload TEXT,
+    admin_notes TEXT,
+    reviewed_by TEXT,
+    reviewed_at TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY(assigned_intent_id) REFERENCES donation_intents(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_reconciliations_status 
+    ON donation_reconciliations (status, created_at DESC);
+
+-- 9D. Polling Synchronization Watermark Table
+CREATE TABLE IF NOT EXISTS reconciliation_sync_state (
+    id TEXT PRIMARY KEY,
+    last_sync_timestamp TEXT NOT NULL,
+    last_cursor TEXT,
+    sync_count INTEGER DEFAULT 0,
+    last_error TEXT,
+    updated_at TEXT DEFAULT (datetime('now'))
+);
 
 -- 10. Webhook Event Log (Zeffy & Third-Party Auditability)
 CREATE TABLE IF NOT EXISTS webhook_events (

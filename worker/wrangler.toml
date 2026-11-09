@@ -1,16 +1,22 @@
 name = "dcvc-api"
 main = "src/index.js"
 compatibility_date = "2024-05-01"
+workers_dev = true
+account_id = "fcd55d9ec6531c5e3a5c0b172a79d995"
 
-routes = [
-  { pattern = "diversitycollective.org/api/webhooks/zeffy", zone_name = "diversitycollective.org" },
-  { pattern = "diversitycollective.org/api/*", zone_name = "diversitycollective.org" },
-  { pattern = "www.diversitycollective.org/api/*", zone_name = "diversitycollective.org" }
-]
+# Scheduled Cron Triggers: Automated Zeffy payment reconciliation, refund/dispute detection every 5 minutes
+[triggers]
+crons = ["*/5 * * * *"]
+
+# When custom domain access is granted in Cloudflare, enable these routes:
+# routes = [
+#   { pattern = "api.diversitycollectivevc.org/*", zone_name = "diversitycollectivevc.org" },
+#   { pattern = "diversitycollective.org/api/*", zone_name = "diversitycollective.org" }
+# ]
 
 [vars]
-ALLOWED_ORIGIN = "https://diversitycollective.org"
-FRONTEND_BASE_URL = "https://diversitycollective.org"
+ALLOWED_ORIGIN = "https://diversitycollectivevc.org"
+FRONTEND_BASE_URL = "https://diversitycollectivevc.org"
 DCVC_STAFF_EMAIL = "info@diversitycollective.org"
 RESEND_FROM_EMAIL = "Diversity Collective <noreply@diversitycollective.org>"
 
@@ -29,6 +35,12 @@ AI_MODEL = "@cf/meta/llama-3.1-8b-instruct-fp8"
 [ai]
 binding = "AI"
 
+# Static Frontend Assets (Single-Page Application full-stack hosting)
+[assets]
+directory = "../dist"
+not_found_handling = "single-page-application"
+binding = "ASSETS"
+
 # Secrets to be configured via: wrangler secret put <NAME>
 # - TURSO_DATABASE_URL
 # - TURSO_AUTH_TOKEN
@@ -37,6 +49,3 @@ binding = "AI"
 # - ZEFFY_WEBHOOK_SECRET
 # - ZEFFY_API_KEY
 
-[env.preview]
-name = "dcvc-api-preview"
-vars = { ALLOWED_ORIGIN = "*", FRONTEND_BASE_URL = "http://localhost:5173" }

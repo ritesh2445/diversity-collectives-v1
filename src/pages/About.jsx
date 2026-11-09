@@ -190,14 +190,14 @@ export default function About() {
             </p>
           </div>
 
-          <div className="flex flex-wrap justify-center items-stretch gap-6 max-w-4xl mx-auto perspective-1000">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto perspective-1000">
             {sponsorsList.map((sponsor) => (
               <a
                 key={sponsor.shortName}
                 href={sponsor.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-[320px] md:w-[360px] bg-white p-7 rounded-2xl border-2 border-slate-200/80 hover:border-[#5A1E65] transition-all text-center shadow-md hover:shadow-2xl interactive-card-3d group cursor-pointer flex flex-col justify-between"
+                className="w-full bg-white p-7 rounded-2xl border-2 border-slate-200/80 hover:border-[#5A1E65] transition-all text-center shadow-md hover:shadow-2xl interactive-card-3d group cursor-pointer flex flex-col justify-between"
               >
                 <div className="h-20 flex items-center justify-center mb-5">
                   <img 

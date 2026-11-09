@@ -11,6 +11,7 @@ import {
   Mail 
 } from 'lucide-react';
 import { submitAccessibilityFeedback } from '../services/api';
+import TurnstileWidget from '../components/TurnstileWidget';
 import { orgInfo } from '../data/dcvcData';
 import { usePageMeta } from '../utils/seo';
 
@@ -28,7 +29,8 @@ export default function AccessibilityFeedback() {
     email: '',
     pageUrl: '',
     assistiveTechnology: 'Screen Reader',
-    barrierDescription: ''
+    barrierDescription: '',
+    turnstileToken: ''
   });
 
   const handleSubmit = async (e) => {
@@ -181,6 +183,12 @@ export default function AccessibilityFeedback() {
                   />
                 </div>
               </div>
+
+              {/* Cloudflare Turnstile Spam Protection */}
+              <TurnstileWidget
+                onVerify={(token) => setFormData(prev => ({ ...prev, turnstileToken: token }))}
+                onExpire={() => setFormData(prev => ({ ...prev, turnstileToken: '' }))}
+              />
 
               <div className="pt-2">
                 <button

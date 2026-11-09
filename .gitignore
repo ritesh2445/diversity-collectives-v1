@@ -26,6 +26,9 @@ dist-ssr
 *.sln
 *.sw?
 
+# Local test output
+test_output/
+
 # Local backup packages (disaster recovery artifacts)
 backups/*.enc
 backups/*-manifest.json

@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { submitVolunteer } from '../services/api';
+import TurnstileWidget from '../components/TurnstileWidget';
 import { orgInfo } from '../data/dcvcData';
 import { usePageMeta } from '../utils/seo';
 
@@ -31,7 +32,8 @@ export default function Volunteer() {
     areasOfInterest: [],
     availability: 'Weekdays (Afternoons)',
     message: '',
-    backgroundCheckConsent: false
+    backgroundCheckConsent: false,
+    turnstileToken: ''
   });
 
   const interestOptions = [
@@ -296,9 +298,15 @@ export default function Volunteer() {
                   className="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-700 focus:ring-emerald-600"
                 />
                 <label htmlFor="bgCheck" className="text-xs text-slate-700 leading-relaxed font-medium">
-                  <strong>Volunteer Safety & Vetting Consent:</strong> Because Diversity Collective provides safe spaces for minor youth and vulnerable adults, I agree to comply with our Code of Conduct and standard volunteer vetting policies. <span className="text-rose-600">*</span>
+                  <strong>Volunteer Safety & Vetting Consent:</strong> Because Diversity Collective provides safe spaces for minor youth and vulnerable adults, I agree to comply with our <Link to="/terms" className="text-emerald-700 font-bold underline hover:text-emerald-900">Code of Conduct</Link> and standard volunteer vetting policies under our <Link to="/privacy" className="text-emerald-700 font-bold underline hover:text-emerald-900">Privacy Policy</Link>. <span className="text-rose-600">*</span>
                 </label>
               </div>
+
+              {/* Cloudflare Turnstile Spam Protection */}
+              <TurnstileWidget
+                onVerify={(token) => setFormData(prev => ({ ...prev, turnstileToken: token }))}
+                onExpire={() => setFormData(prev => ({ ...prev, turnstileToken: '' }))}
+              />
 
               <div className="pt-2">
                 <button

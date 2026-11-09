@@ -13,3 +13,4 @@ const recentEvents = eventUrls.filter(url =>
 console.log(`Total events: ${eventUrls.length}`);
 console.log(`Relevant / recent events identified: ${recentEvents.length}`);
 fs.writeFileSync('scripts/recent_event_urls.json', JSON.stringify(recentEvents.slice(0, 30), null, 2));
+

@@ -13,3 +13,4 @@ for (const [slug, data] of Object.entries(content)) {
     console.log('  Headings:', data.headings.map(h => `${h.tag.toUpperCase()}: ${h.text}`).slice(0, 5).join(' | '));
   }
 }
+

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   MapPin, 
   Phone, 
@@ -14,6 +15,7 @@ import confetti from 'canvas-confetti';
 import { orgInfo } from '../data/dcvcData';
 import CardSpotlight from '../components/CardSpotlight';
 import { submitContact } from '../services/api';
+import TurnstileWidget from '../components/TurnstileWidget';
 import { usePageMeta } from '../utils/seo';
 
 export default function Contact() {
@@ -31,7 +33,8 @@ export default function Contact() {
     phone: '',
     topic: 'General Inquiry',
     message: '',
-    consent: false
+    consent: false,
+    turnstileToken: ''
   });
 
   const handleSubmit = async (e) => {
@@ -325,9 +328,15 @@ export default function Contact() {
                       className="mt-1 h-4 w-4 rounded border-slate-300 text-[#5A1E65] focus:ring-[#5A1E65]"
                     />
                     <label htmlFor="consent" className="text-xs text-slate-700 leading-relaxed font-medium">
-                      I consent to Diversity Collective Ventura County securely processing and storing my contact details to reply to this inquiry. Information will never be sold or shared. <span className="text-rose-600">*</span>
+                      I consent to Diversity Collective Ventura County securely processing and storing my contact details to reply to this inquiry in accordance with our <Link to="/privacy" className="text-[#5A1E65] font-bold underline hover:text-purple-900">Privacy Policy</Link>. Information will never be sold or shared. <span className="text-rose-600">*</span>
                     </label>
                   </div>
+
+                  {/* Cloudflare Turnstile Spam Protection */}
+                  <TurnstileWidget
+                    onVerify={(token) => setFormData(prev => ({ ...prev, turnstileToken: token }))}
+                    onExpire={() => setFormData(prev => ({ ...prev, turnstileToken: '' }))}
+                  />
 
                   <div className="pt-2">
                     <button

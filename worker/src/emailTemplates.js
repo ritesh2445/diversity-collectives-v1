@@ -453,3 +453,159 @@ export function templateAdminAlert({ action, details, actorEmail, targetType, ta
     text: `Admin Alert: ${action} on ${targetType} by ${actorEmail}.\nDetails: ${typeof details === 'object' ? JSON.stringify(details) : details}`
   };
 }
+
+/**
+ * 13. Newsletter Welcome & Subscription Confirmation
+ */
+export function templateNewsletterWelcome({ email, unsubscribeUrl = `${DCVC_WEBSITE}/privacy` }) {
+  const title = 'Welcome to the Diversity Collective Community! 🌈';
+  const contentHtml = `
+    <p style="font-size: 16px; line-height: 1.6; color: #1e293b; margin: 0 0 16px 0;">
+      Thank you for subscribing to the <strong>Diversity Collective Ventura County</strong> newsletter!
+    </p>
+    <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 20px 0;">
+      You're now connected with Ventura County's premier LGBTQ+ community network. Here is what you can look forward to in your inbox:
+    </p>
+
+    <div style="background-color: #fdf4ff; border: 1px solid #f0abfc; border-radius: 16px; padding: 20px; margin: 0 0 24px 0;">
+      <ul style="margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.8; color: #701a75;">
+        <li><strong>Ventura County Pride Announcements:</strong> Headliners, vendor applications, VIP passes & festival schedules.</li>
+        <li><strong>Free Health Screenings & SHINES Updates:</strong> Rapid HIV/STI clinics, status-neutral harm reduction resources.</li>
+        <li><strong>Rainbow Umbrella Youth Circles:</strong> Weekly peer support, art nights & Youth Pride Prom events.</li>
+        <li><strong>LGBTQ+ Affirming Business Directory Spotlights:</strong> Celebrating local safe-space businesses across Ventura County.</li>
+      </ul>
+    </div>
+
+    <p style="font-size: 14px; line-height: 1.6; color: #64748b; margin: 0 0 24px 0;">
+      Our Community Resource Center in Ventura is open Tuesday through Friday for drop-in hours, our lending library, and computer workstations. Stop by and say hello!
+    </p>
+
+    <div style="text-align: center; margin: 24px 0 10px 0;">
+      <a href="${DCVC_WEBSITE}/events" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #e11d48 0%, ${DCVC_PURPLE} 50%, #6b21a8 100%); color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 700; padding: 14px 28px; border-radius: 12px; box-shadow: 0 4px 12px rgba(90, 30, 101, 0.25);">
+        Explore Upcoming Community Events →
+      </a>
+    </div>
+
+    <hr style="border: none; border-top: 1px solid #f1f5f9; margin: 28px 0 16px 0;">
+    <p style="font-size: 11px; line-height: 1.5; color: #94a3b8; text-align: center; margin: 0;">
+      You subscribed with <strong>${email}</strong>. If you ever wish to opt out, you can <a href="${unsubscribeUrl}" style="color: #6b21a8; text-decoration: underline;">unsubscribe at any time</a>.
+    </p>
+  `;
+
+  return {
+    subject: 'Welcome to Diversity Collective Ventura County! 🌈✨',
+    html: baseEmailWrapper({ title: 'Welcome to the DCVC Family!', headerSubtitle: 'Sanctuary, Advocacy & Care Across Ventura County', contentHtml }),
+    text: `Welcome to Diversity Collective Ventura County!
+Thank you for subscribing with ${email}.
+You'll now receive updates on Ventura County Pride, free health clinics, Rainbow Umbrella youth circles, and local LGBTQ+ community advocacy.
+Explore upcoming events: ${DCVC_WEBSITE}/events
+To unsubscribe: ${unsubscribeUrl}`
+  };
+}
+
+/**
+ * 14. Professional Broadcast Newsletter Template
+ */
+export function templateNewsletterBroadcast({
+  subject,
+  preheader = '',
+  headline,
+  authorName = 'Diversity Collective Team',
+  authorTitle = 'Community Leadership',
+  contentHtml,
+  ctaText = '',
+  ctaUrl = '',
+  unsubscribeUrl = `${DCVC_WEBSITE}/privacy`
+}) {
+  const displayTitle = headline || subject;
+
+  const emailBody = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subject}</title>
+  ${preheader ? `
+  <div style="display: none; max-height: 0px; overflow: hidden;">
+    ${preheader}
+    &nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
+  </div>
+  ` : ''}
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: ${DCVC_BG}; margin: 0; padding: 24px; color: #1e293b;">
+  <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 640px; background-color: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(90, 30, 101, 0.08); border: 1px solid #e2e8f0;">
+    
+    <!-- Top Pride Color Band -->
+    <tr>
+      <td style="height: 6px; background: linear-gradient(90deg, #e11d48 0%, #ea580c 20%, #eab308 40%, #16a34a 60%, #0284c7 80%, #7c3aed 100%); line-height: 6px; font-size: 6px;">&nbsp;</td>
+    </tr>
+
+    <!-- Header Banner -->
+    <tr>
+      <td style="padding: 36px 36px 28px 36px; background: linear-gradient(135deg, ${DCVC_PURPLE} 0%, ${DCVC_PURPLE_DARK} 100%);">
+        <div style="display: inline-block; padding: 4px 12px; background-color: rgba(255,255,255,0.15); border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: 1.2px; color: #fef08a; text-transform: uppercase;">
+          COMMUNITY DISPATCH · VENTURA COUNTY
+        </div>
+        <h1 style="color: #ffffff; font-size: 26px; line-height: 1.25; margin: 16px 0 10px 0; font-weight: 800; letter-spacing: -0.5px;">
+          ${displayTitle}
+        </h1>
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #e9d5ff; padding-top: 4px;">
+          <span>By <strong>${authorName}</strong>${authorTitle ? ` · ${authorTitle}` : ''}</span>
+        </div>
+      </td>
+    </tr>
+
+    <!-- Main Content Area -->
+    <tr>
+      <td style="padding: 36px 36px 28px 36px; font-size: 15px; line-height: 1.7; color: #334155;">
+        ${contentHtml}
+
+        ${ctaText && ctaUrl ? `
+        <div style="text-align: center; margin: 36px 0 20px 0;">
+          <a href="${ctaUrl}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #e11d48 0%, ${DCVC_PURPLE} 50%, #6b21a8 100%); color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 700; padding: 16px 36px; border-radius: 14px; box-shadow: 0 6px 18px rgba(90, 30, 101, 0.28); text-align: center;">
+            ${ctaText} →
+          </a>
+        </div>
+        ` : ''}
+
+        <hr style="border: none; border-top: 1px solid #f1f5f9; margin: 36px 0 20px 0;">
+
+        <!-- Community Mutual Aid & Giving Callout -->
+        <div style="background-color: #faf5ff; border: 1px solid #e9d5ff; border-radius: 14px; padding: 18px 20px; font-size: 13px; line-height: 1.6; color: #581c87;">
+          <strong>Support Community Sanctuary:</strong> Diversity Collective is Ventura County's only LGBTQ+ Community Resource Center. Our free services are funded by community members like you. <a href="${DCVC_WEBSITE}/donate" style="color: #7c2d12; font-weight: 700; text-decoration: underline;">Make a tax-deductible gift today</a>.
+        </div>
+      </td>
+    </tr>
+
+    <!-- CAN-SPAM Compliant Footer with Unsubscribe -->
+    <tr>
+      <td style="padding: 24px 36px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; text-align: center; font-size: 11px; line-height: 1.6; color: #94a3b8;">
+        <p style="margin: 0 0 6px 0; font-weight: 700; color: #475569;">
+          Diversity Collective Ventura County, Inc.
+        </p>
+        <p style="margin: 0 0 6px 0;">
+          ${DCVC_ADDRESS} · Tel: ${DCVC_PHONE} · 501(c)(3) Nonprofit
+        </p>
+        <p style="margin: 0 0 10px 0;">
+          <a href="${DCVC_WEBSITE}" style="color: #6b21a8; text-decoration: underline;">diversitycollective.org</a> · <a href="${DCVC_WEBSITE}/events" style="color: #6b21a8; text-decoration: underline;">Upcoming Events</a> · <a href="${DCVC_WEBSITE}/donate" style="color: #6b21a8; text-decoration: underline;">Donate</a>
+        </p>
+        <hr style="border: none; border-top: 1px solid #e2e8f0; width: 60%; margin: 12px auto;">
+        <p style="margin: 0; color: #64748b;">
+          You received this email because you subscribed to community announcements from Diversity Collective Ventura County.<br>
+          <a href="${unsubscribeUrl}" style="color: #dc2626; text-decoration: underline; font-weight: 600;">Unsubscribe from this list</a> · <a href="${DCVC_WEBSITE}/privacy" style="color: #64748b; text-decoration: underline;">Privacy Policy</a>
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+
+  return {
+    subject,
+    html: emailBody,
+    text: `${headline || subject}\nBy ${authorName}\n\n${contentHtml.replace(/<[^>]+>/g, ' ')}\n\n${ctaText ? `${ctaText}: ${ctaUrl}\n\n` : ''}To unsubscribe: ${unsubscribeUrl}\nDiversity Collective Ventura County, Inc. ${DCVC_ADDRESS}`
+  };
+}
+

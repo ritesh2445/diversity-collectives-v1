@@ -8,8 +8,8 @@
 import { executeClientChat } from './localKnowledgeEngine.js';
 
 const API_BASE_URL = typeof window !== 'undefined' && window.location.origin
-  ? (import.meta.env?.VITE_API_BASE_URL || '/api')
-  : '/api';
+  ? (import.meta.env?.VITE_API_URL || import.meta.env?.VITE_API_BASE_URL || 'https://dcvc-api.diversity-collective-vc.workers.dev/api')
+  : 'https://dcvc-api.diversity-collective-vc.workers.dev/api';
 
 /**
  * Standard API Result Type
@@ -253,6 +253,34 @@ export async function askDcvcChat(message) {
 
   // 100% Free, Truly Unlimited Local Knowledge Engine (0 Neurons, 0 Quota, 0 Latency)
   return executeClientChat(cleanMessage);
+}
+
+/**
+ * Register Donation Intent Pre-Checkout
+ * Securely associates upcoming Zeffy checkout with donor details for automatic appreciation card issuance
+ */
+export async function registerDonationIntent(data) {
+  const { donorName, donorEmail, amount, frequency = 'one-time', isAnonymous = false } = data;
+  if (!donorEmail && !isAnonymous) {
+    return { success: false, message: 'Email address is required for donation matching.' };
+  }
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/donations/intent`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ donorName, donorEmail, amount, frequency, isAnonymous })
+    });
+
+    if (res.ok) {
+      const json = await res.json();
+      return { success: true, ...json };
+    }
+  } catch (err) {
+    console.warn('[API Client] Could not register donation intent pre-checkout:', err);
+  }
+
+  return { success: false, message: 'Intent registration skipped' };
 }
 
 // Alias for test and workflow compatibility

@@ -35,9 +35,11 @@
 /photos                                  /gallery                        301
 /a11y                                    /accessibility                  301
 /accessibility-statement                 /accessibility                  301
+/accessibility-statement/*               /accessibility                  301
 /privacy-policy                          /privacy                        301
+/privacy-policy/*                        /privacy                        301
+/terms-and-conditions                    /terms                          301
+/terms-and-conditions/*                  /terms                          301
 /terms-of-use                            /terms                          301
-
-# SPA fallback rule for client-side routing
-/*                                       /index.html                     200
+/terms-of-use/*                          /terms                          301
 

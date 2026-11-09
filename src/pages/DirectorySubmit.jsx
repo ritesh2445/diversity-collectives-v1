@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { submitBusiness } from '../services/api';
+import TurnstileWidget from '../components/TurnstileWidget';
 import { usePageMeta } from '../utils/seo';
 
 export default function DirectorySubmit() {
@@ -35,7 +36,8 @@ export default function DirectorySubmit() {
     ownerName: '',
     ownerEmail: '',
     isLGBTQOwned: false,
-    termsConsent: false
+    termsConsent: false,
+    turnstileToken: ''
   });
 
   const categories = [
@@ -330,9 +332,15 @@ export default function DirectorySubmit() {
                   className="mt-1 h-4 w-4 rounded border-slate-300 text-[#5A1E65] focus:ring-[#5A1E65]"
                 />
                 <label htmlFor="consentPledge" className="text-xs text-slate-700 leading-relaxed font-medium">
-                  <strong>Community Affirming Pledge:</strong> I confirm this business adheres to strict non-discrimination, respects pronouns, provides a safe environment for all gender identities and expressions, and consents to DCVC staff verification. <span className="text-rose-600">*</span>
+                  <strong>Community Affirming Pledge:</strong> I confirm this business adheres to strict non-discrimination, respects pronouns, provides a safe environment for all gender identities and expressions, and consents to DCVC staff verification under our <Link to="/privacy" className="text-[#5A1E65] font-bold underline hover:text-purple-900">Privacy Policy</Link>. <span className="text-rose-600">*</span>
                 </label>
               </div>
+
+              {/* Cloudflare Turnstile Spam Protection */}
+              <TurnstileWidget
+                onVerify={(token) => setFormData(prev => ({ ...prev, turnstileToken: token }))}
+                onExpire={() => setFormData(prev => ({ ...prev, turnstileToken: '' }))}
+              />
 
               <div className="pt-2">
                 <button

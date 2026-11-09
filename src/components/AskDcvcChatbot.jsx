@@ -26,12 +26,12 @@ const SUGGESTED_QUESTIONS = [
 ];
 
 /**
- * Alba — Free Community AI Chatbot
+ * Luna — Free Community AI Chatbot
  * Powered by Cloudflare Workers AI (@cf/meta/llama-3.1-8b-instruct-fp8)
  * $0 recurring cost, 100% free community assistant
  */
 export default function AskDcvcChatbot() {
-  // Alba is enabled by default (set VITE_ENABLE_CHATBOT=false to explicitly disable)
+  // Luna is enabled by default (set VITE_ENABLE_CHATBOT=false to explicitly disable)
   const isEnabled = import.meta.env.VITE_ENABLE_CHATBOT !== 'false';
 
   const [isOpen, setIsOpen] = useState(false);
@@ -39,7 +39,7 @@ export default function AskDcvcChatbot() {
     {
       id: 'welcome',
       role: 'assistant',
-      text: "Hello! I'm Alba, your free community guide. Ask me about our free health testing, youth groups, center hours, events, or volunteer opportunities.",
+      text: "Hello! I'm Luna, your free community guide. Ask me about our free health testing, youth groups, center hours, events, or volunteer opportunities.",
       citations: [
         { title: "Programs", url: "/programs" },
         { title: "Contact Us", url: "/contact" }
@@ -81,7 +81,7 @@ export default function AskDcvcChatbot() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen]);
 
-  // Lock background scrolling on desktop and mobile when Alba chat is open
+  // Lock background scrolling on desktop and mobile when Luna chat is open
   useEffect(() => {
     if (isOpen) {
       const originalOverflow = document.body.style.overflow;
@@ -321,8 +321,8 @@ export default function AskDcvcChatbot() {
           onClick={() => setIsOpen(true)}
           aria-expanded={false}
           aria-haspopup="dialog"
-          aria-label="Open Alba Free AI Community Assistant (Alt + C)"
-          title="Ask Alba (Alt + C)"
+          aria-label="Open Luna Free AI Community Assistant (Alt + C)"
+          title="Ask Luna (Alt + C)"
           className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[9995] flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-3 rounded-full bg-gradient-to-r from-[#5A1E65] via-purple-900 to-[#43144A] text-white shadow-xl hover:shadow-2xl border-2 border-amber-300 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer select-none focus:outline-none focus:ring-4 focus:ring-amber-300 print:hidden"
         >
           <div className="w-6 h-6 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center font-bold shadow-xs flex-shrink-0">
@@ -330,7 +330,7 @@ export default function AskDcvcChatbot() {
           </div>
           <div className="flex flex-col text-left">
             <span className="font-extrabold text-xs tracking-wide text-white leading-tight flex items-center gap-1.5 whitespace-nowrap">
-              <span>Ask Alba</span>
+              <span>Ask Luna</span>
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             </span>
             <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider leading-none whitespace-nowrap">
@@ -354,7 +354,7 @@ export default function AskDcvcChatbot() {
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Alba • DCVC Community Guide"
+          aria-label="Luna • DCVC Community Guide"
           onWheel={(e) => e.stopPropagation()}
           onTouchMove={(e) => e.stopPropagation()}
           className="fixed inset-x-3 bottom-3 sm:inset-x-auto sm:right-6 sm:bottom-6 sm:w-[420px] max-h-[calc(100dvh-24px)] sm:max-h-[640px] h-[min(580px,calc(100dvh-24px))] bg-white rounded-3xl shadow-2xl border-2 border-purple-200 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200 print:hidden z-[9999] overscroll-contain"
@@ -368,7 +368,7 @@ export default function AskDcvcChatbot() {
               <div>
                 <div className="flex items-center gap-1.5">
                   <h3 className="font-display font-extrabold text-sm tracking-wide text-white">
-                    Alba
+                    Luna
                   </h3>
                   <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>

@@ -12,6 +12,9 @@
  */
 
 import { createClient } from '@libsql/client/web';
+import { executeZeffySync } from './zeffySync.js';
+import { resolveAppreciationTier } from './appreciationTiers.js';
+import { runAllMigrations } from './schemaMigrations.js';
 import { processChatRequest } from './chatEngine.js';
 import { createSignedUploadParameters } from './cloudinarySigner.js';
 import { hashPassword, generateAuthToken, verifyAuthToken, requireRole, logAdminAction } from './adminApi.js';
@@ -35,7 +38,9 @@ import {
   templateAccessibilityAcknowledgment,
   templateAccessibilityStaffNotification,
   templateDonorAppreciationEmail,
-  templateAdminAlert
+  templateAdminAlert,
+  templateNewsletterWelcome,
+  templateNewsletterBroadcast
 } from './emailTemplates.js';
 
 // Helper: Response with standard JSON & CORS
@@ -65,8 +70,13 @@ function getCorsHeaders(request, env) {
   const origin = request.headers.get('Origin') || '';
   const allowed = env.ALLOWED_ORIGIN || '*';
   
-  // Allow configured origin, localhost for dev, or wildcard preview
-  const isAllowed = allowed === '*' || origin === allowed || origin.includes('localhost') || origin.includes('127.0.0.1');
+  // Allow configured origin, localhost for dev, Cloudflare Pages staging, or production domains
+  const isAllowed = allowed === '*' || 
+    origin === allowed || 
+    origin.includes('localhost') || 
+    origin.includes('127.0.0.1') ||
+    origin.endsWith('.pages.dev') ||
+    origin.includes('diversitycollective');
 
   return {
     'Access-Control-Allow-Origin': isAllowed ? (origin || '*') : allowed,
@@ -212,49 +222,6 @@ async function verifyZeffyWebhookRequest(request, rawBody, env, payload) {
   return { valid: false, error: 'Webhook authentication failed' };
 }
 
-// Helper: Determine Appreciation Card Tier based on amount and configurable thresholds
-function resolveAppreciationTier(amountDollars, env) {
-  const t1 = parseInt(env.APPRECIATION_TIER_1_MIN || '1', 10);
-  const t2 = parseInt(env.APPRECIATION_TIER_2_MIN || '50', 10);
-  const t3 = parseInt(env.APPRECIATION_TIER_3_MIN || '150', 10);
-  const t4 = parseInt(env.APPRECIATION_TIER_4_MIN || '500', 10);
-
-  if (amountDollars >= t4) {
-    return {
-      tier: 'visionary_benefactor',
-      tierName: 'Visionary Benefactor',
-      badge: 'VISIONARY CIRCLE',
-      tagline: 'Transforming Lives Across Ventura County',
-      impact: 'As a Visionary Benefactor, your profound investment anchors the operational foundation of Diversity Collective Ventura County. You empower the flagship Community Resource Center, sustain year-round advocacy, and ensure Ventura County Pride and the Youth Pride Prom remain forever free, affirming, and accessible to all.'
-    };
-  }
-  if (amountDollars >= t3) {
-    return {
-      tier: 'rainbow_champion',
-      tierName: 'Rainbow Champion',
-      badge: 'CHAMPION CIRCLE',
-      tagline: 'Fostering Resilience & Youth Leadership',
-      impact: 'Your partnership underwrites weekly Rainbow Umbrella and Little Unicorns youth peer circles, creating lifelong friendships, mental health resilience, and affirming spaces where young people can be their authentic selves.'
-    };
-  }
-  if (amountDollars >= t2) {
-    return {
-      tier: 'pride_advocate',
-      tierName: 'Pride Advocate',
-      badge: 'ADVOCATE CIRCLE',
-      tagline: 'Championing Health, Visibility & Dignity',
-      impact: 'Your gift directly funds free, confidential rapid HIV and STI testing clinics, PrEP/PEP healthcare navigation, and stigma-free education through Diversity SHINES.'
-    };
-  }
-  return {
-    tier: 'community_ally',
-    tierName: 'Community Ally',
-    badge: 'COMMUNITY ALLY',
-    tagline: 'Lifting Each Other Up, One Step at a Time',
-    impact: 'Your generous contribution provides vital safer-sex supplies, harm reduction kits, and welcoming computer access for local community members finding sanctuary at our Ventura Community Resource Center.'
-  };
-}
-
 // Helper: Resend Email Dispatch
 async function sendEmail({ apiKey, from, to, replyTo, subject, html, text }) {
   if (!apiKey) {
@@ -262,14 +229,16 @@ async function sendEmail({ apiKey, from, to, replyTo, subject, html, text }) {
     return { id: 'mock-email-id', mock: true };
   }
 
-  const res = await fetch('https://api.resend.com/emails', {
+  const primaryFrom = from || 'Diversity Collective <noreply@diversitycollective.org>';
+  
+  let res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      from: from || 'Diversity Collective <noreply@diversitycollective.org>',
+      from: primaryFrom,
       to: Array.isArray(to) ? to : [to],
       ...(replyTo ? { reply_to: replyTo } : {}),
       subject,
@@ -280,8 +249,32 @@ async function sendEmail({ apiKey, from, to, replyTo, subject, html, text }) {
 
   if (!res.ok) {
     const errText = await res.text();
-    console.error('Resend API error:', errText);
-    throw new Error(`Resend email failed: ${res.statusText}`);
+    console.warn(`Resend dispatch with from "${primaryFrom}" failed (${res.status}): ${errText}`);
+
+    // If unverified domain (common before launch DNS migration), fallback to Resend Sandbox domain for development testing
+    if (res.status === 403 && (errText.includes('domain') || errText.includes('verified') || primaryFrom.includes('@diversitycollective'))) {
+      console.log('Attempting development fallback via onboarding@resend.dev...');
+      res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          from: 'Diversity Collective <onboarding@resend.dev>',
+          to: Array.isArray(to) ? to : [to],
+          subject: `[Dev Preview] ${subject}`,
+          html,
+          ...(text ? { text } : {})
+        })
+      });
+      if (!res.ok) {
+        const fallbackErr = await res.text();
+        throw new Error(`Resend email failed: ${fallbackErr}`);
+      }
+    } else {
+      throw new Error(`Resend email failed: ${errText}`);
+    }
   }
 
   return await res.json();
@@ -312,13 +305,28 @@ export default {
     const pathname = url.pathname.replace(/\/$/, '') || '/';
     const clientIp = request.headers.get('CF-Connecting-IP') || '';
 
+    // If static frontend assets binding is present and request is NOT for /api/*, serve frontend
+    if (env.ASSETS && !pathname.startsWith('/api')) {
+      return env.ASSETS.fetch(request);
+    }
+
     try {
       // 1. Health check
-      if (pathname === '/api/health' && request.method === 'GET') {
+      if (pathname === '/api/health' && (request.method === 'GET' || request.method === 'HEAD')) {
         const hasDb = !!(env.TURSO_DATABASE_URL && env.TURSO_AUTH_TOKEN);
         const hasResend = !!env.RESEND_API_KEY;
         const hasTurnstile = !!env.TURNSTILE_SECRET_KEY;
         const hasZeffy = !!env.ZEFFY_WEBHOOK_SECRET;
+
+        if (request.method === 'HEAD') {
+          return new Response(null, {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/json',
+              ...cors
+            }
+          });
+        }
 
         return jsonResponse({
           status: 'healthy',
@@ -720,8 +728,8 @@ export default {
       if (pathname === '/api/webhooks/zeffy/reconcile' && request.method === 'POST') {
         const authHeader = (request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '').trim();
         const apiKey = env.ZEFFY_API_KEY;
-        const adminAuth = await verifyAuthToken(authHeader, env);
-        const isAuthorized = (apiKey && authHeader === apiKey) || adminAuth.valid;
+        const adminAuth = await verifyAuthToken(authHeader, env.JWT_SECRET || 'dcvc_admin_jwt_secret_2026');
+        const isAuthorized = (apiKey && authHeader === apiKey) || Boolean(adminAuth);
 
         if (!isAuthorized) {
           return errorResponse('Unauthorized reconciliation request', 401, null, cors);
@@ -732,89 +740,22 @@ export default {
         }
 
         try {
-          const zeffyRes = await fetch('https://api.zeffy.com/api/v1/payments?status=succeeded&limit=50', {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${apiKey}`,
-              'Accept': 'application/json'
-            }
-          });
-
-          if (!zeffyRes.ok) {
-            return errorResponse(`Zeffy API returned status ${zeffyRes.status}`, 502, null, cors);
-          }
-
-          const paymentsData = await zeffyRes.json();
-          const payments = Array.isArray(paymentsData) ? paymentsData : (paymentsData.items || paymentsData.data || []);
-
-          let reconciledCount = 0;
-          let skippedCount = 0;
           const db = getDb(env);
-
-          if (db) {
-            for (const payment of payments) {
-              const payId = String(payment.id || '');
-              if (!payId) continue;
-
-              const existing = await db.execute({
-                sql: `SELECT id FROM donation_appreciation_cards WHERE payment_reference = ? LIMIT 1`,
-                args: [payId]
-              });
-
-              if (existing.rows.length > 0) {
-                skippedCount++;
-                continue;
-              }
-
-              // Process missing completed payment
-              let rawAmt = payment.amount ?? payment.total_amount ?? 25;
-              let amtDollars = Number(rawAmt);
-              let amtCents = Math.round(amtDollars * 100);
-              if (Number.isInteger(amtDollars) && amtDollars >= 100) {
-                amtCents = amtDollars;
-                amtDollars = amtCents / 100;
-              }
-
-              const donorObj = payment.contact || payment.donor || {};
-              const isAnon = Boolean(payment.is_anonymous || donorObj.is_anonymous);
-              const name = isAnon ? 'Affirming Friend of DCVC' : (donorObj.name || `${donorObj.first_name || ''} ${donorObj.last_name || ''}`.trim() || 'Affirming Friend of DCVC');
-              const email = (donorObj.email || '').trim().toLowerCase();
-              const tier = resolveAppreciationTier(amtDollars, env);
-              const cardTok = 'dcvc_' + crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().substring(0, 8);
-              const cardId = crypto.randomUUID();
-
-              const emailHash = email ? Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(email)))).map(b => b.toString(16).padStart(2, '0')).join('') : null;
-
-              await db.execute({
-                sql: `INSERT INTO donation_appreciation_cards 
-                      (id, card_token, payment_reference, tier, tier_name, amount_cents, donor_display_name, donor_email_hash, recipient_email, is_anonymous, impact_message, frequency)
-                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                args: [cardId, cardTok, payId, tier.tier, tier.tierName, amtCents, name, emailHash, email || null, isAnon ? 1 : 0, tier.impact, 'one-time']
-              });
-
-              await db.execute({
-                sql: `INSERT OR REPLACE INTO webhook_events (id, event_id, event_type, status) VALUES (?, ?, ?, ?)`,
-                args: [crypto.randomUUID(), payId, 'reconciliation.payment.completed', 'processed']
-              });
-
-              reconciledCount++;
-            }
-          }
-
+          const syncResult = await executeZeffySync(env, db, ctx);
           return jsonResponse({
             success: true,
-            totalFetched: payments.length,
-            reconciledCount,
-            skippedCount
+            status: 'reconciliation_complete',
+            result: syncResult
           }, 200, cors);
-        } catch (recErr) {
-          console.error('Reconciliation error:', recErr);
-          return errorResponse('Failed to execute reconciliation', 500, recErr.message, cors);
+        } catch (syncErr) {
+          console.error('Reconciliation error:', syncErr);
+          return errorResponse(`Zeffy reconciliation failed: ${syncErr.message}`, 500, null, cors);
         }
       }
 
       // =======================================================================
       // 3. APPRECIATION CARDS: Public Retrieval by Secure Token (GET)
+      // Hardened: Fail-closed (404/403/410/503), no mock fallback, Cache-Control: no-store
       // =======================================================================
       if (pathname.startsWith('/api/appreciation-cards/') && request.method === 'GET') {
         const token = pathname.replace('/api/appreciation-cards/', '').trim();
@@ -824,43 +765,54 @@ export default {
           return errorResponse('Missing card token', 400, null, cors);
         }
 
-        // Return fixture if database is not yet wired in test/demo mode
         if (!db) {
-          return jsonResponse({
-            success: true,
-            card: {
-              token,
-              tier: 'pride_advocate',
-              tierName: 'Pride Advocate',
-              amountCents: 5000,
-              donorDisplayName: 'Affirming Community Supporter',
-              isAnonymous: 0,
-              frequency: 'monthly',
-              impactMessage: 'Your gift directly funds free, confidential rapid HIV and STI testing clinics, PrEP/PEP healthcare navigation, and stigma-free education through Diversity SHINES.',
-              createdAt: new Date().toISOString()
-            }
-          }, 200, cors);
+          return errorResponse('Database service temporarily unavailable', 503, null, cors);
         }
 
+        // Hash query token if 48-char hex or direct token lookup
         const result = await db.execute({
-          sql: `SELECT card_token, tier, tier_name, amount_cents, donor_display_name, is_anonymous, impact_message, frequency, created_at, is_opened, opened_at
+          sql: `SELECT card_token, token_hash, tier, tier_name, amount_cents, donor_display_name, is_anonymous, impact_message, frequency, status, created_at, is_opened, opened_at
                 FROM donation_appreciation_cards
-                WHERE card_token = ? LIMIT 1`,
-          args: [token]
+                WHERE card_token = ? OR token_hash = ? LIMIT 1`,
+          args: [token, token]
         });
 
         if (result.rows.length === 0) {
-          return errorResponse('Appreciation card not found', 404, null, cors);
+          return errorResponse('Appreciation keepsake not found', 404, null, cors);
         }
 
         const row = result.rows[0];
+        const status = row.status || 'active';
 
-        // Mark card as opened in background
+        // Enforce lifecycle access controls
+        if (status.startsWith('revoked_')) {
+          return jsonResponse({
+            success: false,
+            error: 'This appreciation keepsake has been revoked or refunded.',
+            status: status
+          }, 410, {
+            ...cors,
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate'
+          });
+        }
+
+        if (status.startsWith('pending_') || status.startsWith('manual_')) {
+          return jsonResponse({
+            success: false,
+            error: 'This appreciation keepsake is pending donation verification.',
+            status: status
+          }, 403, {
+            ...cors,
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate'
+          });
+        }
+
+        // Mark card as opened in background if first open
         if (!row.is_opened) {
           ctx.waitUntil(
             db.execute({
               sql: `UPDATE donation_appreciation_cards SET is_opened = 1, opened_at = datetime('now') WHERE card_token = ?`,
-              args: [token]
+              args: [row.card_token]
             }).catch(e => console.error('Failed to mark card opened:', e))
           );
         }
@@ -876,31 +828,52 @@ export default {
             isAnonymous: Boolean(row.is_anonymous),
             frequency: row.frequency,
             impactMessage: row.impact_message,
+            status: row.status || 'active',
             createdAt: row.created_at
           }
-        }, 200, cors);
+        }, 200, {
+          ...cors,
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate'
+        });
       }
 
       // =======================================================================
-      // 4. APPRECIATION CARDS: Test Simulation Endpoint (POST /api/appreciation-cards/simulate)
+      // 4. APPRECIATION CARDS: Simulation Endpoint (POST /api/appreciation-cards/simulate)
+      // Hardened: Requires Admin Authentication in production; cryptographically minted tokens
       // =======================================================================
       if (pathname === '/api/appreciation-cards/simulate' && request.method === 'POST') {
+        const isDev = !env.ENVIRONMENT || env.ENVIRONMENT === 'development' || env.ENVIRONMENT === 'test';
+        const user = await verifyAuthToken(request, env);
+
+        if (!isDev && (!user || user.role !== 'admin')) {
+          return errorResponse('Forbidden: Simulation requires DCVC Administrator credentials', 403, null, cors);
+        }
+
         const body = await request.json().catch(() => ({}));
         const amount = Number(body.amount || 75);
         const name = body.name || 'Alex Morgan';
         const isAnon = Boolean(body.isAnonymous);
         const tierInfo = resolveAppreciationTier(amount, env);
-        const cardToken = 'dcvc_sim_' + crypto.randomUUID().replace(/-/g, '');
+
+        // Mint cryptographically secure token (24 random bytes -> 48 hex chars)
+        const randomBytes = new Uint8Array(24);
+        crypto.getRandomValues(randomBytes);
+        const cardToken = 'dcvc_sim_' + Array.from(randomBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+
+        // Compute SHA-256 token hash
+        const hashBuf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(cardToken));
+        const tokenHash = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
 
         const db = getDb(env);
         if (db) {
           await db.execute({
             sql: `INSERT INTO donation_appreciation_cards 
-                  (id, card_token, payment_reference, tier, tier_name, amount_cents, donor_display_name, is_anonymous, impact_message, frequency)
-                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                  (id, card_token, token_hash, payment_reference, tier, tier_name, amount_cents, donor_display_name, is_anonymous, impact_message, frequency, status)
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')`,
             args: [
               crypto.randomUUID(),
               cardToken,
+              tokenHash,
               `sim_${Date.now()}`,
               tierInfo.tier,
               tierInfo.tierName,
@@ -920,6 +893,118 @@ export default {
           tierName: tierInfo.tierName,
           cardUrl: `/appreciation-card/${cardToken}`
         }, 201, cors);
+      }
+
+      // =======================================================================
+      // 4.1 DONATION INTENT: Register Intent Pre-Checkout (POST /api/donations/intent)
+      // =======================================================================
+      if (pathname === '/api/donations/intent' && request.method === 'POST') {
+        const body = await request.json().catch(() => ({}));
+        const donorName = (body.donorName || '').trim();
+        const donorEmail = (body.donorEmail || '').toLowerCase().trim();
+        const amount = Number(body.amount || 0);
+        const frequency = body.frequency || 'one-time';
+        const isAnonymous = Boolean(body.isAnonymous);
+
+        if (!donorEmail && !isAnonymous) {
+          return errorResponse('Email address is required for donation matching', 400, null, cors);
+        }
+
+        // Mint cryptographically secure intent token
+        const randomBytes = new Uint8Array(24);
+        crypto.getRandomValues(randomBytes);
+        const intentToken = Array.from(randomBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+        const hashBuf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(intentToken));
+        const tokenHash = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+        const intentId = crypto.randomUUID();
+        const db = getDb(env);
+
+        if (db) {
+          await db.execute({
+            sql: `INSERT INTO donation_intents 
+                  (id, intent_token, token_hash, donor_name, donor_email, amount_cents, frequency, is_anonymous, status)
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+            args: [
+              intentId,
+              intentToken,
+              tokenHash,
+              donorName || 'Affirming Supporter',
+              donorEmail || 'anonymous@privacy.dcvc',
+              Math.round(amount * 100),
+              frequency,
+              isAnonymous ? 1 : 0
+            ]
+          }).catch(err => console.warn('Intent DB insert skipped:', err.message));
+        }
+
+        return jsonResponse({
+          success: true,
+          intentToken,
+          intentId
+        }, 201, cors);
+      }
+
+      // =======================================================================
+      // 4.2 DONATION VERIFY: Self-Service Donor Verification (POST /api/donations/verify)
+      // =======================================================================
+      if (pathname === '/api/donations/verify' && request.method === 'POST') {
+        const body = await request.json().catch(() => ({}));
+        const intentToken = (body.intentToken || '').trim();
+        const transactionId = (body.transactionId || '').trim();
+        const db = getDb(env);
+
+        if (!db) {
+          return errorResponse('Database service temporarily unavailable', 503, null, cors);
+        }
+
+        let card = null;
+
+        if (intentToken) {
+          // Check if intent was matched and card issued
+          const intentRes = await db.execute({
+            sql: `SELECT di.id, di.status, di.donor_email, di.amount_cents, dac.card_token, dac.status as card_status
+                  FROM donation_intents di
+                  LEFT JOIN donation_appreciation_cards dac ON (dac.donor_display_name = di.donor_name OR dac.amount_cents = di.amount_cents)
+                  WHERE di.intent_token = ? LIMIT 1`,
+            args: [intentToken]
+          });
+
+          if (intentRes.rows.length > 0 && intentRes.rows[0].card_token) {
+            card = {
+              cardToken: intentRes.rows[0].card_token,
+              cardStatus: intentRes.rows[0].card_status || 'active'
+            };
+          }
+        }
+
+        if (!card && transactionId) {
+          const cardRes = await db.execute({
+            sql: `SELECT card_token, status FROM donation_appreciation_cards WHERE payment_reference = ? LIMIT 1`,
+            args: [transactionId]
+          });
+
+          if (cardRes.rows.length > 0) {
+            card = {
+              cardToken: cardRes.rows[0].card_token,
+              cardStatus: cardRes.rows[0].status || 'active'
+            };
+          }
+        }
+
+        if (card) {
+          return jsonResponse({
+            success: true,
+            status: 'verified',
+            cardUrl: `/appreciation-card/${card.cardToken}`
+          }, 200, cors);
+        }
+
+        return jsonResponse({
+          success: true,
+          status: 'pending',
+          message: 'Donation verification in progress. Our system checks payment gateways every 5 minutes.'
+        }, 200, cors);
       }
 
       // =======================================================================
@@ -1252,29 +1337,95 @@ export default {
       }
 
       // =======================================================================
-      // 12. Newsletter Subscriptions (POST /api/newsletter/subscribe)
+      // 12. Newsletter Subscriptions (POST /api/newsletter & POST /api/newsletter/subscribe)
       // =======================================================================
-      if (pathname === '/api/newsletter/subscribe' && request.method === 'POST') {
-        const body = await request.json();
+      if ((pathname === '/api/newsletter' || pathname === '/api/newsletter/subscribe') && request.method === 'POST') {
+        const body = await request.json().catch(() => ({}));
+        const email = (body.email || '').toLowerCase().trim();
 
-        if (!body.email || !body.email.includes('@')) {
+        if (!email || !email.includes('@')) {
           return errorResponse('Please provide a valid email address.', 400, null, cors);
         }
 
         const id = crypto.randomUUID();
         const db = getDb(env);
+        const baseUrl = env.FRONTEND_BASE_URL || 'https://diversitycollectivevc.org';
+        const unsubscribeUrl = `${baseUrl}/api/newsletter/unsubscribe?email=${encodeURIComponent(email)}`;
 
         if (db) {
+          // Insert or re-activate if previously unsubscribed
           await db.execute({
-            sql: `INSERT OR IGNORE INTO newsletter_subscribers (id, email, source) VALUES (?, ?, ?)`,
-            args: [id, body.email.toLowerCase().trim(), body.source || 'website']
-          });
+            sql: `INSERT INTO newsletter_subscribers (id, email, source, is_active, unsubscribed_at)
+                  VALUES (?, ?, ?, 1, NULL)
+                  ON CONFLICT(email) DO UPDATE SET is_active = 1, unsubscribed_at = NULL`,
+            args: [id, email, body.source || 'website_footer']
+          }).catch(err => console.warn('Newsletter DB insert error:', err.message));
+        }
+
+        // Dispatch Welcome Email via Resend
+        if (env.RESEND_API_KEY) {
+          const welcomeTpl = templateNewsletterWelcome({ email, unsubscribeUrl });
+          ctx.waitUntil(
+            sendEmail({
+              apiKey: env.RESEND_API_KEY,
+              from: env.RESEND_FROM_EMAIL || 'Diversity Collective <noreply@diversitycollective.org>',
+              to: email,
+              subject: welcomeTpl.subject,
+              html: welcomeTpl.html,
+              text: welcomeTpl.text
+            }).catch(err => console.error('Newsletter welcome email dispatch error:', err))
+          );
         }
 
         return jsonResponse({
           success: true,
-          message: 'Thank you for subscribing to Diversity Collective updates!'
+          message: 'Welcome to the Diversity Collective community! We have sent a confirmation to your inbox.'
         }, 200, cors);
+      }
+
+      // 12B. Newsletter 1-Click Unsubscribe (GET /api/newsletter/unsubscribe)
+      if (pathname === '/api/newsletter/unsubscribe' && request.method === 'GET') {
+        const email = (url.searchParams.get('email') || '').toLowerCase().trim();
+        const db = getDb(env);
+
+        if (db && email) {
+          await db.execute({
+            sql: `UPDATE newsletter_subscribers SET is_active = 0, unsubscribed_at = datetime('now') WHERE email = ?`,
+            args: [email]
+          }).catch(err => console.warn('Unsubscribe update error:', err.message));
+        }
+
+        const html = `
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Unsubscribed · Diversity Collective Ventura County</title>
+            <style>
+              body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #1e293b; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+              .card { background: #ffffff; border-radius: 20px; padding: 40px 32px; max-width: 480px; width: 100%; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.06); border: 1px solid #e2e8f0; }
+              .badge { display: inline-block; background: #fdf2f8; color: #db2777; font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 999px; text-transform: uppercase; margin-bottom: 16px; }
+              h1 { font-size: 22px; font-weight: 800; margin: 0 0 12px 0; color: #0f172a; }
+              p { font-size: 14px; line-height: 1.6; color: #64748b; margin: 0 0 24px 0; }
+              a.btn { display: inline-block; background: #5A1E65; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 700; padding: 12px 24px; border-radius: 12px; }
+            </style>
+          </head>
+          <body>
+            <div class="card">
+              <span class="badge">Preferences Updated</span>
+              <h1>You Have Been Unsubscribed</h1>
+              <p>You have been removed from our community newsletter mailing list (${email || 'your email'}). You can resubscribe at any time on our website.</p>
+              <a href="${env.FRONTEND_BASE_URL || 'https://diversitycollectivevc.org'}" class="btn">Return to Diversity Collective</a>
+            </div>
+          </body>
+          </html>
+        `;
+
+        return new Response(html, {
+          status: 200,
+          headers: { 'Content-Type': 'text/html; charset=utf-8', ...cors }
+        });
       }
 
       // =======================================================================
@@ -1364,25 +1515,29 @@ export default {
           let user = null;
 
           if (db) {
-            const userRes = await db.execute({
-              sql: `SELECT id, email, name, role, password_hash, salt, is_active FROM admin_users WHERE email = ? LIMIT 1`,
-              args: [email]
-            });
-            if (userRes.rows.length > 0) {
-              const u = userRes.rows[0];
-              if (!u.is_active) {
-                return errorResponse('Account is deactivated. Please contact an administrator.', 403, null, cors);
+            try {
+              const userRes = await db.execute({
+                sql: `SELECT id, email, name, role, password_hash, salt, is_active FROM admin_users WHERE email = ? LIMIT 1`,
+                args: [email]
+              });
+              if (userRes.rows.length > 0) {
+                const u = userRes.rows[0];
+                if (!u.is_active) {
+                  return errorResponse('Account is deactivated. Please contact an administrator.', 403, null, cors);
+                }
+                const computedHash = await hashPassword(password, u.salt);
+                if (computedHash === u.password_hash) {
+                  user = { id: u.id, email: u.email, name: u.name, role: u.role };
+                  ctx.waitUntil(
+                    db.execute({
+                      sql: `UPDATE admin_users SET last_login_at = datetime('now') WHERE id = ?`,
+                      args: [u.id]
+                    }).catch(() => {})
+                  );
+                }
               }
-              const computedHash = await hashPassword(password, u.salt);
-              if (computedHash === u.password_hash) {
-                user = { id: u.id, email: u.email, name: u.name, role: u.role };
-                ctx.waitUntil(
-                  db.execute({
-                    sql: `UPDATE admin_users SET last_login_at = datetime('now') WHERE id = ?`,
-                    args: [u.id]
-                  }).catch(() => {})
-                );
-              }
+            } catch (err) {
+              console.warn('Could not query admin_users table (may need migration):', err.message);
             }
           }
 
@@ -1726,6 +1881,218 @@ export default {
           });
           return jsonResponse({ success: true, logs: res.rows }, 200, cors);
         }
+
+        // 15.13 System Migration Runner (POST /api/admin/system/migrate)
+        if (pathname === '/api/admin/system/migrate' && request.method === 'POST') {
+          if (!requireRole(authUser.role, ['admin'])) {
+            return errorResponse('Forbidden: Superadmin role required to run database migrations', 403, null, cors);
+          }
+
+          const db = getDb(env);
+          if (!db) {
+            return errorResponse('Database connection not available', 503, null, cors);
+          }
+
+          const migrationResult = await runAllMigrations(db);
+
+          await logAdminAction(db, {
+            userId: authUser.id,
+            userEmail: authUser.email,
+            action: 'run_database_migrations',
+            targetType: 'system',
+            targetId: 'turso_master',
+            details: migrationResult,
+            ip: clientIp
+          }).catch(() => {});
+
+          return jsonResponse({
+            success: true,
+            message: 'Database schema migrations executed successfully.',
+            result: migrationResult
+          }, 200, cors);
+        }
+
+        // 15.14 System Migration Status (GET /api/admin/system/status)
+        if (pathname === '/api/admin/system/status' && request.method === 'GET') {
+          const db = getDb(env);
+          if (!db) {
+            return errorResponse('Database connection not available', 503, null, cors);
+          }
+
+          const tableRes = await db.execute({
+            sql: `SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name;`,
+            args: []
+          });
+          const tables = (tableRes.rows || []).map(r => r.name || r[0]);
+
+          return jsonResponse({
+            success: true,
+            tables,
+            tableCount: tables.length,
+            databaseConnected: true
+          }, 200, cors);
+        }
+
+        // 15.15 Admin Newsletter Subscribers List (GET /api/admin/newsletter/subscribers)
+        if (pathname === '/api/admin/newsletter/subscribers' && request.method === 'GET') {
+          const db = getDb(env);
+          if (!db) {
+            return jsonResponse({ success: true, count: 0, activeCount: 0, subscribers: [] }, 200, cors);
+          }
+
+          const countRes = await db.execute({
+            sql: `SELECT COUNT(*) as total, SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active FROM newsletter_subscribers`,
+            args: []
+          });
+          const total = countRes.rows[0]?.total || 0;
+          const active = countRes.rows[0]?.active || 0;
+
+          const listRes = await db.execute({
+            sql: `SELECT id, email, source, is_active, consent_timestamp, created_at, unsubscribed_at FROM newsletter_subscribers ORDER BY created_at DESC LIMIT 100`,
+            args: []
+          });
+
+          return jsonResponse({
+            success: true,
+            totalSubscribers: total,
+            activeSubscribers: active,
+            subscribers: listRes.rows
+          }, 200, cors);
+        }
+
+        // 15.16 Admin Newsletter Broadcast (POST /api/admin/newsletter/send)
+        if (pathname === '/api/admin/newsletter/send' && request.method === 'POST') {
+          if (!requireRole(authUser.role, ['admin', 'editor'])) {
+            return errorResponse('Forbidden: Editor or Admin role required to broadcast newsletters', 403, null, cors);
+          }
+
+          const body = await request.json().catch(() => ({}));
+          const subject = (body.subject || '').trim();
+          const preheader = (body.preheader || '').trim();
+          const headline = (body.headline || subject).trim();
+          const authorName = (body.authorName || authUser.name || 'Diversity Collective Team').trim();
+          const authorTitle = (body.authorTitle || 'Community Leadership').trim();
+          const content = (body.content || '').trim();
+          const ctaText = (body.ctaText || '').trim();
+          const ctaUrl = (body.ctaUrl || '').trim();
+          const isTest = Boolean(body.isTest);
+
+          if (!subject || !content) {
+            return errorResponse('Subject line and newsletter content are required.', 400, null, cors);
+          }
+
+          if (!env.RESEND_API_KEY) {
+            return errorResponse('Resend API key is not configured on this environment.', 503, null, cors);
+          }
+
+          const db = getDb(env);
+          const baseUrl = env.FRONTEND_BASE_URL || 'https://diversitycollectivevc.org';
+
+          // Convert simple paragraph breaks into clean HTML paragraphs if plain text
+          const formattedContentHtml = content.includes('<p>') || content.includes('<div>')
+            ? content
+            : content.split('\n\n').map(p => `<p style="margin: 0 0 16px 0; line-height: 1.7;">${p.replace(/\n/g, '<br>')}</p>`).join('');
+
+          if (isTest) {
+            // Test Mode: Send strictly to the logged-in admin's email
+            const testEmail = authUser.email;
+            const testUnsubscribeUrl = `${baseUrl}/api/newsletter/unsubscribe?email=${encodeURIComponent(testEmail)}`;
+            const broadcastTpl = templateNewsletterBroadcast({
+              subject: `[TEST PREVIEW] ${subject}`,
+              preheader,
+              headline,
+              authorName,
+              authorTitle,
+              contentHtml: formattedContentHtml,
+              ctaText,
+              ctaUrl,
+              unsubscribeUrl: testUnsubscribeUrl
+            });
+
+            await sendEmail({
+              apiKey: env.RESEND_API_KEY,
+              from: env.RESEND_FROM_EMAIL || 'Diversity Collective <noreply@diversitycollective.org>',
+              to: testEmail,
+              subject: broadcastTpl.subject,
+              html: broadcastTpl.html,
+              text: broadcastTpl.text
+            });
+
+            return jsonResponse({
+              success: true,
+              isTest: true,
+              message: `Test newsletter preview dispatched to ${testEmail}. Check your inbox!`,
+              recipient: testEmail
+            }, 200, cors);
+          }
+
+          // Production Broadcast: Query all active subscribers
+          let recipients = [];
+          if (db) {
+            const subsRes = await db.execute({
+              sql: `SELECT email FROM newsletter_subscribers WHERE is_active = 1`,
+              args: []
+            });
+            recipients = (subsRes.rows || []).map(r => r.email).filter(Boolean);
+          }
+
+          if (recipients.length === 0) {
+            return errorResponse('No active newsletter subscribers found in database to broadcast to.', 400, null, cors);
+          }
+
+          // Asynchronously dispatch newsletter to all active subscribers
+          for (const recipientEmail of recipients) {
+            const unsubscribeUrl = `${baseUrl}/api/newsletter/unsubscribe?email=${encodeURIComponent(recipientEmail)}`;
+            const broadcastTpl = templateNewsletterBroadcast({
+              subject,
+              preheader,
+              headline,
+              authorName,
+              authorTitle,
+              contentHtml: formattedContentHtml,
+              ctaText,
+              ctaUrl,
+              unsubscribeUrl
+            });
+
+            ctx.waitUntil(
+              sendEmail({
+                apiKey: env.RESEND_API_KEY,
+                from: env.RESEND_FROM_EMAIL || 'Diversity Collective <noreply@diversitycollective.org>',
+                to: recipientEmail,
+                subject: broadcastTpl.subject,
+                html: broadcastTpl.html,
+                text: broadcastTpl.text
+              }).catch(err => console.error(`Broadcast failed for ${recipientEmail}:`, err))
+            );
+          }
+
+          if (db) {
+            await logAdminAction(db, {
+              userId: authUser.id,
+              userEmail: authUser.email,
+              action: 'broadcast_newsletter',
+              targetType: 'newsletter',
+              targetId: subject,
+              details: { subject, recipientCount: recipients.length, headline },
+              ip: clientIp
+            }).catch(() => {});
+          }
+
+          return jsonResponse({
+            success: true,
+            isTest: false,
+            message: `Newsletter broadcast initiated to ${recipients.length} subscriber(s)!`,
+            recipientsCount: recipients.length,
+            subject,
+            sentAt: new Date().toISOString()
+          }, 200, cors);
+        }
+      }
+
+      // Static frontend assets fallback (Full-stack SPA hosting)
+      if (env.ASSETS && !pathname.startsWith('/api/')) {
+        return env.ASSETS.fetch(request);
       }
 
       // 404 for unknown endpoints
@@ -1735,5 +2102,19 @@ export default {
       console.error('Unhandled API exception:', err);
       return errorResponse('Internal server error', 500, err.message, cors);
     }
+  },
+
+  /**
+   * Cloudflare Cron Trigger Handler: Runs every 5 minutes
+   * Authoritative polling against Zeffy API for payment reconciliation, refund/dispute detection
+   */
+  async scheduled(event, env, ctx) {
+    console.log(`[Scheduled Cron] Zeffy sync triggered at ${new Date(event.scheduledTime).toISOString()}`);
+    const db = getDb(env);
+    ctx.waitUntil(
+      executeZeffySync(env, db, ctx)
+        .then(result => console.log('[Scheduled Cron] Zeffy sync outcome:', result))
+        .catch(err => console.error('[Scheduled Cron] Zeffy sync error:', err))
+    );
   }
 };

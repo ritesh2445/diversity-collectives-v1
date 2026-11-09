@@ -41,7 +41,7 @@ export default function TermsAndConditions() {
         <div className="p-8 rounded-3xl bg-slate-50 border-2 border-slate-200 space-y-3">
           <h2 className="font-display text-xl font-black text-slate-950">1. Acceptance of Terms</h2>
           <p className="text-xs sm:text-sm text-slate-600">
-            By accessing or using the Diversity Collective Ventura County website (diversitycollective.org), our online forms, or participating in our physical sanctuary programs, you agree to comply with these terms, our Privacy Policy, and our Community Code of Conduct.
+            By accessing or using the Diversity Collective Ventura County website (diversitycollective.org), our online forms, or participating in our physical sanctuary programs, you agree to comply with these terms, our <Link to="/privacy" className="text-[#5A1E65] font-bold underline hover:text-purple-900">Privacy Policy</Link>, and our Community Code of Conduct.
           </p>
         </div>
 

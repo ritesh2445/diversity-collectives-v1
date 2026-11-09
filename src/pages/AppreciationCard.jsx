@@ -15,6 +15,7 @@ import {
   RotateCcw,
   ExternalLink,
   Printer,
+  FileText,
   Smartphone,
   Monitor,
   Flame,
@@ -23,6 +24,8 @@ import {
   Lock
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { toPng } from 'html-to-image';
+import { jsPDF } from 'jspdf';
 import { orgInfo } from '../data/dcvcData';
 import { 
   APPRECIATION_TIERS, 
@@ -636,223 +639,171 @@ export default function AppreciationCard() {
     });
   };
 
+  // Pre-flight check: Await document web fonts, image decoding, and SVG layout computation
+  const preflightCardAssets = async (element) => {
+    if (typeof document !== 'undefined' && document.fonts && document.fonts.ready) {
+      try {
+        await document.fonts.ready;
+      } catch (e) {
+        console.warn('Font readiness check skipped:', e);
+      }
+    }
+
+    const imgs = Array.from(element.querySelectorAll('img'));
+    await Promise.all(
+      imgs.map((img) => {
+        if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+        return new Promise((resolve) => {
+          img.onload = () => resolve();
+          img.onerror = () => resolve();
+          setTimeout(resolve, 800);
+        });
+      })
+    );
+
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  };
+
+  // Cross-device download & iOS Safari Web Share API integration
+  const saveOrShareFile = async (blob, fileName, mimeType, title) => {
+    const file = new File([blob], fileName, { type: mimeType });
+    if (typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: title || 'DCVC Appreciation Card',
+          text: 'Diversity Collective Ventura County Keepsake'
+        });
+        return { success: true, method: 'share' };
+      } catch (shareErr) {
+        if (shareErr.name === 'AbortError') {
+          return { success: false, method: 'aborted' };
+        }
+        console.warn('Web Share failed, falling back to download:', shareErr);
+      }
+    }
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    return { success: true, method: 'download' };
+  };
+
   const handlePrint = () => {
+    const card = cardRef.current;
+    if (card) {
+      // Measure actual rendered height and calculate proportional scale to fit exactly within A4 Landscape (194mm printable height = ~733px)
+      const cardH = card.offsetHeight || 880;
+      const cardW = card.offsetWidth || 896;
+      // Target height is 680px to guarantee safe margins and prevent any second page
+      const scale = Math.min(1, Math.min(680 / cardH, 950 / cardW));
+      card.style.setProperty('--print-scale', scale.toFixed(3));
+    }
     window.print();
   };
 
-  const handleDownloadHighRes = () => {
+  const handleDownloadHighRes = async () => {
+    const cardElement = cardRef.current;
+    if (!cardElement) return;
+
     try {
       setIsGeneratingDownload(true);
-      
-      const width = 2400;
-      const height = 1500;
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        setIsGeneratingDownload(false);
-        window.print();
-        return;
-      }
+      await preflightCardAssets(cardElement);
 
-      const isDark = activeTierId === APPRECIATION_TIERS.VISIONARY_BENEFACTOR;
-
-      // 1. Luxury Background Gradient
-      const bgGrad = ctx.createLinearGradient(0, 0, width, height);
-      if (isDark) {
-        bgGrad.addColorStop(0, '#090814');
-        bgGrad.addColorStop(0.5, '#161329');
-        bgGrad.addColorStop(1, '#0b0919');
-      } else if (activeTierId === APPRECIATION_TIERS.RAINBOW_CHAMPION) {
-        bgGrad.addColorStop(0, '#fffbfb');
-        bgGrad.addColorStop(0.5, '#fbf8ff');
-        bgGrad.addColorStop(1, '#f5faff');
-      } else if (activeTierId === APPRECIATION_TIERS.PRIDE_ADVOCATE) {
-        bgGrad.addColorStop(0, '#fdf7fe');
-        bgGrad.addColorStop(0.5, '#faf5ff');
-        bgGrad.addColorStop(1, '#f5fcff');
-      } else {
-        bgGrad.addColorStop(0, '#fffdfa');
-        bgGrad.addColorStop(0.5, '#fffbf5');
-        bgGrad.addColorStop(1, '#fff7ed');
-      }
-      ctx.fillStyle = bgGrad;
-      ctx.fillRect(0, 0, width, height);
-
-      // 2. Decorative Double Framing Borders
-      ctx.strokeStyle = isDark ? '#d97706' : '#c084fc';
-      ctx.lineWidth = 14;
-      ctx.strokeRect(50, 50, width - 100, height - 100);
-
-      ctx.strokeStyle = isDark ? '#fbbf24' : '#e2e8f0';
-      ctx.lineWidth = 4;
-      ctx.strokeRect(75, 75, width - 150, height - 150);
-
-      // 3. Header Accent Bar
-      const accentGrad = ctx.createLinearGradient(75, 0, width - 75, 0);
-      if (isDark) {
-        accentGrad.addColorStop(0, '#fde047');
-        accentGrad.addColorStop(0.5, '#f59e0b');
-        accentGrad.addColorStop(1, '#b45309');
-      } else if (activeTierId === APPRECIATION_TIERS.RAINBOW_CHAMPION) {
-        accentGrad.addColorStop(0, '#ef4444');
-        accentGrad.addColorStop(0.25, '#f59e0b');
-        accentGrad.addColorStop(0.5, '#10b981');
-        accentGrad.addColorStop(0.75, '#06b6d4');
-        accentGrad.addColorStop(1, '#8b5cf6');
-      } else if (activeTierId === APPRECIATION_TIERS.PRIDE_ADVOCATE) {
-        accentGrad.addColorStop(0, '#c026d3');
-        accentGrad.addColorStop(0.5, '#ec4899');
-        accentGrad.addColorStop(1, '#06b6d4');
-      } else {
-        accentGrad.addColorStop(0, '#f59e0b');
-        accentGrad.addColorStop(0.5, '#fb7185');
-        accentGrad.addColorStop(1, '#d97706');
-      }
-      ctx.fillStyle = accentGrad;
-      ctx.fillRect(75, 75, width - 150, 18);
-
-      // 4. Header Branding
-      ctx.fillStyle = isDark ? '#fbbf24' : '#5A1E65';
-      ctx.font = 'bold 36px "Outfit", system-ui, sans-serif';
-      ctx.textAlign = 'left';
-      ctx.fillText('DIVERSITY COLLECTIVE VENTURA COUNTY', 140, 175);
-      
-      ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
-      ctx.font = '600 22px "Inter", system-ui, sans-serif';
-      ctx.fillText('VENTURA COUNTY 501(C)(3) NONPROFIT · ESTABLISHED 2014', 140, 215);
-
-      // Tier Badge Pill & ID
-      ctx.textAlign = 'right';
-      ctx.fillStyle = isDark ? '#fbbf24' : '#5A1E65';
-      ctx.font = 'bold 32px "Outfit", system-ui, sans-serif';
-      ctx.fillText(currentTier.badgeText || currentTier.title, width - 140, 175);
-
-      ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
-      ctx.font = 'bold 22px monospace';
-      ctx.fillText(`ID: ${certificateId}`, width - 140, 215);
-
-      // Divider Line
-      ctx.strokeStyle = isDark ? '#334155' : '#e2e8f0';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(140, 255);
-      ctx.lineTo(width - 140, 255);
-      ctx.stroke();
-
-      // 5. Inscription Titles
-      ctx.textAlign = 'center';
-      ctx.fillStyle = isDark ? '#e2e8f0' : '#5A1E65';
-      ctx.font = 'bold 28px "Outfit", system-ui, sans-serif';
-      ctx.fillText('OFFICIAL CERTIFICATE OF COMMEMORATIVE GRATITUDE', width / 2, 335);
-
-      ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
-      ctx.font = 'italic 34px "Fraunces", Georgia, serif';
-      ctx.fillText('With Heartfelt Thanks To', width / 2, 400);
-
-      // Donor Name (High-Contrast Bold)
-      ctx.fillStyle = isDark ? '#ffffff' : '#0f172a';
-      ctx.font = '900 76px "Fraunces", Georgia, serif';
-      const donorName = cardData?.donorDisplayName || 'Affirming Community Supporter';
-      ctx.fillText(donorName, width / 2, 500);
-
-      // Underline
-      const nameWidth = ctx.measureText(donorName).width;
-      const underlineGrad = ctx.createLinearGradient((width - nameWidth) / 2, 0, (width + nameWidth) / 2, 0);
-      underlineGrad.addColorStop(0, '#f59e0b');
-      underlineGrad.addColorStop(0.5, '#ec4899');
-      underlineGrad.addColorStop(1, '#8b5cf6');
-      ctx.fillStyle = underlineGrad;
-      ctx.fillRect((width - nameWidth) / 2 - 20, 525, nameWidth + 40, 6);
-
-      // Tier Quote
-      ctx.fillStyle = isDark ? '#cbd5e1' : '#334155';
-      ctx.font = 'italic 32px "Fraunces", Georgia, serif';
-      ctx.fillText(currentTier.quote, width / 2, 605);
-
-      // Circle Insignia
-      ctx.fillStyle = isDark ? '#fbbf24' : '#5A1E65';
-      ctx.font = 'bold 24px "Outfit", system-ui, sans-serif';
-      ctx.fillText(`★  ${currentTier.circleName}  ★`, width / 2, 675);
-
-      // 6. Impact Box
-      ctx.fillStyle = isDark ? 'rgba(30, 27, 75, 0.7)' : 'rgba(255, 255, 255, 0.9)';
-      ctx.fillRect(width / 2 - 700, 725, 1400, 160);
-      ctx.strokeStyle = isDark ? '#4338ca' : '#cbd5e1';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(width / 2 - 700, 725, 1400, 160);
-
-      ctx.fillStyle = isDark ? '#fbbf24' : '#5A1E65';
-      ctx.font = 'bold 22px "Outfit", system-ui, sans-serif';
-      ctx.fillText('YOUR VENTURA COUNTY COMMUNITY IMPACT', width / 2, 770);
-
-      ctx.fillStyle = isDark ? '#e2e8f0' : '#475569';
-      ctx.font = '22px "Inter", system-ui, sans-serif';
-      const impactText = cardData?.impactMessage || currentTier.impactNarrative;
-      ctx.fillText(impactText, width / 2, 830);
-
-      // 7. Community Gratitude Signature Block
-      ctx.textAlign = 'left';
-      ctx.fillStyle = isDark ? '#fbbf24' : '#5A1E65';
-      ctx.font = 'bold 22px "Outfit", system-ui, sans-serif';
-      ctx.fillText('WITH DEEPEST GRATITUDE', 140, 1010);
-
-      ctx.fillStyle = isDark ? '#ffffff' : '#0f172a';
-      ctx.font = 'bold 36px "Fraunces", Georgia, serif';
-      ctx.fillText('Diversity Collective Ventura County', 140, 1060);
-
-      ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
-      ctx.font = '500 22px "Inter", system-ui, sans-serif';
-      ctx.fillText('Board of Directors, Staff, Volunteers & Community Sanctuary', 140, 1105);
-
-      // 8. Commemorative Seal
-      ctx.textAlign = 'right';
-      ctx.fillStyle = isDark ? '#fbbf24' : '#5A1E65';
-      ctx.font = 'bold 24px "Outfit", system-ui, sans-serif';
-      ctx.fillText('501(c)(3) NONPROFIT PUBLIC CHARITY', width - 140, 1030);
-
-      ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
-      ctx.font = '500 22px "Inter", system-ui, sans-serif';
-      ctx.fillText('Ventura County, California · Established 2014', width - 140, 1070);
-
-      ctx.fillStyle = isDark ? '#a78bfa' : '#7c3aed';
-      ctx.font = 'bold 20px monospace';
-      ctx.fillText(`VERIFIED KEEPSAKE · ${certificateId}`, width - 140, 1105);
-
-      // 9. Non-Tax Receipt Disclosure Notice
-      ctx.textAlign = 'center';
-      ctx.fillStyle = isDark ? '#64748b' : '#94a3b8';
-      ctx.font = '500 18px "Inter", system-ui, sans-serif';
-      ctx.fillText(
-        'Commemorative Keepsake Notice: This appreciation card is an expressive cultural keepsake honoring your generous partnership. Official tax-deductible receipts are issued independently via Zeffy.',
-        width / 2,
-        1380
+      const isMobile = typeof window !== 'undefined' && (
+        window.innerWidth < 768 ||
+        /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
       );
+      // Desktop: 2.5x pixel ratio for sharp 300 DPI target; Mobile: 1.75x to safely respect iOS 288MB limit
+      const pixelRatio = isMobile ? 1.75 : 2.5;
 
-      // Output to Blob
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          setIsGeneratingDownload(false);
-          return;
-        }
-        const cleanName = (cardData?.donorDisplayName || 'Supporter').replace(/[^a-zA-Z0-9]/g, '_');
-        const fileName = `DCVC-Appreciation-Card-${(currentTier.badgeText || 'Donor').replace(/[^a-zA-Z0-9]/g, '-')}-${cleanName}.png`;
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        setIsGeneratingDownload(false);
-      }, 'image/png');
+      const dataUrl = await toPng(cardElement, {
+        quality: 0.98,
+        pixelRatio
+      });
 
+      const res = await fetch(dataUrl);
+      const blob = await res.blob();
+
+      const cleanName = (cardData?.donorDisplayName || 'Supporter').replace(/[^a-zA-Z0-9]/g, '_');
+      const fileName = `DCVC-Appreciation-Card-${(currentTier.badgeText || 'Donor').replace(/[^a-zA-Z0-9]/g, '-')}-${cleanName}.png`;
+
+      await saveOrShareFile(blob, fileName, 'image/png', `DCVC ${currentTier.title} Keepsake Card`);
     } catch (err) {
       console.error('Failed to export high-res card:', err);
+      handlePrint();
+    } finally {
       setIsGeneratingDownload(false);
-      window.print();
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    const cardElement = cardRef.current;
+    if (!cardElement) return;
+
+    try {
+      setIsGeneratingDownload(true);
+      await preflightCardAssets(cardElement);
+
+      const isMobile = typeof window !== 'undefined' && (
+        window.innerWidth < 768 ||
+        /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+      );
+      const pixelRatio = isMobile ? 1.75 : 2.5;
+
+      const dataUrl = await toPng(cardElement, {
+        quality: 0.98,
+        pixelRatio
+      });
+
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4',
+        compress: true
+      });
+
+      const pageWidth = 297;
+      const pageHeight = 210;
+      const margin = 8;
+      const maxW = pageWidth - (margin * 2);
+      const maxH = pageHeight - (margin * 2);
+
+      const cardRect = cardElement.getBoundingClientRect();
+      const cardAspect = cardRect.width / cardRect.height;
+      const targetAspect = maxW / maxH;
+
+      let renderW, renderH, offsetX, offsetY;
+      if (cardAspect > targetAspect) {
+        renderW = maxW;
+        renderH = maxW / cardAspect;
+        offsetX = margin;
+        offsetY = margin + (maxH - renderH) / 2;
+      } else {
+        renderH = maxH;
+        renderW = maxH * cardAspect;
+        offsetX = margin + (maxW - renderW) / 2;
+        offsetY = margin;
+      }
+
+      pdf.addImage(dataUrl, 'PNG', offsetX, offsetY, renderW, renderH, undefined, 'FAST');
+
+      const cleanName = (cardData?.donorDisplayName || 'Supporter').replace(/[^a-zA-Z0-9]/g, '_');
+      const fileName = `DCVC-Certificate-${(currentTier.badgeText || 'Donor').replace(/[^a-zA-Z0-9]/g, '-')}-${cleanName}.pdf`;
+
+      const pdfBlob = pdf.output('blob');
+      await saveOrShareFile(pdfBlob, fileName, 'application/pdf', `DCVC ${currentTier.title} Certificate`);
+    } catch (err) {
+      console.error('Failed to export PDF certificate:', err);
+      handlePrint();
+    } finally {
+      setIsGeneratingDownload(false);
     }
   };
 
@@ -1169,23 +1120,42 @@ export default function AppreciationCard() {
             <div 
               id="appreciation-card-render"
               ref={cardRef}
-              className={`relative rounded-3xl p-6 sm:p-12 border-2 ${currentTier.borderStyle} ${currentTier.cardBackground} shadow-2xl overflow-hidden transition-all duration-700`}
+              onContextMenu={(e) => isPreview && e.preventDefault()}
+              className={`relative rounded-3xl p-6 sm:p-12 border-2 ${currentTier.borderStyle} ${currentTier.cardBackground} shadow-2xl overflow-hidden transition-all duration-700 ${isPreview ? 'select-none' : ''}`}
             >
+              {/* Official Studio Preview Diagonal Watermark */}
+              {isPreview && (
+                <div 
+                  aria-hidden="true"
+                  className="absolute inset-0 pointer-events-none z-40 flex items-center justify-center overflow-hidden select-none"
+                  style={{ userSelect: 'none' }}
+                >
+                  <div className="transform -rotate-25 text-slate-900/12 font-black text-xl sm:text-3xl md:text-4xl tracking-[0.25em] uppercase border-4 border-dashed border-slate-900/15 py-4 px-8 rounded-3xl text-center shadow-xs">
+                    OFFICIAL STUDIO PREVIEW · UNISSUED KEEPSAKE
+                  </div>
+                </div>
+              )}
+
               {/* Distinct Tier Color Bar at Top */}
               <div className={`absolute top-0 left-0 right-0 h-3 bg-gradient-to-r ${currentTier.themeGradient}`} />
 
-              {/* Dedicated Print & PDF Formatting Rules */}
+              {/* Dedicated Print & PDF Proportional Scaling Rules */}
               <style>{`
                 @media print {
                   @page {
                     size: landscape;
                     margin: 8mm;
                   }
-                  body {
+                  html, body {
                     background: #ffffff !important;
                     color: #0f172a !important;
                     -webkit-print-color-adjust: exact !important;
                     print-color-adjust: exact !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    width: 100% !important;
+                    height: 100% !important;
+                    overflow: hidden !important;
                   }
                   header, footer, nav, aside, .print\\:hidden, [role="banner"], [role="contentinfo"] {
                     display: none !important;
@@ -1194,9 +1164,14 @@ export default function AppreciationCard() {
                     box-shadow: none !important;
                     max-width: 100% !important;
                     width: 100% !important;
-                    border: 2px solid #cbd5e1 !important;
+                    zoom: var(--print-scale, 0.76) !important;
                     page-break-inside: avoid !important;
+                    break-inside: avoid !important;
                     margin: 0 auto !important;
+                  }
+                  #appreciation-card-render * {
+                    page-break-inside: avoid !important;
+                    break-inside: avoid !important;
                   }
                 }
               `}</style>
@@ -1363,6 +1338,18 @@ export default function AppreciationCard() {
             {/* =============================================================== */}
             {/* ACTIONS TOOLBAR: Download High-Res, Print PDF, Share, Replay    */}
             {/* =============================================================== */}
+            {isPreview && (
+              <div className="w-full text-xs font-semibold text-amber-900 bg-amber-50 border border-amber-200/90 px-4 py-3 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 shadow-xs print:hidden">
+                <span className="flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-amber-700 flex-shrink-0" />
+                  <span>Studio Preview Mode: High-resolution PNG and PDF exports are unlocked upon authentic donor contribution.</span>
+                </span>
+                <Link to="/donate" className="text-xs font-bold text-[#5A1E65] underline hover:text-purple-900 whitespace-nowrap">
+                  Make a Contribution & Claim Keepsake →
+                </Link>
+              </div>
+            )}
+
             <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-white rounded-3xl border border-slate-200 shadow-md print:hidden">
               
               <div className="flex flex-wrap gap-2.5">
@@ -1370,21 +1357,34 @@ export default function AppreciationCard() {
                 <button
                   type="button"
                   onClick={handleDownloadHighRes}
-                  disabled={isGeneratingDownload}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-[#5A1E65] to-purple-800 hover:from-purple-900 hover:to-indigo-950 text-white text-xs font-bold transition-all cursor-pointer shadow-md hover:shadow-lg disabled:opacity-50"
+                  disabled={isGeneratingDownload || isPreview}
+                  title={isPreview ? "Exports are disabled in preview mode" : "Download Keepsake"}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-[#5A1E65] to-purple-800 hover:from-purple-900 hover:to-indigo-950 text-white text-xs font-bold transition-all cursor-pointer shadow-md hover:shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <Download className={`w-4 h-4 text-amber-300 ${isGeneratingDownload ? 'animate-bounce' : ''}`} />
-                  <span>{isGeneratingDownload ? 'Rendering 300 DPI Artwork...' : 'Download High-Res Artwork (300 DPI PNG)'}</span>
+                  <span>{isGeneratingDownload ? 'Rendering 300 DPI...' : 'Download Keepsake (300 DPI PNG)'}</span>
                 </button>
 
-                {/* Print / Save as PDF Button */}
+                {/* Download Verified PDF Certificate */}
+                <button
+                  type="button"
+                  onClick={handleDownloadPdf}
+                  disabled={isGeneratingDownload || isPreview}
+                  title={isPreview ? "Exports are disabled in preview mode" : "Download PDF Certificate"}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all cursor-pointer shadow-xs disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <FileText className="w-4 h-4 text-amber-300" />
+                  <span>Download PDF Certificate</span>
+                </button>
+
+                {/* Proportional Print / Save Button */}
                 <button
                   type="button"
                   onClick={handlePrint}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-slate-300 hover:bg-slate-100 text-slate-800 text-xs font-bold transition-all cursor-pointer shadow-xs"
                 >
-                  <Printer className="w-4 h-4 text-slate-300" />
-                  <span>Print / Save as PDF</span>
+                  <Printer className="w-4 h-4 text-slate-600" />
+                  <span>Print Card</span>
                 </button>
 
                 {/* Copy Clean Share Link */}

@@ -23,47 +23,55 @@ export default function Footer() {
         
         {/* Top Editorial Row: Supported By */}
         <div className="pb-16 border-b border-slate-800">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
-            <div className="flex flex-col gap-2 max-w-md">
-              <span className="text-xs font-bold text-amber-400 tracking-wider uppercase">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+            <div className="flex flex-col gap-1.5 max-w-xl">
+              <span className="text-xs font-bold text-amber-400 tracking-wider uppercase flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-amber-400" />
                 COMMUNITY ALLIANCES & PARTNERS
               </span>
-              <p className="text-sm text-slate-200 leading-relaxed">
-                Honoring the local public health agencies and sponsors who help fund our health, safety, and community outreach.
+              <p className="text-sm text-slate-300 leading-relaxed">
+                Honoring the local public health agencies and foundational sponsors who help fund our health, safety, and community outreach.
               </p>
             </div>
-            
-            <div className="flex flex-wrap items-center gap-6 md:gap-8">
-              {sponsorsList.map((sponsor) => (
-                <a
-                  key={sponsor.shortName}
-                  href={sponsor.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-900 transition-colors"
-                  title={sponsor.name}
-                >
-                  <div className="w-28 h-12 md:w-32 md:h-14 rounded-xl bg-white p-2 flex items-center justify-center overflow-hidden border border-slate-700 shadow-sm flex-shrink-0">
-                    <img 
-                      src={sponsor.logo} 
-                      alt={sponsor.name}
-                      className="max-h-full max-w-full object-contain"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.parentElement.innerHTML = `<span class="text-xs font-bold text-slate-800">${sponsor.shortName}</span>`;
-                      }}
-                    />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-xs font-bold text-white flex items-center gap-1">
-                      {sponsor.shortName}
-                      <ArrowUpRight className="w-3 h-3 text-slate-400" />
-                    </span>
-                    <span className="text-[11px] text-slate-300">{sponsor.role}</span>
-                  </div>
-                </a>
-              ))}
-            </div>
+            <Link
+              to="/sponsors"
+              className="text-xs font-bold text-purple-400 hover:text-purple-300 transition-colors inline-flex items-center gap-1 shrink-0"
+            >
+              <span>View All Alliances</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4 w-full">
+            {sponsorsList.map((sponsor) => (
+              <a
+                key={sponsor.shortName}
+                href={sponsor.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-center gap-3.5 p-3 rounded-xl bg-slate-900/60 border border-slate-800/80 hover:border-purple-500/40 hover:bg-slate-900 transition-all duration-200 min-w-0 h-full"
+                title={sponsor.name}
+              >
+                <div className="w-28 h-12 md:w-32 md:h-12 rounded-lg bg-white p-2 flex items-center justify-center overflow-hidden border border-slate-700/60 shadow-xs shrink-0 group-hover:scale-102 transition-transform">
+                  <img 
+                    src={sponsor.logo} 
+                    alt={sponsor.name}
+                    className="max-h-full max-w-full object-contain"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.parentElement.innerHTML = `<span class="text-xs font-bold text-slate-800">${sponsor.shortName}</span>`;
+                    }}
+                  />
+                </div>
+                <div className="flex flex-col min-w-0 flex-1">
+                  <span className="text-xs font-bold text-white group-hover:text-purple-300 transition-colors flex items-center gap-1">
+                    <span className="truncate">{sponsor.shortName}</span>
+                    <ArrowUpRight className="w-3 h-3 text-slate-400 group-hover:text-purple-300 shrink-0" />
+                  </span>
+                  <span className="text-[11px] text-slate-300 leading-tight mt-0.5 line-clamp-2">{sponsor.role}</span>
+                </div>
+              </a>
+            ))}
           </div>
         </div>
 
@@ -259,6 +267,13 @@ export default function Footer() {
               className="text-slate-300 hover:text-white transition-colors"
             >
               Terms & Conditions
+            </Link>
+            <span>·</span>
+            <Link 
+              to="/admin" 
+              className="text-slate-300 hover:text-white transition-colors"
+            >
+              Staff Portal
             </Link>
             <span>·</span>
             <span className="text-slate-300">© {new Date().getFullYear()} DCVC. All Rights Reserved.</span>

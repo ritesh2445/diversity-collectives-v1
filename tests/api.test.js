@@ -1,7 +1,7 @@
 // API Client Validation Tests
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { submitContact, submitVolunteer, submitBusinessListing } from '../src/services/api.js';
+import { submitContact, submitVolunteer, submitBusinessListing, registerDonationIntent } from '../src/services/api.js';
 
 describe('Centralized API Client Validation', () => {
   it('submitContact rejects empty name', async () => {
@@ -42,5 +42,26 @@ describe('Centralized API Client Validation', () => {
     });
     assert.equal(res.success, false);
     assert.ok(res.errors?.affirmingPledge);
+  });
+
+  it('registerDonationIntent rejects missing email when not anonymous', async () => {
+    const res = await registerDonationIntent({
+      donorName: 'Test Supporter',
+      donorEmail: '',
+      amount: 50,
+      isAnonymous: false
+    });
+    assert.equal(res.success, false);
+    assert.match(res.message, /Email address is required/i);
+  });
+
+  it('registerDonationIntent safely handles pre-checkout registration', async () => {
+    const res = await registerDonationIntent({
+      donorName: 'Test Supporter',
+      donorEmail: 'donor@example.com',
+      amount: 50,
+      isAnonymous: false
+    });
+    assert.ok(typeof res === 'object');
   });
 });

@@ -326,7 +326,7 @@ export function executeClientChat(query) {
   if (boundaries.isMedical) {
     return {
       success: true,
-      answer: `Alba (Ask DCVC) cannot provide medical diagnoses, treatment plans, or clinical evaluations. ` +
+      answer: `Luna (Ask DCVC) cannot provide medical diagnoses, treatment plans, or clinical evaluations. ` +
               `However, Diversity Collective provides **free, confidential rapid HIV and STI screenings** (results in 15–20 minutes) ` +
               `and PrEP/PEP healthcare navigation through our **Diversity SHINES** clinic at our Community Resource Center ` +
               `(2471 Portola Road, Suite 100, Ventura) Monday–Friday from 1:00 PM to 5:00 PM. No insurance or payment is required. ` +
@@ -342,7 +342,7 @@ export function executeClientChat(query) {
   if (boundaries.isLegal) {
     return {
       success: true,
-      answer: `Alba (Ask DCVC) cannot provide formal legal advice, representation, or counsel. ` +
+      answer: `Luna (Ask DCVC) cannot provide formal legal advice, representation, or counsel. ` +
               `Diversity Collective can connect community members with local LGBTQ+-affirming legal clinics and advocacy partners ` +
               `through our [Affirming Business Directory](/directory) or by contacting our team directly at [Contact Us](/contact).`,
       citations: [
@@ -356,7 +356,7 @@ export function executeClientChat(query) {
   if (boundaries.isInjection) {
     return {
       success: true,
-      answer: `I am Alba (Ask DCVC), the official community assistant for Diversity Collective Ventura County. ` +
+      answer: `I am Luna (Ask DCVC), the official community assistant for Diversity Collective Ventura County. ` +
               `I can only answer questions regarding DCVC programs, free clinical testing, youth groups, hours, and community resources. ` +
               `How can I assist you with our services today?`,
       citations: [{ title: "About DCVC", url: "/about" }],

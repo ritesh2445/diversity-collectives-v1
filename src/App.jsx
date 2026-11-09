@@ -12,51 +12,82 @@ import ReciteToolbar from './components/accessibility/ReciteToolbar';
 import ReciteReadingAids from './components/accessibility/ReciteReadingAids';
 import ReciteLauncher from './components/accessibility/ReciteLauncher';
 
-// Eagerly loaded for instantaneous LCP first paint
+// Eagerly loaded for instantaneous LCP first paint & 100% zero-failure compliance routes
 import Home from './pages/Home';
+import LegalPrivacy from './pages/LegalPrivacy';
+import TermsAndConditions from './pages/TermsAndConditions';
 
-// Lazily loaded route components for optimal code splitting & sub-500kB chunks
-const About = lazy(() => import('./pages/About'));
-const BoardAndStaff = lazy(() => import('./pages/BoardAndStaff'));
-const Sponsors = lazy(() => import('./pages/Sponsors'));
-const Programs = lazy(() => import('./pages/Programs'));
-const ProgramDetail = lazy(() => import('./pages/ProgramDetail'));
-const Community = lazy(() => import('./pages/Community'));
-const Events = lazy(() => import('./pages/Events'));
-const EventDetail = lazy(() => import('./pages/EventDetail'));
+/**
+ * Resilient lazy loader that retries dynamic imports if interrupted by Vite HMR recompilation,
+ * chunk invalidations, or transient network drops.
+ */
+function lazyWithRetry(factory) {
+  return lazy(() =>
+    factory().catch(async (err) => {
+      // 1. Retry once after 250ms to allow bundler module transformation to finish
+      await new Promise(r => setTimeout(r, 250));
+      return factory().catch((retryErr) => {
+        // 2. Check if this is a chunk or dynamic import failure
+        const isDynamicImportError =
+          retryErr?.message?.includes('dynamically imported module') ||
+          retryErr?.message?.includes('Loading chunk') ||
+          retryErr?.name === 'ChunkLoadError';
+
+        if (isDynamicImportError && typeof window !== 'undefined') {
+          const key = 'chunk_reload_' + window.location.pathname;
+          if (!sessionStorage.getItem(key)) {
+            sessionStorage.setItem(key, 'true');
+            window.location.reload();
+            return new Promise(() => {}); // never resolves, page is reloading
+          }
+        }
+        throw retryErr;
+      });
+    })
+  );
+}
+
+// Lazily loaded route components with automatic retry
+const About = lazyWithRetry(() => import('./pages/About'));
+const BoardAndStaff = lazyWithRetry(() => import('./pages/BoardAndStaff'));
+const Sponsors = lazyWithRetry(() => import('./pages/Sponsors'));
+const Programs = lazyWithRetry(() => import('./pages/Programs'));
+const ProgramDetail = lazyWithRetry(() => import('./pages/ProgramDetail'));
+const Community = lazyWithRetry(() => import('./pages/Community'));
+const Events = lazyWithRetry(() => import('./pages/Events'));
+const EventDetail = lazyWithRetry(() => import('./pages/EventDetail'));
 
 // Training Catalog & Booking
-const Training = lazy(() => import('./pages/Training'));
-const TrainingDetail = lazy(() => import('./pages/TrainingDetail'));
-const TrainingBooking = lazy(() => import('./pages/TrainingBooking'));
+const Training = lazyWithRetry(() => import('./pages/Training'));
+const TrainingDetail = lazyWithRetry(() => import('./pages/TrainingDetail'));
+const TrainingBooking = lazyWithRetry(() => import('./pages/TrainingBooking'));
 
 // Business Directory
-const Directory = lazy(() => import('./pages/Directory'));
-const DirectoryProfile = lazy(() => import('./pages/DirectoryProfile'));
-const DirectorySubmit = lazy(() => import('./pages/DirectorySubmit'));
+const Directory = lazyWithRetry(() => import('./pages/Directory'));
+const DirectoryProfile = lazyWithRetry(() => import('./pages/DirectoryProfile'));
+const DirectorySubmit = lazyWithRetry(() => import('./pages/DirectorySubmit'));
 
 // Content & Community
-const News = lazy(() => import('./pages/News'));
-const NewsArticle = lazy(() => import('./pages/NewsArticle'));
-const Gallery = lazy(() => import('./pages/Gallery'));
-const Resources = lazy(() => import('./pages/Resources'));
+const News = lazyWithRetry(() => import('./pages/News'));
+const NewsArticle = lazyWithRetry(() => import('./pages/NewsArticle'));
+const Gallery = lazyWithRetry(() => import('./pages/Gallery'));
+const Resources = lazyWithRetry(() => import('./pages/Resources'));
 
 // Engagement & Giving
-const GetInvolved = lazy(() => import('./pages/GetInvolved'));
-const Volunteer = lazy(() => import('./pages/Volunteer'));
-const Donate = lazy(() => import('./pages/Donate'));
-const Contact = lazy(() => import('./pages/Contact'));
-const AppreciationCard = lazy(() => import('./pages/AppreciationCard'));
+const GetInvolved = lazyWithRetry(() => import('./pages/GetInvolved'));
+const Volunteer = lazyWithRetry(() => import('./pages/Volunteer'));
+const Donate = lazyWithRetry(() => import('./pages/Donate'));
+const Contact = lazyWithRetry(() => import('./pages/Contact'));
+const AppreciationCard = lazyWithRetry(() => import('./pages/AppreciationCard'));
 import AskDcvcChatbot from './components/AskDcvcChatbot';
 
 // Legal, Accessibility & Utility
-const AccessibilityStatement = lazy(() => import('./pages/AccessibilityStatement'));
-const AccessibilityFeedback = lazy(() => import('./pages/AccessibilityFeedback'));
-const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
-const TermsAndConditions = lazy(() => import('./pages/TermsAndConditions'));
-const SubmissionSuccess = lazy(() => import('./pages/SubmissionSuccess'));
-const SubmissionError = lazy(() => import('./pages/SubmissionError'));
-const NotFound = lazy(() => import('./pages/NotFound'));
+const AccessibilityStatement = lazyWithRetry(() => import('./pages/AccessibilityStatement'));
+const AccessibilityFeedback = lazyWithRetry(() => import('./pages/AccessibilityFeedback'));
+const SubmissionSuccess = lazyWithRetry(() => import('./pages/SubmissionSuccess'));
+const SubmissionError = lazyWithRetry(() => import('./pages/SubmissionError'));
+const NotFound = lazyWithRetry(() => import('./pages/NotFound'));
+const Admin = lazyWithRetry(() => import('./pages/Admin'));
 import GeneralError, { ErrorBoundary } from './pages/GeneralError';
 
 export default function App() {
@@ -138,8 +169,11 @@ export default function App() {
                 <Route path="/accessibility-feedback" element={<AccessibilityFeedback />} />
 
                 {/* Legal & Compliance */}
-                <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/privacy" element={<LegalPrivacy />} />
                 <Route path="/terms" element={<TermsAndConditions />} />
+
+                {/* Administrative Portal */}
+                <Route path="/admin" element={<Admin />} />
 
                 {/* Utility & Feedback Pathways */}
                 <Route path="/submission-success" element={<SubmissionSuccess />} />
@@ -162,8 +196,11 @@ export default function App() {
                 <Route path="/rainbow-umbrella" element={<Navigate to="/programs/rainbow-umbrella" replace />} />
                 <Route path="/schedule-your-appointment" element={<Navigate to="/programs/diversity-shines" replace />} />
                 <Route path="/accessibility-statement" element={<Navigate to="/accessibility" replace />} />
+                <Route path="/accessibility-statement/*" element={<Navigate to="/accessibility" replace />} />
                 <Route path="/privacy-policy" element={<Navigate to="/privacy" replace />} />
+                <Route path="/privacy-policy/*" element={<Navigate to="/privacy" replace />} />
                 <Route path="/terms-and-conditions" element={<Navigate to="/terms" replace />} />
+                <Route path="/terms-and-conditions/*" element={<Navigate to="/terms" replace />} />
 
                 {/* Custom 404 Not Found Catch-All */}
                 <Route path="*" element={<NotFound />} />
