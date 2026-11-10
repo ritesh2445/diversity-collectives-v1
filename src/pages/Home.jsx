@@ -1269,12 +1269,12 @@ export default function Home() {
                 Discover verified LGBTQ+ owned and affirming businesses across Ventura, Oxnard, Ojai, Camarillo, and the Conejo Valley.
               </p>
             </div>
-            <div className="flex items-center gap-3">
-              <Link to="/directory" className="btn-primary py-2.5 px-5 text-xs font-bold inline-flex items-center gap-1.5 shadow-sm">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+              <Link to="/directory" className="btn-primary py-2.5 px-5 text-xs font-bold inline-flex items-center justify-center gap-1.5 shadow-sm text-center">
                 <span>Browse Full Directory</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
-              <Link to="/directory/submit" className="btn-secondary py-2.5 px-4 text-xs font-bold inline-flex items-center gap-1.5 bg-white">
+              <Link to="/directory/submit" className="btn-secondary py-2.5 px-4 text-xs font-bold inline-flex items-center justify-center gap-1.5 bg-white text-center">
                 <span>Submit Your Business</span>
               </Link>
             </div>

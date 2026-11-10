@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { 
   MessageSquare, 
   X, 
@@ -11,7 +11,8 @@ import {
   Bot,
   User,
   ArrowRight,
-  ChevronDown
+  ChevronDown,
+  EyeOff
 } from 'lucide-react';
 import { askDcvcChat } from '../services/api';
 
@@ -49,8 +50,40 @@ export default function AskDcvcChatbot() {
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isDismissed, setIsDismissed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('dcvc_hide_luna_launcher') === 'true';
+    }
+    return false;
+  });
+  const [showHidePrompt, setShowHidePrompt] = useState(false);
+  const location = useLocation();
+  const pressTimerRef = useRef(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+
+  const handlePressStart = () => {
+    pressTimerRef.current = setTimeout(() => {
+      setShowHidePrompt(true);
+    }, 550);
+  };
+
+  const handlePressEnd = () => {
+    if (pressTimerRef.current) {
+      clearTimeout(pressTimerRef.current);
+      pressTimerRef.current = null;
+    }
+  };
+
+  const handleHide = (e) => {
+    e.stopPropagation();
+    setIsDismissed(true);
+    try {
+      sessionStorage.setItem('dcvc_hide_luna_launcher', 'true');
+    } catch {
+      // Safe fallback
+    }
+  };
 
   // Auto-scroll to bottom of messages
   useEffect(() => {
@@ -314,30 +347,81 @@ export default function AskDcvcChatbot() {
 
   return (
     <>
-      {/* Floating Action Button (Bottom Right) */}
-      {!isOpen && (
-        <button
-          type="button"
-          onClick={() => setIsOpen(true)}
-          aria-expanded={false}
-          aria-haspopup="dialog"
-          aria-label="Open Luna Free AI Community Assistant (Alt + C)"
-          title="Ask Luna (Alt + C)"
-          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[9995] flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-3 rounded-full bg-gradient-to-r from-[#5A1E65] via-purple-900 to-[#43144A] text-white shadow-xl hover:shadow-2xl border-2 border-amber-300 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer select-none focus:outline-none focus:ring-4 focus:ring-amber-300 print:hidden"
-        >
-          <div className="w-6 h-6 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center font-bold shadow-xs flex-shrink-0">
-            <Sparkles className="w-3.5 h-3.5 fill-current" />
-          </div>
-          <div className="flex flex-col text-left">
-            <span className="font-extrabold text-xs tracking-wide text-white leading-tight flex items-center gap-1.5 whitespace-nowrap">
-              <span>Ask Luna</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            </span>
-            <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider leading-none whitespace-nowrap">
-              Free AI Guide
-            </span>
-          </div>
-        </button>
+      {/* Floating Action Button (Bottom Right: Home screen only, long-press to hide) */}
+      {!isOpen && location.pathname === '/' && !isDismissed && (
+        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-30 select-none print:hidden">
+          {/* Hide Confirmation Popover (long press or right click) */}
+          {showHidePrompt && (
+            <div 
+              className="absolute bottom-14 right-0 mb-2 w-56 p-3 rounded-2xl bg-slate-900/95 text-white shadow-2xl border border-purple-300/40 backdrop-blur-md animate-fadeIn text-xs"
+              role="dialog"
+              aria-label="Hide button prompt"
+            >
+              <div className="flex items-center justify-between pb-1.5 border-b border-white/10 mb-2">
+                <span className="font-bold text-amber-300">Luna AI Assistant</span>
+                <button
+                  onClick={() => setShowHidePrompt(false)}
+                  className="text-slate-400 hover:text-white"
+                  aria-label="Close"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <p className="text-[11px] text-slate-300 leading-tight mb-2.5">
+                Hide this floating button? (You can still ask Luna anytime from the navigation menu or with <kbd className="px-1 py-0.5 bg-white/20 rounded font-mono text-[9px]">Alt+C</kbd>).
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleHide}
+                  className="flex-1 py-1.5 px-2 rounded-xl bg-purple-700 hover:bg-purple-600 text-white font-bold text-[11px] text-center inline-flex items-center justify-center gap-1 cursor-pointer"
+                >
+                  <EyeOff className="w-3 h-3" />
+                  <span>Hide Button</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowHidePrompt(false)}
+                  className="py-1.5 px-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 font-semibold text-[11px] cursor-pointer"
+                >
+                  Keep
+                </button>
+              </div>
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setIsOpen(true)}
+            onTouchStart={handlePressStart}
+            onTouchEnd={handlePressEnd}
+            onMouseDown={handlePressStart}
+            onMouseUp={handlePressEnd}
+            onMouseLeave={handlePressEnd}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              setShowHidePrompt(true);
+            }}
+            aria-expanded={false}
+            aria-haspopup="dialog"
+            aria-label="Open Luna Free AI Community Assistant (Alt + C). Long press to hide."
+            title="Ask Luna (Alt + C) • Long-press to hide"
+            className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-3 rounded-full bg-gradient-to-r from-[#5A1E65] via-purple-900 to-[#43144A] text-white shadow-xl hover:shadow-2xl border-2 border-amber-300 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer select-none focus:outline-none focus:ring-4 focus:ring-amber-300"
+          >
+            <div className="w-6 h-6 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center font-bold shadow-xs flex-shrink-0">
+              <Sparkles className="w-3.5 h-3.5 fill-current" />
+            </div>
+            <div className="flex flex-col text-left">
+              <span className="font-extrabold text-xs tracking-wide text-white leading-tight flex items-center gap-1.5 whitespace-nowrap">
+                <span>Ask Luna</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              </span>
+              <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider leading-none whitespace-nowrap">
+                Free AI Guide
+              </span>
+            </div>
+          </button>
+        </div>
       )}
 
       {/* Backdrop overlay for mobile to lock screen touches and prevent background scroll */}

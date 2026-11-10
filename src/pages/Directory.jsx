@@ -138,7 +138,7 @@ export default function Directory() {
 
           <Link
             to="/directory/submit"
-            className="btn-primary py-3.5 px-6 text-xs font-bold inline-flex items-center gap-2 shadow-lg hover:shadow-xl self-start md:self-auto"
+            className="btn-primary py-3.5 px-6 text-xs font-bold inline-flex items-center justify-center gap-2 shadow-lg hover:shadow-xl w-full sm:w-auto text-center"
           >
             <PlusCircle className="w-4 h-4 text-amber-300" />
             <span>Submit Your Business</span>

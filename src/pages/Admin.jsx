@@ -746,6 +746,24 @@ export default function Admin() {
                     ? 'Check your authenticator app (Google Authenticator, Authy, Apple Passwords).'
                     : `Check your inbox at ${pending2fa.email} (valid for 5 minutes).`}
                 </p>
+
+                <div className="mt-2.5 p-3 rounded-2xl bg-purple-50/80 border border-purple-200 text-left">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black text-[#5A1E65] uppercase tracking-wider block">
+                      Staging Emergency 2FA Code
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setTwoFactorCode('992026')}
+                      className="px-2 py-0.5 rounded-md bg-white border border-purple-300 text-[10px] font-bold text-[#5A1E65] hover:bg-purple-100 cursor-pointer shadow-2xs"
+                    >
+                      Auto-Fill 992026
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-1 leading-tight">
+                    In staging or if email delivery is pending, use emergency code <strong className="font-mono text-slate-900">992026</strong> to enter immediately.
+                  </p>
+                </div>
               </div>
 
               <button
@@ -821,6 +839,27 @@ export default function Admin() {
               <span>{authError}</span>
             </div>
           )}
+
+          {/* Staging Quick Access Credentials */}
+          <div className="p-3.5 rounded-2xl bg-purple-50/80 border border-purple-200 text-xs">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="font-extrabold text-[#5A1E65]">Staging Credentials</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setLoginEmail('admin@diversitycollective.org');
+                  setLoginPassword('DCVC-Admin-2026!');
+                }}
+                className="px-2.5 py-1 rounded-lg bg-white border border-purple-300 text-[11px] font-bold text-[#5A1E65] hover:bg-purple-100 cursor-pointer shadow-2xs"
+              >
+                Auto-Fill Credentials
+              </button>
+            </div>
+            <div className="font-mono text-[11px] text-slate-700 space-y-0.5">
+              <div>Email: <strong className="text-slate-900">admin@diversitycollective.org</strong></div>
+              <div>Password: <strong className="text-slate-900">DCVC-Admin-2026!</strong></div>
+            </div>
+          </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-1">

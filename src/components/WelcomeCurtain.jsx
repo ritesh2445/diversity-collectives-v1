@@ -2,27 +2,29 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Sparkles, Heart, X } from 'lucide-react';
 
 export default function WelcomeCurtain() {
-  // Always trigger the loading animation on every page refresh / load
-  const [animating, setAnimating] = useState(true);
+  // Show welcome curtain once per session; replaying can still be triggered via event
+  const [animating, setAnimating] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      return !sessionStorage.getItem('dcvc_welcome_seen');
+    } catch {
+      return false;
+    }
+  });
   const [fadingOut, setFadingOut] = useState(false);
   const [key, setKey] = useState(0);
 
-  // Clean up any legacy session flags so refresh always shows the animation
-  useEffect(() => {
+  const handleDismiss = useCallback(() => {
+    setFadingOut(true);
     try {
-      sessionStorage.removeItem('dcvc_welcome_seen');
-      localStorage.removeItem('dcvc_welcome_seen');
+      sessionStorage.setItem('dcvc_welcome_seen', 'true');
     } catch {
       // Graceful fallback
     }
-  }, []);
-
-  const handleDismiss = useCallback(() => {
-    setFadingOut(true);
     setTimeout(() => {
       setAnimating(false);
       setFadingOut(false);
-    }, 350);
+    }, 280);
   }, []);
 
   // Escape key dismisses instantly
@@ -56,7 +58,7 @@ export default function WelcomeCurtain() {
 
     const timer = setTimeout(() => {
       handleDismiss();
-    }, 2400);
+    }, 1400);
 
     return () => clearTimeout(timer);
   }, [animating, fadingOut, key, handleDismiss]);

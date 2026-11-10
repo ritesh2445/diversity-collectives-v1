@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  Sparkles, 
-  X, 
-  ChevronLeft, 
-  ChevronRight, 
-  Maximize2, 
+import {
+  Sparkles,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Maximize2,
   Camera,
   Layers,
   ArrowRight,
@@ -355,14 +355,14 @@ export default function Gallery() {
 
   return (
     <div className="pt-6 md:pt-10 pb-24 bg-transparent text-slate-800 selection:bg-[#5A1E65] selection:text-white">
-      
+
       {/* ================================================================
           HERO TITLE & INTRODUCTION
           ================================================================ */}
       <section className="container-clean pb-8 relative overflow-hidden">
-        <div 
-          className="absolute -top-24 right-10 w-96 h-96 rounded-full bg-gradient-to-tr from-purple-300/30 via-pink-200/20 to-amber-200/25 blur-3xl pointer-events-none" 
-          aria-hidden="true" 
+        <div
+          className="absolute -top-24 right-10 w-96 h-96 rounded-full bg-gradient-to-tr from-purple-300/30 via-pink-200/20 to-amber-200/25 blur-3xl pointer-events-none"
+          aria-hidden="true"
         />
 
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 relative z-10">
@@ -371,7 +371,7 @@ export default function Gallery() {
               <span className="glass-pill text-xs font-black text-[#5A1E65] bg-purple-50/90 border-purple-200/90 shadow-2xs">
                 ✨ 3D SPOTLIGHT & HISTORICAL ARCHIVES
               </span>
-              <a 
+              <a
                 href="#memory-lane"
                 className="hidden sm:inline-flex items-center gap-1.5 text-xs font-bold text-purple-700 hover:text-purple-900 bg-white/80 px-3 py-1 rounded-full border border-purple-200 hover:border-purple-300 shadow-2xs transition-all"
               >
@@ -392,7 +392,7 @@ export default function Gallery() {
 
           {/* Quick jump to Memory Lane on mobile */}
           <div className="sm:hidden">
-            <a 
+            <a
               href="#memory-lane"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-100/80 text-purple-950 font-bold text-xs border border-purple-300"
             >
@@ -406,7 +406,7 @@ export default function Gallery() {
       {/* ================================================================
           3D PERSPECTIVE CAROUSEL: ROUNDED CARDS (EXPAND WHEN TAPPED)
           ================================================================ */}
-      <section 
+      <section
         className="py-10 md:py-14 relative overflow-hidden bg-gradient-to-b from-purple-50/40 via-transparent to-pink-50/30 border-y border-purple-100/60"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -458,7 +458,7 @@ export default function Gallery() {
         </div>
 
         {/* 3D Perspective Stage */}
-        <div 
+        <div
           className="relative w-full h-[460px] sm:h-[520px] flex items-center justify-center overflow-visible select-none"
           style={{ perspective: '1200px' }}
         >
@@ -502,11 +502,10 @@ export default function Gallery() {
                   transition: 'transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s ease',
                   transformStyle: 'preserve-3d'
                 }}
-                className={`absolute w-[290px] sm:w-[380px] h-[390px] sm:h-[450px] rounded-3xl p-3 bg-white/95 backdrop-blur-xl border-2 transition-all cursor-pointer group shadow-xl ${
-                  isCenter 
-                    ? 'border-purple-400/90 ring-4 ring-purple-500/20 shadow-purple-900/25 hover:shadow-2xl hover:scale-[1.07]' 
+                className={`absolute w-[290px] sm:w-[380px] h-[390px] sm:h-[450px] rounded-3xl p-3 bg-white/95 backdrop-blur-xl border-2 transition-all cursor-pointer group shadow-xl ${isCenter
+                    ? 'border-purple-400/90 ring-4 ring-purple-500/20 shadow-purple-900/25 hover:shadow-2xl hover:scale-[1.07]'
                     : 'border-slate-200/80 hover:border-purple-300'
-                }`}
+                  }`}
               >
                 {/* Image Container with Rounded Corners */}
                 <div className="relative w-full h-[62%] rounded-2xl overflow-hidden bg-slate-900">
@@ -516,7 +515,7 @@ export default function Gallery() {
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                     loading="lazy"
                   />
-                  
+
                   {/* Category & Year Tag */}
                   <div className="absolute top-3 left-3 flex items-center gap-1.5">
                     <span className="px-2.5 py-1 rounded-full bg-slate-950/80 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-wider">
@@ -528,11 +527,10 @@ export default function Gallery() {
                   </div>
 
                   {/* Tap to Expand Glow Pill */}
-                  <div className={`absolute bottom-3 right-3 px-3 py-1.5 rounded-full text-xs font-black flex items-center gap-1.5 shadow-lg backdrop-blur-md transition-all ${
-                    isCenter 
-                      ? 'bg-[#5A1E65] text-white opacity-100 ring-2 ring-amber-300/60' 
+                  <div className={`absolute bottom-3 right-3 px-3 py-1.5 rounded-full text-xs font-black flex items-center gap-1.5 shadow-lg backdrop-blur-md transition-all ${isCenter
+                      ? 'bg-[#5A1E65] text-white opacity-100 ring-2 ring-amber-300/60'
                       : 'bg-slate-950/70 text-white opacity-0 group-hover:opacity-100'
-                  }`}>
+                    }`}>
                     <Maximize2 className="w-3.5 h-3.5" />
                     <span>{isCenter ? 'Tap to Expand' : 'View'}</span>
                   </div>
@@ -572,11 +570,10 @@ export default function Gallery() {
               key={dotIdx}
               type="button"
               onClick={() => setCarouselIndex(dotIdx)}
-              className={`h-2 rounded-full transition-all cursor-pointer ${
-                carouselIndex === dotIdx 
-                  ? 'w-8 bg-[#5A1E65]' 
+              className={`h-2 rounded-full transition-all cursor-pointer ${carouselIndex === dotIdx
+                  ? 'w-8 bg-[#5A1E65]'
                   : 'w-2 bg-slate-300 hover:bg-purple-300'
-              }`}
+                }`}
               aria-label={`Go to slide ${dotIdx + 1}`}
             />
           ))}
@@ -595,7 +592,7 @@ export default function Gallery() {
           onClick={() => setExpandedPhoto(null)}
           onTouchMove={(e) => e.stopPropagation()}
         >
-          <div 
+          <div
             className="max-w-4xl w-full max-h-[88vh] bg-white text-slate-900 rounded-3xl overflow-hidden shadow-2xl flex flex-col border border-purple-200/80 animate-in zoom-in-95 duration-200 overscroll-contain"
             onClick={(e) => e.stopPropagation()}
           >
@@ -619,13 +616,13 @@ export default function Gallery() {
 
             {/* Modal Body: Split Layout */}
             <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-12 overflow-hidden">
-              
+
               {/* Photo Area with Ambient Dynamic Aura (Framed Archival Showcase) */}
               <div className="md:col-span-6 lg:col-span-7 bg-gradient-to-br from-slate-900 via-purple-950/70 to-slate-900 flex items-center justify-center relative overflow-hidden min-h-[240px] md:min-h-0 p-3 sm:p-5">
-                <div 
+                <div
                   className="absolute inset-0 bg-cover bg-center filter blur-3xl opacity-60 scale-125 pointer-events-none"
                   style={{ backgroundImage: `url(${getOptimizedImageUrl(expandedPhoto.image, { width: 400 })})` }}
-                  aria-hidden="true" 
+                  aria-hidden="true"
                 />
                 <div className="absolute inset-0 bg-slate-950/25 pointer-events-none" aria-hidden="true" />
                 <img
@@ -640,7 +637,7 @@ export default function Gallery() {
 
               {/* Story & Metadata: Smooth Scrollable Column */}
               <div className="md:col-span-6 lg:col-span-5 flex flex-col justify-between overflow-hidden bg-slate-50/60 border-l border-purple-100">
-                
+
                 {/* Scrollable Content Container */}
                 <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4 overscroll-contain">
                   <div>
@@ -651,7 +648,7 @@ export default function Gallery() {
                       {expandedPhoto.title}
                     </h3>
                   </div>
-                  
+
                   {expandedPhoto.quote && (
                     <blockquote className="p-3 rounded-xl bg-white border-l-4 border-amber-400 shadow-2xs italic font-serif text-slate-800 text-xs sm:text-sm leading-relaxed">
                       "{expandedPhoto.quote}"
@@ -704,7 +701,7 @@ export default function Gallery() {
                           title: expandedPhoto.title,
                           text: expandedPhoto.description,
                           url: window.location.href
-                        }).catch(() => {});
+                        }).catch(() => { });
                       } else {
                         navigator.clipboard.writeText(window.location.href);
                         alert('Archival record link copied to clipboard!');
@@ -744,18 +741,16 @@ export default function Gallery() {
             <button
               type="button"
               onClick={() => setViewMode('grid')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                viewMode === 'grid' ? 'bg-white text-slate-950 shadow-xs' : 'text-slate-600 hover:text-slate-900'
-              }`}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${viewMode === 'grid' ? 'bg-white text-slate-950 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                }`}
             >
               Grid View
             </button>
             <button
               type="button"
               onClick={() => setViewMode('wall')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                viewMode === 'wall' ? 'bg-white text-slate-950 shadow-xs' : 'text-slate-600 hover:text-slate-900'
-              }`}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${viewMode === 'wall' ? 'bg-white text-slate-950 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                }`}
             >
               Horizontal Wall
             </button>
@@ -772,11 +767,10 @@ export default function Gallery() {
                 setSelectedCategory(cat);
                 setSelectedPhotoIndex(null);
               }}
-              className={`px-4 py-2 text-xs font-bold rounded-full transition-all cursor-pointer border ${
-                selectedCategory === cat
+              className={`px-4 py-2 text-xs font-bold rounded-full transition-all cursor-pointer border ${selectedCategory === cat
                   ? 'bg-slate-900 text-white border-purple-500 shadow-sm'
                   : 'bg-white text-slate-700 border-slate-200 hover:border-purple-300'
-              }`}
+                }`}
             >
               {cat}
             </button>
@@ -858,16 +852,16 @@ export default function Gallery() {
       {/* ================================================================
           DCVC MEMORY LANE (2014 – 2026): GAME ARCADE & CINEMATIC ODYSSEY
           ================================================================ */}
-      <section 
+      <section
         id="memory-lane"
         ref={memoryLaneSectionRef}
         className="container-clean pt-16 pb-24 border-t-2 border-purple-100 relative overflow-hidden"
         aria-label="DCVC Historical Memory Lane 2014 to 2026"
       >
         {/* Dynamic Multi-Color Volumetric Light Mesh that shifts per milestone */}
-        <div 
+        <div
           className={`absolute top-1/4 left-1/2 -translate-x-1/2 w-full max-w-5xl h-[520px] rounded-full bg-gradient-to-r ${currentTheme.aura} blur-3xl pointer-events-none transition-all duration-700 milestone-aurora-glow opacity-80`}
-          aria-hidden="true" 
+          aria-hidden="true"
         />
 
         {/* Section Header */}
@@ -890,7 +884,7 @@ export default function Gallery() {
         {/* GAME HUD / CONTROL BAR */}
         <div className="max-w-5xl mx-auto mb-8 relative z-20">
           <div className="p-4 sm:p-5 rounded-3xl bg-white/90 backdrop-blur-md border-2 border-purple-200 shadow-xl flex flex-col gap-4">
-            
+
             {/* Top Row: Level Counter + Controls */}
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-purple-100 pb-3">
               <div className="flex items-center gap-2.5">
@@ -913,11 +907,10 @@ export default function Gallery() {
                     setSoundEnabled(next);
                     if (next) playMilestoneChime(1.2);
                   }}
-                  className={`p-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border ${
-                    soundEnabled 
-                      ? 'bg-amber-100 text-amber-950 border-amber-300 shadow-xs' 
+                  className={`p-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border ${soundEnabled
+                      ? 'bg-amber-100 text-amber-950 border-amber-300 shadow-xs'
                       : 'bg-slate-100 hover:bg-slate-200 text-slate-600 border-slate-200'
-                  }`}
+                    }`}
                   title={soundEnabled ? 'Mute Game SFX' : 'Enable Interactive Game SFX'}
                   aria-label={soundEnabled ? 'Mute Game SFX' : 'Enable Interactive Game SFX'}
                 >
@@ -929,11 +922,10 @@ export default function Gallery() {
                 <button
                   type="button"
                   onClick={() => setIsAutoPlayingMilestones(!isAutoPlayingMilestones)}
-                  className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border ${
-                    isAutoPlayingMilestones 
-                      ? 'bg-gradient-to-r from-[#5A1E65] to-purple-800 text-white border-purple-600 shadow-md animate-pulse' 
+                  className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border ${isAutoPlayingMilestones
+                      ? 'bg-gradient-to-r from-[#5A1E65] to-purple-800 text-white border-purple-600 shadow-md animate-pulse'
                       : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
-                  }`}
+                    }`}
                   title={isAutoPlayingMilestones ? 'Pause Time Odyssey' : 'Auto-Play Time Odyssey'}
                   aria-label={isAutoPlayingMilestones ? 'Pause Time Odyssey' : 'Auto-Play Time Odyssey'}
                 >
@@ -949,11 +941,10 @@ export default function Gallery() {
                   <button
                     type="button"
                     onClick={() => setMemoryLaneViewMode('stage')}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
-                      memoryLaneViewMode === 'stage' 
-                        ? 'bg-white text-[#5A1E65] shadow-xs font-black' 
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${memoryLaneViewMode === 'stage'
+                        ? 'bg-white text-[#5A1E65] shadow-xs font-black'
                         : 'text-slate-500 hover:text-slate-800'
-                    }`}
+                      }`}
                     title="Interactive Cinematic Stage"
                     aria-label="Interactive Cinematic Stage"
                   >
@@ -963,11 +954,10 @@ export default function Gallery() {
                   <button
                     type="button"
                     onClick={() => setMemoryLaneViewMode('grid')}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
-                      memoryLaneViewMode === 'grid' 
-                        ? 'bg-white text-[#5A1E65] shadow-xs font-black' 
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${memoryLaneViewMode === 'grid'
+                        ? 'bg-white text-[#5A1E65] shadow-xs font-black'
                         : 'text-slate-500 hover:text-slate-800'
-                    }`}
+                      }`}
                     title="All Milestones Grid"
                     aria-label="All Milestones Grid"
                   >
@@ -982,7 +972,7 @@ export default function Gallery() {
             <div className="relative pt-3 pb-1">
               {/* Electric Wire Highway Track */}
               <div className="absolute top-1/2 left-4 right-4 -translate-y-1/2 h-2.5 rounded-full overflow-hidden bg-slate-900/10 border border-purple-200">
-                <div 
+                <div
                   className="h-full electric-wire-track transition-all duration-500 ease-out rounded-full shadow-[0_0_12px_rgba(217,27,92,0.8)]"
                   style={{ width: `${Math.max(12, ((activeMilestoneIdx) / (milestones.length - 1)) * 100)}%` }}
                 />
@@ -999,27 +989,25 @@ export default function Gallery() {
                       key={m.year}
                       type="button"
                       onClick={() => scrollToMilestone(idx)}
-                      className={`group relative flex flex-col items-center cursor-pointer transition-all duration-300 focus:outline-none ${
-                        isActive ? 'scale-115 z-10' : 'hover:scale-105'
-                      }`}
+                      className={`group relative flex flex-col items-center cursor-pointer transition-all duration-300 focus:outline-none ${isActive ? 'scale-115 z-10' : 'hover:scale-105'
+                        }`}
                       aria-label={`Jump to Milestone ${m.year}: ${m.title}`}
                       aria-current={isActive ? 'step' : undefined}
                     >
                       {/* Node Circle with Electric Ping */}
                       <div className="relative">
                         {isActive && (
-                          <div 
+                          <div
                             className="absolute -inset-2 rounded-full border-2 border-amber-400 checkpoint-radar-ring pointer-events-none"
-                            aria-hidden="true" 
+                            aria-hidden="true"
                           />
                         )}
-                        <div className={`w-8 h-8 sm:w-11 sm:h-11 rounded-full flex items-center justify-center font-black text-xs transition-all duration-300 shadow-md ${
-                          isActive
+                        <div className={`w-8 h-8 sm:w-11 sm:h-11 rounded-full flex items-center justify-center font-black text-xs transition-all duration-300 shadow-md ${isActive
                             ? 'bg-gradient-to-tr from-[#5A1E65] via-rose-500 to-amber-400 text-white ring-4 ring-amber-300/80 shadow-xl electric-node-glow'
                             : isPassed
-                            ? 'bg-purple-900 text-white hover:bg-purple-800'
-                            : 'bg-white text-slate-600 border-2 border-slate-300 hover:border-purple-400'
-                        }`}>
+                              ? 'bg-purple-900 text-white hover:bg-purple-800'
+                              : 'bg-white text-slate-600 border-2 border-slate-300 hover:border-purple-400'
+                          }`}>
                           {isActive ? (
                             <Zap className="w-4 h-4 fill-amber-300 text-amber-300 animate-bounce" />
                           ) : isPassed ? (
@@ -1031,11 +1019,10 @@ export default function Gallery() {
                       </div>
 
                       {/* Year Label */}
-                      <span className={`mt-1.5 text-[11px] sm:text-xs font-black transition-colors ${
-                        isActive 
-                          ? 'text-[#5A1E65] font-extrabold' 
+                      <span className={`mt-1.5 text-[11px] sm:text-xs font-black transition-colors ${isActive
+                          ? 'text-[#5A1E65] font-extrabold'
                           : 'text-slate-500 group-hover:text-purple-700'
-                      }`}>
+                        }`}>
                         {m.year}
                       </span>
                     </button>
@@ -1047,7 +1034,7 @@ export default function Gallery() {
             {/* Auto-Play Progress Bar (shown when playing) */}
             {isAutoPlayingMilestones && (
               <div className="w-full bg-slate-100 rounded-full h-1 overflow-hidden mt-1">
-                <div 
+                <div
                   className="bg-gradient-to-r from-emerald-400 via-amber-400 to-[#D91B5C] h-full transition-all duration-100"
                   style={{ width: `${autoPlayProgress}%` }}
                 />
@@ -1062,9 +1049,9 @@ export default function Gallery() {
           <div className="relative w-full overflow-hidden my-6 z-10">
 
             {/* THE CONTINUOUS ELECTRIC WIRE THREADING HORIZONTALLY THROUGH THE CARDS */}
-            <div 
+            <div
               className="absolute top-1/2 left-0 right-0 -translate-y-1/2 h-2.5 electric-wire-track pointer-events-none rounded-full z-0 opacity-80"
-              aria-hidden="true" 
+              aria-hidden="true"
             />
 
             {/* Floating Navigation Chevrons on Left and Right edges (Optimized for all viewports) */}
@@ -1106,11 +1093,10 @@ export default function Gallery() {
                   <div
                     key={milestone.year}
                     ref={el => (cardRefs.current[idx] = el)}
-                    className={`w-[84vw] sm:w-[380px] md:w-[420px] lg:w-[440px] h-fit self-center flex-shrink-0 snap-center rounded-3xl bg-white border-2 p-3.5 sm:p-4 transition-all duration-500 relative flex flex-col items-center text-center overflow-hidden opacity-100 ${
-                      isActive 
-                        ? 'scale-100 border-[#5A1E65] ring-4 ring-amber-300/80 shadow-2xl z-20' 
+                    className={`w-[84vw] sm:w-[380px] md:w-[420px] lg:w-[440px] h-fit self-center flex-shrink-0 snap-center rounded-3xl bg-white border-2 p-3.5 sm:p-4 transition-all duration-500 relative flex flex-col items-center text-center overflow-hidden opacity-100 ${isActive
+                        ? 'scale-100 border-[#5A1E65] ring-4 ring-amber-300/80 shadow-2xl z-20'
                         : 'scale-95 border-purple-200/90 shadow-md hover:scale-98 hover:border-purple-300 z-10'
-                    }`}
+                      }`}
                   >
                     {/* Subtle Dimmer Overlay for Inactive Cards (Does NOT affect solid white backing) */}
                     {!isActive && (
@@ -1118,18 +1104,18 @@ export default function Gallery() {
                     )}
                     {/* Cinematic Lens Flare Streak Wipe on Active Card */}
                     {isActive && (
-                      <div 
+                      <div
                         key={`flare-${flareKey}`}
                         className="absolute inset-y-0 w-32 bg-gradient-to-r from-transparent via-white/80 to-transparent pointer-events-none z-40 memory-lane-flare -skew-x-12"
-                        aria-hidden="true" 
+                        aria-hidden="true"
                       />
                     )}
 
                     {/* Ambient Internal Glow for Active Milestone */}
                     {isActive && (
-                      <div 
+                      <div
                         className={`absolute -top-24 -right-24 w-80 h-80 rounded-full bg-gradient-to-br ${theme.aura} blur-3xl pointer-events-none opacity-60`}
-                        aria-hidden="true" 
+                        aria-hidden="true"
                       />
                     )}
 
@@ -1148,13 +1134,13 @@ export default function Gallery() {
 
                     {/* Title & Subtitle: CENTER-ALIGNED */}
                     <div className="space-y-0.5 max-w-sm mx-auto mt-1 z-10">
-                      <h3 
+                      <h3
                         style={{
                           color: milestone.fontColor || undefined,
                           fontSize: milestone.fontSize === '2xl' ? '1.25rem' :
-                                    milestone.fontSize === '3xl' ? '1.35rem' :
-                                    milestone.fontSize === 'xl' ? '1.15rem' :
-                                    milestone.fontSize === 'sm' ? '1rem' : undefined
+                            milestone.fontSize === '3xl' ? '1.35rem' :
+                              milestone.fontSize === 'xl' ? '1.15rem' :
+                                milestone.fontSize === 'sm' ? '1rem' : undefined
                         }}
                         className="font-display text-base sm:text-lg font-black text-slate-950 leading-snug text-center"
                       >
@@ -1236,9 +1222,8 @@ export default function Gallery() {
                             onClick={() => {
                               setActiveFolderPics(prev => ({ ...prev, [milestone.year]: undefined }));
                             }}
-                            className={`text-[9px] font-bold cursor-pointer ${
-                              selectedPicIdx === undefined ? 'text-[#5A1E65] underline' : 'text-slate-500 hover:text-slate-800'
-                            }`}
+                            className={`text-[9px] font-bold cursor-pointer ${selectedPicIdx === undefined ? 'text-[#5A1E65] underline' : 'text-slate-500 hover:text-slate-800'
+                              }`}
                           >
                             Main Photo
                           </button>
@@ -1255,11 +1240,10 @@ export default function Gallery() {
                                   setActiveFolderPics(prev => ({ ...prev, [milestone.year]: pIdx }));
                                   playMilestoneChime(1.3);
                                 }}
-                                className={`w-11 h-8 rounded-lg overflow-hidden bg-slate-900 border-2 cursor-pointer transition-all shadow-2xs ${
-                                  isSelected
+                                className={`w-11 h-8 rounded-lg overflow-hidden bg-slate-900 border-2 cursor-pointer transition-all shadow-2xs ${isSelected
                                     ? 'border-amber-400 ring-2 ring-amber-300 scale-105 z-10'
                                     : 'border-purple-200 hover:border-purple-400 hover:scale-102'
-                                }`}
+                                  }`}
                                 title={pic.caption || `Photo ${pIdx + 1}`}
                               >
                                 <img
@@ -1337,11 +1321,10 @@ export default function Gallery() {
               return (
                 <div
                   key={milestone.year}
-                  className={`rounded-3xl bg-white border-2 p-6 transition-all duration-300 shadow-md hover:shadow-xl flex flex-col justify-between space-y-4 group ${
-                    isCurrent 
-                      ? 'border-[#5A1E65] ring-2 ring-purple-300' 
+                  className={`rounded-3xl bg-white border-2 p-6 transition-all duration-300 shadow-md hover:shadow-xl flex flex-col justify-between space-y-4 group ${isCurrent
+                      ? 'border-[#5A1E65] ring-2 ring-purple-300'
                       : 'border-purple-100 hover:border-purple-300'
-                  }`}
+                    }`}
                 >
                   <div className="space-y-3 text-center">
                     {/* Top Row: Year + Badge Centered */}

@@ -40,14 +40,20 @@ export default function SmoothScroll({ children }) {
 
     observeElements();
 
-    // Re-check on dynamic route transitions
-    const mutationObserver = new MutationObserver(() => {
-      observeElements();
-    });
+    // Re-check on dynamic route transitions with debounced scheduling
+    let debounceTimer = null;
+    const debouncedObserve = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        observeElements();
+      }, 150);
+    };
 
+    const mutationObserver = new MutationObserver(debouncedObserve);
     mutationObserver.observe(document.body, { childList: true, subtree: true });
 
     return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
       observer.disconnect();
       mutationObserver.disconnect();
     };

@@ -115,3 +115,4 @@ describe('GitHub & jsDelivr CDN Gallery Engine', () => {
   });
 
 });
+
