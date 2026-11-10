@@ -5,37 +5,43 @@ export default {
   fields: [
     {
       name: 'title',
-      title: 'Event Title',
+      title: 'Event Name',
+      description: 'The headline name for this event (e.g. Ventura County Pride 2026).',
       type: 'string',
       validation: (Rule) => Rule.required()
     },
     {
       name: 'slug',
-      title: 'Slug',
+      title: 'Web Address (Slug)',
+      description: 'The URL path on the website (e.g. pride-festival-2026). Click Generate.',
       type: 'slug',
       options: { source: 'title', maxLength: 96 },
       validation: (Rule) => Rule.required()
     },
     {
       name: 'date',
-      title: 'Date String / Schedule',
+      title: 'Date Text',
+      description: 'Clear date string (e.g. Saturday, August 15, 2026).',
       type: 'string',
       validation: (Rule) => Rule.required()
     },
     {
       name: 'time',
       title: 'Time',
+      description: 'Start and end time (e.g. 11:00 AM – 6:00 PM).',
       type: 'string'
     },
     {
       name: 'location',
       title: 'Location & Address',
+      description: 'Park, venue name, or street address.',
       type: 'string',
       validation: (Rule) => Rule.required()
     },
     {
       name: 'category',
-      title: 'Category',
+      title: 'Event Category',
+      description: 'Choose the theme of this event.',
       type: 'string',
       options: {
         list: [
@@ -49,48 +55,56 @@ export default {
     },
     {
       name: 'image',
-      title: 'Event Image / Flyer',
+      title: 'Event Flyer or Photo',
+      description: 'Event banner or promotional flyer.',
       type: 'image',
       options: { hotspot: true }
     },
     {
       name: 'description',
-      title: 'Event Description',
+      title: 'Event Details',
+      description: 'Full description of entertainment, guest speakers, activities, and schedule.',
       type: 'text',
       rows: 5
     },
     {
       name: 'isRecurring',
-      title: 'Is Recurring Event',
+      title: 'Does this event repeat?',
+      description: 'Turn this on if this event happens regularly.',
       type: 'boolean',
       initialValue: false
     },
     {
       name: 'recurrenceRule',
-      title: 'Recurrence Rule (e.g. Weekly on Friday)',
+      title: 'How often does it repeat?',
+      description: 'For example: "Every 1st & 3rd Friday" or "Every Tuesday at 4 PM".',
       type: 'string',
       hidden: ({ document }) => !document?.isRecurring
     },
     {
       name: 'isCancelled',
-      title: 'Event Cancelled Notice',
+      title: 'Is this event cancelled?',
+      description: 'Turn on to display an urgent cancellation banner on the event card.',
       type: 'boolean',
       initialValue: false
     },
     {
       name: 'cancellationReason',
-      title: 'Cancellation Notice Text',
+      title: 'Cancellation Notice',
+      description: 'Brief explanation for community members why this event is postponed or cancelled.',
       type: 'string',
       hidden: ({ document }) => !document?.isCancelled
     },
     {
       name: 'registrationUrl',
-      title: 'External Registration Link',
+      title: 'RSVP / Ticket Link',
+      description: 'Web link where attendees can RSVP, register, or purchase tickets.',
       type: 'url'
     },
     {
       name: 'capacity',
-      title: 'Attendee Capacity',
+      title: 'Attendee Limit',
+      description: 'Maximum number of participants (leave blank if unlimited).',
       type: 'number'
     }
   ],
@@ -102,4 +116,3 @@ export default {
     }
   }
 };
-

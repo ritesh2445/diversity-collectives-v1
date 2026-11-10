@@ -6,42 +6,35 @@ export default {
     {
       name: 'name',
       title: 'Full Name',
+      description: 'First and last name (and any credentials, e.g. MSW, PhD).',
       type: 'string',
       validation: (Rule) => Rule.required()
     },
     {
       name: 'role',
-      title: 'Board Role / Office',
+      title: 'Board Role',
+      description: 'Position on the board (e.g. Board President, Vice President, Treasurer, Secretary, Member at Large).',
       type: 'string',
-      description: 'e.g., President, Vice President, Treasurer, Secretary, Director at Large',
       validation: (Rule) => Rule.required()
     },
     {
       name: 'photo',
-      title: 'Headshot Photo',
+      title: 'Profile Photo',
+      description: 'Headshot or portrait photo.',
       type: 'image',
       options: { hotspot: true }
     },
     {
       name: 'bio',
-      title: 'Biography',
+      title: 'Short Biography',
+      description: 'A brief, warm summary of their background, professional expertise, and passion for DCVC.',
       type: 'text',
       rows: 4
     },
     {
-      name: 'term',
-      title: 'Term Years',
-      type: 'string'
-    },
-    {
-      name: 'isOfficer',
-      title: 'Executive Officer',
-      type: 'boolean',
-      initialValue: false
-    },
-    {
       name: 'order',
-      title: 'Display Order',
+      title: 'Order on Website',
+      description: 'Lower numbers appear first (e.g. 1 for President, 2 for Vice President).',
       type: 'number'
     }
   ],
@@ -53,4 +46,3 @@ export default {
     }
   }
 };
-

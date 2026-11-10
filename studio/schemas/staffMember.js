@@ -1,54 +1,53 @@
 export default {
   name: 'staffMember',
-  title: 'Staff Member',
+  title: 'DCVC Staff Member',
   type: 'document',
   fields: [
     {
       name: 'name',
       title: 'Full Name',
+      description: 'First and last name.',
       type: 'string',
       validation: (Rule) => Rule.required()
     },
     {
       name: 'title',
-      title: 'Job Title / Position',
+      title: 'Job Title',
+      description: 'Official position (e.g. Executive Director, Youth Programs Coordinator).',
       type: 'string',
       validation: (Rule) => Rule.required()
     },
     {
       name: 'department',
-      title: 'Department / Program Area',
+      title: 'Department',
+      description: 'Team (e.g. Leadership, Youth Services, Community Health, Operations).',
       type: 'string',
-      options: {
-        list: [
-          { title: 'Executive & Administration', value: 'Executive' },
-          { title: 'Community Resource Center', value: 'Operations' },
-          { title: 'Health & Wellness (SHINES)', value: 'Health' },
-          { title: 'Youth Programs (Rainbow Umbrella)', value: 'Youth' },
-          { title: 'Education & Training (P.R.I.D.E.)', value: 'Education' }
-        ]
-      }
+      initialValue: 'Operations'
     },
     {
       name: 'photo',
-      title: 'Staff Portrait Photo',
+      title: 'Staff Photo',
+      description: 'Headshot or welcoming portrait.',
       type: 'image',
       options: { hotspot: true }
     },
     {
       name: 'bio',
-      title: 'Biography & Community Background',
+      title: 'About Them',
+      description: 'A friendly bio explaining their role and community dedication.',
       type: 'text',
       rows: 4
     },
     {
       name: 'email',
-      title: 'Staff Inquiries Email',
+      title: 'Staff Email',
+      description: 'Direct contact email at diversitycollective.org.',
       type: 'string'
     },
     {
       name: 'order',
-      title: 'Display Order',
+      title: 'Order on Website',
+      description: 'Lower numbers appear first.',
       type: 'number'
     }
   ],
@@ -60,4 +59,3 @@ export default {
     }
   }
 };
-
