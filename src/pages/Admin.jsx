@@ -6,6 +6,7 @@ import {
   CheckCircle2, 
   AlertCircle, 
   Eye, 
+  EyeOff, 
   Smartphone, 
   Monitor, 
   Sparkles, 
@@ -137,8 +138,9 @@ export default function Admin() {
     return '';
   });
   const [user, setUser] = useState(null);
-  const [loginEmail, setLoginEmail] = useState('admin@diversitycollective.org');
+  const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState('');
@@ -749,29 +751,11 @@ export default function Admin() {
                   className="w-full px-4 py-3.5 rounded-2xl border-2 border-slate-300 focus:border-[#5A1E65] focus:ring-4 focus:ring-purple-100 text-center font-mono text-2xl font-black tracking-[0.4em] outline-none transition-all placeholder:text-slate-300 placeholder:tracking-widest"
                   placeholder="000000"
                 />
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[11px] text-slate-400 text-center">
                   {pending2fa.mfaType === 'totp' 
-                    ? 'Check your authenticator app (Google Authenticator, Authy, Apple Passwords).'
-                    : `Check your inbox at ${pending2fa.email} (valid for 5 minutes).`}
+                    ? 'Enter the 6-digit verification code from your authenticator app.'
+                    : `We sent a 6-digit verification code to ${pending2fa.email}.`}
                 </p>
-
-                <div className="mt-2.5 p-3 rounded-2xl bg-purple-50/80 border border-purple-200 text-left">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-black text-[#5A1E65] uppercase tracking-wider block">
-                      Staging Emergency 2FA Code
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setTwoFactorCode('992026')}
-                      className="px-2 py-0.5 rounded-md bg-white border border-purple-300 text-[10px] font-bold text-[#5A1E65] hover:bg-purple-100 cursor-pointer shadow-2xs"
-                    >
-                      Auto-Fill 992026
-                    </button>
-                  </div>
-                  <p className="text-[11px] text-slate-500 mt-1 leading-tight">
-                    In staging or if email delivery is pending, use emergency code <strong className="font-mono text-slate-900">992026</strong> to enter immediately.
-                  </p>
-                </div>
               </div>
 
               <button
@@ -848,27 +832,6 @@ export default function Admin() {
             </div>
           )}
 
-          {/* Staging Quick Access Credentials */}
-          <div className="p-3.5 rounded-2xl bg-purple-50/80 border border-purple-200 text-xs">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="font-extrabold text-[#5A1E65]">Staging Credentials</span>
-              <button
-                type="button"
-                onClick={() => {
-                  setLoginEmail('admin@diversitycollective.org');
-                  setLoginPassword('DCVC-Admin-2026!');
-                }}
-                className="px-2.5 py-1 rounded-lg bg-white border border-purple-300 text-[11px] font-bold text-[#5A1E65] hover:bg-purple-100 cursor-pointer shadow-2xs"
-              >
-                Auto-Fill Credentials
-              </button>
-            </div>
-            <div className="font-mono text-[11px] text-slate-700 space-y-0.5">
-              <div>Email: <strong className="text-slate-900">admin@diversitycollective.org</strong></div>
-              <div>Password: <strong className="text-slate-900">DCVC-Admin-2026!</strong></div>
-            </div>
-          </div>
-
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-1">
               <label className="text-xs font-bold text-slate-700 block">
@@ -881,6 +844,7 @@ export default function Admin() {
                 onChange={(e) => setLoginEmail(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 text-sm font-medium outline-none"
                 placeholder="admin@diversitycollective.org"
+                autoComplete="username"
               />
             </div>
 
@@ -888,14 +852,25 @@ export default function Admin() {
               <label className="text-xs font-bold text-slate-700 block">
                 Password
               </label>
-              <input
-                type="password"
-                required
-                value={loginPassword}
-                onChange={(e) => setLoginPassword(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 text-sm font-medium outline-none"
-                placeholder="••••••••••••••••"
-              />
+              <div className="relative">
+                <input
+                  type={showLoginPassword ? "text" : "password"}
+                  required
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  className="w-full px-4 py-3 pr-11 rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 text-sm font-medium outline-none"
+                  placeholder="••••••••••••••••"
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowLoginPassword(!showLoginPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer p-1"
+                  aria-label={showLoginPassword ? "Hide password" : "Show password"}
+                >
+                  {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
 
             {/* Cloudflare Turnstile CAPTCHA Protection */}

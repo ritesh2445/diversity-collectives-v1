@@ -17,6 +17,7 @@ import {
   History,
   Lock,
   Eye,
+  EyeOff,
   Edit,
   Trash2,
   Palette,
@@ -101,6 +102,7 @@ export default function AdminApp() {
   // Login form state
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [loginMfa, setLoginMfa] = useState('');
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -463,19 +465,30 @@ export default function AdminApp() {
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
                 Password
               </label>
-              <input 
-                type="password"
-                required
-                value={loginPassword}
-                onChange={(e) => setLoginPassword(e.target.value)}
-                placeholder="••••••••••••"
-                className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#5A1E65] focus:border-transparent outline-none transition-all"
-              />
+              <div className="relative">
+                <input 
+                  type={showLoginPassword ? "text" : "password"}
+                  required
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  placeholder="••••••••••••"
+                  autoComplete="current-password"
+                  className="w-full px-4 py-3 pr-11 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#5A1E65] focus:border-transparent outline-none transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowLoginPassword(!showLoginPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer p-1"
+                  aria-label={showLoginPassword ? "Hide password" : "Show password"}
+                >
+                  {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
 
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                2FA Authenticator Code <span className="text-slate-400 font-normal">(Optional for Dev)</span>
+                2FA Authenticator Code
               </label>
               <input 
                 type="text"
@@ -483,6 +496,7 @@ export default function AdminApp() {
                 onChange={(e) => setLoginMfa(e.target.value)}
                 placeholder="6-digit code"
                 maxLength={6}
+                autoComplete="one-time-code"
                 className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#5A1E65] focus:border-transparent outline-none font-mono"
               />
             </div>
@@ -495,12 +509,6 @@ export default function AdminApp() {
               {isLoggingIn ? 'Authenticating...' : 'Sign In to Portal'}
             </button>
           </form>
-
-          <div className="mt-8 pt-6 border-t border-slate-100 text-center">
-            <p className="text-[11px] text-slate-400">
-              Dev Access: <code className="bg-slate-100 px-1 py-0.5 rounded text-slate-700">admin@diversitycollective.org</code> / <code className="bg-slate-100 px-1 py-0.5 rounded text-slate-700">DCVC-Admin-2026!</code>
-            </p>
-          </div>
         </div>
       </div>
     );
