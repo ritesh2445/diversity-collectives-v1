@@ -305,17 +305,22 @@ img {
   font-weight: 700;
   white-space: nowrap;
   flex-shrink: 0;
-  border-radius: 9999px;
-  background: linear-gradient(135deg, #5A1E65 0%, #7E22CE 55%, #4338CA 100%);
-  color: #FFFFFF;
+  border-radius: var(--dcvc-btn-radius, 9999px);
+  background: var(--dcvc-btn-primary-bg, linear-gradient(135deg, #5A1E65 0%, #7E22CE 55%, #4338CA 100%));
+  color: var(--dcvc-btn-primary-text, #FFFFFF) !important;
   border: 1px solid rgba(216, 180, 254, 0.4);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: 0 4px 16px rgba(126, 34, 206, 0.35);
   cursor: pointer;
 }
 
+.btn-primary *,
+.btn-primary span {
+  color: var(--dcvc-btn-primary-text, #FFFFFF) !important;
+}
+
 .btn-primary:hover {
-  background: linear-gradient(135deg, #4A1553 0%, #6B21A8 55%, #3730A3 100%);
+  background: var(--dcvc-btn-primary-hover, linear-gradient(135deg, #4A1553 0%, #6B21A8 55%, #3730A3 100%));
   border-color: rgba(233, 213, 255, 0.8);
   transform: translateY(-2px) scale(1.015);
   box-shadow: 0 8px 26px rgba(126, 34, 206, 0.48);

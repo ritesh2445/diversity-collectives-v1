@@ -139,6 +139,32 @@ export default function ReciteReadingAids() {
           </p>
         </aside>
       )}
+
+      {/* 5. Dyslexia & Visual Stress Comfort Tint Overlays (Irlen Syndrome Relief) */}
+      {settings.dyslexiaTint === 'peach' && (
+        <div 
+          className="fixed inset-0 pointer-events-none z-[85] bg-[#ffe5b4]/20 mix-blend-multiply transition-opacity duration-300" 
+          aria-hidden="true" 
+        />
+      )}
+      {settings.dyslexiaTint === 'cream' && (
+        <div 
+          className="fixed inset-0 pointer-events-none z-[85] bg-[#fffdd0]/25 mix-blend-multiply transition-opacity duration-300" 
+          aria-hidden="true" 
+        />
+      )}
+      {settings.dyslexiaTint === 'mint' && (
+        <div 
+          className="fixed inset-0 pointer-events-none z-[85] bg-[#e2f8ee]/25 mix-blend-multiply transition-opacity duration-300" 
+          aria-hidden="true" 
+        />
+      )}
+      {settings.dyslexiaTint === 'sky' && (
+        <div 
+          className="fixed inset-0 pointer-events-none z-[85] bg-[#e0f2fe]/20 mix-blend-multiply transition-opacity duration-300" 
+          aria-hidden="true" 
+        />
+      )}
     </>
   );
 }

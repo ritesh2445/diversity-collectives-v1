@@ -1098,6 +1098,62 @@ export default function ReciteToolbar() {
                     </button>
                   ))}
                 </div>
+
+                {/* 1-Click Dyslexia Mode Sanctuary Preset */}
+                <div className="pt-2 border-t border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => a11yStore.toggleDyslexiaMode()}
+                    className={`w-full py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-between transition-all cursor-pointer ${
+                      settings.dyslexiaMode
+                        ? 'bg-amber-400 text-slate-950 shadow-md ring-2 ring-amber-300'
+                        : 'bg-purple-900/60 hover:bg-purple-800 text-purple-200 border border-purple-500/40'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 text-left">
+                      <span className="text-base">📖</span>
+                      <div>
+                        <span className="block font-black">Dyslexia Sanctuary Mode</span>
+                        <span className="block text-[10px] opacity-80">OpenDyslexic + 1.8x Line Spacing + Tint</span>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-black/20">
+                      {settings.dyslexiaMode ? 'ON' : 'OFF'}
+                    </span>
+                  </button>
+
+                  {/* Reading Tint Picker (Irlen Syndrome Relief) */}
+                  <div className="pt-2">
+                    <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                      Visual Stress Comfort Tint:
+                    </span>
+                    <div className="grid grid-cols-5 gap-1.5 text-center">
+                      {[
+                        { id: 'none', label: 'None', bg: 'bg-slate-800' },
+                        { id: 'peach', label: 'Peach', bg: 'bg-[#ffe5b4] text-slate-900' },
+                        { id: 'cream', label: 'Cream', bg: 'bg-[#fffdd0] text-slate-900' },
+                        { id: 'mint', label: 'Mint', bg: 'bg-[#e2f8ee] text-slate-900' },
+                        { id: 'sky', label: 'Sky', bg: 'bg-[#e0f2fe] text-slate-900' },
+                      ].map((t) => (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => {
+                            a11yStore.update('dyslexiaTint', t.id);
+                            a11yStore.announce(`Dyslexia reading tint set to ${t.label}`);
+                          }}
+                          className={`p-1 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${t.bg} ${
+                            settings.dyslexiaTint === t.id
+                              ? 'ring-2 ring-amber-400 border-white'
+                              : 'border-slate-700 opacity-80 hover:opacity-100'
+                          }`}
+                        >
+                          {t.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>

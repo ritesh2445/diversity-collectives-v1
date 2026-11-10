@@ -188,10 +188,10 @@ export default function Header() {
                   <Link
                     key={item.to}
                     to={item.to}
-                    className={`px-2.5 2xl:px-3 py-1.5 2xl:py-2 text-xs 2xl:text-sm font-semibold rounded-full transition-all whitespace-nowrap ${
+                    className={`px-2.5 2xl:px-3 py-1.5 2xl:py-2 text-xs 2xl:text-sm font-bold rounded-full transition-all whitespace-nowrap ${
                       isActive 
-                        ? 'text-white bg-gradient-to-r from-[#5A1E65] to-purple-700 shadow-md shadow-purple-500/20 font-bold' 
-                        : 'text-slate-700 hover:text-[#5A1E65] hover:bg-purple-50/80'
+                        ? 'text-white bg-gradient-to-r from-[#5A1E65] to-purple-700 shadow-md shadow-purple-500/20' 
+                        : 'text-black hover:text-white hover:bg-gradient-to-r hover:from-[#5A1E65] hover:to-purple-700'
                     }`}
                   >
                     {item.label}
@@ -207,10 +207,10 @@ export default function Header() {
                   onMouseEnter={() => setMoreOpen(true)}
                   aria-expanded={moreOpen}
                   aria-haspopup="true"
-                  className={`px-2.5 py-1.5 text-xs font-semibold rounded-full transition-all whitespace-nowrap inline-flex items-center gap-1 cursor-pointer ${
+                  className={`px-2.5 py-1.5 text-xs font-bold rounded-full transition-all whitespace-nowrap inline-flex items-center gap-1 cursor-pointer ${
                     isSecondaryActive || moreOpen
-                      ? 'text-white bg-gradient-to-r from-[#5A1E65] to-purple-700 shadow-md shadow-purple-500/20 font-bold'
-                      : 'text-slate-700 hover:text-[#5A1E65] hover:bg-purple-50/80'
+                      ? 'text-white bg-gradient-to-r from-[#5A1E65] to-purple-700 shadow-md shadow-purple-500/20'
+                      : 'text-black hover:text-white hover:bg-gradient-to-r hover:from-[#5A1E65] hover:to-purple-700'
                   }`}
                 >
                   <span>More</span>
@@ -234,16 +234,16 @@ export default function Header() {
                             onClick={() => setMoreOpen(false)}
                             className={`flex items-start gap-2.5 p-2 rounded-xl transition-all ${
                               isActive
-                                ? 'bg-purple-50 text-[#5A1E65] font-bold'
-                                : 'text-slate-700 hover:bg-purple-50/60 hover:text-[#5A1E65]'
+                                ? 'bg-gradient-to-r from-[#5A1E65] to-purple-700 text-white font-bold shadow-xs'
+                                : 'text-black font-bold hover:bg-purple-100 hover:text-[#5A1E65]'
                             }`}
                           >
-                            <div className={`p-1.5 rounded-lg shrink-0 mt-0.5 ${isActive ? 'bg-[#5A1E65] text-white' : 'bg-purple-100/70 text-[#5A1E65]'}`}>
+                            <div className={`p-1.5 rounded-lg shrink-0 mt-0.5 ${isActive ? 'bg-white/20 text-white' : 'bg-purple-100/70 text-[#5A1E65]'}`}>
                               <ItemIcon className="w-3.5 h-3.5" />
                             </div>
                             <div className="flex flex-col min-w-0">
-                              <span className="text-xs font-bold leading-tight">{item.label}</span>
-                              <span className="text-[10px] text-slate-500 leading-tight mt-0.5 truncate">{item.desc}</span>
+                              <span className={`text-xs font-bold leading-tight ${isActive ? 'text-white' : 'text-black'}`}>{item.label}</span>
+                              <span className={`text-[10px] leading-tight mt-0.5 truncate ${isActive ? 'text-purple-100' : 'text-slate-500'}`}>{item.desc}</span>
                             </div>
                           </Link>
                         );
@@ -420,26 +420,34 @@ export default function Header() {
                     key={item.to}
                     to={item.to}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center justify-between py-2.5 px-3 rounded-xl transition-colors group ${
-                      isActive ? 'bg-purple-50' : 'hover:bg-purple-50/60'
+                    className={`flex items-center justify-between py-2.5 px-3 rounded-xl transition-all group ${
+                      isActive 
+                        ? 'bg-gradient-to-r from-[#5A1E65] to-purple-800 text-white font-bold shadow-md' 
+                        : 'text-black font-bold hover:bg-purple-50'
                     }`}
                   >
                     <div className="flex items-center gap-3">
                       <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                        isActive ? 'bg-[#5A1E65] text-white' : 'bg-slate-100 text-slate-700 group-hover:bg-purple-100 group-hover:text-[#5A1E65]'
+                        isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-800 group-hover:bg-purple-100 group-hover:text-[#5A1E65]'
                       }`}>
                         <ItemIcon className="w-4 h-4" />
                       </div>
                       <div>
                         <span className={`font-bold text-sm block ${
-                          isActive ? 'text-[#5A1E65]' : 'text-slate-900 group-hover:text-[#5A1E65]'
+                          isActive ? 'text-white' : 'text-black'
                         }`}>
                           {item.label}
                         </span>
-                        <span className="text-[11px] text-slate-500">{item.desc}</span>
+                        <span className={`text-[11px] block ${
+                          isActive ? 'text-purple-100' : 'text-slate-500'
+                        }`}>
+                          {item.desc}
+                        </span>
                       </div>
                     </div>
-                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                    <ChevronRight className={`w-4 h-4 transition-transform group-hover:translate-x-0.5 ${
+                      isActive ? 'text-white' : 'text-slate-400'
+                    }`} />
                   </Link>
                 );
               })}

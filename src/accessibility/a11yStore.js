@@ -44,6 +44,11 @@ export const DEFAULT_SETTINGS = {
   autoReadHover: true,
   selectedVoice: '',
   currentLanguage: 'en', // 'en', 'es', 'tl', 'vi', 'zh'
+
+  // 5. Dyslexia & Neurodivergent Reading Aids
+  dyslexiaMode: false,
+  dyslexiaTint: 'none', // 'none', 'peach', 'cream', 'mint', 'sky'
+  bionicReading: false,
 };
 
 function loadStoredSettings() {
@@ -271,6 +276,9 @@ class NativeAccessibilityStore {
     html.setAttribute('data-a11y-cursor-highlight', s.cursorHighlight ? 'true' : 'false');
     html.setAttribute('data-a11y-enhanced-focus', s.enhancedFocus ? 'true' : 'false');
     html.setAttribute('data-a11y-pause-animations', s.pauseAnimations ? 'true' : 'false');
+    html.setAttribute('data-a11y-dyslexia-mode', s.dyslexiaMode ? 'true' : 'false');
+    html.setAttribute('data-a11y-dyslexia-tint', s.dyslexiaTint || 'none');
+    html.setAttribute('data-a11y-bionic', s.bionicReading ? 'true' : 'false');
 
     if (s.pauseAnimations) {
       html.classList.add('reduce-motion');
@@ -280,6 +288,33 @@ class NativeAccessibilityStore {
 
     // Dispatch event for smooth scroll and animations
     window.dispatchEvent(new CustomEvent('a11ySettingsChanged', { detail: s }));
+  }
+
+  toggleDyslexiaMode() {
+    const current = this.state.dyslexiaMode;
+    if (!current) {
+      this.updateMultiple({
+        dyslexiaMode: true,
+        fontFamily: 'opendyslexic',
+        lineHeight: '1.8',
+        letterSpacing: '0.16em',
+        wordSpacing: '0.24em',
+        ruler: true,
+        dyslexiaTint: 'peach'
+      });
+      this.announce('Dyslexia Sanctuary Mode enabled with OpenDyslexic typography, line spacing, reading ruler, and soft peach contrast tint.');
+    } else {
+      this.updateMultiple({
+        dyslexiaMode: false,
+        fontFamily: 'default',
+        lineHeight: 'normal',
+        letterSpacing: 'normal',
+        wordSpacing: 'normal',
+        ruler: false,
+        dyslexiaTint: 'none'
+      });
+      this.announce('Dyslexia Sanctuary Mode disabled. Default typography restored.');
+    }
   }
 
   announce(message) {

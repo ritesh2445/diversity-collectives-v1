@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   ArrowRight, 
@@ -8,13 +8,39 @@ import {
   ShieldCheck, 
   Heart,
   Sparkles,
-  ArrowUpRight
+  ArrowUpRight,
+  Filter,
+  Users
 } from 'lucide-react';
 import { cmsStore } from '../services/cmsStore';
 import CardSpotlight from '../components/CardSpotlight';
+import { usePageMeta } from '../utils/seo';
+
+const AGE_GROUP_ORDER = {
+  'little-unicorns': 1,         // Kids & Pre-Teens (Ages 9–13)
+  'rainbow-umbrella': 2,        // Youth & Teens (Ages 13–23)
+  'trans-affinity': 3,          // Teens, Young Adults & Adults
+  'diversity-shines': 4,        // Adults & Wellness
+  'community-resource-center': 5 // Multigenerational / All Ages Sanctuary
+};
+
+const AGE_FILTERS = [
+  'All Age Groups',
+  'Kids & Pre-Teens (Ages 9–13)',
+  'Youth & Teens (Ages 13–23)',
+  'Young Adults & Adults',
+  'All Ages Sanctuary'
+];
 
 export default function Programs() {
+  usePageMeta({
+    title: 'LGBTQ+ Programs & Sanctuaries Sorted by Age',
+    description: 'Explore youth peer circles, children sanctuaries, adult wellness clinics, and community drop-in hours across Ventura County.',
+    canonicalPath: '/programs'
+  });
+
   const [programs, setPrograms] = useState(() => cmsStore.getPrograms());
+  const [selectedAgeFilter, setSelectedAgeFilter] = useState('All Age Groups');
 
   useEffect(() => {
     const unsubscribe = cmsStore.subscribe((data) => {
@@ -22,6 +48,35 @@ export default function Programs() {
     });
     return unsubscribe;
   }, []);
+
+  // Default Sort by Age Progression: Youngest to Eldest / All Ages
+  const sortedAndFilteredPrograms = useMemo(() => {
+    const list = [...programs].sort((a, b) => {
+      const rankA = a.ageRank || AGE_GROUP_ORDER[a.slug] || 99;
+      const rankB = b.ageRank || AGE_GROUP_ORDER[b.slug] || 99;
+      return rankA - rankB;
+    });
+
+    if (selectedAgeFilter === 'All Age Groups') return list;
+
+    return list.filter(prog => {
+      const slug = prog.slug;
+      if (selectedAgeFilter === 'Kids & Pre-Teens (Ages 9–13)') {
+        return slug === 'little-unicorns';
+      }
+      if (selectedAgeFilter === 'Youth & Teens (Ages 13–23)') {
+        return slug === 'rainbow-umbrella' || slug === 'trans-affinity';
+      }
+      if (selectedAgeFilter === 'Young Adults & Adults') {
+        return slug === 'diversity-shines' || slug === 'trans-affinity';
+      }
+      if (selectedAgeFilter === 'All Ages Sanctuary') {
+        return slug === 'community-resource-center';
+      }
+      return true;
+    });
+  }, [programs, selectedAgeFilter]);
+
   return (
     <div className="pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
       
@@ -34,9 +89,14 @@ export default function Programs() {
         />
 
         <div className="max-w-3xl relative z-10 flex flex-col gap-4">
-          <span className="glass-pill text-xs font-bold text-[#5A1E65] bg-purple-50 border-purple-200/90 shadow-xs">
-            COMMUNITY CARE & CLINICAL SERVICES
-          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="glass-pill text-xs font-bold text-[#5A1E65] bg-purple-50 border-purple-200/90 shadow-xs">
+              COMMUNITY CARE & CLINICAL SERVICES
+            </span>
+            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+              Sorted by Age Groups
+            </span>
+          </div>
           <h1 className="font-display text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-slate-950 leading-[1.05]">
             Our Programs & <br />
             <span className="font-serif italic font-normal text-[#5A1E65]">Affirming Sanctuaries.</span>
@@ -45,12 +105,33 @@ export default function Programs() {
             Every program at Diversity Collective is created with a trauma-informed, culturally affirming approach to empower LGBTQ+ individuals from youth to elderhood.
           </p>
         </div>
+
+        {/* Age Group Filter Chips */}
+        <div className="mt-8 pt-6 border-t border-slate-100 flex flex-wrap items-center gap-2">
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1 mr-2">
+            <Users className="w-3.5 h-3.5 text-[#5A1E65]" />
+            <span>Age Progression:</span>
+          </span>
+          {AGE_FILTERS.map((filter) => (
+            <button
+              key={filter}
+              onClick={() => setSelectedAgeFilter(filter)}
+              className={`px-4 py-2 text-xs font-bold rounded-full transition-all cursor-pointer border ${
+                selectedAgeFilter === filter
+                  ? 'bg-slate-900 text-white border-purple-500 shadow-sm font-extrabold'
+                  : 'bg-white text-slate-700 border-slate-200 hover:border-purple-300 hover:bg-purple-50/50'
+              }`}
+            >
+              {filter}
+            </button>
+          ))}
+        </div>
       </section>
 
-      {/* Program Catalog */}
+      {/* Program Catalog (Ordered by Age: Kids -> Teens -> Adults -> All Ages) */}
       <section className="container-clean py-16">
         <div className="space-y-20">
-          {programs.map((prog, index) => {
+          {sortedAndFilteredPrograms.map((prog, index) => {
             const isEven = index % 2 === 0;
             return (
               <div 
@@ -94,7 +175,7 @@ export default function Programs() {
                             className="absolute top-4 left-4 px-3.5 py-1.5 bg-white/95 backdrop-blur-md rounded-full text-xs font-black tracking-wider uppercase shadow-md border border-slate-200 z-20"
                             style={{ color: prog.accent || '#5A1E65' }}
                           >
-                            PROGRAM {prog.chapter}
+                            PROGRAM {prog.chapter || `0${index + 1}`}
                           </div>
 
                           <div className="absolute bottom-4 left-4 right-4 text-white text-xs flex items-center justify-between translate-z-10 z-20">
@@ -147,50 +228,35 @@ export default function Programs() {
                   </div>
 
                   <div className="pt-2 flex flex-wrap items-center gap-4">
-                    <Link
+                    <Link 
                       to={`/programs/${prog.slug}`}
-                      className="btn-primary text-xs py-3 px-6 shadow-md hover:shadow-xl inline-flex items-center gap-2"
+                      className="btn-primary py-3.5 px-7 text-xs font-bold shadow-lg hover:shadow-xl inline-flex items-center gap-2"
                     >
-                      <span>Explore Dedicated Page</span>
+                      <span>Explore {prog.title}</span>
                       <ArrowRight className="w-4 h-4" />
                     </Link>
-                    <a
-                      href={`mailto:${prog.contactEmail}`}
-                      className="text-xs font-bold text-slate-700 hover:text-[#5A1E65] px-3.5 py-2.5 rounded-full border border-slate-200 hover:bg-slate-50 transition-colors inline-flex items-center gap-1.5"
-                    >
-                      <Mail className="w-3.5 h-3.5 text-slate-400" />
-                      <span>Inquire Directly</span>
-                    </a>
+                    {prog.slug === 'diversity-shines' ? (
+                      <Link 
+                        to="/appointments"
+                        className="btn-secondary py-3.5 px-6 text-xs font-bold inline-flex items-center gap-2"
+                      >
+                        <Heart className="w-4 h-4 text-rose-500" />
+                        <span>Book Confidential Screening</span>
+                      </Link>
+                    ) : (
+                      <Link 
+                        to="/contact"
+                        className="btn-secondary py-3.5 px-6 text-xs font-bold inline-flex items-center gap-2"
+                      >
+                        <Heart className="w-4 h-4 text-rose-500" />
+                        <span>Get Connected</span>
+                      </Link>
+                    )}
                   </div>
                 </div>
               </div>
             );
           })}
-        </div>
-      </section>
-
-      {/* Support CTA Banner in 3D Style */}
-      <section className="container-clean pt-10">
-        <div className="p-8 md:p-12 aurora-bg text-white rounded-3xl shadow-2xl flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden">
-          <div className="space-y-3 relative z-10">
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-xs font-bold text-amber-300 border border-amber-400/30 backdrop-blur-md">
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>JOIN OUR COMMUNITY NETWORK</span>
-            </span>
-            <h3 className="font-display text-2xl md:text-3xl lg:text-4xl font-black text-white">
-              Want to support one of these vital programs?
-            </h3>
-            <p className="text-xs md:text-sm text-purple-100 max-w-xl leading-relaxed">
-              From facilitating youth circles to assisting during free screening nights, our volunteer network powers everything we do.
-            </p>
-          </div>
-          <Link
-            to="/get-involved"
-            className="py-3.5 px-7 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-400 text-slate-950 font-black text-sm shadow-[0_10px_25px_-5px_rgba(245,158,11,0.4)] hover:scale-103 transition-all flex-shrink-0 cursor-pointer flex items-center gap-2 relative z-10"
-          >
-            <span>Volunteer With DCVC</span>
-            <ArrowRight className="w-4 h-4" />
-          </Link>
         </div>
       </section>
 

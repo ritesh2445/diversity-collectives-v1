@@ -21,7 +21,8 @@ import {
   Lock,
   Gift,
   Star,
-  Activity
+  Activity,
+  Mail
 } from 'lucide-react';
 import { 
   orgInfo, 
@@ -546,10 +547,10 @@ export default function Home() {
                 <div className="flex flex-wrap items-center gap-3 pt-1">
                   <Link 
                     to={customHeroProps?.primaryCtaUrl || "/programs"} 
-                    className="inline-flex items-center justify-center gap-2 text-sm font-extrabold text-white bg-gradient-to-r from-[#5A1E65] via-purple-700 to-indigo-600 hover:from-purple-900 hover:to-indigo-700 py-3 sm:py-3.5 px-6 sm:px-7 rounded-full shadow-md hover:shadow-lg transition-all"
+                    className="inline-flex items-center justify-center gap-2 text-sm font-extrabold !text-white text-white bg-gradient-to-r from-[#5A1E65] via-purple-700 to-indigo-600 hover:from-purple-900 hover:to-indigo-700 py-3 sm:py-3.5 px-6 sm:px-7 rounded-full shadow-md hover:shadow-lg transition-all"
                   >
-                    <span>{customHeroProps?.primaryCtaText || "Explore Free Programs"}</span>
-                    <ArrowRight className="w-4 h-4" />
+                    <span className="!text-white text-white font-extrabold">{customHeroProps?.primaryCtaText || "Explore Free Programs"}</span>
+                    <ArrowRight className="w-4 h-4 !text-white text-white" />
                   </Link>
 
                   <Link 
@@ -561,13 +562,12 @@ export default function Home() {
                   </Link>
 
                   <a
-                    href={customHeroProps?.phoneUrl || `tel:${orgInfo.phone.replace(/[^0-9]/g, '')}`}
-                    className="inline-flex items-center justify-center gap-2 text-sm font-extrabold text-slate-800 bg-white hover:bg-purple-50/50 py-3 sm:py-3.5 px-5 sm:px-6 rounded-full border-2 border-purple-200/90 shadow-2xs hover:shadow-sm hover:border-purple-400 transition-all"
+                    href="mailto:info@diversitycollective.org"
+                    aria-label="Send email to info@diversitycollective.org"
+                    title="Send email to info@diversitycollective.org"
+                    className="w-12 h-12 rounded-full border-2 border-purple-200/90 bg-white hover:bg-purple-50 text-[#5A1E65] hover:text-purple-900 shadow-2xs hover:shadow-sm hover:border-purple-400 flex items-center justify-center transition-all cursor-pointer flex-shrink-0"
                   >
-                    <div className="w-5 h-5 rounded-full bg-rose-100 flex items-center justify-center flex-shrink-0">
-                      <Phone className="w-3 h-3 text-rose-600" />
-                    </div>
-                    <span>{customHeroProps?.phoneText || "(805) 644-LGBT (5428)"}</span>
+                    <Mail className="w-5 h-5 text-[#5A1E65]" />
                   </a>
                 </div>
 
@@ -832,10 +832,10 @@ export default function Home() {
                   {/* 1. Primary CTA - Explore Free Programs */}
                   <Link 
                     to="/programs" 
-                    className="w-full inline-flex items-center justify-center gap-2.5 text-sm sm:text-base font-extrabold text-white bg-gradient-to-r from-[#5A1E65] via-[#8B1A8F] via-[#C026D3] to-[#7C3AED] hover:from-[#4A0E4F] hover:to-[#6D28D9] active:scale-[0.99] py-3.5 sm:py-4 px-7 rounded-full shadow-lg shadow-purple-900/30 hover:shadow-xl hover:shadow-purple-700/40 hover:scale-[1.01] transition-all text-center group btn-shimmer"
+                    className="w-full inline-flex items-center justify-center gap-2.5 text-sm sm:text-base font-extrabold !text-white text-white bg-gradient-to-r from-[#5A1E65] via-[#8B1A8F] via-[#C026D3] to-[#7C3AED] hover:from-[#4A0E4F] hover:to-[#6D28D9] active:scale-[0.99] py-3.5 sm:py-4 px-7 rounded-full shadow-lg shadow-purple-900/30 hover:shadow-xl hover:shadow-purple-700/40 hover:scale-[1.01] transition-all text-center group btn-shimmer"
                   >
-                    <span>Explore Free Programs</span>
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
+                    <span className="!text-white text-white font-extrabold">Explore Free Programs</span>
+                    <ArrowRight className="w-4 h-4 !text-white text-white group-hover:translate-x-1.5 transition-transform" />
                   </Link>
 
                   {/* 2. Secondary CTA - Visit Sanctuary */}
@@ -849,15 +849,15 @@ export default function Home() {
                     <span>Visit Sanctuary</span>
                   </Link>
 
-                  {/* 3. Tertiary CTA - Direct Phone Call */}
+                  {/* 3. Tertiary CTA - Email Us */}
                   <a
-                    href={`tel:${orgInfo.phone.replace(/[^0-9]/g, '')}`}
+                    href="mailto:info@diversitycollective.org"
                     className="w-full inline-flex items-center justify-center gap-2.5 text-sm sm:text-base font-extrabold text-slate-800 bg-white/95 hover:bg-white active:scale-[0.99] py-3.5 px-6 rounded-full border-2 border-purple-200/90 hover:border-purple-400 shadow-xs hover:shadow-md hover:scale-[1.01] transition-all text-center group"
                   >
-                    <div className="w-6 h-6 rounded-full bg-rose-100 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
-                      <Phone className="w-3.5 h-3.5 text-rose-700" />
+                    <div className="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
+                      <Mail className="w-3.5 h-3.5 text-[#5A1E65]" />
                     </div>
-                    <span>(805) 644-LGBT (5428)</span>
+                    <span>info@diversitycollective.org</span>
                   </a>
                 </div>
 

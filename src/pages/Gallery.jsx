@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   Sparkles,
   X,
@@ -29,7 +29,9 @@ import {
   LayoutGrid,
   Tv,
   CheckCircle2,
-  ExternalLink
+  ExternalLink,
+  Copy,
+  Check
 } from 'lucide-react';
 import { galleryPhotos, memoryLaneMilestones } from '../data/dcvcData';
 import { cmsStore } from '../services/cmsStore';
@@ -80,6 +82,10 @@ export default function Gallery() {
     return () => { isMounted = false; };
   }, []);
 
+  // Search Params & Social Deep Link Handling (?photo=<id>)
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [shareToast, setShareToast] = useState('');
+
   // 3D Carousel State
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
@@ -89,6 +95,45 @@ export default function Gallery() {
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'wall'
+
+  // Deep link handler on load
+  useEffect(() => {
+    const photoParam = searchParams.get('photo');
+    if (photoParam && photos.length > 0) {
+      const found = photos.find(p => p.id === photoParam || p.slug === photoParam);
+      if (found) {
+        setExpandedPhoto(found);
+      }
+    }
+  }, [searchParams, photos]);
+
+  const handleSharePhoto = (photo, platform) => {
+    if (!photo) return;
+    const photoId = photo.id || photo.slug || encodeURIComponent(photo.title);
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://diversitycollective.pages.dev';
+    const shareUrl = `${origin}/gallery?photo=${photoId}`;
+    const title = `Diversity Collective VC: ${photo.title}`;
+    const text = `${photo.title} (${photo.year || 'Archive'}) — ${photo.description || 'Explore the DCVC historical moments archive'}`;
+
+    if (platform === 'copy') {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(shareUrl);
+        setShareToast('Link copied to clipboard!');
+        setTimeout(() => setShareToast(''), 3500);
+      }
+    } else if (platform === 'twitter') {
+      const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`;
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } else if (platform === 'facebook') {
+      const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } else if (platform === 'whatsapp') {
+      const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text + '\n' + shareUrl)}`;
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } else if (platform === 'native' && navigator.share) {
+      navigator.share({ title, text, url: shareUrl }).catch(() => {});
+    }
+  };
 
   // Memory Lane State & Game Experience
   const [activeMilestoneIdx, setActiveMilestoneIdx] = useState(0);
@@ -684,35 +729,91 @@ export default function Gallery() {
                   </div>
                 </div>
 
-                {/* Fixed Action Footer - Responsive & Accessible (Zero Download Option) */}
-                <div className="p-3.5 sm:p-4 bg-white border-t border-slate-200 flex items-center justify-between gap-2.5 flex-shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setExpandedPhoto(null)}
-                    className="py-2.5 px-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-colors cursor-pointer"
-                  >
-                    Close Record
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (navigator.share) {
-                        navigator.share({
-                          title: expandedPhoto.title,
-                          text: expandedPhoto.description,
-                          url: window.location.href
-                        }).catch(() => { });
-                      } else {
-                        navigator.clipboard.writeText(window.location.href);
-                        alert('Archival record link copied to clipboard!');
-                      }
-                    }}
-                    className="flex-1 py-2.5 px-3.5 rounded-xl bg-[#5A1E65] hover:bg-[#43144A] text-white font-bold text-xs flex items-center justify-center gap-2 transition-colors shadow-2xs cursor-pointer"
-                    title="Share this archival moment"
-                  >
-                    <Share2 className="w-3.5 h-3.5" />
-                    <span>Share Archival Record</span>
-                  </button>
+                {/* Social Sharing & Action Footer */}
+                <div className="p-3.5 sm:p-4 bg-white border-t border-slate-200 flex flex-col gap-3 flex-shrink-0">
+                  
+                  {shareToast && (
+                    <div className="bg-emerald-600 text-white text-[11px] font-bold py-1.5 px-3 rounded-xl text-center flex items-center justify-center gap-1.5 animate-fade-in shadow-xs">
+                      <Check className="w-3.5 h-3.5" />
+                      <span>{shareToast}</span>
+                    </div>
+                  )}
+
+                  {/* Multi-Platform Social Share Row */}
+                  <div className="flex items-center justify-between gap-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 hidden sm:inline">
+                      Share Moment:
+                    </span>
+
+                    <div className="flex items-center gap-1.5 flex-1 sm:flex-initial justify-end">
+                      {/* Copy Direct Link */}
+                      <button
+                        type="button"
+                        onClick={() => handleSharePhoto(expandedPhoto, 'copy')}
+                        className="py-1.5 px-2.5 rounded-lg bg-slate-100 hover:bg-purple-100 text-slate-700 hover:text-[#5A1E65] text-xs font-bold transition-colors inline-flex items-center gap-1 cursor-pointer"
+                        title="Copy direct shareable link"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>Copy Link</span>
+                      </button>
+
+                      {/* X / Twitter */}
+                      <button
+                        type="button"
+                        onClick={() => handleSharePhoto(expandedPhoto, 'twitter')}
+                        className="py-1.5 px-2.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-colors inline-flex items-center gap-1 cursor-pointer"
+                        title="Share on X (Twitter)"
+                      >
+                        <span>𝕏 Post</span>
+                      </button>
+
+                      {/* Facebook */}
+                      <button
+                        type="button"
+                        onClick={() => handleSharePhoto(expandedPhoto, 'facebook')}
+                        className="py-1.5 px-2.5 rounded-lg bg-[#1877F2] hover:bg-blue-700 text-white text-xs font-bold transition-colors inline-flex items-center gap-1 cursor-pointer"
+                        title="Share on Facebook"
+                      >
+                        <span>Facebook</span>
+                      </button>
+
+                      {/* WhatsApp */}
+                      <button
+                        type="button"
+                        onClick={() => handleSharePhoto(expandedPhoto, 'whatsapp')}
+                        className="py-1.5 px-2.5 rounded-lg bg-[#25D366] hover:bg-emerald-600 text-white text-xs font-bold transition-colors inline-flex items-center gap-1 cursor-pointer"
+                        title="Share on WhatsApp"
+                      >
+                        <span>WhatsApp</span>
+                      </button>
+
+                      {/* Native Mobile Share */}
+                      {typeof navigator !== 'undefined' && navigator.share && (
+                        <button
+                          type="button"
+                          onClick={() => handleSharePhoto(expandedPhoto, 'native')}
+                          className="p-1.5 rounded-lg bg-purple-100 text-[#5A1E65] hover:bg-purple-200 transition-colors cursor-pointer"
+                          title="Open native device share"
+                        >
+                          <Share2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedPhoto(null)}
+                      className="py-2 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-colors cursor-pointer"
+                    >
+                      Close Record
+                    </button>
+                    <span className="text-[10px] text-slate-400 font-medium">
+                      Deep link: /gallery?photo={expandedPhoto.id || expandedPhoto.slug}
+                    </span>
+                  </div>
+
                 </div>
 
               </div>
@@ -1467,9 +1568,36 @@ export default function Gallery() {
                 </p>
               </div>
 
-              <span className="text-xs text-slate-400 font-bold whitespace-nowrap">
-                {selectedPhotoIndex + 1} of {filteredPhotos.length}
-              </span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => handleSharePhoto(activeLightboxPhoto, 'copy')}
+                  className="py-1.5 px-2.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-bold inline-flex items-center gap-1 cursor-pointer transition-colors"
+                  title="Copy link"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>Copy Link</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSharePhoto(activeLightboxPhoto, 'twitter')}
+                  className="py-1.5 px-2.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-bold cursor-pointer transition-colors"
+                  title="Share on X"
+                >
+                  𝕏
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSharePhoto(activeLightboxPhoto, 'facebook')}
+                  className="py-1.5 px-2.5 rounded-lg bg-[#1877F2] text-white text-xs font-bold cursor-pointer transition-colors"
+                  title="Share on Facebook"
+                >
+                  Facebook
+                </button>
+                <span className="text-xs text-slate-400 font-bold whitespace-nowrap ml-2">
+                  {selectedPhotoIndex + 1} of {filteredPhotos.length}
+                </span>
+              </div>
             </div>
           </div>
 

@@ -25,9 +25,9 @@ export const orgInfo = {
   phone: "(805) 644-LGBT (5428)",
   phoneRaw: "+18056445428",
   email: "info@diversitycollective.org",
-  donationUrl: "https://www.diversitycollectivevc.org/get-involved/#donate",
-  volunteerUrl: "https://www.diversitycollectivevc.org/volunteer/",
-  brochureUrl: "https://www.diversitycollectivevc.org/wp-content/uploads/2023/08/DCVC_FundraisingBrochure_Web_ReplyCard_FINALHR.pdf",
+  donationUrl: "/donate",
+  volunteerUrl: "/volunteer",
+  brochureUrl: "/images/botanical-flyer.jpg",
   socials: {
     facebook: "https://www.facebook.com/diversitycollectivevc",
     instagram: "https://www.instagram.com/diversitycollectivevc",
@@ -272,7 +272,7 @@ export const liveEvents = [
     address: "2471 Portola Road, Suite 100, Ventura, CA",
     image: "/images/shines-screening.jpg",
     description: "Do you know your status? Schedule a FREE confidential screening performed by certified HIV testing counselors. Rapid HIV testing plus gonorrhea, chlamydia, and syphilis testing. Confidential results and PrEP/PEP linkage.",
-    registrationUrl: "https://www.diversitycollectivevc.org/schedule-your-appointment/#hivSchedule",
+    registrationUrl: "/appointments",
     contactEmail: "shines@diversitycollective.org",
     featured: true
   },
@@ -374,7 +374,7 @@ export const liveEvents = [
     address: "Ventura Beach Promenade, Ventura, CA",
     image: "/images/botanical-flyer.jpg",
     description: "Gathering to honor community members affected by HIV/AIDS, advocate for health equity across Ventura County, and raise vital funds for Diversity SHINES prevention care.",
-    registrationUrl: "https://www.diversitycollectivevc.org/dcvc-events/#aids-walk-ventura",
+    registrationUrl: "/events",
     contactEmail: "info@diversitycollective.org",
     featured: true
   }
@@ -501,34 +501,39 @@ export const resourcesDirectory = [
 
 export const boardMembers = [
   {
-    name: "Roland Catabona",
-    role: "President, Board of Directors",
-    bio: "Relocated back to his hometown Oxnard after 18+ years in Community and Business Banking. Roland served as co-chair for AIDS Walk Ventura and fundraising chair for Ventura County Pride. Alongside his partner, he has completed multiple AIDS LifeCycle rides and works to grow the region's cyclist and wellness community. He is also a certified Ashtanga Vinyasa yoga instructor."
+    name: "Steve Somann",
+    role: "Co-Founder & Board Member",
+    bio: "Co-founder of Diversity Collective in 2014. Served as Treasurer (2014–2015), President (2015–2018), and continues to steward property management and institutional growth for the Community Resource Center.",
+    photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&h=400&q=80",
+    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&h=400&q=80"
   },
   {
     name: "Unique Dowtin",
     role: "Secretary, Board of Directors",
-    bio: "Library professional at The Getty and filmmaker. Unique's work across public library systems fostered her deep dedication to advocacy, lifelong learning, and community building. Since moving to Ventura in 2018, she has volunteered for AIDSWalk, Ventura Pride, and Loud & Queer."
-  },
-  {
-    name: "Steve Somann",
-    role: "Co-Founder & Board Member",
-    bio: "Co-founder of Diversity Collective in 2014. Served as Treasurer (2014–2015), President (2015–2018), and continues to steward property management and institutional growth for the Community Resource Center."
+    bio: "Library professional at The Getty and filmmaker. Unique's work across public library systems fostered her deep dedication to advocacy, lifelong learning, and community building. Since moving to Ventura in 2018, she has volunteered for AIDSWalk, Ventura Pride, and Loud & Queer.",
+    photo: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&h=400&q=80",
+    image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&h=400&q=80"
   },
   {
     name: "Luis Andrade",
     role: "Board Member / Vice President",
-    bio: "Testing Specialist with Bank of America Global Risk Management with over two decades of experience in the banking and mortgage sectors. Luis leads events for the Bank of America Southern California LGBT+ Pride Chapter and champions community engagement across Ventura County."
+    bio: "Testing Specialist with Bank of America Global Risk Management with over two decades of experience in the banking and mortgage sectors. Luis leads events for the Bank of America Southern California LGBT+ Pride Chapter and champions community engagement across Ventura County.",
+    photo: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&h=400&q=80",
+    image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&h=400&q=80"
   },
   {
     name: "Celia Sandhya Daniels",
     role: "Board Member",
-    bio: "Healthcare management executive, Founder & CEO of Rebekon Consulting, and prominent advocate focusing on biases in AI, healthcare, and gender equity. Recognized as one of the Top 20 LGBTQ leaders in biopharma and Top 10 LGBTQ+ voices on LinkedIn, Celia also serves on the Workforce Development Board of Ventura County and holds leadership positions with PFLAG and Stonewall Democrats."
+    bio: "Healthcare management executive, Founder & CEO of Rebekon Consulting, and prominent advocate focusing on biases in AI, healthcare, and gender equity. Recognized as one of the Top 20 LGBTQ leaders in biopharma and Top 10 LGBTQ+ voices on LinkedIn, Celia also serves on the Workforce Development Board of Ventura County and holds leadership positions with PFLAG and Stonewall Democrats.",
+    photo: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=400&h=400&q=80",
+    image: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=400&h=400&q=80"
   },
   {
     name: "AJ Holmes",
     role: "Board Member",
-    bio: "Dedicated community organizer and advocate bringing passionate civic perspective and grassroots support to Diversity Collective's programs and youth outreach."
+    bio: "Dedicated community organizer and advocate bringing passionate civic perspective and grassroots support to Diversity Collective's programs and youth outreach.",
+    photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&h=400&q=80",
+    image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&h=400&q=80"
   }
 ];
 
@@ -603,31 +608,31 @@ export const annualSignatureEvents = [
     title: "Ventura County Pride Festival",
     tagline: "The Premier LGBTQ+ Cultural Celebration on the Coast",
     description: "Annual seaside festival celebrating community pride, local artists, performers, food, community resource vendors, and intersectional solidarity at Plaza Park in Ventura (July 25th). All proceeds sustain the Community Resource Center.",
-    link: "https://www.diversitycollectivevc.org/dcvc-events/#ventura-county-pride"
+    link: "/events"
   },
   {
     title: "Diversity Gala",
     tagline: "Honoring Champions of Equity and Community Leadership",
     description: "Our premier annual benefit evening honoring community advocates, corporate allies, and volunteers whose contributions transform lives in Ventura County. Highlights include the Vanguard Award (One Step A La Vez), Diversity Spotlight Award (Celia Daniels), and Community Ally Award (Guidestar).",
-    link: "https://www.diversitycollectivevc.org/dcvc-events/#diversity-gala"
+    link: "/events"
   },
   {
     title: "Pride Prom",
     tagline: "An Unforgettable, Affirming Night for LGBTQ+ Youth",
     description: "Hosted by Rainbow Umbrella for youth ages 13–23. Held on Saturday, May 30th at The Palomino in downtown Ventura. A safe, magical prom where everyone can dress authentically, dance with anyone, and celebrate without fear.",
-    link: "https://www.diversitycollectivevc.org/dcvc-events/#pride-prom"
+    link: "/events"
   },
   {
     title: "AIDS Walk Ventura",
     tagline: "Walking in Remembrance, Advocating for a Healthier Future",
     description: "Commemorating loved ones lost to HIV/AIDS, combating healthcare stigmas, and raising dedicated funding for Diversity SHINES screening and navigation.",
-    link: "https://www.diversitycollectivevc.org/dcvc-events/#aids-walk-ventura"
+    link: "/events"
   },
   {
     title: "World AIDS Day",
     tagline: "December 1st Global Remembrance & Stigma Reduction",
     description: "Observed on December 1st with candlelight vigils, remembrance quilts, and community education in collaboration with Ventura County Public Health and Diversity SHINES.",
-    link: "https://www.diversitycollectivevc.org/dcvc-events/#world-aids-day"
+    link: "/events"
   }
 ];
 

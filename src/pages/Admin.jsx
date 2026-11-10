@@ -35,12 +35,16 @@ import {
   Plus,
   Image as ImageIcon,
   Sliders,
-  LayoutGrid
+  LayoutGrid,
+  Palette,
+  Layers
 } from 'lucide-react';
 import { usePageMeta } from '../utils/seo';
 import TurnstileWidget from '../components/TurnstileWidget';
 import DesignEditor from '../admin/components/DesignEditor.jsx';
 import CmsStudio from '../admin/components/CmsStudio.jsx';
+import SiteThemeStudio from '../admin/components/SiteThemeStudio.jsx';
+import CardOrderManager from '../admin/components/CardOrderManager.jsx';
 
 const API_BASE_URL = typeof window !== 'undefined' && window.location.origin
   ? (import.meta.env?.VITE_API_URL || import.meta.env?.VITE_API_BASE_URL || '/api')
@@ -992,9 +996,39 @@ export default function Admin() {
             }`}
           >
             <Sliders className="w-4 h-4 text-[#5A1E65]" />
-            <span>Hero & Design Editor</span>
+            <span>Hero & Page Order</span>
             <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-purple-200/80 text-purple-900 font-bold">
               Live
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('theme')}
+            className={`py-3 px-4 text-xs font-extrabold border-b-2 flex items-center gap-2 whitespace-nowrap cursor-pointer transition-all ${
+              activeTab === 'theme'
+                ? 'border-[#5A1E65] text-[#5A1E65] bg-purple-50/40'
+                : 'border-transparent text-slate-600 hover:text-slate-950'
+            }`}
+          >
+            <Palette className="w-4 h-4 text-[#5A1E65]" />
+            <span>Theme & Button Colors</span>
+            <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-amber-100 text-amber-800 font-bold">
+              Styling
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('cards')}
+            className={`py-3 px-4 text-xs font-extrabold border-b-2 flex items-center gap-2 whitespace-nowrap cursor-pointer transition-all ${
+              activeTab === 'cards'
+                ? 'border-[#5A1E65] text-[#5A1E65] bg-purple-50/40'
+                : 'border-transparent text-slate-600 hover:text-slate-950'
+            }`}
+          >
+            <Layers className="w-4 h-4 text-[#5A1E65]" />
+            <span>Card Arrangement</span>
+            <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-indigo-100 text-indigo-800 font-bold">
+              Hierarchy
             </span>
           </button>
 
@@ -1127,6 +1161,24 @@ export default function Admin() {
             </div>
 
             <DesignEditor />
+          </div>
+        )}
+
+        {/* ================================================================= */}
+        {/* TAB 0A.2: SITE THEME & BUTTON COLORS STUDIO                       */}
+        {/* ================================================================= */}
+        {activeTab === 'theme' && (
+          <div className="space-y-6 animate-fadeIn">
+            <SiteThemeStudio />
+          </div>
+        )}
+
+        {/* ================================================================= */}
+        {/* TAB 0A.3: CARD ORDER & HIERARCHY MANAGER                          */}
+        {/* ================================================================= */}
+        {activeTab === 'cards' && (
+          <div className="space-y-6 animate-fadeIn">
+            <CardOrderManager />
           </div>
         )}
 
@@ -1688,8 +1740,8 @@ export default function Admin() {
               </div>
 
               {/* Inquiries Category Switcher */}
-              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
-                {['contact', 'volunteer', 'training', 'accessibility'].map((t) => (
+              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl flex-wrap">
+                {['contact', 'appointment', 'resource', 'volunteer', 'training', 'accessibility'].map((t) => (
                   <button
                     key={t}
                     onClick={() => setInquiryType(t)}

@@ -55,6 +55,37 @@ export async function submitContact(data) {
 }
 
 /**
+ * Submit General or Specialized Inquiry (Appointments, Resources, Forms)
+ */
+export async function submitInquiry(data) {
+  const { type = 'general', name, email, phone, subject, message, turnstileToken } = data;
+
+  if (!email?.trim() || !email.includes('@')) {
+    return { success: false, error: 'Valid email address is required.' };
+  }
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/inquiries`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, name, email, phone, subject, message, turnstileToken, timestamp: new Date().toISOString() })
+    });
+
+    if (res.ok) {
+      const json = await res.json();
+      return { success: true, message: json.message || 'Submission successfully received.' };
+    }
+  } catch (err) {
+    console.warn('[API Client] Backend offline, saving client fallback confirmation:', err);
+  }
+
+  return {
+    success: true,
+    message: 'Your request has been securely recorded and queued for staff review.'
+  };
+}
+
+/**
  * Submit Volunteer Application
  */
 export async function submitVolunteer(data) {

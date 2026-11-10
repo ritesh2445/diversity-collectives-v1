@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Search, 
@@ -8,16 +8,45 @@ import {
   ArrowUpRight, 
   Sparkles,
   Ticket,
-  AlertTriangle
+  AlertTriangle,
+  Calendar as CalendarIcon,
+  List as ListIcon,
+  ChevronLeft,
+  ChevronRight,
+  Filter,
+  Check
 } from 'lucide-react';
 import { cmsStore } from '../services/cmsStore';
 import { annualSignatureEvents } from '../data/dcvcData';
 import CardSpotlight from '../components/CardSpotlight';
+import { usePageMeta } from '../utils/seo';
+
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
+
+const MONTH_ABBRS = [
+  'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
+  'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'
+];
 
 export default function Events() {
+  usePageMeta({
+    title: 'Events & Cultural Calendar',
+    description: 'Explore upcoming LGBTQ+ youth circles, health screening clinics, social mixers, and Pride celebrations across Ventura County.',
+    canonicalPath: '/events'
+  });
+
   const [events, setEvents] = useState(() => cmsStore.getEvents());
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [viewMode, setViewMode] = useState('list'); // 'list' | 'calendar'
+  
+  // Traditional Monthly Calendar State
+  const [currentCalendarDate, setCurrentCalendarDate] = useState(() => new Date(2026, 9, 1)); // Oct 2026 default to align with authentic events
+  const [selectedDateFilter, setSelectedDateFilter] = useState(null); // '2026-10-09' or null
 
   useEffect(() => {
     const unsubscribe = cmsStore.subscribe((data) => {
@@ -26,15 +55,92 @@ export default function Events() {
     return unsubscribe;
   }, []);
 
-  const categories = ['All', 'Health & Wellness', 'Youth', 'Adult Support', 'Seniors', 'Professional Growth', 'Signature Event', 'Festival & Celebration'];
+  const categories = [
+    'All', 
+    'Health & Wellness', 
+    'Youth', 
+    'Adult Support', 
+    'Seniors', 
+    'Professional Growth', 
+    'Signature Event', 
+    'Festival & Celebration'
+  ];
 
-  const filteredEvents = events.filter(evt => {
-    const matchesSearch = evt.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          evt.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          evt.location.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCat = selectedCategory === 'All' || evt.category === selectedCategory;
-    return matchesSearch && matchesCat;
-  });
+  const handleSearchSubmit = (e) => {
+    e?.preventDefault();
+    setSearchQuery(searchInput);
+    setSelectedDateFilter(null);
+  };
+
+  // Helper to parse event month abbreviation
+  const getEventDateKey = (evt) => {
+    const monthIndex = MONTH_ABBRS.indexOf((evt.month || '').toUpperCase());
+    if (monthIndex === -1) return null;
+    const year = evt.year || '2026';
+    const day = String(evt.day || '1').padStart(2, '0');
+    const month = String(monthIndex + 1).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const filteredEvents = useMemo(() => {
+    return events.filter(evt => {
+      const q = searchQuery.toLowerCase();
+      const matchesSearch = !q || 
+        evt.title.toLowerCase().includes(q) ||
+        evt.description.toLowerCase().includes(q) ||
+        evt.location.toLowerCase().includes(q) ||
+        evt.category.toLowerCase().includes(q);
+
+      const matchesCat = selectedCategory === 'All' || evt.category === selectedCategory;
+
+      const dateKey = getEventDateKey(evt);
+      const matchesDate = !selectedDateFilter || dateKey === selectedDateFilter;
+
+      return matchesSearch && matchesCat && matchesDate;
+    });
+  }, [events, searchQuery, selectedCategory, selectedDateFilter]);
+
+  // Calendar calculations for selected month
+  const calendarYear = currentCalendarDate.getFullYear();
+  const calendarMonth = currentCalendarDate.getMonth(); // 0-11
+  const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+  const firstDayOfWeek = new Date(calendarYear, calendarMonth, 1).getDay(); // 0 (Sun) to 6 (Sat)
+
+  // Group events by day of current calendar month
+  const eventsByDay = useMemo(() => {
+    const map = {};
+    events.forEach(evt => {
+      const monthIndex = MONTH_ABBRS.indexOf((evt.month || '').toUpperCase());
+      const evtYear = parseInt(evt.year || '2026', 10);
+      if (monthIndex === calendarMonth && evtYear === calendarYear) {
+        const dayNum = parseInt(evt.day, 10);
+        if (!map[dayNum]) map[dayNum] = [];
+        map[dayNum].push(evt);
+      }
+    });
+    return map;
+  }, [events, calendarMonth, calendarYear]);
+
+  const handlePrevMonth = () => {
+    setCurrentCalendarDate(new Date(calendarYear, calendarMonth - 1, 1));
+    setSelectedDateFilter(null);
+  };
+
+  const handleNextMonth = () => {
+    setCurrentCalendarDate(new Date(calendarYear, calendarMonth + 1, 1));
+    setSelectedDateFilter(null);
+  };
+
+  const handleSelectDay = (day) => {
+    const monthStr = String(calendarMonth + 1).padStart(2, '0');
+    const dayStr = String(day).padStart(2, '0');
+    const key = `${calendarYear}-${monthStr}-${dayStr}`;
+    if (selectedDateFilter === key) {
+      setSelectedDateFilter(null);
+    } else {
+      setSelectedDateFilter(key);
+    }
+  };
 
   return (
     <div className="pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
@@ -47,36 +153,95 @@ export default function Events() {
           aria-hidden="true" 
         />
 
-        <div className="max-w-3xl relative z-10 flex flex-col gap-4">
-          <span className="glass-pill text-xs font-bold text-[#5A1E65] bg-purple-50 border-purple-200/90 shadow-xs">
-            OFFICIAL CALENDAR & CULTURAL LIFE
-          </span>
-          <h1 className="font-display text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-slate-950 leading-[1.05]">
-            Cultural Calendar & <br />
-            <span className="font-serif italic font-normal text-[#5A1E65]">Upcoming Gatherings.</span>
-          </h1>
-          <p className="font-serif italic text-xl md:text-2xl text-slate-700 leading-relaxed pt-2">
-            From our weekly youth circles and free testing clinics to seaside Pride and annual galas, explore upcoming events across Ventura County.
-          </p>
-        </div>
-
-        {/* Search and Filter Controls */}
-        <div className="mt-10 pt-8 border-t border-slate-100 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-          
-          {/* Search Box */}
-          <div className="relative flex-1 max-w-md">
-            <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
-            <input 
-              type="text"
-              placeholder="Search gatherings, screenings, topics..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 text-sm bg-slate-50 border border-slate-200 focus:border-[#5A1E65] focus:bg-white focus:ring-2 focus:ring-purple-100 rounded-2xl outline-none transition-all font-medium"
-            />
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 relative z-10">
+          <div className="max-w-3xl flex flex-col gap-4">
+            <span className="glass-pill text-xs font-bold text-[#5A1E65] bg-purple-50 border-purple-200/90 shadow-xs">
+              OFFICIAL CALENDAR & CULTURAL LIFE
+            </span>
+            <h1 className="font-display text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-slate-950 leading-[1.05]">
+              Cultural Calendar & <br />
+              <span className="font-serif italic font-normal text-[#5A1E65]">Upcoming Gatherings.</span>
+            </h1>
+            <p className="font-serif italic text-xl md:text-2xl text-slate-700 leading-relaxed pt-2">
+              From weekly youth circles and free testing clinics to seaside Pride and annual galas, explore upcoming events across Ventura County.
+            </p>
           </div>
 
-          {/* Category Pills */}
-          <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-1">
+          {/* View Switcher: List vs Traditional Calendar Grid */}
+          <div className="flex items-center gap-2 p-1.5 bg-slate-100 rounded-2xl border border-slate-200 self-start md:self-end flex-shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                setViewMode('list');
+                setSelectedDateFilter(null);
+              }}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                viewMode === 'list'
+                  ? 'bg-white text-[#5A1E65] shadow-sm font-extrabold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <ListIcon className="w-4 h-4" />
+              <span>Cards View</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('calendar')}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                viewMode === 'calendar'
+                  ? 'bg-[#5A1E65] text-white shadow-sm font-extrabold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <CalendarIcon className="w-4 h-4" />
+              <span>View Calendar</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Search Bar with Dedicated Search Button and Category Filters */}
+        <div className="mt-10 pt-8 border-t border-slate-100 space-y-4">
+          
+          <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 max-w-2xl">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+              <input 
+                type="text"
+                placeholder="Search gatherings, screenings, topics, or venues..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="w-full pl-11 pr-4 py-3 text-sm bg-slate-50 border border-slate-200 focus:border-[#5A1E65] focus:bg-white focus:ring-2 focus:ring-purple-100 rounded-2xl outline-none transition-all font-medium text-slate-900"
+              />
+            </div>
+            <button
+              type="submit"
+              className="btn-primary py-3 px-6 text-xs font-extrabold shadow-md hover:shadow-lg inline-flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer"
+            >
+              <Search className="w-4 h-4" />
+              <span>Search Events</span>
+            </button>
+            {(searchQuery || selectedCategory !== 'All' || selectedDateFilter) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchInput('');
+                  setSearchQuery('');
+                  setSelectedCategory('All');
+                  setSelectedDateFilter(null);
+                }}
+                className="py-3 px-4 rounded-2xl border border-slate-200 text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer text-center"
+              >
+                Clear All
+              </button>
+            )}
+          </form>
+
+          {/* Category Filter Pills */}
+          <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-1 pt-1">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1 mr-1">
+              <Filter className="w-3.5 h-3.5" />
+              <span>Filter:</span>
+            </span>
             {categories.map((cat) => (
               <button
                 key={cat}
@@ -95,16 +260,177 @@ export default function Events() {
         </div>
       </section>
 
-      {/* Main Calendar List in 3D Cards */}
-      <section className="container-clean py-16">
+      {/* Traditional Interactive Monthly Calendar View */}
+      {viewMode === 'calendar' && (
+        <section className="container-clean py-10">
+          <div className="p-6 sm:p-8 rounded-3xl bg-white border-2 border-slate-200 shadow-xl mb-12">
+            
+            {/* Calendar Month Header */}
+            <div className="flex items-center justify-between pb-6 border-b border-slate-100 mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-purple-100 text-[#5A1E65] flex items-center justify-center font-bold">
+                  <CalendarIcon className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="font-display text-2xl sm:text-3xl font-black text-slate-950">
+                    {MONTH_NAMES[calendarMonth]} {calendarYear}
+                  </h2>
+                  <p className="text-xs text-slate-500 font-medium">
+                    Click any highlighted date to view events scheduled on that day
+                  </p>
+                </div>
+              </div>
+
+              {/* Month Switcher Controls */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handlePrevMonth}
+                  className="w-10 h-10 rounded-xl border border-slate-200 hover:bg-purple-50 hover:text-[#5A1E65] flex items-center justify-center text-slate-700 transition-colors cursor-pointer"
+                  title="Previous Month"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNextMonth}
+                  className="w-10 h-10 rounded-xl border border-slate-200 hover:bg-purple-50 hover:text-[#5A1E65] flex items-center justify-center text-slate-700 transition-colors cursor-pointer"
+                  title="Next Month"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Days of the Week */}
+            <div className="grid grid-cols-7 gap-2 text-center text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+              <span>Sun</span>
+              <span>Mon</span>
+              <span>Tue</span>
+              <span>Wed</span>
+              <span>Thu</span>
+              <span>Fri</span>
+              <span>Sat</span>
+            </div>
+
+            {/* Month Days Grid */}
+            <div className="grid grid-cols-7 gap-2">
+              {/* Blank offset cells */}
+              {Array.from({ length: firstDayOfWeek }).map((_, i) => (
+                <div key={`blank-${i}`} className="min-h-[72px] sm:min-h-[96px] rounded-2xl bg-slate-50/50 border border-transparent" />
+              ))}
+
+              {/* Day cells */}
+              {Array.from({ length: daysInMonth }).map((_, i) => {
+                const dayNum = i + 1;
+                const dayEvents = eventsByDay[dayNum] || [];
+                const monthStr = String(calendarMonth + 1).padStart(2, '0');
+                const dayStr = String(dayNum).padStart(2, '0');
+                const dateKey = `${calendarYear}-${monthStr}-${dayStr}`;
+                const isSelected = selectedDateFilter === dateKey;
+                const hasEvents = dayEvents.length > 0;
+
+                return (
+                  <button
+                    key={`day-${dayNum}`}
+                    type="button"
+                    onClick={() => handleSelectDay(dayNum)}
+                    className={`min-h-[72px] sm:min-h-[96px] p-2 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer ${
+                      isSelected
+                        ? 'border-purple-600 bg-purple-50 ring-2 ring-purple-600 shadow-md'
+                        : hasEvents
+                        ? 'border-purple-200 bg-white hover:border-[#5A1E65] hover:shadow-md'
+                        : 'border-slate-100 bg-white/70 text-slate-400 hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className={`text-xs sm:text-sm font-black ${
+                        isSelected 
+                          ? 'text-[#5A1E65]' 
+                          : hasEvents 
+                          ? 'text-slate-900' 
+                          : 'text-slate-400'
+                      }`}>
+                        {dayNum}
+                      </span>
+                      {hasEvents && (
+                        <span className="w-2 h-2 rounded-full bg-purple-600 animate-pulse" />
+                      )}
+                    </div>
+
+                    {hasEvents && (
+                      <div className="space-y-1 mt-1">
+                        {dayEvents.slice(0, 2).map((ev) => (
+                          <div 
+                            key={ev.id}
+                            className="text-[10px] sm:text-[11px] font-bold text-[#5A1E65] truncate bg-purple-100/70 px-1.5 py-0.5 rounded-md leading-tight"
+                            title={ev.title}
+                          >
+                            {ev.title}
+                          </div>
+                        ))}
+                        {dayEvents.length > 2 && (
+                          <span className="text-[9px] text-slate-500 font-bold block">
+                            +{dayEvents.length - 2} more
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Selected Date Filter Banner */}
+            {selectedDateFilter && (
+              <div className="mt-6 p-4 rounded-2xl bg-purple-50 border border-purple-200 flex flex-wrap items-center justify-between gap-3 animate-fade-in">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-700">
+                    Filtered by Date: <strong>{selectedDateFilter}</strong> ({filteredEvents.length} gathering{filteredEvents.length === 1 ? '' : 's'} found)
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedDateFilter(null)}
+                  className="px-3 py-1.5 rounded-xl bg-purple-700 text-white font-bold text-xs hover:bg-purple-800 transition-colors cursor-pointer"
+                >
+                  Show All Gatherings for Month
+                </button>
+              </div>
+            )}
+
+          </div>
+        </section>
+      )}
+
+      {/* Event Cards Section */}
+      <section className="container-clean py-8">
         
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="font-display text-2xl sm:text-3xl font-black text-slate-950">
+              {viewMode === 'calendar' ? 'Events for Selected Timeframe' : 'Upcoming Gatherings'}
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-500 font-medium">
+              Showing {filteredEvents.length} event{filteredEvents.length === 1 ? '' : 's'}
+              {selectedCategory !== 'All' ? ` in ${selectedCategory}` : ''}
+              {searchQuery ? ` matching "${searchQuery}"` : ''}
+            </p>
+          </div>
+        </div>
+
         {filteredEvents.length === 0 ? (
           <div className="p-16 text-center bg-slate-50 rounded-3xl border border-slate-200 space-y-3">
-            <p className="font-display text-xl font-bold text-slate-900">No upcoming gatherings match your search.</p>
-            <p className="text-xs text-slate-500">Try clearing your filters or search keywords.</p>
+            <p className="font-display text-xl font-bold text-slate-900">No gatherings match your criteria.</p>
+            <p className="text-xs text-slate-500">Try adjusting your category filter, selected date, or search terms.</p>
             <button 
-              onClick={() => { setSearchQuery(''); setSelectedCategory('All'); }}
-              className="btn-primary py-2 px-5 text-xs font-bold mt-2"
+              onClick={() => { 
+                setSearchInput('');
+                setSearchQuery(''); 
+                setSelectedCategory('All'); 
+                setSelectedDateFilter(null);
+              }}
+              className="btn-primary py-2 px-5 text-xs font-bold mt-2 cursor-pointer"
             >
               Reset Filters
             </button>
@@ -181,27 +507,25 @@ export default function Events() {
                       </div>
                     </div>
 
-                    {/* Actions: 100% Active */}
+                    {/* Actions: 100% In-App */}
                     <div className="md:col-span-3 flex flex-col md:items-end gap-2.5 relative z-20">
                       <Link
                         to={`/events/${evt.slug}`}
-                        className="btn-primary py-3 px-6 text-xs font-bold w-full md:w-auto text-center shadow-md hover:shadow-xl inline-flex items-center justify-center gap-1.5"
+                        className="btn-primary py-3 px-6 text-xs font-bold w-full md:w-auto text-center shadow-md hover:shadow-xl inline-flex items-center justify-center gap-1.5 cursor-pointer"
                       >
                         <span>Details & RSVP</span>
                         <ArrowRight className="w-3.5 h-3.5" />
                       </Link>
 
                       {evt.registrationUrl ? (
-                        <a
-                          href={evt.registrationUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                        <Link
+                          to={evt.registrationUrl.startsWith('http') ? '/appointments' : evt.registrationUrl}
                           className="text-xs font-bold text-[#5A1E65] hover:underline flex items-center gap-1 py-1"
                         >
                           <Ticket className="w-3.5 h-3.5" />
                           <span>Direct Registration</span>
                           <ArrowUpRight className="w-3 h-3" />
-                        </a>
+                        </Link>
                       ) : (
                         <span className="text-[11px] text-slate-400 font-medium">Free Drop-In · No Ticket Needed</span>
                       )}
@@ -233,22 +557,20 @@ export default function Events() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-4">
               {annualSignatureEvents.map((sig) => (
-                <a
+                <Link
                   key={sig.title}
-                  href={sig.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  to={sig.link.startsWith('http') ? '/events' : sig.link}
                   className="p-6 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 hover:border-amber-300 transition-all hover:scale-102 flex flex-col justify-between group cursor-pointer"
                 >
                   <div className="space-y-2">
-                    <span className="text-[11px] font-black uppercase tracking-wider text-amber-300">{sig.season}</span>
+                    <span className="text-[11px] font-black uppercase tracking-wider text-amber-300">{sig.season || 'Annual'}</span>
                     <h4 className="font-display text-xl font-bold text-white group-hover:text-amber-200 transition-colors flex items-center justify-between">
                       <span>{sig.title}</span>
                       <ArrowUpRight className="w-4 h-4 text-amber-300" />
                     </h4>
-                    <p className="text-xs text-purple-100 leading-relaxed">{sig.summary}</p>
+                    <p className="text-xs text-purple-100 leading-relaxed">{sig.description}</p>
                   </div>
-                </a>
+                </Link>
               ))}
             </div>
           </div>

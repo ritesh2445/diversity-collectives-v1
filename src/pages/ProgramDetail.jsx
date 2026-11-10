@@ -203,15 +203,13 @@ export default function ProgramDetail() {
               We offer free confidential HIV and STI screenings every 1st Monday of the month from 3:00 PM – 7:00 PM performed by state-certified testing counselors. Our STI screenings include syphilis, chlamydia, and gonorrhea. We also provide PrEP & PEP navigation and free 'SHINE With Me' safer sex kits (mail order or pick up at the CRC).
             </p>
             <div className="flex flex-wrap items-center gap-4 pt-2">
-              <a 
-                href="https://www.diversitycollectivevc.org/schedule-your-appointment/#hivSchedule"
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link 
+                to="/appointments"
                 className="btn-primary py-3.5 px-6 text-xs sm:text-sm font-bold shadow-md hover:shadow-xl inline-flex items-center gap-2"
               >
                 <span>Book Free Appointment Online</span>
-                <ArrowUpRight className="w-4 h-4" />
-              </a>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
               <a 
                 href="https://wkf.ms/3PhSCAl"
                 target="_blank"

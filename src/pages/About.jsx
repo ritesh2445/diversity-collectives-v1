@@ -152,19 +152,34 @@ export default function About() {
               maxTilt={6}
               glare={true}
             >
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
                     {member.role}
                   </span>
                   <Award className="w-4 h-4 text-purple-600" />
                 </div>
-                <h3 className="font-display text-xl sm:text-2xl font-black text-slate-950 tracking-tight">
-                  {member.name}
-                </h3>
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-medium">
-                  {member.bio}
-                </p>
+
+                {/* Circular Board Member Portrait */}
+                <div className="flex justify-center py-2">
+                  <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-4 border-purple-200/90 shadow-md ring-4 ring-purple-50 bg-purple-50 flex-shrink-0">
+                    <img 
+                      src={member.photo || member.image || "/images/volunteers.jpg"} 
+                      alt={member.name} 
+                      className="w-full h-full object-cover"
+                      onError={(e) => { e.target.src = "/images/volunteers.jpg"; }}
+                    />
+                  </div>
+                </div>
+
+                <div className="text-center sm:text-left">
+                  <h3 className="font-display text-xl sm:text-2xl font-black text-slate-950 tracking-tight">
+                    {member.name}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-medium mt-2">
+                    {member.bio}
+                  </p>
+                </div>
               </div>
               <div className="pt-5 mt-5 border-t border-slate-100 text-xs font-bold text-[#5A1E65] flex items-center justify-between">
                 <span>Diversity Collective VC</span>
