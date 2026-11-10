@@ -350,10 +350,10 @@ export const INITIAL_SEEDS = [
   {
     sql: `INSERT OR REPLACE INTO admin_users (id, email, name, role, password_hash, salt, is_active)
           VALUES 
-          ('adm-1', 'admin@diversitycollective.org', 'Tess Allen (Executive Director)', 'admin', '8b5a794966c62c2f0fcf6408226068222383c27e3848b61e27a69623e1e07297', 'dcvc_salt_2026', 1),
-          ('adm-2', 'moderator@diversitycollective.org', 'Community Directory Moderator', 'approver', '8b5a794966c62c2f0fcf6408226068222383c27e3848b61e27a69623e1e07297', 'dcvc_salt_2026', 1),
-          ('adm-3', 'editor@diversitycollective.org', 'Communications Specialist', 'editor', '8b5a794966c62c2f0fcf6408226068222383c27e3848b61e27a69623e1e07297', 'dcvc_salt_2026', 1),
-          ('adm-4', 'board-observer@diversitycollective.org', 'Board Secretary (Audit)', 'read_only', '8b5a794966c62c2f0fcf6408226068222383c27e3848b61e27a69623e1e07297', 'dcvc_salt_2026', 1)`,
+          ('adm-1', 'admin@diversitycollective.org', 'Tess Allen (Executive Director)', 'admin', '7b50f4cc95a9d7b234780c529e9f5c330da5a3ca8114eafb003ccd47c11e4dd5', 'dcvc_salt_2026', 1),
+          ('adm-2', 'moderator@diversitycollective.org', 'Community Directory Moderator', 'approver', '7b50f4cc95a9d7b234780c529e9f5c330da5a3ca8114eafb003ccd47c11e4dd5', 'dcvc_salt_2026', 1),
+          ('adm-3', 'editor@diversitycollective.org', 'Communications Specialist', 'editor', '7b50f4cc95a9d7b234780c529e9f5c330da5a3ca8114eafb003ccd47c11e4dd5', 'dcvc_salt_2026', 1),
+          ('adm-4', 'board-observer@diversitycollective.org', 'Board Secretary (Audit)', 'read_only', '7b50f4cc95a9d7b234780c529e9f5c330da5a3ca8114eafb003ccd47c11e4dd5', 'dcvc_salt_2026', 1)`,
     args: []
   },
 

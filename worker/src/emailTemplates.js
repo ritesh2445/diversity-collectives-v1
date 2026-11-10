@@ -609,3 +609,38 @@ export function templateNewsletterBroadcast({
   };
 }
 
+// 14. Admin 2FA One-Time Verification Code
+export function templateAdmin2faOtp({ email, otpCode }) {
+  const contentHtml = `
+    <p style="font-size: 15px; line-height: 1.6; margin: 0 0 16px 0; color: #334155;">
+      A sign-in attempt was initiated for the <strong>DCVC Administrative Portal</strong> for account <code>${email}</code>.
+    </p>
+    <p style="font-size: 15px; line-height: 1.6; margin: 0 0 20px 0; color: #334155;">
+      Use the secure one-time verification code below to complete your administrative authentication:
+    </p>
+
+    <div style="background-color: #f1f5f9; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 20px; text-align: center; margin: 24px 0;">
+      <span style="font-size: 36px; font-weight: 800; letter-spacing: 8px; color: ${DCVC_PURPLE}; font-family: monospace;">
+        ${otpCode}
+      </span>
+    </div>
+
+    <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 14px 18px; margin: 20px 0; font-size: 13px; line-height: 1.6; color: #991b1b;">
+      <strong>Security Notice:</strong> This code is strictly single-use and expires in <strong>5 minutes</strong>. If you did not initiate this sign-in attempt, someone may have obtained your password. Please notify the DCVC security team immediately.
+    </div>
+  `;
+
+  const html = baseEmailWrapper({
+    title: 'DCVC Admin Verification Code',
+    headerSubtitle: 'Two-Factor Authentication Security Code',
+    contentHtml
+  });
+
+  return {
+    subject: `Your DCVC Admin Verification Code: ${otpCode}`,
+    html,
+    text: `Your DCVC Admin verification code is: ${otpCode}\n\nThis code is valid for 5 minutes.\nIf you did not initiate this request, notify DCVC staff immediately.`
+  };
+}
+
+

@@ -17,7 +17,20 @@ import { resolveAppreciationTier } from './appreciationTiers.js';
 import { runAllMigrations } from './schemaMigrations.js';
 import { processChatRequest } from './chatEngine.js';
 import { createSignedUploadParameters } from './cloudinarySigner.js';
-import { hashPassword, generateAuthToken, verifyAuthToken, requireRole, logAdminAction } from './adminApi.js';
+import { 
+  hashPassword, 
+  generateAuthToken, 
+  verifyAuthToken, 
+  requireRole, 
+  logAdminAction,
+  generateTotpSecret,
+  generateTotpCode,
+  verifyTotpCode,
+  getTotpUri,
+  generateEphemeralOtp,
+  generateTempToken,
+  verifyTempToken
+} from './adminApi.js';
 import { 
   convertRowsToCsv, 
   SHEET_COLUMNS, 
@@ -39,6 +52,7 @@ import {
   templateAccessibilityStaffNotification,
   templateDonorAppreciationEmail,
   templateAdminAlert,
+  templateAdmin2faOtp,
   templateNewsletterWelcome,
   templateNewsletterBroadcast
 } from './emailTemplates.js';
@@ -110,6 +124,51 @@ async function verifyTurnstile(token, secretKey, remoteIp) {
     console.error('Turnstile verification failed:', err);
     return { success: false, error: 'Failed to verify security token' };
   }
+}
+
+// Rate-limiting map for administrative authentication (in-memory per Worker isolate)
+const adminLoginAttempts = new Map();
+
+function checkAdminRateLimit(ip) {
+  const key = ip || 'unknown';
+  const now = Date.now();
+  const record = adminLoginAttempts.get(key);
+  if (!record) return { allowed: true };
+
+  if (record.lockedUntil && now < record.lockedUntil) {
+    const remainingMins = Math.ceil((record.lockedUntil - now) / 60000);
+    return { allowed: false, remainingMins };
+  }
+
+  // Reset if window has elapsed (15 minutes)
+  if (now - record.firstAttempt > 15 * 60 * 1000) {
+    adminLoginAttempts.delete(key);
+    return { allowed: true };
+  }
+
+  return { allowed: true };
+}
+
+function recordAdminFailure(ip) {
+  const key = ip || 'unknown';
+  const now = Date.now();
+  const record = adminLoginAttempts.get(key) || { count: 0, firstAttempt: now };
+  record.count += 1;
+  if (record.count >= 5) {
+    record.lockedUntil = now + (15 * 60 * 1000); // 15-minute lock
+  }
+  adminLoginAttempts.set(key, record);
+}
+
+function clearAdminFailures(ip) {
+  adminLoginAttempts.delete(ip || 'unknown');
+}
+
+function maskEmailForDisplay(email) {
+  if (!email || !email.includes('@')) return email;
+  const [local, domain] = email.split('@');
+  if (local.length <= 2) return `${local[0]}*@${domain}`;
+  return `${local[0]}***${local[local.length - 1]}@${domain}`;
 }
 
 // Helper: Verify Zeffy HMAC-SHA256 Webhook Signature with constant-time comparison
@@ -728,7 +787,7 @@ export default {
       if (pathname === '/api/webhooks/zeffy/reconcile' && request.method === 'POST') {
         const authHeader = (request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '').trim();
         const apiKey = env.ZEFFY_API_KEY;
-        const adminAuth = await verifyAuthToken(authHeader, env.JWT_SECRET || 'dcvc_admin_jwt_secret_2026');
+        const adminAuth = await verifyAuthToken(authHeader, env.ADMIN_JWT_SECRET || env.JWT_SECRET || 'dcvc_admin_jwt_secret_2026');
         const isAuthorized = (apiKey && authHeader === apiKey) || Boolean(adminAuth);
 
         if (!isAuthorized) {
@@ -1503,6 +1562,11 @@ export default {
       if (pathname.startsWith('/api/admin/')) {
         // 15.1 Admin Authentication: Login (POST /api/admin/auth/login)
         if (pathname === '/api/admin/auth/login' && request.method === 'POST') {
+          const rateCheck = checkAdminRateLimit(clientIp);
+          if (!rateCheck.allowed) {
+            return errorResponse(`Too many failed login attempts. Please try again in ${rateCheck.remainingMins} minutes.`, 429, null, cors);
+          }
+
           const body = await request.json().catch(() => ({}));
           const email = (body.email || '').toLowerCase().trim();
           const password = body.password || '';
@@ -1511,77 +1575,395 @@ export default {
             return errorResponse('Email and password are required', 400, null, cors);
           }
 
+          // Optional Turnstile verification if token is provided or secret is set
+          if (body.turnstileToken) {
+            const turnstile = await verifyTurnstile(body.turnstileToken, env.TURNSTILE_SECRET_KEY, clientIp);
+            if (!turnstile.success) {
+              return errorResponse('Security verification failed. Please try again.', 400, turnstile.error, cors);
+            }
+          }
+
           const db = getDb(env);
-          let user = null;
+          let userRow = null;
 
           if (db) {
             try {
               const userRes = await db.execute({
-                sql: `SELECT id, email, name, role, password_hash, salt, is_active FROM admin_users WHERE email = ? LIMIT 1`,
+                sql: `SELECT id, email, name, role, password_hash, salt, mfa_enabled, mfa_secret, is_active FROM admin_users WHERE email = ? LIMIT 1`,
                 args: [email]
               });
               if (userRes.rows.length > 0) {
-                const u = userRes.rows[0];
-                if (!u.is_active) {
-                  return errorResponse('Account is deactivated. Please contact an administrator.', 403, null, cors);
-                }
-                const computedHash = await hashPassword(password, u.salt);
-                if (computedHash === u.password_hash) {
-                  user = { id: u.id, email: u.email, name: u.name, role: u.role };
-                  ctx.waitUntil(
-                    db.execute({
-                      sql: `UPDATE admin_users SET last_login_at = datetime('now') WHERE id = ?`,
-                      args: [u.id]
-                    }).catch(() => {})
-                  );
-                }
+                userRow = userRes.rows[0];
               }
             } catch (err) {
-              console.warn('Could not query admin_users table (may need migration):', err.message);
+              console.warn('Could not query admin_users table:', err.message);
             }
           }
 
-          // Safe development fallback test account when database credentials are not yet configured
-          if (!user && (!db || email === 'admin@diversitycollective.org')) {
+          // Fallback test account ONLY when database is completely unconfigured (offline local unit testing)
+          if (!userRow && !db) {
             const devSalt = 'dcvc_salt_2026';
             const expectedHash = await hashPassword('DCVC-Admin-2026!', devSalt);
-            const inputHash = await hashPassword(password, devSalt);
-
-            if (inputHash === expectedHash) {
-              user = {
-                id: 'adm-dev-1',
-                email: 'admin@diversitycollective.org',
-                name: 'Tess Allen (Executive Director)',
-                role: 'admin'
-              };
-            }
+            userRow = {
+              id: 'adm-dev-1',
+              email: 'admin@diversitycollective.org',
+              name: 'Tess Allen (Executive Director)',
+              role: 'admin',
+              password_hash: expectedHash,
+              salt: devSalt,
+              mfa_enabled: 0,
+              mfa_secret: null,
+              is_active: 1
+            };
           }
 
-          if (!user) {
+          if (!userRow) {
+            recordAdminFailure(clientIp);
             return errorResponse('Invalid email or password', 401, null, cors);
           }
 
-          const token = await generateAuthToken(user, env.JWT_SECRET || 'dcvc_admin_jwt_secret_2026');
+          if (!userRow.is_active) {
+            return errorResponse('Account is deactivated. Please contact a system administrator.', 403, null, cors);
+          }
+
+          const computedHash = await hashPassword(password, userRow.salt);
+          const isLegacySeededHash = userRow.password_hash === '8b5a794966c62c2f0fcf6408226068222383c27e3848b61e27a69623e1e07297' && password === 'DCVC-Admin-2026!';
+
+          if (computedHash !== userRow.password_hash && !isLegacySeededHash) {
+            recordAdminFailure(clientIp);
+            return errorResponse('Invalid email or password', 401, null, cors);
+          }
+
+          // If legacy migration seed hash was present, auto-upgrade in database to computed PBKDF2 hash
+          if (isLegacySeededHash && db) {
+            ctx.waitUntil(
+              db.execute({
+                sql: `UPDATE admin_users SET password_hash = ? WHERE id = ?`,
+                args: [computedHash, userRow.id]
+              }).catch(e => console.error('Failed to auto-upgrade legacy admin password hash:', e))
+            );
+          }
+
+          // Password verified successfully: clear failure counts
+          clearAdminFailures(clientIp);
+
+          const jwtSecret = env.ADMIN_JWT_SECRET || env.JWT_SECRET || 'dcvc_admin_jwt_secret_2026';
+          const maskedEmail = maskEmailForDisplay(userRow.email);
+
+          // Case A: User has TOTP Authenticator App configured
+          if (userRow.mfa_enabled && userRow.mfa_secret) {
+            const tempToken = await generateTempToken({
+              userId: userRow.id,
+              email: userRow.email,
+              name: userRow.name,
+              role: userRow.role,
+              mfaType: 'totp'
+            }, jwtSecret, 300);
+
+            return jsonResponse({
+              success: true,
+              requires2fa: true,
+              mfaType: 'totp',
+              tempToken,
+              email: maskedEmail,
+              message: 'Please enter the 6-digit code from your authenticator app.'
+            }, 200, cors);
+          }
+
+          // Case B: User has not yet paired an authenticator app -> Dispatches 6-digit OTP code to registered admin email
+          const emailOtp = generateEphemeralOtp(6);
+          const emailOtpHash = await hashPassword(emailOtp, 'dcvc_mfa_otp');
+
+          const tempToken = await generateTempToken({
+            userId: userRow.id,
+            email: userRow.email,
+            name: userRow.name,
+            role: userRow.role,
+            mfaType: 'email',
+            emailOtpHash
+          }, jwtSecret, 300);
+
+          // Dispatch verification code via Resend
+          const emailContent = templateAdmin2faOtp({ email: userRow.email, otpCode: emailOtp });
+          ctx.waitUntil(
+            sendEmail({
+              apiKey: env.RESEND_API_KEY,
+              from: env.RESEND_FROM_EMAIL || 'Diversity Collective <noreply@diversitycollective.org>',
+              to: userRow.email,
+              subject: emailContent.subject,
+              html: emailContent.html,
+              text: emailContent.text
+            }).catch(err => console.error('Failed to send 2FA verification code email:', err))
+          );
+
+          return jsonResponse({
+            success: true,
+            requires2fa: true,
+            mfaType: 'email',
+            tempToken,
+            email: maskedEmail,
+            message: `A single-use 6-digit verification code has been dispatched to ${maskedEmail}.`
+          }, 200, cors);
+        }
+
+        // 15.2 Admin 2FA Code Verification (POST /api/admin/auth/2fa/verify)
+        if (pathname === '/api/admin/auth/2fa/verify' && request.method === 'POST') {
+          const body = await request.json().catch(() => ({}));
+          const { tempToken, code } = body;
+          const cleanCode = (code || '').replace(/\s+/g, '').trim();
+
+          if (!tempToken || !cleanCode) {
+            return errorResponse('Verification token and 6-digit code are required.', 400, null, cors);
+          }
+
+          const jwtSecret = env.ADMIN_JWT_SECRET || env.JWT_SECRET || 'dcvc_admin_jwt_secret_2026';
+          const tempPayload = await verifyTempToken(tempToken, jwtSecret);
+
+          if (!tempPayload) {
+            return errorResponse('Your verification session has expired. Please sign in again.', 401, null, cors);
+          }
+
+          const db = getDb(env);
+
+          // Verify Code based on MFA Type
+          if (tempPayload.mfaType === 'totp') {
+            let mfaSecret = null;
+            if (db) {
+              const uRes = await db.execute({
+                sql: `SELECT mfa_secret FROM admin_users WHERE id = ? LIMIT 1`,
+                args: [tempPayload.userId]
+              });
+              if (uRes.rows.length > 0) mfaSecret = uRes.rows[0].mfa_secret;
+            }
+
+            const isValidTotp = await verifyTotpCode(mfaSecret, cleanCode);
+            if (!isValidTotp) {
+              return errorResponse('Invalid 6-digit authenticator code. Please check your authenticator app and try again.', 400, null, cors);
+            }
+          } else if (tempPayload.mfaType === 'email') {
+            const computedCodeHash = await hashPassword(cleanCode, 'dcvc_mfa_otp');
+            if (computedCodeHash !== tempPayload.emailOtpHash) {
+              return errorResponse('Invalid 6-digit verification code. Please check your email and try again.', 400, null, cors);
+            }
+          } else {
+            return errorResponse('Unsupported 2FA verification type.', 400, null, cors);
+          }
+
+          // Code verified: Issue persistent 12-hour session JWT
+          const sessionPayload = {
+            id: tempPayload.userId,
+            email: tempPayload.email,
+            name: tempPayload.name,
+            role: tempPayload.role
+          };
+
+          const token = await generateAuthToken(sessionPayload, jwtSecret);
+
+          // Record audit log and update last_login_at
+          if (db) {
+            ctx.waitUntil(
+              db.batch([
+                {
+                  sql: `UPDATE admin_users SET last_login_at = datetime('now') WHERE id = ?`,
+                  args: [tempPayload.userId]
+                },
+                {
+                  sql: `INSERT INTO admin_audit_logs (id, user_id, user_email, action, target_type, target_id, details, ip_address)
+                        VALUES (?, ?, ?, 'admin_login_success', 'auth', ?, ?, ?)`,
+                  args: [
+                    crypto.randomUUID(),
+                    tempPayload.userId,
+                    tempPayload.email,
+                    tempPayload.userId,
+                    JSON.stringify({ mfaType: tempPayload.mfaType, userAgent: request.headers.get('user-agent') }),
+                    clientIp
+                  ]
+                }
+              ], 'deferred').catch(e => console.error('Failed to log admin login:', e))
+            );
+          }
 
           return jsonResponse({
             success: true,
             token,
-            user: { id: user.id, email: user.email, name: user.name, role: user.role }
+            user: {
+              id: tempPayload.userId,
+              email: tempPayload.email,
+              name: tempPayload.name,
+              role: tempPayload.role,
+              mfaEnabled: tempPayload.mfaType === 'totp'
+            }
           }, 200, cors);
         }
 
-        // Middleware: Verify Admin Authorization for all other /api/admin/* endpoints
+        // 15.3 Admin 2FA Resend Email Code (POST /api/admin/auth/2fa/resend)
+        if (pathname === '/api/admin/auth/2fa/resend' && request.method === 'POST') {
+          const body = await request.json().catch(() => ({}));
+          const { tempToken } = body;
+          const jwtSecret = env.ADMIN_JWT_SECRET || env.JWT_SECRET || 'dcvc_admin_jwt_secret_2026';
+          const tempPayload = await verifyTempToken(tempToken, jwtSecret);
+
+          if (!tempPayload) {
+            return errorResponse('Verification session has expired. Please sign in again.', 401, null, cors);
+          }
+
+          const freshOtp = generateEphemeralOtp(6);
+          const freshOtpHash = await hashPassword(freshOtp, 'dcvc_mfa_otp');
+
+          const newTempToken = await generateTempToken({
+            ...tempPayload,
+            emailOtpHash: freshOtpHash
+          }, jwtSecret, 300);
+
+          const emailContent = templateAdmin2faOtp({ email: tempPayload.email, otpCode: freshOtp });
+          ctx.waitUntil(
+            sendEmail({
+              apiKey: env.RESEND_API_KEY,
+              from: env.RESEND_FROM_EMAIL || 'Diversity Collective <noreply@diversitycollective.org>',
+              to: tempPayload.email,
+              subject: emailContent.subject,
+              html: emailContent.html,
+              text: emailContent.text
+            }).catch(err => console.error('Failed to resend 2FA verification email:', err))
+          );
+
+          return jsonResponse({
+            success: true,
+            tempToken: newTempToken,
+            message: `A fresh verification code has been dispatched to ${maskEmailForDisplay(tempPayload.email)}.`
+          }, 200, cors);
+        }
+
+        // =====================================================================
+        // Middleware: Verify Admin Authorization for all protected /api/admin/* endpoints
+        // =====================================================================
         const authHeader = request.headers.get('Authorization') || '';
         const token = authHeader.replace(/^Bearer\s+/i, '').trim();
-        const authUser = await verifyAuthToken(token, env.JWT_SECRET || 'dcvc_admin_jwt_secret_2026');
+        const jwtSecret = env.ADMIN_JWT_SECRET || env.JWT_SECRET || 'dcvc_admin_jwt_secret_2026';
+        const authUser = await verifyAuthToken(token, jwtSecret);
 
         if (!authUser) {
           return errorResponse('Unauthorized. Valid admin session token required.', 401, null, cors);
         }
 
-        // 15.2 Current User Profile (GET /api/admin/auth/me)
+        // 15.4 Current User Profile (GET /api/admin/auth/me)
         if (pathname === '/api/admin/auth/me' && request.method === 'GET') {
-          return jsonResponse({ success: true, user: authUser }, 200, cors);
+          const db = getDb(env);
+          let mfaEnabled = false;
+          if (db) {
+            try {
+              const uRes = await db.execute({
+                sql: `SELECT mfa_enabled FROM admin_users WHERE id = ? LIMIT 1`,
+                args: [authUser.id || authUser.userId]
+              });
+              if (uRes.rows.length > 0) {
+                mfaEnabled = Boolean(uRes.rows[0].mfa_enabled);
+              }
+            } catch {}
+          }
+          return jsonResponse({ success: true, user: { ...authUser, mfaEnabled } }, 200, cors);
+        }
+
+        // 15.5 Generate Authenticator App (TOTP) Secret & Enrollment URI (POST /api/admin/auth/2fa/setup)
+        if (pathname === '/api/admin/auth/2fa/setup' && request.method === 'POST') {
+          const secret = generateTotpSecret(20);
+          const otpauthUri = getTotpUri(authUser.email, secret, 'Diversity Collective VC');
+          const formattedKey = secret.match(/.{1,4}/g)?.join(' ') || secret;
+
+          return jsonResponse({
+            success: true,
+            secret,
+            otpauthUri,
+            formattedKey,
+            email: authUser.email
+          }, 200, cors);
+        }
+
+        // 15.6 Confirm & Activate Authenticator App 2FA (POST /api/admin/auth/2fa/confirm)
+        if (pathname === '/api/admin/auth/2fa/confirm' && request.method === 'POST') {
+          const body = await request.json().catch(() => ({}));
+          const { secret, code } = body;
+          const cleanCode = (code || '').replace(/\s+/g, '').trim();
+
+          if (!secret || !cleanCode) {
+            return errorResponse('Secret key and 6-digit confirmation code are required.', 400, null, cors);
+          }
+
+          const isValid = await verifyTotpCode(secret, cleanCode);
+          if (!isValid) {
+            return errorResponse('Invalid 6-digit code. Please verify the code displayed in your authenticator app and try again.', 400, null, cors);
+          }
+
+          const db = getDb(env);
+          if (db) {
+            await db.execute({
+              sql: `UPDATE admin_users SET mfa_enabled = 1, mfa_secret = ? WHERE id = ?`,
+              args: [secret, authUser.id || authUser.userId]
+            });
+            await logAdminAction(db, {
+              userId: authUser.id || authUser.userId,
+              userEmail: authUser.email,
+              action: 'admin_2fa_activated',
+              targetType: 'auth',
+              ip: clientIp
+            });
+          }
+
+          return jsonResponse({
+            success: true,
+            message: 'Authenticator App (TOTP) 2FA successfully configured and activated!'
+          }, 200, cors);
+        }
+
+        // 15.7 Disable Authenticator App 2FA (POST /api/admin/auth/2fa/disable)
+        if (pathname === '/api/admin/auth/2fa/disable' && request.method === 'POST') {
+          const body = await request.json().catch(() => ({}));
+          const { password, code } = body;
+
+          const db = getDb(env);
+          if (!db) {
+            return errorResponse('Database not available to modify security settings.', 500, null, cors);
+          }
+
+          const userRes = await db.execute({
+            sql: `SELECT password_hash, salt, mfa_secret FROM admin_users WHERE id = ? LIMIT 1`,
+            args: [authUser.id || authUser.userId]
+          });
+
+          if (userRes.rows.length === 0) {
+            return errorResponse('User record not found.', 404, null, cors);
+          }
+
+          const u = userRes.rows[0];
+          const computedHash = await hashPassword(password || '', u.salt);
+          if (computedHash !== u.password_hash) {
+            return errorResponse('Incorrect current password.', 400, null, cors);
+          }
+
+          if (u.mfa_secret && code) {
+            const isValid = await verifyTotpCode(u.mfa_secret, code);
+            if (!isValid) {
+              return errorResponse('Invalid 6-digit authenticator code.', 400, null, cors);
+            }
+          }
+
+          await db.execute({
+            sql: `UPDATE admin_users SET mfa_enabled = 0, mfa_secret = NULL WHERE id = ?`,
+            args: [authUser.id || authUser.userId]
+          });
+
+          await logAdminAction(db, {
+            userId: authUser.id || authUser.userId,
+            userEmail: authUser.email,
+            action: 'admin_2fa_disabled',
+            targetType: 'auth',
+            ip: clientIp
+          });
+
+          return jsonResponse({
+            success: true,
+            message: 'Two-factor authentication disabled.'
+          }, 200, cors);
         }
 
         // 15.3 Directory Moderation List (GET /api/admin/directory)

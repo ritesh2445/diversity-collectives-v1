@@ -14,6 +14,11 @@ import {
   FileText, 
   RefreshCw, 
   ShieldCheck, 
+  ShieldAlert,
+  Shield,
+  Key,
+  QrCode,
+  Copy,
   Inbox, 
   Briefcase, 
   Calendar, 
@@ -25,6 +30,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { usePageMeta } from '../utils/seo';
+import TurnstileWidget from '../components/TurnstileWidget';
 
 const API_BASE_URL = typeof window !== 'undefined' && window.location.origin
   ? (import.meta.env?.VITE_API_URL || import.meta.env?.VITE_API_BASE_URL || '/api')
@@ -108,21 +114,49 @@ export default function Admin() {
     canonicalPath: '/admin'
   });
 
-  // Auth State
+  // Auth State (Strictly Session-Scoped; No Long-Lived Token in LocalStorage)
   const [token, setToken] = useState(() => {
     if (typeof window !== 'undefined') {
-      return sessionStorage.getItem('dcvc_admin_token') || localStorage.getItem('dcvc_admin_token') || '';
+      localStorage.removeItem('dcvc_admin_token'); // Purge legacy persistent storage
+      return sessionStorage.getItem('dcvc_admin_token') || '';
     }
     return '';
   });
   const [user, setUser] = useState(null);
   const [loginEmail, setLoginEmail] = useState('admin@diversitycollective.org');
   const [loginPassword, setLoginPassword] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState('');
 
-  // Active Tab: 'newsletter' | 'directory' | 'inquiries' | 'audit'
+  // 2FA Verification State
+  const [pending2fa, setPending2fa] = useState(null); // { requires2fa: true, mfaType: 'totp' | 'email', tempToken, email, message }
+  const [twoFactorCode, setTwoFactorCode] = useState('');
+  const [twoFactorLoading, setTwoFactorLoading] = useState(false);
+  const [twoFactorSuccessMsg, setTwoFactorSuccessMsg] = useState('');
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  // Authenticator App (TOTP) Setup State
+  const [setupTotpData, setSetupTotpData] = useState(null);
+  const [setupTotpCode, setSetupTotpCode] = useState('');
+  const [setupTotpLoading, setSetupTotpLoading] = useState(false);
+  const [setupTotpStatus, setSetupTotpStatus] = useState(null);
+  const [copiedKey, setCopiedKey] = useState(false);
+  const [showDisableModal, setShowDisableModal] = useState(false);
+  const [disableTotpPassword, setDisableTotpPassword] = useState('');
+  const [disableTotpCode, setDisableTotpCode] = useState('');
+  const [disableTotpLoading, setDisableTotpLoading] = useState(false);
+
+  // Active Tab: 'newsletter' | 'directory' | 'inquiries' | 'security'
   const [activeTab, setActiveTab] = useState('newsletter');
+
+  // Cooldown timer for email OTP resend
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown]);
 
   // Newsletter Studio State
   const [subject, setSubject] = useState(NEWSLETTER_PRESETS[0].subject);
@@ -181,20 +215,35 @@ export default function Admin() {
     e.preventDefault();
     setAuthLoading(true);
     setAuthError('');
+    setTwoFactorSuccessMsg('');
 
     try {
       const res = await fetch(`${API_BASE_URL}/admin/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: loginEmail, password: loginPassword })
+        body: JSON.stringify({ 
+          email: loginEmail, 
+          password: loginPassword,
+          turnstileToken: turnstileToken || undefined
+        })
       });
       const data = await res.json();
 
+      // Case: 2FA Challenge Required (Strict Organization Security Policy)
+      if (data.success && data.requires2fa) {
+        setPending2fa(data);
+        setTwoFactorCode('');
+        setTwoFactorSuccessMsg(data.message || '');
+        return;
+      }
+
+      // Fallback Direct Token (if 2FA was already completed in session)
       if (data.success && data.token) {
         sessionStorage.setItem('dcvc_admin_token', data.token);
-        localStorage.setItem('dcvc_admin_token', data.token);
+        localStorage.removeItem('dcvc_admin_token');
         setToken(data.token);
         setUser(data.user);
+        setPending2fa(null);
       } else {
         setAuthError(data.error || 'Invalid credentials. Please verify your email and password.');
       }
@@ -205,11 +254,173 @@ export default function Admin() {
     }
   };
 
+  const handleVerify2fa = async (e) => {
+    if (e) e.preventDefault();
+    const cleanCode = (twoFactorCode || '').replace(/\s+/g, '').trim();
+    if (!cleanCode || cleanCode.length !== 6) {
+      setAuthError('Please enter a valid 6-digit security code.');
+      return;
+    }
+
+    setTwoFactorLoading(true);
+    setAuthError('');
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/auth/2fa/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tempToken: pending2fa.tempToken,
+          code: cleanCode
+        })
+      });
+      const data = await res.json();
+
+      if (data.success && data.token) {
+        sessionStorage.setItem('dcvc_admin_token', data.token);
+        localStorage.removeItem('dcvc_admin_token');
+        setToken(data.token);
+        setUser(data.user);
+        setPending2fa(null);
+        setTwoFactorCode('');
+        setTwoFactorSuccessMsg('');
+      } else {
+        setAuthError(data.error || 'Invalid 6-digit code. Please verify and try again.');
+      }
+    } catch {
+      setAuthError('Network communication failure during 2FA verification.');
+    } finally {
+      setTwoFactorLoading(false);
+    }
+  };
+
+  const handleResendEmailCode = async () => {
+    if (resendCooldown > 0 || !pending2fa?.tempToken) return;
+    setAuthError('');
+    setTwoFactorSuccessMsg('');
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/auth/2fa/resend`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tempToken: pending2fa.tempToken })
+      });
+      const data = await res.json();
+      if (data.success && data.tempToken) {
+        setPending2fa(prev => ({ ...prev, tempToken: data.tempToken }));
+        setTwoFactorSuccessMsg(data.message || 'Fresh 6-digit code dispatched to your email.');
+        setResendCooldown(60);
+      } else {
+        setAuthError(data.error || 'Failed to dispatch new verification code.');
+      }
+    } catch {
+      setAuthError('Network communication error during code resend.');
+    }
+  };
+
+  const handleStartTotpSetup = async () => {
+    setSetupTotpLoading(true);
+    setSetupTotpStatus(null);
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/auth/2fa/setup`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSetupTotpData(data);
+        setSetupTotpCode('');
+      } else {
+        setSetupTotpStatus({ success: false, message: data.error || 'Failed to initialize 2FA setup.' });
+      }
+    } catch {
+      setSetupTotpStatus({ success: false, message: 'Network error connecting to setup endpoint.' });
+    } finally {
+      setSetupTotpLoading(false);
+    }
+  };
+
+  const handleConfirmTotpSetup = async (e) => {
+    if (e) e.preventDefault();
+    const clean = setupTotpCode.replace(/\s+/g, '').trim();
+    if (!clean || clean.length !== 6) {
+      setSetupTotpStatus({ success: false, message: 'Please enter the 6-digit code from your app.' });
+      return;
+    }
+
+    setSetupTotpLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/auth/2fa/confirm`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          secret: setupTotpData.secret,
+          code: clean
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setUser(prev => ({ ...prev, mfaEnabled: true }));
+        setSetupTotpStatus({ success: true, message: 'Authenticator App (TOTP) 2FA successfully configured and active!' });
+        setSetupTotpData(null);
+        setSetupTotpCode('');
+      } else {
+        setSetupTotpStatus({ success: false, message: data.error || 'Invalid confirmation code. Please check your authenticator app.' });
+      }
+    } catch {
+      setSetupTotpStatus({ success: false, message: 'Network error confirming 2FA.' });
+    } finally {
+      setSetupTotpLoading(false);
+    }
+  };
+
+  const handleDisableTotp = async (e) => {
+    if (e) e.preventDefault();
+    if (!disableTotpPassword) {
+      setSetupTotpStatus({ success: false, message: 'Password is required to disable 2FA.' });
+      return;
+    }
+
+    setDisableTotpLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/auth/2fa/disable`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          password: disableTotpPassword,
+          code: disableTotpCode.trim() || undefined
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setUser(prev => ({ ...prev, mfaEnabled: false }));
+        setShowDisableModal(false);
+        setDisableTotpPassword('');
+        setDisableTotpCode('');
+        setSetupTotpStatus({ success: true, message: 'Two-factor authenticator app has been deactivated.' });
+      } else {
+        setSetupTotpStatus({ success: false, message: data.error || 'Failed to disable 2FA.' });
+      }
+    } catch {
+      setSetupTotpStatus({ success: false, message: 'Network error disabling 2FA.' });
+    } finally {
+      setDisableTotpLoading(false);
+    }
+  };
+
   const handleLogout = () => {
     sessionStorage.removeItem('dcvc_admin_token');
     localStorage.removeItem('dcvc_admin_token');
     setToken('');
     setUser(null);
+    setPending2fa(null);
   };
 
   const fetchSubscriberStats = async () => {
@@ -337,9 +548,118 @@ export default function Admin() {
   };
 
   // =========================================================================
-  // VIEW: Login Screen
+  // VIEW: Login Screen & 2FA Challenge Screen
   // =========================================================================
   if (!user) {
+    // 2FA Challenge Screen
+    if (pending2fa) {
+      return (
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 sm:p-6 py-16">
+          <div className="w-full max-w-md bg-white rounded-3xl shadow-xl border border-slate-200 p-8 sm:p-10 space-y-8 animate-fadeIn">
+            <div className="text-center space-y-2">
+              <div className="w-14 h-14 rounded-2xl bg-purple-100 text-[#5A1E65] flex items-center justify-center mx-auto mb-3 shadow-inner">
+                <ShieldCheck className="w-7 h-7" />
+              </div>
+              <span className="inline-block px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-purple-50 text-[#5A1E65] border border-purple-200">
+                {pending2fa.mfaType === 'totp' ? 'Authenticator App 2FA' : 'Email Security Code'}
+              </span>
+              <h1 className="font-display text-2xl font-black text-slate-950">
+                Two-Factor Authentication
+              </h1>
+              <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                {pending2fa.message || `Enter the 6-digit verification code to complete sign-in for ${pending2fa.email}.`}
+              </p>
+            </div>
+
+            {authError && (
+              <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-800 flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                <span>{authError}</span>
+              </div>
+            )}
+
+            {twoFactorSuccessMsg && (
+              <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <span>{twoFactorSuccessMsg}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleVerify2fa} className="space-y-5">
+              <div className="space-y-2 text-center">
+                <label className="text-xs font-bold text-slate-700 block">
+                  6-Digit Verification Code
+                </label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  autoFocus
+                  required
+                  maxLength={6}
+                  value={twoFactorCode}
+                  onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, ''))}
+                  className="w-full px-4 py-3.5 rounded-2xl border-2 border-slate-300 focus:border-[#5A1E65] focus:ring-4 focus:ring-purple-100 text-center font-mono text-2xl font-black tracking-[0.4em] outline-none transition-all placeholder:text-slate-300 placeholder:tracking-widest"
+                  placeholder="000000"
+                />
+                <p className="text-[11px] text-slate-400">
+                  {pending2fa.mfaType === 'totp' 
+                    ? 'Check your authenticator app (Google Authenticator, Authy, Apple Passwords).'
+                    : `Check your inbox at ${pending2fa.email} (valid for 5 minutes).`}
+                </p>
+              </div>
+
+              <button
+                type="submit"
+                disabled={twoFactorLoading || twoFactorCode.length !== 6}
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#5A1E65] to-purple-800 text-white font-extrabold text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                {twoFactorLoading ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Verifying Code...</span>
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>Verify & Open Admin Workspace</span>
+                  </>
+                )}
+              </button>
+
+              {pending2fa.mfaType === 'email' && (
+                <div className="text-center pt-1">
+                  <button
+                    type="button"
+                    onClick={handleResendEmailCode}
+                    disabled={resendCooldown > 0}
+                    className="text-xs font-bold text-[#5A1E65] hover:underline disabled:opacity-50 cursor-pointer"
+                  >
+                    {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : 'Resend Code via Email'}
+                  </button>
+                </div>
+              )}
+            </form>
+
+            <div className="pt-4 border-t border-slate-100 text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setPending2fa(null);
+                  setTwoFactorCode('');
+                  setAuthError('');
+                  setTwoFactorSuccessMsg('');
+                }}
+                className="text-xs font-bold text-slate-500 hover:text-slate-800 cursor-pointer"
+              >
+                ← Back to sign-in credentials
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Step 1: Login Form
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 sm:p-6 py-16">
         <div className="w-full max-w-md bg-white rounded-3xl shadow-xl border border-slate-200 p-8 sm:p-10 space-y-8">
@@ -351,7 +671,7 @@ export default function Admin() {
               DCVC Administrative Portal
             </h1>
             <p className="text-xs text-slate-500">
-              Sign in with your authorized Diversity Collective staff credentials to access the Newsletter Studio, Directory moderation, and operational inquiries.
+              Sign in with your authorized Diversity Collective staff credentials. Second-factor authentication (2FA) is enforced.
             </p>
           </div>
 
@@ -391,6 +711,16 @@ export default function Admin() {
               />
             </div>
 
+            {/* Cloudflare Turnstile CAPTCHA Protection */}
+            <div className="py-2 flex justify-center">
+              <TurnstileWidget
+                onVerify={(token) => setTurnstileToken(token)}
+                onExpire={() => setTurnstileToken('')}
+                theme="light"
+                size="flexible"
+              />
+            </div>
+
             <button
               type="submit"
               disabled={authLoading}
@@ -404,15 +734,19 @@ export default function Admin() {
               ) : (
                 <>
                   <Lock className="w-4 h-4" />
-                  <span>Sign In to Admin Workspace</span>
+                  <span>Sign In & Continue to 2FA</span>
                 </>
               )}
             </button>
           </form>
 
-          <div className="pt-4 border-t border-slate-100 text-center">
+          <div className="pt-4 border-t border-slate-100 text-center space-y-1">
+            <div className="flex items-center justify-center gap-1.5 text-emerald-700 text-xs font-bold">
+              <ShieldCheck className="w-4 h-4" />
+              <span>Two-Factor Authentication Protected</span>
+            </div>
             <p className="text-[11px] text-slate-400">
-              Protected by PBKDF2-SHA256 authenticated encryption & audit logging.
+              PBKDF2-SHA256 password derivation · Cloudflare Turnstile protected
             </p>
           </div>
         </div>
@@ -508,6 +842,27 @@ export default function Admin() {
           >
             <Inbox className="w-4 h-4" />
             <span>Operational Inquiries</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('security')}
+            className={`py-3 px-4 text-xs font-extrabold border-b-2 flex items-center gap-2 whitespace-nowrap cursor-pointer transition-all ${
+              activeTab === 'security'
+                ? 'border-[#5A1E65] text-[#5A1E65] bg-purple-50/40'
+                : 'border-transparent text-slate-600 hover:text-slate-950'
+            }`}
+          >
+            <ShieldCheck className="w-4 h-4" />
+            <span>Security & 2FA</span>
+            {user?.mfaEnabled ? (
+              <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 font-bold flex items-center gap-1">
+                <Check className="w-2.5 h-2.5" /> 2FA Active
+              </span>
+            ) : (
+              <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-amber-100 text-amber-800 font-bold">
+                Email 2FA
+              </span>
+            )}
           </button>
         </div>
       </header>
@@ -1088,7 +1443,274 @@ export default function Admin() {
           </div>
         )}
 
+        {/* ================================================================= */}
+        {/* TAB 4: SECURITY & TWO-FACTOR AUTHENTICATION                       */}
+        {/* ================================================================= */}
+        {activeTab === 'security' && (
+          <div className="space-y-8 max-w-4xl">
+            {/* Top Security Banner */}
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xs space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-purple-100 text-[#5A1E65] flex items-center justify-center">
+                    <ShieldCheck className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-900">Administrator Security & 2FA</h2>
+                    <p className="text-xs text-slate-500">
+                      Manage cryptographic second-factor authentication and staff credentials.
+                    </p>
+                  </div>
+                </div>
+                <div>
+                  {user?.mfaEnabled ? (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-50 border border-emerald-200 text-emerald-800">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      Authenticator App Active (TOTP)
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-amber-50 border border-amber-200 text-amber-800">
+                      <Clock className="w-4 h-4 text-amber-600" />
+                      Email 2FA Enforced
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Status Alert if any */}
+              {setupTotpStatus && (
+                <div className={`p-4 rounded-2xl text-xs flex items-center gap-3 ${
+                  setupTotpStatus.success 
+                    ? 'bg-emerald-50 border border-emerald-200 text-emerald-800' 
+                    : 'bg-rose-50 border border-rose-200 text-rose-800'
+                }`}>
+                  {setupTotpStatus.success ? (
+                    <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                  )}
+                  <span>{setupTotpStatus.message}</span>
+                </div>
+              )}
+
+              {/* Active User Information Box */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Staff Member</span>
+                  <span className="text-sm font-extrabold text-slate-900 block mt-1">{user?.name}</span>
+                  <span className="text-xs text-slate-500">{user?.email}</span>
+                </div>
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Assigned Role</span>
+                  <span className="text-sm font-extrabold text-[#5A1E65] block mt-1 uppercase tracking-wide">{user?.role}</span>
+                  <span className="text-xs text-slate-500">Role-Based Access Control</span>
+                </div>
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Session Duration</span>
+                  <span className="text-sm font-extrabold text-slate-900 block mt-1">12 Hours (Active)</span>
+                  <span className="text-xs text-slate-500">In-memory HMAC JWT session</span>
+                </div>
+              </div>
+
+              {/* Authenticator App Configuration Section */}
+              <div className="pt-4 space-y-4">
+                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <Smartphone className="w-5 h-5 text-purple-700" />
+                  Time-Based Authenticator App (Google Authenticator, Authy, Apple Passwords)
+                </h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Authenticator apps generate rotating 6-digit verification codes every 30 seconds directly on your mobile device. They work offline without cellular network dependencies and provide superior protection against interception.
+                </p>
+
+                {!setupTotpData && (
+                  <div className="flex flex-wrap gap-3 pt-2">
+                    <button
+                      onClick={handleStartTotpSetup}
+                      disabled={setupTotpLoading}
+                      className="px-5 py-2.5 rounded-xl bg-[#5A1E65] hover:bg-purple-900 text-white font-extrabold text-xs shadow-sm transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                    >
+                      {setupTotpLoading ? (
+                        <>
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                          <span>Generating Secret Key...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Key className="w-3.5 h-3.5" />
+                          <span>{user?.mfaEnabled ? 'Re-Pair Authenticator App' : 'Pair Authenticator App'}</span>
+                        </>
+                      )}
+                    </button>
+
+                    {user?.mfaEnabled && (
+                      <button
+                        onClick={() => setShowDisableModal(true)}
+                        className="px-4 py-2.5 rounded-xl border border-rose-200 text-rose-700 hover:bg-rose-50 font-bold text-xs transition-colors cursor-pointer"
+                      >
+                        Disable Authenticator App
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Setup Modal / Card */}
+                {setupTotpData && (
+                  <div className="p-6 rounded-2xl bg-purple-50/60 border border-purple-200 space-y-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-purple-950 font-bold text-sm">
+                        <Key className="w-4 h-4 text-[#5A1E65]" />
+                        <span>Step 1: Add Account to Your Authenticator App</span>
+                      </div>
+                      <button
+                        onClick={() => setSetupTotpData(null)}
+                        className="p-1 rounded-lg text-slate-400 hover:text-slate-600"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <div className="space-y-3">
+                      <p className="text-xs text-slate-700">
+                        Open <strong>Google Authenticator</strong>, <strong>Authy</strong>, or your mobile password manager, select <strong>Add Account</strong>, and enter the setup key below:
+                      </p>
+
+                      <div className="p-3.5 bg-white rounded-xl border border-purple-200 flex items-center justify-between font-mono text-sm tracking-wider text-slate-900 font-bold">
+                        <span>{setupTotpData.formattedKey}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(setupTotpData.secret);
+                            setCopiedKey(true);
+                            setTimeout(() => setCopiedKey(false), 2000);
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-purple-100 hover:bg-purple-200 text-[#5A1E65] text-xs font-sans font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                        >
+                          {copiedKey ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                          <span>{copiedKey ? 'Copied!' : 'Copy'}</span>
+                        </button>
+                      </div>
+
+                      <div className="text-center pt-1">
+                        <a
+                          href={setupTotpData.otpauthUri}
+                          className="inline-flex items-center gap-1.5 text-xs font-bold text-[#5A1E65] hover:underline"
+                        >
+                          <Smartphone className="w-3.5 h-3.5" />
+                          <span>Tap here to open directly in Authenticator on this device</span>
+                        </a>
+                      </div>
+                    </div>
+
+                    {/* Step 2: Verification Input */}
+                    <form onSubmit={handleConfirmTotpSetup} className="space-y-3 pt-4 border-t border-purple-200">
+                      <div className="flex items-center gap-2 text-purple-950 font-bold text-sm">
+                        <CheckCircle2 className="w-4 h-4 text-[#5A1E65]" />
+                        <span>Step 2: Enter 6-Digit Code to Confirm</span>
+                      </div>
+                      <p className="text-xs text-slate-600">
+                        Enter the code currently displayed in your authenticator app to activate protection:
+                      </p>
+
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={6}
+                          value={setupTotpCode}
+                          onChange={(e) => setSetupTotpCode(e.target.value.replace(/\D/g, ''))}
+                          placeholder="000000"
+                          className="w-40 px-4 py-2.5 rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 text-center font-mono text-lg font-bold tracking-widest outline-none bg-white"
+                        />
+                        <button
+                          type="submit"
+                          disabled={setupTotpLoading || setupTotpCode.length !== 6}
+                          className="px-5 py-2.5 rounded-xl bg-[#5A1E65] hover:bg-purple-900 text-white font-extrabold text-xs shadow-sm transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                        >
+                          {setupTotpLoading ? (
+                            <>
+                              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                              <span>Activating...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Check className="w-3.5 h-3.5" />
+                              <span>Activate 2FA Protection</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
       </main>
+
+      {/* Disable 2FA Modal */}
+      {showDisableModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-slate-200">
+            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-700 flex items-center justify-center mx-auto">
+              <ShieldAlert className="w-6 h-6" />
+            </div>
+
+            <div className="text-center space-y-2">
+              <h3 className="font-display text-xl font-black text-slate-950">
+                Disable Authenticator App (2FA)
+              </h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Enter your staff password to deactivate Authenticator App 2FA. Future sign-ins will fall back to single-use Email verification codes.
+              </p>
+            </div>
+
+            <form onSubmit={handleDisableTotp} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700 block">Current Password</label>
+                <input
+                  type="password"
+                  required
+                  value={disableTotpPassword}
+                  onChange={(e) => setDisableTotpPassword(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-[#5A1E65] text-sm outline-none"
+                  placeholder="••••••••••••"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700 block">Authenticator Code (Optional)</label>
+                <input
+                  type="text"
+                  maxLength={6}
+                  value={disableTotpCode}
+                  onChange={(e) => setDisableTotpCode(e.target.value.replace(/\D/g, ''))}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-[#5A1E65] text-center font-mono tracking-widest text-sm outline-none"
+                  placeholder="000000"
+                />
+              </div>
+
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowDisableModal(false)}
+                  className="flex-1 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-bold text-xs hover:bg-slate-50 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={disableTotpLoading}
+                  className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {disableTotpLoading ? 'Deactivating...' : 'Confirm Disable'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Safety Confirmation Modal for Mass Broadcast */}
       {showConfirmModal && (
