@@ -178,6 +178,41 @@ export default function Home() {
   const [selectedEventCategory, setSelectedEventCategory] = useState('all');
   const [expandedProgram, setExpandedProgram] = useState(null);
   const [activeThemeId, setActiveThemeId] = useState(getActiveHeroTheme);
+  const [customHeroProps, setCustomHeroProps] = useState(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const stored = localStorage.getItem('dcvc_admin_custom_layout');
+      if (stored) {
+        const blocks = JSON.parse(stored);
+        const heroBlock = blocks.find(b => b.type === 'hero_banner' && b.enabled !== false);
+        return heroBlock?.props || null;
+      }
+    } catch {
+      // Safe fallback
+    }
+    return null;
+  });
+
+  useEffect(() => {
+    const handleLayoutUpdate = () => {
+      try {
+        const stored = localStorage.getItem('dcvc_admin_custom_layout');
+        if (stored) {
+          const blocks = JSON.parse(stored);
+          const heroBlock = blocks.find(b => b.type === 'hero_banner' && b.enabled !== false);
+          setCustomHeroProps(heroBlock?.props || null);
+        }
+      } catch {
+        // Safe fallback
+      }
+    };
+    window.addEventListener('storage', handleLayoutUpdate);
+    window.addEventListener('dcvc_layout_updated', handleLayoutUpdate);
+    return () => {
+      window.removeEventListener('storage', handleLayoutUpdate);
+      window.removeEventListener('dcvc_layout_updated', handleLayoutUpdate);
+    };
+  }, []);
 
   useEffect(() => {
     const unsubscribe = subscribeToHeroTheme((themeId) => {
@@ -467,14 +502,14 @@ export default function Home() {
               <div className="lg:col-span-7 flex flex-col gap-6 z-10">
                 <div className="flex flex-col gap-3 sm:gap-3.5">
                   <span className="inline-flex items-center text-[11px] sm:text-xs font-bold text-[#5A1E65] py-1 px-3.5 bg-purple-50/95 border border-purple-200/90 rounded-full shadow-2xs self-start">
-                    ESTABLISHED 2014 · VENTURA COUNTY 501(C)(3) NONPROFIT
+                    {customHeroProps?.eyebrow || 'ESTABLISHED 2014 · VENTURA COUNTY 501(C)(3) NONPROFIT'}
                   </span>
 
                   <h1 className="font-display text-4xl sm:text-6xl md:text-7xl xl:text-[5.15rem] font-black tracking-tight text-slate-950 leading-[1.08] sm:leading-[1.04]">
-                    <span className="block">You Are</span>
+                    <span className="block">{customHeroProps?.titleLine1 || 'You Are'}</span>
                     <span className="block mt-1 sm:mt-1.5">
                       <span className="font-serif italic font-semibold tracking-[-0.015em] bg-gradient-to-r from-[#4A0E4E] via-[#8B1A8F] via-[#D91B5C] via-[#E11D48] via-[#EA580C] via-[#F97316] to-[#F59E0B] bg-clip-text text-transparent relative inline-block mr-2.5 sm:mr-3.5 pb-1 sm:pb-1.5">
-                        Always Welcome
+                        {customHeroProps?.titleAccentWord || 'Always Welcome'}
                         <svg 
                           className="absolute -bottom-1 sm:-bottom-1.5 left-0 w-full h-2 sm:h-3 overflow-visible pointer-events-none" 
                           viewBox="0 0 100 8" 
@@ -498,41 +533,41 @@ export default function Home() {
                           />
                         </svg>
                       </span>
-                      <span className="font-display font-black text-slate-950 inline-block">Here.</span>
+                      <span className="font-display font-black text-slate-950 inline-block">{customHeroProps?.titleLine2 || 'Here.'}</span>
                     </span>
                   </h1>
 
                   <p className="text-sm sm:text-base md:text-lg text-slate-600 leading-relaxed font-normal max-w-xl pt-0.5">
-                    Diversity Collective is Ventura County's premier cultural sanctuary and clinical wellness home — delivering free rapid health testing, youth peer programs, mutual aid, and intersectional advocacy across all 10 county cities.
+                    {customHeroProps?.description || "Diversity Collective is Ventura County's premier cultural sanctuary and clinical wellness home — delivering free rapid health testing, youth peer programs, mutual aid, and intersectional advocacy across all 10 county cities."}
                   </p>
                 </div>
 
                 {/* 3 Action Buttons (Horizontal layout matching reference mockup) */}
                 <div className="flex flex-wrap items-center gap-3 pt-1">
                   <Link 
-                    to="/programs" 
+                    to={customHeroProps?.primaryCtaUrl || "/programs"} 
                     className="inline-flex items-center justify-center gap-2 text-sm font-extrabold text-white bg-gradient-to-r from-[#5A1E65] via-purple-700 to-indigo-600 hover:from-purple-900 hover:to-indigo-700 py-3 sm:py-3.5 px-6 sm:px-7 rounded-full shadow-md hover:shadow-lg transition-all"
                   >
-                    <span>Explore Free Programs</span>
+                    <span>{customHeroProps?.primaryCtaText || "Explore Free Programs"}</span>
                     <ArrowRight className="w-4 h-4" />
                   </Link>
 
                   <Link 
-                    to="/contact" 
+                    to={customHeroProps?.secondaryCtaUrl || "/contact"} 
                     className="inline-flex items-center justify-center gap-2 text-sm font-extrabold text-slate-800 bg-white hover:bg-purple-50/50 py-3 sm:py-3.5 px-5 sm:px-6 rounded-full border-2 border-purple-200/90 shadow-2xs hover:shadow-sm hover:border-purple-400 transition-all"
                   >
                     <MapPin className="w-4 h-4 text-[#5A1E65]" />
-                    <span>Visit Sanctuary</span>
+                    <span>{customHeroProps?.secondaryCtaText || "Visit Sanctuary"}</span>
                   </Link>
 
                   <a
-                    href={`tel:${orgInfo.phone.replace(/[^0-9]/g, '')}`}
+                    href={customHeroProps?.phoneUrl || `tel:${orgInfo.phone.replace(/[^0-9]/g, '')}`}
                     className="inline-flex items-center justify-center gap-2 text-sm font-extrabold text-slate-800 bg-white hover:bg-purple-50/50 py-3 sm:py-3.5 px-5 sm:px-6 rounded-full border-2 border-purple-200/90 shadow-2xs hover:shadow-sm hover:border-purple-400 transition-all"
                   >
                     <div className="w-5 h-5 rounded-full bg-rose-100 flex items-center justify-center flex-shrink-0">
                       <Phone className="w-3 h-3 text-rose-600" />
                     </div>
-                    <span>(805) 644-LGBT (5428)</span>
+                    <span>{customHeroProps?.phoneText || "(805) 644-LGBT (5428)"}</span>
                   </a>
                 </div>
 
@@ -677,7 +712,7 @@ export default function Home() {
                 >
                   <div className="relative overflow-hidden aspect-[4/3]">
                     <img 
-                      src="/images/community-gathering.jpg" 
+                      src={customHeroProps?.photoUrl || "/images/community-gathering.jpg"} 
                       alt="Diversity Collective Ventura County community members gathering"
                       className="w-full h-full object-cover"
                       onError={(e) => {
@@ -690,7 +725,9 @@ export default function Home() {
                     <div className="absolute bottom-4 left-4 right-4 flex flex-wrap items-center justify-between gap-2 text-white text-xs pointer-events-none">
                       <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-xs px-2.5 py-1 rounded-full border border-white/20">
                         <MapPin className="w-3.5 h-3.5 text-amber-300 flex-shrink-0" />
-                        <span className="font-semibold text-white drop-shadow-md text-[11px] sm:text-xs">2471 Portola Road, Suite 100, Ventura</span>
+                        <span className="font-semibold text-white drop-shadow-md text-[11px] sm:text-xs">
+                          {customHeroProps?.locationBadge || "2471 Portola Road, Suite 100, Ventura"}
+                        </span>
                       </div>
                       <span className="text-emerald-300 drop-shadow-md font-bold text-[11px] bg-emerald-950/85 px-2.5 py-1 rounded-full border border-emerald-400/50 shadow-sm flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>

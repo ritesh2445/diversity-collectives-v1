@@ -33,10 +33,14 @@ import {
   Trash2,
   ExternalLink,
   Plus,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Sliders,
+  LayoutGrid
 } from 'lucide-react';
 import { usePageMeta } from '../utils/seo';
 import TurnstileWidget from '../components/TurnstileWidget';
+import DesignEditor from '../admin/components/DesignEditor.jsx';
+import CmsStudio from '../admin/components/CmsStudio.jsx';
 
 const API_BASE_URL = typeof window !== 'undefined' && window.location.origin
   ? (import.meta.env?.VITE_API_URL || import.meta.env?.VITE_API_BASE_URL || '/api')
@@ -153,8 +157,8 @@ export default function Admin() {
   const [disableTotpCode, setDisableTotpCode] = useState('');
   const [disableTotpLoading, setDisableTotpLoading] = useState(false);
 
-  // Active Tab: 'newsletter' | 'directory' | 'inquiries' | 'security'
-  const [activeTab, setActiveTab] = useState('newsletter');
+  // Active Tab: 'hero' | 'cms' | 'newsletter' | 'directory' | 'inquiries' | 'gallery' | 'security'
+  const [activeTab, setActiveTab] = useState('hero');
 
   // Cooldown timer for email OTP resend
   useEffect(() => {
@@ -980,6 +984,36 @@ export default function Admin() {
         {/* Tab Navigation */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-2 overflow-x-auto border-t border-slate-100">
           <button
+            onClick={() => setActiveTab('hero')}
+            className={`py-3 px-4 text-xs font-extrabold border-b-2 flex items-center gap-2 whitespace-nowrap cursor-pointer transition-all ${
+              activeTab === 'hero'
+                ? 'border-[#5A1E65] text-[#5A1E65] bg-purple-50/40'
+                : 'border-transparent text-slate-600 hover:text-slate-950'
+            }`}
+          >
+            <Sliders className="w-4 h-4 text-[#5A1E65]" />
+            <span>Hero & Design Editor</span>
+            <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-purple-200/80 text-purple-900 font-bold">
+              Live
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('cms')}
+            className={`py-3 px-4 text-xs font-extrabold border-b-2 flex items-center gap-2 whitespace-nowrap cursor-pointer transition-all ${
+              activeTab === 'cms'
+                ? 'border-[#5A1E65] text-[#5A1E65] bg-purple-50/40'
+                : 'border-transparent text-slate-600 hover:text-slate-950'
+            }`}
+          >
+            <LayoutGrid className="w-4 h-4 text-[#5A1E65]" />
+            <span>Website CMS Studio</span>
+            <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 font-bold">
+              Events · Programs · News
+            </span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('newsletter')}
             className={`py-3 px-4 text-xs font-extrabold border-b-2 flex items-center gap-2 whitespace-nowrap cursor-pointer transition-all ${
               activeTab === 'newsletter'
@@ -1064,6 +1098,81 @@ export default function Admin() {
       {/* Main Tab Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         
+        {/* ================================================================= */}
+        {/* TAB 0A: HERO & DESIGN EDITOR                                      */}
+        {/* ================================================================= */}
+        {activeTab === 'hero' && (
+          <div className="space-y-6 animate-fadeIn">
+            <div className="bg-gradient-to-r from-purple-900 via-[#5A1E65] to-indigo-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="space-y-1 max-w-2xl">
+                <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-white/20 text-amber-300 border border-white/20">
+                  Full Website Control
+                </span>
+                <h2 className="font-display text-2xl sm:text-3xl font-black">
+                  Hero & Section Design Editor
+                </h2>
+                <p className="text-xs sm:text-sm text-purple-100">
+                  Edit homepage headlines, call-to-actions, phone links, sanctuary hours, cover images, wave rivers, and drag-and-drop section order. Changes update live!
+                </p>
+              </div>
+              <a
+                href="/"
+                target="_blank"
+                rel="noreferrer"
+                className="px-5 py-2.5 rounded-xl bg-white text-slate-900 font-extrabold text-xs hover:bg-purple-50 transition-all inline-flex items-center gap-1.5 shadow-md self-start md:self-auto shrink-0"
+              >
+                <span>View Live Site</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+
+            <DesignEditor />
+          </div>
+        )}
+
+        {/* ================================================================= */}
+        {/* TAB 0B: WEBSITE CMS STUDIO (PROGRAMS, EVENTS, NEWS, RESOURCES)   */}
+        {/* ================================================================= */}
+        {activeTab === 'cms' && (
+          <div className="space-y-6 animate-fadeIn">
+            <div className="bg-gradient-to-r from-teal-900 via-slate-900 to-purple-950 rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="space-y-1 max-w-2xl">
+                <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-teal-500/20 text-teal-300 border border-teal-400/30">
+                  Universal CMS Control
+                </span>
+                <h2 className="font-display text-2xl sm:text-3xl font-black">
+                  Website Content Management Studio
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-300">
+                  Create, edit, and delete Community Events (with cancellation banners), Programs, News Articles (with rich writing pad), Resources, Staff & Board, and Sitewide Announcements.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 self-start md:self-auto shrink-0">
+                <a
+                  href="/events"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-all inline-flex items-center gap-1"
+                >
+                  <span>Events</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+                <a
+                  href="/programs"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-all inline-flex items-center gap-1"
+                >
+                  <span>Programs</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+            </div>
+
+            <CmsStudio />
+          </div>
+        )}
+
         {/* ================================================================= */}
         {/* TAB 1: NEWSLETTER STUDIO                                          */}
         {/* ================================================================= */}
