@@ -27,7 +27,13 @@ import {
   X,
   ArrowRight,
   Clock,
-  ChevronRight
+  ChevronRight,
+  Camera,
+  UploadCloud,
+  Trash2,
+  ExternalLink,
+  Plus,
+  Image as ImageIcon
 } from 'lucide-react';
 import { usePageMeta } from '../utils/seo';
 import TurnstileWidget from '../components/TurnstileWidget';
@@ -179,6 +185,23 @@ export default function Admin() {
   const [inquiries, setInquiries] = useState([]);
   const [inquiryType, setInquiryType] = useState('contact');
 
+  // Gallery Studio (GitHub + jsDelivr Multi-CDN) State
+  const [galleryPhotos, setGalleryPhotos] = useState([]);
+  const [galleryLoading, setGalleryLoading] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadTitle, setUploadTitle] = useState('');
+  const [uploadCategory, setUploadCategory] = useState('Festivals & Pride');
+  const [uploadYear, setUploadYear] = useState('2026');
+  const [uploadDescription, setUploadDescription] = useState('');
+  const [uploadQuote, setUploadQuote] = useState('');
+  const [uploadFeatured, setUploadFeatured] = useState(true);
+  const [uploadFileData, setUploadFileData] = useState(null);
+  const [uploadFileName, setUploadFileName] = useState('');
+  const [uploadPreviewUrl, setUploadPreviewUrl] = useState('');
+  const [isUploadingToGit, setIsUploadingToGit] = useState(false);
+  const [galleryActionStatus, setGalleryActionStatus] = useState(null);
+  const [copiedCdnId, setCopiedCdnId] = useState(null);
+
   // Load user session on mount
   useEffect(() => {
     if (token) {
@@ -192,8 +215,125 @@ export default function Admin() {
       if (activeTab === 'newsletter') fetchSubscriberStats();
       if (activeTab === 'directory') fetchPendingBusinesses();
       if (activeTab === 'inquiries') fetchInquiries(inquiryType);
+      if (activeTab === 'gallery') fetchAdminGallery();
     }
   }, [user, activeTab, inquiryType]);
+
+  const fetchAdminGallery = async () => {
+    setGalleryLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/gallery`);
+      if (res.ok) {
+        const data = await res.json();
+        setGalleryPhotos(data.photos || []);
+      }
+    } catch (err) {
+      console.warn('Failed to load gallery photos:', err);
+    } finally {
+      setGalleryLoading(false);
+    }
+  };
+
+  const handleImageSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select a valid image file (JPEG, PNG, WebP).');
+      return;
+    }
+
+    setUploadFileName(file.name);
+    setUploadPreviewUrl(URL.createObjectURL(file));
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setUploadFileData(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleUploadGalleryPhoto = async (e) => {
+    if (e) e.preventDefault();
+    if (!uploadTitle.trim() || !uploadFileData) {
+      alert('Please provide a title and select an image file to upload.');
+      return;
+    }
+
+    setIsUploadingToGit(true);
+    setGalleryActionStatus(null);
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/gallery/upload`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          title: uploadTitle.trim(),
+          category: uploadCategory,
+          year: uploadYear,
+          description: uploadDescription.trim(),
+          quote: uploadQuote.trim(),
+          featured: uploadFeatured,
+          fileName: uploadFileName,
+          fileData: uploadFileData
+        })
+      });
+
+      const data = await res.json();
+
+      if (data.success && data.photo) {
+        setGalleryActionStatus({
+          success: true,
+          message: data.message || `Photo "${uploadTitle}" committed to GitHub and live on jsDelivr CDN!`
+        });
+        setShowUploadModal(false);
+        setUploadTitle('');
+        setUploadDescription('');
+        setUploadQuote('');
+        setUploadFileData(null);
+        setUploadFileName('');
+        setUploadPreviewUrl('');
+        fetchAdminGallery();
+      } else {
+        setGalleryActionStatus({
+          success: false,
+          message: data.error || 'Failed to upload photo to repository.'
+        });
+      }
+    } catch {
+      setGalleryActionStatus({
+        success: false,
+        message: 'Network communication failure uploading photo.'
+      });
+    } finally {
+      setIsUploadingToGit(false);
+    }
+  };
+
+  const handleDeleteGalleryPhoto = async (id, title) => {
+    if (!window.confirm(`Are you sure you want to delete "${title || 'this photo'}" from the community gallery?`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/gallery/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setGalleryPhotos(prev => prev.filter(p => p.id !== id));
+        setGalleryActionStatus({ success: true, message: `Photo removed from gallery.` });
+      } else {
+        alert(data.error || 'Failed to delete photo.');
+      }
+    } catch {
+      alert('Network error deleting photo.');
+    }
+  };
 
   const fetchCurrentUser = async () => {
     try {
@@ -845,6 +985,21 @@ export default function Admin() {
           </button>
 
           <button
+            onClick={() => setActiveTab('gallery')}
+            className={`py-3 px-4 text-xs font-extrabold border-b-2 flex items-center gap-2 whitespace-nowrap cursor-pointer transition-all ${
+              activeTab === 'gallery'
+                ? 'border-[#5A1E65] text-[#5A1E65] bg-purple-50/40'
+                : 'border-transparent text-slate-600 hover:text-slate-950'
+            }`}
+          >
+            <Camera className="w-4 h-4" />
+            <span>Gallery Studio</span>
+            <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-purple-200/80 text-purple-900 font-bold">
+              {galleryPhotos.length || 8}
+            </span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('security')}
             className={`py-3 px-4 text-xs font-extrabold border-b-2 flex items-center gap-2 whitespace-nowrap cursor-pointer transition-all ${
               activeTab === 'security'
@@ -1440,6 +1595,334 @@ export default function Admin() {
                 </tbody>
               </table>
             </div>
+          </div>
+        )}
+
+        {/* ================================================================= */}
+        {/* TAB 3.5: COMMUNITY GALLERY STUDIO (GitHub + jsDelivr Multi-CDN)    */}
+        {/* ================================================================= */}
+        {activeTab === 'gallery' && (
+          <div className="space-y-8">
+            {/* Gallery Top Banner & CDN Diagnostics */}
+            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-purple-100 text-[#5A1E65] flex items-center justify-center">
+                    <Camera className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-900">Community Gallery Studio</h2>
+                    <p className="text-xs text-slate-500">
+                      GitHub repository storage · jsDelivr global multi-CDN edge delivery.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setShowUploadModal(true)}
+                    className="px-5 py-2.5 rounded-xl bg-[#5A1E65] hover:bg-purple-900 text-white font-extrabold text-xs shadow-sm transition-all flex items-center gap-2 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Upload Image to Gallery</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Status Banner */}
+              {galleryActionStatus && (
+                <div className={`p-4 rounded-2xl text-xs flex items-center gap-3 ${
+                  galleryActionStatus.success
+                    ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
+                    : 'bg-rose-50 border border-rose-200 text-rose-800'
+                }`}>
+                  {galleryActionStatus.success ? (
+                    <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                  )}
+                  <span>{galleryActionStatus.message}</span>
+                </div>
+              )}
+
+              {/* CDN Architecture Metrics */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Storage Backend</span>
+                  <span className="text-sm font-extrabold text-slate-900 block mt-1">GitHub Git Contents</span>
+                  <span className="text-xs text-slate-500 font-mono">ritesh2445/diversity-collectives-v1</span>
+                </div>
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Edge Delivery CDN</span>
+                  <span className="text-sm font-extrabold text-emerald-700 block mt-1 flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> jsDelivr Multi-CDN
+                  </span>
+                  <span className="text-xs text-slate-500">Fastly + Cloudflare + Quantil</span>
+                </div>
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Total Visuals</span>
+                  <span className="text-sm font-extrabold text-[#5A1E65] block mt-1">
+                    {galleryPhotos.length} Photos Indexed
+                  </span>
+                  <span className="text-xs text-slate-500">Indexed in Turso Database</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Gallery Media Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {galleryPhotos.map((photo) => (
+                <div key={photo.id} className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-md transition-shadow group flex flex-col justify-between">
+                  <div>
+                    <div className="relative aspect-video bg-slate-100 overflow-hidden">
+                      <img
+                        src={photo.cdn_url || photo.image_url}
+                        alt={photo.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                        onError={(e) => {
+                          if (e.target.src !== photo.image_url) {
+                            e.target.src = photo.image_url;
+                          }
+                        }}
+                      />
+                      <div className="absolute top-3 left-3 flex items-center gap-1.5">
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-slate-900/80 backdrop-blur-xs text-white">
+                          {photo.category}
+                        </span>
+                        {photo.year && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/90 text-slate-900 shadow-xs">
+                            {photo.year}
+                          </span>
+                        )}
+                      </div>
+                      {photo.featured && (
+                        <div className="absolute top-3 right-3">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-400 text-amber-950 flex items-center gap-1 shadow-xs">
+                            <Sparkles className="w-3 h-3" /> 3D Carousel
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="p-5 space-y-2">
+                      <h4 className="font-bold text-slate-900 text-sm line-clamp-1">{photo.title}</h4>
+                      {photo.quote && (
+                        <p className="text-xs italic text-purple-900/80 line-clamp-2">
+                          "{photo.quote}"
+                        </p>
+                      )}
+                      {photo.description && (
+                        <p className="text-xs text-slate-500 line-clamp-2">
+                          {photo.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-slate-50/80 border-t border-slate-100 flex items-center justify-between text-xs font-bold">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const url = photo.cdn_url || photo.image_url;
+                        navigator.clipboard.writeText(url);
+                        setCopiedCdnId(photo.id);
+                        setTimeout(() => setCopiedCdnId(null), 2000);
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-purple-300 hover:text-[#5A1E65] flex items-center gap-1.5 cursor-pointer transition-colors"
+                    >
+                      {copiedCdnId === photo.id ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-600" />
+                          <span className="text-emerald-700">CDN URL Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5 text-slate-400" />
+                          <span>Copy CDN Link</span>
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteGalleryPhoto(photo.id, photo.title)}
+                      className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                      title="Delete Photo"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Upload New Photo Modal */}
+            {showUploadModal && (
+              <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+                <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-slate-200 my-8">
+                  <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-xl bg-purple-100 text-[#5A1E65] flex items-center justify-center">
+                        <UploadCloud className="w-5 h-5" />
+                      </div>
+                      <h3 className="font-display text-lg font-black text-slate-950">
+                        Upload to GitHub & CDN
+                      </h3>
+                    </div>
+                    <button
+                      onClick={() => setShowUploadModal(false)}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleUploadGalleryPhoto} className="space-y-4">
+                    {/* Image File Selector & Preview */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-700 block">
+                        Select Photo (JPEG, PNG, WebP)
+                      </label>
+                      <div className="border-2 border-dashed border-slate-300 hover:border-[#5A1E65] rounded-2xl p-4 text-center cursor-pointer transition-colors relative bg-slate-50/50">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          required
+                          onChange={handleImageSelect}
+                          className="absolute inset-0 opacity-0 cursor-pointer"
+                        />
+                        {uploadPreviewUrl ? (
+                          <div className="space-y-2">
+                            <img
+                              src={uploadPreviewUrl}
+                              alt="Upload preview"
+                              className="max-h-48 mx-auto rounded-xl object-contain shadow-xs"
+                            />
+                            <span className="text-xs text-slate-500 font-mono block truncate">
+                              {uploadFileName} (Click to change)
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="py-6 space-y-2 text-slate-500">
+                            <UploadCloud className="w-8 h-8 mx-auto text-[#5A1E65]/60" />
+                            <p className="text-xs font-bold text-slate-700">Click or Drag & Drop photo here</p>
+                            <p className="text-[11px] text-slate-400">High-resolution JPEG, PNG, or WebP</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Title */}
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700 block">Photo Title</label>
+                      <input
+                        type="text"
+                        required
+                        value={uploadTitle}
+                        onChange={(e) => setUploadTitle(e.target.value)}
+                        placeholder="e.g. Ventura Coastline Pride Gathering"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-[#5A1E65] text-xs font-medium outline-none"
+                      />
+                    </div>
+
+                    {/* Category & Year */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-700 block">Category</label>
+                        <select
+                          value={uploadCategory}
+                          onChange={(e) => setUploadCategory(e.target.value)}
+                          className="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:border-[#5A1E65] text-xs font-medium outline-none bg-white"
+                        >
+                          <option value="Festivals & Pride">Festivals & Pride</option>
+                          <option value="Youth & Safe Harbor">Youth & Safe Harbor</option>
+                          <option value="Health & Wellness">Health & Wellness</option>
+                          <option value="Sanctuary & Community">Sanctuary & Community</option>
+                          <option value="Volunteers & Action">Volunteers & Action</option>
+                          <option value="Kids & Families">Kids & Families</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-700 block">Year</label>
+                        <input
+                          type="text"
+                          required
+                          value={uploadYear}
+                          onChange={(e) => setUploadYear(e.target.value)}
+                          placeholder="2026"
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-[#5A1E65] text-xs font-medium outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Community Quote */}
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700 block">Community Quote / Caption</label>
+                      <input
+                        type="text"
+                        value={uploadQuote}
+                        onChange={(e) => setUploadQuote(e.target.value)}
+                        placeholder="e.g. A coastline illuminated in rainbows..."
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-[#5A1E65] text-xs font-medium outline-none"
+                      />
+                    </div>
+
+                    {/* Description */}
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700 block">Description (Alt text / Context)</label>
+                      <textarea
+                        rows={2}
+                        value={uploadDescription}
+                        onChange={(e) => setUploadDescription(e.target.value)}
+                        placeholder="Describe the moment and people featured for accessibility..."
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-[#5A1E65] text-xs font-medium outline-none resize-none"
+                      />
+                    </div>
+
+                    {/* Featured Checkbox */}
+                    <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700 pt-1">
+                      <input
+                        type="checkbox"
+                        checked={uploadFeatured}
+                        onChange={(e) => setUploadFeatured(e.target.checked)}
+                        className="rounded text-[#5A1E65] focus:ring-[#5A1E65]"
+                      />
+                      <span>Feature in 3D Carousel Showcase</span>
+                    </label>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-3 pt-3 border-t border-slate-100">
+                      <button
+                        type="button"
+                        onClick={() => setShowUploadModal(false)}
+                        className="flex-1 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-bold text-xs hover:bg-slate-50 transition-colors cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isUploadingToGit || !uploadFileData}
+                        className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-[#5A1E65] to-purple-800 text-white font-extrabold text-xs shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                      >
+                        {isUploadingToGit ? (
+                          <>
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                            <span>Uploading to GitHub & CDN...</span>
+                          </>
+                        ) : (
+                          <>
+                            <UploadCloud className="w-3.5 h-3.5" />
+                            <span>Publish to jsDelivr CDN</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

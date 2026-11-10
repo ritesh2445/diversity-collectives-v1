@@ -54,6 +54,32 @@ export default function Gallery() {
     return unsubscribe;
   }, []);
 
+  // Fetch live photos from GitHub + jsDelivr CDN Gallery API
+  useEffect(() => {
+    let isMounted = true;
+    const fetchLiveGallery = async () => {
+      try {
+        const apiBase = typeof window !== 'undefined' && window.location.origin
+          ? (import.meta.env?.VITE_API_URL || import.meta.env?.VITE_API_BASE_URL || '/api')
+          : '/api';
+        const res = await fetch(`${apiBase}/gallery`);
+        if (res.ok) {
+          const data = await res.json();
+          if (isMounted && data.success && Array.isArray(data.photos) && data.photos.length > 0) {
+            setPhotos(data.photos.map(p => ({
+              ...p,
+              image: p.cdn_url || p.image_url || p.image
+            })));
+          }
+        }
+      } catch (err) {
+        console.warn('Live gallery fetch fallback to store:', err);
+      }
+    };
+    fetchLiveGallery();
+    return () => { isMounted = false; };
+  }, []);
+
   // 3D Carousel State
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);

@@ -17,6 +17,15 @@ import { resolveAppreciationTier } from './appreciationTiers.js';
 import { runAllMigrations } from './schemaMigrations.js';
 import { processChatRequest } from './chatEngine.js';
 import { createSignedUploadParameters } from './cloudinarySigner.js';
+import {
+  buildJsDelivrUrl,
+  sanitizeFilename,
+  uploadToGitHub,
+  deleteFromGitHub,
+  listGalleryPhotos,
+  addGalleryPhoto,
+  deleteGalleryPhoto
+} from './galleryService.js';
 import { 
   hashPassword, 
   generateAuthToken, 
@@ -1067,6 +1076,33 @@ export default {
       }
 
       // =======================================================================
+      // 4.5. Community Gallery: Public Retrieval (GET /api/gallery)
+      // =======================================================================
+      if (pathname === '/api/gallery' && request.method === 'GET') {
+        const db = getDb(env);
+        const category = url.searchParams.get('category');
+        const year = url.searchParams.get('year');
+        const featured = url.searchParams.get('featured');
+        const limit = Math.min(parseInt(url.searchParams.get('limit') || '50', 10), 100);
+        const offset = Math.max(parseInt(url.searchParams.get('offset') || '0', 10), 0);
+
+        const photos = await listGalleryPhotos(db, {
+          category,
+          year,
+          featured: featured !== null ? featured === 'true' : undefined,
+          limit,
+          offset
+        });
+
+        return jsonResponse({
+          success: true,
+          photos,
+          count: photos.length,
+          cdnBase: `https://cdn.jsdelivr.net/gh/${env.GITHUB_OWNER || 'ritesh2445'}/${env.GITHUB_REPO || 'diversity-collectives-v1'}@${env.GITHUB_BRANCH || 'main'}`
+        }, 200, cors);
+      }
+
+      // =======================================================================
       // 5. Business Directory: Search & Filter (GET /api/directory)
       // =======================================================================
       if (pathname === '/api/directory' && request.method === 'GET') {
@@ -1963,6 +1999,144 @@ export default {
           return jsonResponse({
             success: true,
             message: 'Two-factor authentication disabled.'
+          }, 200, cors);
+        }
+
+        // 15.8 Gallery Photo Upload to GitHub & jsDelivr CDN (POST /api/admin/gallery/upload)
+        if (pathname === '/api/admin/gallery/upload' && request.method === 'POST') {
+          if (!requireRole(authUser.role, ['admin', 'editor'])) {
+            return errorResponse('Forbidden: Administrator or editor role required to upload gallery media.', 403, null, cors);
+          }
+
+          const body = await request.json().catch(() => ({}));
+          const { title, category, year, description, quote, featured, fileData, fileName } = body;
+
+          if (!title || !fileData) {
+            return errorResponse('Image title and file data are required.', 400, null, cors);
+          }
+
+          const cleanFileName = sanitizeFilename(fileName || `${title}.jpg`);
+          const categorySlug = (category || 'community')
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, '-')
+            .replace(/-+/g, '-');
+          const gitPath = `public/gallery/${categorySlug}/${cleanFileName}`;
+
+          const ghOwner = env.GITHUB_OWNER || 'ritesh2445';
+          const ghRepo = env.GITHUB_REPO || 'diversity-collectives-v1';
+          const ghBranch = env.GITHUB_BRANCH || 'main';
+
+          let githubSha = null;
+          let githubPath = gitPath;
+
+          // Commit to GitHub repository if GITHUB_TOKEN is available
+          if (env.GITHUB_TOKEN) {
+            const ghRes = await uploadToGitHub({
+              githubToken: env.GITHUB_TOKEN,
+              owner: ghOwner,
+              repo: ghRepo,
+              branch: ghBranch,
+              path: gitPath,
+              contentBase64: fileData,
+              commitMessage: `feat(gallery): add ${title} to ${category || 'gallery'}`
+            });
+
+            if (!ghRes.success) {
+              return errorResponse(`GitHub repository commit failed: ${ghRes.error}`, 502, null, cors);
+            }
+            githubSha = ghRes.sha;
+            githubPath = ghRes.path || gitPath;
+          }
+
+          // Build primary jsDelivr edge CDN URL with local asset fallback
+          const cdnUrl = buildJsDelivrUrl({
+            owner: ghOwner,
+            repo: ghRepo,
+            branch: ghBranch,
+            path: gitPath
+          });
+          const localFallbackUrl = `/${gitPath.replace(/^public\//, '')}`;
+
+          const db = getDb(env);
+          const newPhoto = await addGalleryPhoto(db, {
+            title,
+            category: category || 'Festivals & Pride',
+            year: year || String(new Date().getFullYear()),
+            image_url: localFallbackUrl,
+            cdn_url: cdnUrl,
+            github_path: githubPath,
+            github_sha: githubSha,
+            description: description || null,
+            quote: quote || null,
+            featured: Boolean(featured)
+          });
+
+          if (db) {
+            await logAdminAction(db, {
+              userId: authUser.id || authUser.userId,
+              userEmail: authUser.email,
+              action: 'admin_gallery_upload',
+              targetType: 'gallery',
+              targetId: newPhoto.id,
+              details: { title, cdnUrl, gitPath, gitPushed: Boolean(env.GITHUB_TOKEN) },
+              ip: clientIp
+            });
+          }
+
+          return jsonResponse({
+            success: true,
+            photo: newPhoto,
+            message: env.GITHUB_TOKEN 
+              ? 'Image committed to GitHub and published to jsDelivr CDN!'
+              : 'Image registered in gallery database (configure GITHUB_TOKEN for automated Git commits).'
+          }, 201, cors);
+        }
+
+        // 15.9 Gallery Photo Deletion (DELETE /api/admin/gallery/:id)
+        if (pathname.startsWith('/api/admin/gallery/') && request.method === 'DELETE') {
+          if (!requireRole(authUser.role, ['admin', 'editor'])) {
+            return errorResponse('Forbidden: Administrator role required to remove gallery photos.', 403, null, cors);
+          }
+
+          const photoId = pathname.replace('/api/admin/gallery/', '').trim();
+          const db = getDb(env);
+
+          if (!photoId) {
+            return errorResponse('Photo ID is required.', 400, null, cors);
+          }
+
+          const delRes = await deleteGalleryPhoto(db, photoId);
+          if (!delRes.success) {
+            return errorResponse(delRes.error || 'Failed to delete photo.', 500, null, cors);
+          }
+
+          // If photo had a GitHub SHA and path, remove from GitHub repo
+          if (delRes.photo?.github_path && delRes.photo?.github_sha && env.GITHUB_TOKEN) {
+            await deleteFromGitHub({
+              githubToken: env.GITHUB_TOKEN,
+              owner: env.GITHUB_OWNER || 'ritesh2445',
+              repo: env.GITHUB_REPO || 'diversity-collectives-v1',
+              branch: env.GITHUB_BRANCH || 'main',
+              path: delRes.photo.github_path,
+              sha: delRes.photo.github_sha,
+              commitMessage: `chore(gallery): remove ${delRes.photo.title}`
+            }).catch(e => console.warn('GitHub deletion warning:', e.message));
+          }
+
+          if (db) {
+            await logAdminAction(db, {
+              userId: authUser.id || authUser.userId,
+              userEmail: authUser.email,
+              action: 'admin_gallery_delete',
+              targetType: 'gallery',
+              targetId: photoId,
+              ip: clientIp
+            });
+          }
+
+          return jsonResponse({
+            success: true,
+            message: 'Gallery photo deleted successfully.'
           }, 200, cors);
         }
 

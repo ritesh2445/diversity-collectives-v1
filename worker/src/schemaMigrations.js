@@ -335,7 +335,26 @@ export const SCHEMA_STATEMENTS = [
     sync_count INTEGER DEFAULT 0,
     last_error TEXT,
     updated_at TEXT DEFAULT (datetime('now'))
-  )`
+  )`,
+
+  // 16. Community Gallery Photos (GitHub + jsDelivr Multi-CDN)
+  `CREATE TABLE IF NOT EXISTS gallery_photos (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    category TEXT NOT NULL,
+    year TEXT,
+    image_url TEXT NOT NULL,
+    cdn_url TEXT NOT NULL,
+    github_path TEXT,
+    github_sha TEXT,
+    description TEXT,
+    quote TEXT,
+    featured INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now'))
+  )`,
+
+  `CREATE INDEX IF NOT EXISTS idx_gallery_category ON gallery_photos (category, year)`,
+  `CREATE INDEX IF NOT EXISTS idx_gallery_featured ON gallery_photos (featured, created_at DESC)`
 ];
 
 export const INITIAL_SEEDS = [
@@ -368,6 +387,22 @@ export const INITIAL_SEEDS = [
           ('biz-4', 'ojai-valley-botanicals', 'Ojai Valley Botanicals & Tea Lounge', 'Retail & Gifts', 'Queer-owned organic herbal dispensary, local artwork gallery, and safe community space hosting queer book clubs and acoustic open mics.', '214 E Ojai Ave, Ojai, CA 93023', 'Ojai', '93023', '(805) 555-0199', 'herbs@ojaibotanicals.example', 'https://example.com/ojai-botanicals', 'https://res.cloudinary.com/dcvc/image/upload/v1/directory/ojai-botanicals-logo.png', 'https://res.cloudinary.com/dcvc/image/upload/v1/directory/ojai-botanicals-cover.jpg', 1, 1, 'approved', '2024-02-10T16:00:00Z'),
           ('biz-5', 'conejo-valley-fitness-collective', 'Conejo Valley Fitness Collective', 'Fitness & Recreation', 'Body-neutral, trans-inclusive functional movement studio with private changing suites, gender-neutral showers, and certified affirming personal trainers.', '145 E Thousand Oaks Blvd, Thousand Oaks, CA 91360', 'Thousand Oaks', '91360', '(805) 555-0123', 'train@conejofitness.example', 'https://example.com/conejofitness', 'https://res.cloudinary.com/dcvc/image/upload/v1/directory/conejo-fitness-logo.png', 'https://res.cloudinary.com/dcvc/image/upload/v1/directory/conejo-fitness-cover.jpg', 0, 1, 'approved', '2024-02-15T11:45:00Z'),
           ('biz-6', 'pacific-view-design-studio', 'Pacific View Creative & Web Studio', 'Professional Services', 'Full-stack digital design, web accessibility auditing, and brand strategy studio partnering with non-profits, progressive campaigns, and queer creators.', '4001 Mission Oaks Blvd, Camarillo, CA 93012', 'Camarillo', '93012', '(805) 555-0167', 'create@pacificview.example', 'https://example.com/pacificview', 'https://res.cloudinary.com/dcvc/image/upload/v1/directory/pacific-view-logo.png', 'https://res.cloudinary.com/dcvc/image/upload/v1/directory/pacific-view-cover.jpg', 1, 1, 'approved', '2024-02-20T13:00:00Z')`,
+    args: []
+  },
+
+  // Seed Baseline Gallery Photos with jsDelivr Multi-CDN URLs
+  {
+    sql: `INSERT OR REPLACE INTO gallery_photos 
+          (id, title, category, year, image_url, cdn_url, github_path, description, quote, featured)
+          VALUES 
+          ('gal-1', 'Ventura County Pride Coastline Gathering', 'Festivals & Pride', '2026', '/images/community-gathering.jpg', 'https://cdn.jsdelivr.net/gh/ritesh2445/diversity-collectives-v1@main/public/images/community-gathering.jpg', 'public/images/community-gathering.jpg', 'Community members uniting on the Ventura Promenade for celebration, music, and solidarity.', 'A coastline illuminated in rainbows, proving love is louder than hate.', 1),
+          ('gal-2', 'Rainbow Umbrella Youth Peer Circle', 'Youth & Safe Harbor', '2026', '/images/youth-umbrella.jpg', 'https://cdn.jsdelivr.net/gh/ritesh2445/diversity-collectives-v1@main/public/images/youth-umbrella.jpg', 'public/images/youth-umbrella.jpg', 'Weekly youth peer support circle exploring creative art and self-expression in a trauma-informed safe harbor.', 'Creating an unconditional safe harbor where every young person is celebrated.', 1),
+          ('gal-3', 'First Countywide Youth Pride Prom', 'Youth & Safe Harbor', '2023', '/images/pride-prom.jpeg', 'https://cdn.jsdelivr.net/gh/ritesh2445/diversity-collectives-v1@main/public/images/pride-prom.jpeg', 'public/images/pride-prom.jpeg', 'Hundreds of LGBTQ+ high schoolers across all 10 county cities dancing freely without judgment.', 'The magical, affirming night we all deserved in high school.', 1),
+          ('gal-4', 'Dedicated Community Volunteers & Mutual Aid', 'Volunteers & Action', '2026', '/images/volunteers.jpg', 'https://cdn.jsdelivr.net/gh/ritesh2445/diversity-collectives-v1@main/public/images/volunteers.jpg', 'public/images/volunteers.jpg', 'Passionate community members packing SHINE With Me safer-sex and hygiene kits at our outreach pavilion.', 'Grassroots mutual aid powered by over 300 passionate volunteers each year.', 1),
+          ('gal-5', 'Community Resource Center Flagship Sanctuary', 'Sanctuary & Community', '2026', '/images/crc-building.jpg', 'https://cdn.jsdelivr.net/gh/ritesh2445/diversity-collectives-v1@main/public/images/crc-building.jpg', 'public/images/crc-building.jpg', 'Our physical sanctuary at 2471 Portola Road, Suite 100 in Ventura, CA.', 'A permanent front door for affirming care, education, and belonging.', 1),
+          ('gal-6', 'Diversity SHINES Health Testing Clinic', 'Health & Wellness', '2026', '/images/shines-screening.jpg', 'https://cdn.jsdelivr.net/gh/ritesh2445/diversity-collectives-v1@main/public/images/shines-screening.jpg', 'public/images/shines-screening.jpg', 'State-certified counselors administering free, confidential rapid HIV and STI screenings.', '15-minute rapid results with zero judgment and zero cost.', 1),
+          ('gal-7', 'Pacific Coastline Sunset Solidarity Gathering', 'Festivals & Pride', '2025', '/images/ventura-coast.jpg', 'https://cdn.jsdelivr.net/gh/ritesh2445/diversity-collectives-v1@main/public/images/ventura-coast.jpg', 'public/images/ventura-coast.jpg', 'Sunset community connection gathering on the Ventura shore reflecting on a decade of progress.', 'Where our Pacific horizon meets our enduring community resilience.', 1),
+          ('gal-8', 'Little Unicorns Family & Youth Circle', 'Kids & Families', '2026', '/images/little-unicorns.png', 'https://cdn.jsdelivr.net/gh/ritesh2445/diversity-collectives-v1@main/public/images/little-unicorns.png', 'public/images/little-unicorns.png', 'Monthly gentle gatherings for pre-teens ages 9–13, parents, caregivers, and affirming allies.', 'Empowering affirming families and building confidence from the very start.', 1)`,
     args: []
   }
 ];
