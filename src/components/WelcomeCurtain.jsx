@@ -16,15 +16,10 @@ export default function WelcomeCurtain() {
 
   const handleDismiss = useCallback(() => {
     setFadingOut(true);
-    try {
-      sessionStorage.setItem('dcvc_welcome_seen', 'true');
-    } catch {
-      // Graceful fallback
-    }
     setTimeout(() => {
       setAnimating(false);
       setFadingOut(false);
-    }, 280);
+    }, 350);
   }, []);
 
   // Escape key dismisses instantly
@@ -52,13 +47,13 @@ export default function WelcomeCurtain() {
     };
   }, []);
 
-  // Manage animation auto-dismissal timer (~2.4s)
+  // Manage animation auto-dismissal timer (exact 2.5s duration as specified)
   useEffect(() => {
     if (!animating || fadingOut) return;
 
     const timer = setTimeout(() => {
       handleDismiss();
-    }, 1400);
+    }, 2500);
 
     return () => clearTimeout(timer);
   }, [animating, fadingOut, key, handleDismiss]);
