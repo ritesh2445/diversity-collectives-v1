@@ -56,7 +56,8 @@ export default function ReciteToolbar() {
   // Focus Music state
   const [musicPlaying, setMusicPlaying] = useState(false);
   const [activeTrack, setActiveTrack] = useState(null); // 'focus' | 'deeper' | null
-  const [musicVolume, setMusicVolume] = useState(0.5);
+  const [musicVolume, setMusicVolume] = useState(0.65);
+  const [musicError, setMusicError] = useState(null);
 
   // Voice command state & Live Speech HUD
   const [isListening, setIsListening] = useState(false);
@@ -309,22 +310,31 @@ export default function ReciteToolbar() {
   };
 
   // Focus Audio Handlers
-  const handleToggleFocusTrack = (trackName) => {
+  const handleToggleFocusTrack = async (trackName) => {
+    setMusicError(null);
     if (activeTrack === trackName && musicPlaying) {
       focusAudio.stop();
       setMusicPlaying(false);
       setActiveTrack(null);
       a11yStore.announce('Focus music stopped');
-    } else {
-      if (trackName === 'focus') {
-        focusAudio.playFocusTrack();
-      } else {
-        focusAudio.playDeeperReadingTrack();
-      }
+      return;
+    }
+
+    focusAudio.setVolume(musicVolume);
+    const started = trackName === 'focus'
+      ? await focusAudio.playFocusTrack()
+      : await focusAudio.playDeeperReadingTrack();
+
+    if (started) {
       focusAudio.setVolume(musicVolume);
       setMusicPlaying(true);
       setActiveTrack(trackName);
       a11yStore.announce(`${trackName === 'focus' ? 'Focus 432Hz ambient track' : 'Deeper reading ambient track'} playing`);
+    } else {
+      setMusicPlaying(false);
+      setActiveTrack(null);
+      setMusicError('Browser blocked audio playback. Click the track button again or check tab mute settings.');
+      a11yStore.announce('Unable to start focus audio');
     }
   };
 
@@ -976,12 +986,14 @@ export default function ReciteToolbar() {
                 </div>
 
                 {/* Status Message */}
-                <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px] text-slate-400 flex items-start gap-2">
-                  <span className="text-emerald-400 font-bold">⏸</span>
+                <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px] text-slate-300 flex items-start gap-2">
+                  <span className="text-emerald-400 font-bold">{musicPlaying ? '♪' : '⏸'}</span>
                   <p>
-                    {musicPlaying 
-                      ? `Now playing: ${activeTrack === 'focus' ? 'Focus 432Hz Ambient Resonance' : 'Deeper Reading Calming Waves'}`
-                      : 'Audio paused. Click below to start playing royalty-free calming tones.'}
+                    {musicError
+                      ? musicError
+                      : musicPlaying
+                        ? `Now playing: ${activeTrack === 'focus' ? 'Focus 432Hz Ambient Resonance' : 'Deeper Reading Brown Rain Noise'}`
+                        : 'Audio paused. Click a track below to start playing royalty-free calming soundscapes.'}
                   </p>
                 </div>
 
@@ -1077,6 +1089,7 @@ export default function ReciteToolbar() {
                   {[
                     { id: 'default', label: 'Default Sanctuary' },
                     { id: 'opendyslexic', label: 'OpenDyslexic' },
+                    { id: 'lexend', label: 'Lexend Reader' },
                     { id: 'atkinson', label: 'Atkinson Legible' },
                     { id: 'arial', label: 'Arial Clean' },
                     { id: 'comicsans', label: 'Comic Sans' },
@@ -1227,6 +1240,154 @@ export default function ReciteToolbar() {
           >
             <Plus className="w-4 h-4 stroke-[3]" />
           </button>
+
+          {/* DEDICATED DYSLEXIA SUPPORT SUITE BUTTON + FLYOUT */}
+          <div className="relative">
+            <button
+              onClick={() => setActiveFlyout(activeFlyout === 'dyslexia' ? null : 'dyslexia')}
+              className={`h-9 px-2.5 rounded-md font-black text-xs flex items-center gap-1.5 transition-all cursor-pointer ${
+                settings.dyslexiaMode || settings.bionicReading || settings.dyslexiaTint !== 'none' || settings.fontFamily === 'opendyslexic' || settings.fontFamily === 'lexend'
+                  ? 'bg-amber-400 text-slate-950 ring-2 ring-amber-300 shadow-sm'
+                  : 'bg-[#0284C7] hover:bg-[#0369A1] text-white'
+              }`}
+              title="Dyslexia Support Suite (OpenDyslexic Font, Bionic Reading, Irlen Color Tints & Line Guide)"
+              aria-haspopup="true"
+              aria-expanded={activeFlyout === 'dyslexia'}
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              <span>Dyslexia</span>
+            </button>
+
+            {activeFlyout === 'dyslexia' && (
+              <div className="absolute top-full left-0 mt-2 w-80 p-4 bg-[#0B1528] text-white rounded-2xl shadow-2xl border-2 border-amber-400/50 z-[100002] space-y-3.5">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                  <div>
+                    <span className="font-extrabold text-xs text-amber-300 uppercase tracking-wider block">Dyslexia Reading Support</span>
+                    <span className="text-[10px] text-slate-400">Visual stress, tracking & crowding aids</span>
+                  </div>
+                  <button onClick={() => setActiveFlyout(null)} className="text-slate-400 hover:text-white text-xs p-1 cursor-pointer">✕</button>
+                </div>
+
+                {/* 1-Click Master Dyslexia Profile */}
+                <button
+                  type="button"
+                  onClick={() => a11yStore.toggleDyslexiaMode()}
+                  className={`w-full py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-between transition-all cursor-pointer ${
+                    settings.dyslexiaMode
+                      ? 'bg-amber-400 text-slate-950 shadow-md ring-2 ring-amber-300'
+                      : 'bg-purple-900/70 hover:bg-purple-800 text-purple-100 border border-purple-500/40'
+                  }`}
+                >
+                  <div className="text-left">
+                    <span className="block font-black">1-Click Dyslexia Mode</span>
+                    <span className="block text-[10px] opacity-80">OpenDyslexic + Wide Spacing + Ruler + Cream Tint</span>
+                  </div>
+                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-black/20">
+                    {settings.dyslexiaMode ? 'ON' : 'OFF'}
+                  </span>
+                </button>
+
+                {/* Bionic Anchor Reading Toggle */}
+                <button
+                  type="button"
+                  onClick={() => a11yStore.toggleBionicReading()}
+                  className={`w-full py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-between transition-all cursor-pointer border ${
+                    settings.bionicReading
+                      ? 'bg-sky-500 text-slate-950 border-sky-300 shadow-sm'
+                      : 'bg-slate-900 text-slate-200 border-slate-700 hover:bg-slate-800'
+                  }`}
+                >
+                  <div className="text-left">
+                    <span className="block font-extrabold"><strong>Bio</strong>nic <strong>An</strong>chor <strong>Rea</strong>ding</span>
+                    <span className="block text-[10px] opacity-80">Guides eye fixation cleanly across words</span>
+                  </div>
+                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-black/20">
+                    {settings.bionicReading ? 'ON' : 'OFF'}
+                  </span>
+                </button>
+
+                {/* Dyslexia Fonts */}
+                <div>
+                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Dyslexia-Friendly Typefaces</span>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {[
+                      { id: 'opendyslexic', label: 'OpenDyslexic' },
+                      { id: 'lexend', label: 'Lexend' },
+                      { id: 'atkinson', label: 'Atkinson' },
+                      { id: 'default', label: 'Standard Font' },
+                    ].map((f) => (
+                      <button
+                        key={f.id}
+                        type="button"
+                        onClick={() => {
+                          a11yStore.update('fontFamily', f.id);
+                          a11yStore.announce(`Font set to ${f.label}`);
+                        }}
+                        className={`p-1.5 rounded-lg text-xs font-bold border text-left cursor-pointer ${
+                          settings.fontFamily === f.id
+                            ? 'bg-sky-600 text-white border-sky-300'
+                            : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800'
+                        }`}
+                      >
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Irlen / Visual Stress Color Overlays */}
+                <div>
+                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Visual Stress Overlays (Irlen Relief)</span>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {[
+                      { id: 'none', label: 'Off', bg: 'bg-slate-800 text-slate-200' },
+                      { id: 'cream', label: 'Warm Cream', bg: 'bg-[#fffdd0] text-slate-900' },
+                      { id: 'peach', label: 'Soft Peach', bg: 'bg-[#ffe5b4] text-slate-900' },
+                      { id: 'yellow', label: 'Pale Yellow', bg: 'bg-[#fef9c3] text-slate-900' },
+                      { id: 'mint', label: 'Calm Mint', bg: 'bg-[#e2f8ee] text-slate-900' },
+                      { id: 'sky', label: 'Soft Sky', bg: 'bg-[#e0f2fe] text-slate-900' },
+                    ].map((t) => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => {
+                          a11yStore.update('dyslexiaTint', t.id);
+                          a11yStore.announce(`Dyslexia reading overlay set to ${t.label}`);
+                        }}
+                        className={`py-1.5 px-2 rounded-lg text-[11px] font-bold border cursor-pointer transition-all ${t.bg} ${
+                          settings.dyslexiaTint === t.id ? 'ring-2 ring-amber-400 border-white' : 'border-slate-700 opacity-85 hover:opacity-100'
+                        }`}
+                      >
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Word Spacing & Tracking Quick Toggles */}
+                <div className="grid grid-cols-2 gap-1.5 pt-1 border-t border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => a11yStore.toggleRuler()}
+                    className={`py-1.5 px-2 rounded-lg text-[11px] font-bold border cursor-pointer ${
+                      settings.ruler ? 'bg-amber-400 text-slate-950 border-amber-300' : 'bg-slate-900 text-slate-300 border-slate-700'
+                    }`}
+                  >
+                    Line Ruler: {settings.ruler ? 'ON' : 'OFF'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => a11yStore.toggleScreenMask()}
+                    className={`py-1.5 px-2 rounded-lg text-[11px] font-bold border cursor-pointer ${
+                      settings.screenMask ? 'bg-amber-400 text-slate-950 border-amber-300' : 'bg-slate-900 text-slate-300 border-slate-700'
+                    }`}
+                  >
+                    Focus Band: {settings.screenMask ? 'ON' : 'OFF'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* ================================================================

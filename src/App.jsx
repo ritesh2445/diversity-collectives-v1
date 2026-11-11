@@ -50,6 +50,7 @@ function lazyWithRetry(factory) {
 // Lazily loaded route components with automatic retry
 const About = lazyWithRetry(() => import('./pages/About'));
 const BoardAndStaff = lazyWithRetry(() => import('./pages/BoardAndStaff'));
+const BoardMemberProfile = lazyWithRetry(() => import('./pages/BoardMemberProfile'));
 const Sponsors = lazyWithRetry(() => import('./pages/Sponsors'));
 const Programs = lazyWithRetry(() => import('./pages/Programs'));
 const ProgramDetail = lazyWithRetry(() => import('./pages/ProgramDetail'));
@@ -151,6 +152,8 @@ function AppLayout() {
               <Route path="/" element={<Home />} />
               <Route path="/about" element={<About />} />
               <Route path="/board-and-staff" element={<BoardAndStaff />} />
+              <Route path="/board-and-staff/:slug" element={<BoardMemberProfile />} />
+              <Route path="/board/:slug" element={<BoardMemberProfile />} />
               <Route path="/sponsors" element={<Sponsors />} />
 
               {/* Programs & Community */}

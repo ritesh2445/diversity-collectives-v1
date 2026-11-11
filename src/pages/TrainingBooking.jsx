@@ -53,7 +53,11 @@ export default function TrainingBooking() {
     }
 
     setStatus('loading');
-    const res = await submitTrainingBooking(formData);
+    const matchedCourse = trainingCourses.find(c => c.slug === formData.courseSlug);
+    const res = await submitTrainingBooking({
+      ...formData,
+      courseTitle: matchedCourse?.title || formData.courseSlug,
+    });
 
     if (res.success) {
       setStatus('success');

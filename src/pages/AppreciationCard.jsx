@@ -16,12 +16,12 @@ import {
   ExternalLink,
   Printer,
   FileText,
-  Smartphone,
-  Monitor,
   Flame,
   Shield,
   Users,
-  Lock
+  Lock,
+  RefreshCw,
+  ShieldAlert
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { toPng } from 'html-to-image';
@@ -486,20 +486,25 @@ function VisionaryBenefactorArtwork() {
 // ============================================================================
 // MAIN APPRECIATION CARD PAGE COMPONENT
 // ============================================================================
+const API_BASE_URL = typeof window !== 'undefined' && window.location.origin
+  ? (import.meta.env?.VITE_API_URL || import.meta.env?.VITE_API_BASE_URL || 'https://dcvc-api.diversity-collective-vc.workers.dev/api')
+  : 'https://dcvc-api.diversity-collective-vc.workers.dev/api';
+
+const PREVIEW_PLACEHOLDER_NAME = 'Sample Community Supporter';
+
 export default function AppreciationCard() {
   const { token } = useParams();
   const isPreview = !token || token === 'preview';
 
-  // Preview controls
+  // Preview controls (strictly non-editable showcase)
   const [activeTierId, setActiveTierId] = useState(APPRECIATION_TIERS.PRIDE_ADVOCATE);
-  const [previewViewport, setPreviewViewport] = useState('desktop'); // 'desktop' | 'mobile'
-  const [customDonorName, setCustomDonorName] = useState('Jordan Rivers');
-  
+  const [captureShieldActive, setCaptureShieldActive] = useState(false);
+
   // Card state
   const [cardData, setCardData] = useState(() => {
     if (isPreview) {
       return {
-        donorDisplayName: 'Jordan Rivers',
+        donorDisplayName: PREVIEW_PLACEHOLDER_NAME,
         tier: APPRECIATION_TIERS.PRIDE_ADVOCATE,
         tierName: TIER_CONFIGS[APPRECIATION_TIERS.PRIDE_ADVOCATE].title,
         amountCents: TIER_CONFIGS[APPRECIATION_TIERS.PRIDE_ADVOCATE].minAmount * 100,
@@ -511,6 +516,7 @@ export default function AppreciationCard() {
     }
     return null;
   });
+  const [cardError, setCardError] = useState(null);
   const [isLoading, setIsLoading] = useState(!isPreview);
   const [isOpened, setIsOpened] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -523,12 +529,90 @@ export default function AppreciationCard() {
     : false;
 
   usePageMeta({
-    title: 'Your DCVC Appreciation Card | Diversity Collective Ventura County',
-    description: 'A personalized digital thank-you card honoring your generous investment in LGBTQ+ sanctuary and wellness across Ventura County.',
+    title: isPreview
+      ? 'Appreciation Card Showcase | Diversity Collective Ventura County'
+      : 'Your DCVC Appreciation Card | Diversity Collective Ventura County',
+    description: 'Browse sample DCVC Donor Appreciation Card tiers or open your Zeffy-verified personalized keepsake.',
     canonicalPath: `/appreciation-card/${token || 'preview'}`
   });
 
-  // Fetch real card data by token
+  // Anti-screenshot / capture deterrent listener for public preview mode
+  useEffect(() => {
+    if (!isPreview || typeof window === 'undefined') return undefined;
+
+    const triggerShield = () => setCaptureShieldActive(true);
+    const clearShield = () => setCaptureShieldActive(false);
+
+    const handleKeyDown = (e) => {
+      const key = String(e.key || '').toLowerCase();
+      const isCaptureShortcut =
+        key === 'printscreen' ||
+        ((e.metaKey || e.ctrlKey) && e.key && e.key.toLowerCase() === 'p') ||
+        ((e.metaKey || e.ctrlKey) && e.shiftKey && ['3', '4', '5', 's'].includes(key));
+
+      if (isCaptureShortcut) {
+        if (key !== 'printscreen') e.preventDefault();
+        triggerShield();
+      }
+    };
+
+    const handleVisibility = () => {
+      if (document.hidden) triggerShield();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('blur', triggerShield);
+    window.addEventListener('focus', clearShield);
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('blur', triggerShield);
+      window.removeEventListener('focus', clearShield);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [isPreview]);
+
+  const fetchVerifiedCard = async () => {
+    if (!token || isPreview) return;
+    setIsLoading(true);
+    setCardError(null);
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/appreciation-cards/${encodeURIComponent(token)}`, {
+        cache: 'no-store'
+      });
+      const json = await res.json().catch(() => ({}));
+
+      if (res.ok && json.success && json.card) {
+        setCardData(json.card);
+        setActiveTierId(json.card.tier || APPRECIATION_TIERS.COMMUNITY_ALLY);
+        setCardError(null);
+      } else {
+        setCardData(null);
+        setCardError({
+          status: res.status,
+          message:
+            json.error ||
+            (res.status === 403
+              ? 'This appreciation keepsake is waiting for Zeffy payment confirmation.'
+              : res.status === 410
+                ? 'This appreciation keepsake has been revoked due to a refunded or disputed transaction.'
+                : 'No verified Zeffy appreciation card matched this link yet.')
+        });
+      }
+    } catch (err) {
+      setCardData(null);
+      setCardError({
+        status: 503,
+        message: 'Unable to reach our donation verification server right now. Please try again in a moment.'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch real card data by token (or update sample tier in public preview)
   useEffect(() => {
     const activeConfigs = getActiveTierConfigs();
     const customCards = getCustomSpecialCards();
@@ -538,8 +622,9 @@ export default function AppreciationCard() {
         activeConfigs[activeTierId] || 
         activeConfigs[APPRECIATION_TIERS.PRIDE_ADVOCATE];
 
+      setCardError(null);
       setCardData({
-        donorDisplayName: customDonorName || 'Affirming Community Supporter',
+        donorDisplayName: PREVIEW_PLACEHOLDER_NAME,
         tier: activeTierId,
         tierName: config.title,
         amountCents: (config.minAmount || 50) * 100,
@@ -552,48 +637,8 @@ export default function AppreciationCard() {
       return;
     }
 
-    const fetchCard = async () => {
-      try {
-        const apiBase = import.meta.env.VITE_API_BASE_URL || '/api';
-        const res = await fetch(`${apiBase}/appreciation-cards/${token}`);
-        if (res.ok) {
-          const json = await res.json();
-          if (json.success && json.card) {
-            setCardData(json.card);
-            setActiveTierId(json.card.tier || APPRECIATION_TIERS.COMMUNITY_ALLY);
-          }
-        } else {
-          // Graceful fallback for mock/demo cards
-          setCardData({
-            donorDisplayName: 'Affirming Community Supporter',
-            tier: APPRECIATION_TIERS.PRIDE_ADVOCATE,
-            tierName: 'Pride Advocate',
-            amountCents: 5000,
-            frequency: 'one-time',
-            isAnonymous: false,
-            impactMessage: activeConfigs[APPRECIATION_TIERS.PRIDE_ADVOCATE]?.impactNarrative || 'Supporting DCVC community sanctuary and wellness.',
-            createdAt: new Date().toISOString()
-          });
-        }
-      } catch (err) {
-        console.warn('Card lookup fallback:', err);
-        setCardData({
-          donorDisplayName: 'Affirming Community Supporter',
-          tier: APPRECIATION_TIERS.PRIDE_ADVOCATE,
-          tierName: 'Pride Advocate',
-          amountCents: 5000,
-          frequency: 'one-time',
-          isAnonymous: false,
-          impactMessage: activeConfigs[APPRECIATION_TIERS.PRIDE_ADVOCATE]?.impactNarrative || 'Supporting DCVC community sanctuary and wellness.',
-          createdAt: new Date().toISOString()
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchCard();
-  }, [token, isPreview, activeTierId, customDonorName]);
+    fetchVerifiedCard();
+  }, [token, isPreview, activeTierId]);
 
   // Handle opening interaction + tier-tailored celebration particles
   const handleOpenCard = () => {
@@ -816,115 +861,109 @@ export default function AppreciationCard() {
   const isDark = (cardData?.tier || activeTierId) === APPRECIATION_TIERS.VISIONARY_BENEFACTOR;
 
   // Unique verified certificate token code
-  const certificateId = `DCVC-AC-${currentTier.certificatePrefix || 'GEN'}-2026-${(token || 'PREVIEW').substring(0, 6).toUpperCase()}`;
-
-  // Security Verification for Studio Preview Route
-  const isDev = Boolean(import.meta.env.DEV);
-  const isStaffAuthenticated = typeof window !== 'undefined' && Boolean(
-    localStorage.getItem('dcvc_admin_token') || 
-    sessionStorage.getItem('dcvc_admin_token') ||
-    localStorage.getItem('dcvc_cms_auth')
-  );
-  const canAccessPreview = isDev || isStaffAuthenticated;
-
-  if (isPreview && !canAccessPreview) {
-    return (
-      <div className="min-h-[80vh] flex items-center justify-center bg-slate-50 py-16 px-4">
-        <div className="max-w-md w-full bg-white rounded-3xl p-8 border border-slate-200 shadow-xl text-center space-y-6">
-          <div className="w-16 h-16 rounded-2xl bg-purple-50 text-[#5A1E65] border border-purple-200 flex items-center justify-center mx-auto shadow-sm">
-            <Lock className="w-8 h-8" />
-          </div>
-          <div className="space-y-2">
-            <span className="text-[11px] font-black uppercase tracking-widest text-[#5A1E65]">Staff Access Only</span>
-            <h1 className="font-fraunces text-2xl font-black text-slate-950">Appreciation Card Studio</h1>
-            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-              In production, the Appreciation Card preview studio is restricted to authorized DCVC personnel. Real donors access cards via the private, cryptographic link sent upon donation confirmation.
-            </p>
-          </div>
-          <div className="pt-2 flex flex-col gap-2.5">
-            <Link
-              to="/admin"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[#5A1E65] hover:bg-purple-900 text-white text-xs font-bold transition-all shadow-md cursor-pointer"
-            >
-              <span>Sign In via Admin Portal</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link
-              to="/"
-              className="inline-flex items-center justify-center px-6 py-2.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer"
-            >
-              Return to Homepage
-            </Link>
-          </div>
-          <p className="text-[11px] text-slate-400">
-            Diversity Collective Ventura County · 501(c)(3) Nonprofit
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const certificateId = isPreview
+    ? `DCVC-SAMPLE-${currentTier.certificatePrefix || 'GEN'}-PREVIEW`
+    : `DCVC-AC-${currentTier.certificatePrefix || 'GEN'}-2026-${(token || 'VERIFIED').substring(0, 6).toUpperCase()}`;
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center space-y-4">
           <div className="w-12 h-12 border-4 border-purple-200 border-t-purple-800 rounded-full animate-spin mx-auto" />
-          <p className="text-sm font-semibold text-slate-600">Retrieving your appreciation keepsake...</p>
+          <p className="text-sm font-semibold text-slate-600">Verifying Zeffy confirmation &amp; retrieving keepsake...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Real token route without confirmed payment -> Strict Zeffy Verification Required state
+  if (!isPreview && (cardError || !cardData)) {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center bg-slate-50 py-16 px-4">
+        <div className="max-w-lg w-full bg-white rounded-3xl p-8 border-2 border-purple-100 shadow-xl text-center space-y-6">
+          <div className="w-16 h-16 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center mx-auto shadow-sm">
+            <ShieldAlert className="w-8 h-8" />
+          </div>
+          <div className="space-y-2">
+            <span className="text-[11px] font-black uppercase tracking-widest text-[#5A1E65]">
+              Zeffy Payment Verification Required
+            </span>
+            <h1 className="font-fraunces text-2xl font-black text-slate-950">
+              {cardError?.status === 410 ? 'Appreciation Card Revoked' : 'Awaiting Zeffy Confirmation'}
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+              {cardError?.message || 'Personalized Appreciation Cards featuring your donor name are minted and emailed only after Zeffy confirms your completed contribution.'}
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+            <button
+              type="button"
+              onClick={fetchVerifiedCard}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[#5A1E65] hover:bg-purple-900 text-white text-xs font-bold transition-all shadow-md cursor-pointer"
+            >
+              <RefreshCw className="w-4 h-4" />
+              <span>Check Verification Status</span>
+            </button>
+            <Link
+              to="/appreciation-card/preview"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-all"
+            >
+              <Eye className="w-4 h-4" />
+              <span>Browse Public Sample Preview</span>
+            </Link>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-100/70 text-slate-900 py-10 px-4 sm:px-6 lg:px-8 selection:bg-purple-900 selection:text-white">
-      
+    <div
+      className={`min-h-screen bg-slate-100/70 text-slate-900 py-8 sm:py-10 px-4 sm:px-6 lg:px-8 ${
+        isPreview ? 'select-none' : 'selection:bg-purple-900 selection:text-white'
+      }`}
+      onContextMenu={(e) => { if (isPreview) e.preventDefault(); }}
+      onCopy={(e) => { if (isPreview) e.preventDefault(); }}
+      onDragStart={(e) => { if (isPreview) e.preventDefault(); }}
+    >
+      {/* Print suppression in public preview mode */}
+      {isPreview && (
+        <style>{`
+          @media print {
+            .dcvc-preview-protected, body {
+              display: none !important;
+            }
+          }
+        `}</style>
+      )}
+
       {/* =================================================================== */}
-      {/* PREVIEW CONTROLS TOOLBAR (Preview Mode Only · Never Printed)        */}
+      {/* COMPACT PUBLIC SHOWCASE SWITCHER (No Login · Non-Editable · Read-Only) */}
       {/* =================================================================== */}
       {isPreview && (
-        <aside aria-label="Appreciation Card Preview Toolbar" className="max-w-4xl mx-auto mb-8 bg-white/95 backdrop-blur-md p-4 sm:p-5 rounded-3xl border border-purple-200 shadow-xl print:hidden space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
-            <div className="flex items-center gap-2">
+        <aside aria-label="Public Appreciation Card Tiers" className="max-w-xl mx-auto mb-6 bg-white/95 backdrop-blur-md p-4 rounded-3xl border border-purple-200 shadow-lg print:hidden space-y-3 dcvc-preview-protected">
+          <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-2.5">
+            <div className="flex items-center gap-2.5">
               <span className="w-8 h-8 rounded-xl bg-purple-100 text-[#5A1E65] flex items-center justify-center">
                 <Eye className="w-4 h-4" />
               </span>
               <div>
-                <h2 className="text-xs font-black uppercase tracking-wider text-purple-950">
-                  Donor Appreciation Keepsake Studio
-                </h2>
+                <h1 className="text-xs font-black uppercase tracking-wider text-purple-950">
+                  Public Appreciation Card Preview
+                </h1>
                 <p className="text-[11px] text-slate-500">
-                  4 Bespoke Tier Designs · Responsive Canvas Simulation
+                  Read-only miniature sample · Official named cards unlock upon Zeffy confirmation
                 </p>
               </div>
             </div>
-
-            {/* Viewport Switcher */}
-            <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl self-start sm:self-auto">
-              <button
-                type="button"
-                onClick={() => setPreviewViewport('desktop')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                  previewViewport === 'desktop' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-900'
-                }`}
-              >
-                <Monitor className="w-3.5 h-3.5" />
-                <span>Desktop</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setPreviewViewport('mobile')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                  previewViewport === 'mobile' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-900'
-                }`}
-              >
-                <Smartphone className="w-3.5 h-3.5" />
-                <span>Mobile (390px)</span>
-              </button>
-            </div>
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-[10px] font-black text-amber-800 whitespace-nowrap">
+              <Lock className="w-3 h-3" />
+              <span>Protected</span>
+            </span>
           </div>
 
           {/* Core Tier Switcher Buttons */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
             {Object.values(activeConfigs).map((tier) => {
               const isSelected = activeTierId === tier.id;
               return (
@@ -935,21 +974,14 @@ export default function AppreciationCard() {
                     setActiveTierId(tier.id);
                     setIsOpened(false);
                   }}
-                  className={`py-2.5 px-3 rounded-2xl text-xs font-bold transition-all text-left flex flex-col justify-between cursor-pointer border ${
+                  className={`py-2 px-2.5 rounded-xl text-xs font-bold transition-all text-left flex flex-col justify-between cursor-pointer border ${
                     isSelected
-                      ? 'bg-[#5A1E65] text-white border-[#5A1E65] shadow-md ring-2 ring-purple-400'
+                      ? 'bg-[#5A1E65] text-white border-[#5A1E65] shadow-sm ring-2 ring-purple-300'
                       : 'bg-slate-50 hover:bg-purple-50/70 border-slate-200 text-slate-700'
                   }`}
                 >
-                  <span className="text-[10px] uppercase font-mono tracking-wider opacity-75">
-                    Tier #{tier.certificatePrefix}
-                  </span>
-                  <span className="font-extrabold text-xs truncate mt-0.5">
-                    {tier.title}
-                  </span>
-                  <span className="text-[10px] font-medium opacity-85 mt-1">
-                    Threshold: ${tier.minAmount}+
-                  </span>
+                  <span className="font-extrabold text-[11px] truncate">{tier.title}</span>
+                  <span className="text-[10px] opacity-80">${tier.minAmount}+</span>
                 </button>
               );
             })}
@@ -959,10 +991,10 @@ export default function AppreciationCard() {
           {customCards.length > 0 && (
             <div className="pt-2 border-t border-slate-100">
               <span className="text-[10px] font-bold uppercase tracking-wider text-purple-900 block mb-1.5 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                <span>Special Commemorative Custom Cards ({customCards.length})</span>
+                <Sparkles className="w-3 h-3 text-amber-500" />
+                <span>Commemorative Editions ({customCards.length})</span>
               </span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                 {customCards.map((card) => {
                   const isSelected = activeTierId === card.id;
                   return (
@@ -973,19 +1005,14 @@ export default function AppreciationCard() {
                         setActiveTierId(card.id);
                         setIsOpened(false);
                       }}
-                      className={`py-2 px-3 rounded-xl text-xs font-bold transition-all text-left flex items-center justify-between cursor-pointer border ${
+                      className={`py-1.5 px-2.5 rounded-xl text-xs font-bold transition-all text-left flex items-center justify-between cursor-pointer border ${
                         isSelected
-                          ? 'bg-[#5A1E65] text-white border-[#5A1E65] shadow-xs ring-1 ring-purple-400'
+                          ? 'bg-[#5A1E65] text-white border-[#5A1E65]'
                           : 'bg-amber-50/70 hover:bg-amber-100/70 border-amber-200 text-slate-800'
                       }`}
                     >
-                      <div className="truncate pr-2">
-                        <span className="block font-black text-xs truncate">{card.title}</span>
-                        <span className="block text-[10px] opacity-80">{card.circleName}</span>
-                      </div>
-                      <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-black/10 flex-shrink-0">
-                        ${card.minAmount}+
-                      </span>
+                      <span className="truncate font-bold text-[11px] pr-2">{card.title}</span>
+                      <span className="text-[10px] font-mono font-bold flex-shrink-0">${card.minAmount}+</span>
                     </button>
                   );
                 })}
@@ -993,45 +1020,66 @@ export default function AppreciationCard() {
             </div>
           )}
 
-          {/* Recipient Customizer & State Reset */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1 text-xs">
-            <div className="w-full sm:w-auto flex items-center gap-2">
-              <label htmlFor="custom-donor-name-input" className="font-bold text-slate-600 whitespace-nowrap">Recipient Name:</label>
-              <input
-                id="custom-donor-name-input"
-                type="text"
-                value={customDonorName}
-                onChange={(e) => setCustomDonorName(e.target.value)}
-                placeholder="Donor Name"
-                className="w-full sm:w-64 px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-semibold focus:ring-2 focus:ring-[#5A1E65] outline-none"
-              />
-            </div>
-
+          {/* Read-Only Controls Footer */}
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-[11px] text-slate-500">
+            <span className="flex items-center gap-1 font-medium">
+              <Shield className="w-3.5 h-3.5 text-purple-700" />
+              <span>Non-editable sample preview · Downloads &amp; captures disabled</span>
+            </span>
             <button
               type="button"
               onClick={() => setIsOpened(prev => !prev)}
-              className="text-xs font-bold text-[#5A1E65] hover:text-purple-900 flex items-center gap-1 cursor-pointer self-end sm:self-auto"
+              className="font-bold text-[#5A1E65] hover:text-purple-900 flex items-center gap-1 cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>Toggle State: {isOpened ? 'Show Sealed Envelope' : 'Show Opened Card'}</span>
+              <span>{isOpened ? 'Show Sealed' : 'Preview Card'}</span>
             </button>
           </div>
         </aside>
       )}
 
       {/* =================================================================== */}
-      {/* CARD CONTAINER (Responsive Viewport Wrappers)                       */}
+      {/* CARD CONTAINER: Smaller Constrained Interface for Public Previews   */}
       {/* =================================================================== */}
-      <div className={`mx-auto transition-all duration-300 ${
-        previewViewport === 'mobile' ? 'max-w-[420px]' : 'max-w-4xl'
+      <div className={`mx-auto transition-all duration-300 relative ${
+        isPreview
+          ? 'max-w-[440px] dcvc-preview-protected'
+          : 'max-w-4xl'
       }`}>
+        {/* Capture / Screenshot Deterrent Shield */}
+        {isPreview && captureShieldActive && (
+          <div
+            onClick={() => setCaptureShieldActive(false)}
+            className="absolute inset-0 z-50 rounded-3xl bg-slate-950/92 backdrop-blur-xl text-white flex flex-col items-center justify-center p-6 text-center space-y-3 cursor-pointer border-2 border-amber-400/50 shadow-2xl"
+          >
+            <ShieldAlert className="w-10 h-10 text-amber-400" />
+            <h2 className="font-fraunces text-lg font-black">Sample Preview Protected</h2>
+            <p className="text-xs text-slate-300 max-w-xs leading-relaxed">
+              Screenshots and exports are restricted for sample previews. Your personalized keepsake unlocks automatically once Zeffy confirms your donation.
+            </p>
+            <span className="px-4 py-1.5 rounded-full bg-amber-400 text-slate-950 text-[11px] font-black">
+              Click to Resume Preview
+            </span>
+          </div>
+        )}
         
         {/* =================================================================== */}
         {/* STATE 1: BESPOKE SEALED KEEPSAKE ENVELOPE (Unopened)                */}
         {/* =================================================================== */}
         {!isOpened ? (
-          <div className={`rounded-3xl border-2 ${currentTier.borderStyle} ${currentTier.envelopeBg || 'bg-white'} shadow-2xl p-7 sm:p-14 text-center relative overflow-hidden transition-all duration-500`}>
+          <div className={`rounded-3xl border-2 ${currentTier.borderStyle} ${currentTier.envelopeBg || 'bg-white'} shadow-2xl ${isPreview ? 'p-5 sm:p-6' : 'p-7 sm:p-14'} text-center relative overflow-hidden transition-all duration-500`}>
             
+            {isPreview && (
+              <div
+                aria-hidden="true"
+                className="absolute inset-0 pointer-events-none z-20 flex items-center justify-center overflow-hidden select-none"
+              >
+                <span className={`transform -rotate-25 ${isDark ? 'text-white/12 border-white/15' : 'text-slate-900/12 border-slate-900/15'} font-black text-[11px] tracking-[0.2em] uppercase border-2 border-dashed py-1.5 px-4 rounded-xl`}>
+                  SAMPLE PREVIEW · UNISSUED
+                </span>
+              </div>
+            )}
+
             {/* Ambient Background Aura */}
             <div 
               className={`absolute -top-32 -right-32 w-80 h-80 rounded-full bg-gradient-to-tr ${currentTier.themeGradient} opacity-25 blur-3xl pointer-events-none`}
@@ -1121,18 +1169,24 @@ export default function AppreciationCard() {
               id="appreciation-card-render"
               ref={cardRef}
               onContextMenu={(e) => isPreview && e.preventDefault()}
-              className={`relative rounded-3xl p-6 sm:p-12 border-2 ${currentTier.borderStyle} ${currentTier.cardBackground} shadow-2xl overflow-hidden transition-all duration-700 ${isPreview ? 'select-none' : ''}`}
+              style={isPreview ? { WebkitUserSelect: 'none', WebkitTouchCallout: 'none', userSelect: 'none' } : undefined}
+              className={`relative rounded-3xl ${isPreview ? 'p-5 sm:p-6' : 'p-6 sm:p-12'} border-2 ${currentTier.borderStyle} ${currentTier.cardBackground} shadow-2xl overflow-hidden transition-all duration-700 ${isPreview ? 'select-none pointer-events-none' : ''}`}
             >
-              {/* Official Studio Preview Diagonal Watermark */}
+              {/* Dense Anti-Screenshot Watermark Mesh in Public Preview Mode */}
               {isPreview && (
                 <div 
                   aria-hidden="true"
-                  className="absolute inset-0 pointer-events-none z-40 flex items-center justify-center overflow-hidden select-none"
+                  className="absolute inset-0 pointer-events-none z-40 grid grid-cols-2 gap-6 place-items-center overflow-hidden select-none opacity-80"
                   style={{ userSelect: 'none' }}
                 >
-                  <div className="transform -rotate-25 text-slate-900/12 font-black text-xl sm:text-3xl md:text-4xl tracking-[0.25em] uppercase border-4 border-dashed border-slate-900/15 py-4 px-8 rounded-3xl text-center shadow-xs">
-                    OFFICIAL STUDIO PREVIEW · UNISSUED KEEPSAKE
-                  </div>
+                  {[0, 1, 2, 3].map((wmIdx) => (
+                    <div
+                      key={wmIdx}
+                      className={`transform -rotate-25 ${isDark ? 'text-white/15 border-white/15' : 'text-slate-900/15 border-slate-900/15'} font-black text-[10px] sm:text-xs tracking-[0.2em] uppercase border-2 border-dashed py-2 px-3 rounded-xl text-center`}
+                    >
+                      SAMPLE PREVIEW · UNISSUED · ZEFFY VERIFIED ONLY
+                    </div>
+                  ))}
                 </div>
               )}
 
@@ -1336,89 +1390,101 @@ export default function AppreciationCard() {
             </div>
 
             {/* =============================================================== */}
-            {/* ACTIONS TOOLBAR: Download High-Res, Print PDF, Share, Replay    */}
+            {/* ACTIONS TOOLBAR: Full Exports for Verified Donors Only          */}
             {/* =============================================================== */}
-            {isPreview && (
-              <div className="w-full text-xs font-semibold text-amber-900 bg-amber-50 border border-amber-200/90 px-4 py-3 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 shadow-xs print:hidden">
-                <span className="flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-amber-700 flex-shrink-0" />
-                  <span>Studio Preview Mode: High-resolution PNG and PDF exports are unlocked upon authentic donor contribution.</span>
-                </span>
-                <Link to="/donate" className="text-xs font-bold text-[#5A1E65] underline hover:text-purple-900 whitespace-nowrap">
-                  Make a Contribution & Claim Keepsake →
-                </Link>
+            {isPreview ? (
+              <div className="w-full text-xs font-semibold text-amber-950 bg-amber-50 border border-amber-200 p-4 rounded-2xl flex flex-col gap-3 shadow-xs print:hidden">
+                <div className="flex items-start gap-2">
+                  <Lock className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
+                  <span>
+                    <strong>Protected Sample Preview:</strong> Editing, screenshots, printing, and PNG/PDF downloads are disabled. Personalized keepsakes featuring your name are issued automatically after Zeffy confirms your donation.
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setIsOpened(false)}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-purple-900 cursor-pointer"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Close Envelope</span>
+                  </button>
+                  <Link
+                    to="/donate"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#5A1E65] text-white text-xs font-bold hover:bg-purple-900 transition-colors shadow-sm"
+                  >
+                    <span>Donate via Zeffy to Claim</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-white rounded-3xl border border-slate-200 shadow-md print:hidden">
+                <div className="flex flex-wrap gap-2.5">
+                  {/* Download High-Resolution 300 DPI Artwork (PNG) */}
+                  <button
+                    type="button"
+                    onClick={handleDownloadHighRes}
+                    disabled={isGeneratingDownload}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-[#5A1E65] to-purple-800 hover:from-purple-900 hover:to-indigo-950 text-white text-xs font-bold transition-all cursor-pointer shadow-md hover:shadow-lg disabled:opacity-40"
+                  >
+                    <Download className={`w-4 h-4 text-amber-300 ${isGeneratingDownload ? 'animate-bounce' : ''}`} />
+                    <span>{isGeneratingDownload ? 'Rendering 300 DPI...' : 'Download Keepsake (300 DPI PNG)'}</span>
+                  </button>
+
+                  {/* Download Verified PDF Certificate */}
+                  <button
+                    type="button"
+                    onClick={handleDownloadPdf}
+                    disabled={isGeneratingDownload}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all cursor-pointer shadow-xs disabled:opacity-40"
+                  >
+                    <FileText className="w-4 h-4 text-amber-300" />
+                    <span>Download PDF Certificate</span>
+                  </button>
+
+                  {/* Proportional Print / Save Button */}
+                  <button
+                    type="button"
+                    onClick={handlePrint}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-slate-300 hover:bg-slate-100 text-slate-800 text-xs font-bold transition-all cursor-pointer shadow-xs"
+                  >
+                    <Printer className="w-4 h-4 text-slate-600" />
+                    <span>Print Card</span>
+                  </button>
+
+                  {/* Copy Clean Share Link */}
+                  <button
+                    type="button"
+                    onClick={handleCopyLink}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-all cursor-pointer"
+                  >
+                    {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4 text-slate-600" />}
+                    <span>{copied ? 'Link Copied!' : 'Copy Share Link'}</span>
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  {/* Replay Opening Animation */}
+                  <button
+                    type="button"
+                    onClick={() => setIsOpened(false)}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-purple-900 transition-colors cursor-pointer"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Replay Keepsake Seal</span>
+                  </button>
+
+                  <Link
+                    to="/programs"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#5A1E65] text-white text-xs font-bold hover:bg-purple-900 transition-colors shadow-xs"
+                  >
+                    <span>See Programs in Action</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
               </div>
             )}
-
-            <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-white rounded-3xl border border-slate-200 shadow-md print:hidden">
-              
-              <div className="flex flex-wrap gap-2.5">
-                {/* Download High-Resolution 300 DPI Artwork (PNG) */}
-                <button
-                  type="button"
-                  onClick={handleDownloadHighRes}
-                  disabled={isGeneratingDownload || isPreview}
-                  title={isPreview ? "Exports are disabled in preview mode" : "Download Keepsake"}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-[#5A1E65] to-purple-800 hover:from-purple-900 hover:to-indigo-950 text-white text-xs font-bold transition-all cursor-pointer shadow-md hover:shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <Download className={`w-4 h-4 text-amber-300 ${isGeneratingDownload ? 'animate-bounce' : ''}`} />
-                  <span>{isGeneratingDownload ? 'Rendering 300 DPI...' : 'Download Keepsake (300 DPI PNG)'}</span>
-                </button>
-
-                {/* Download Verified PDF Certificate */}
-                <button
-                  type="button"
-                  onClick={handleDownloadPdf}
-                  disabled={isGeneratingDownload || isPreview}
-                  title={isPreview ? "Exports are disabled in preview mode" : "Download PDF Certificate"}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all cursor-pointer shadow-xs disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <FileText className="w-4 h-4 text-amber-300" />
-                  <span>Download PDF Certificate</span>
-                </button>
-
-                {/* Proportional Print / Save Button */}
-                <button
-                  type="button"
-                  onClick={handlePrint}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-slate-300 hover:bg-slate-100 text-slate-800 text-xs font-bold transition-all cursor-pointer shadow-xs"
-                >
-                  <Printer className="w-4 h-4 text-slate-600" />
-                  <span>Print Card</span>
-                </button>
-
-                {/* Copy Clean Share Link */}
-                <button
-                  type="button"
-                  onClick={handleCopyLink}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-all cursor-pointer"
-                >
-                  {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4 text-slate-600" />}
-                  <span>{copied ? 'Link Copied!' : 'Copy Share Link'}</span>
-                </button>
-              </div>
-
-              <div className="flex items-center gap-3">
-                {/* Replay Opening Animation */}
-                <button
-                  type="button"
-                  onClick={() => setIsOpened(false)}
-                  className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-purple-900 transition-colors cursor-pointer"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Replay Keepsake Seal</span>
-                </button>
-
-                <Link
-                  to="/programs"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#5A1E65] text-white text-xs font-bold hover:bg-purple-900 transition-colors shadow-xs"
-                >
-                  <span>See Programs in Action</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-
-            </div>
 
           </div>
         )}

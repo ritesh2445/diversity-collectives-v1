@@ -499,41 +499,105 @@ export const resourcesDirectory = [
   }
 ];
 
+export function getBoardMemberSlug(member) {
+  if (!member) return '';
+  if (member.slug) return member.slug;
+  return String(member.name || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+}
+
 export const boardMembers = [
   {
+    slug: "steve-somann",
     name: "Steve Somann",
+    pronouns: "he/him",
     role: "Co-Founder & Board Member",
+    tenure: "Serving Since 2014",
+    city: "Ventura, CA",
+    committee: "Facilities, Real Estate & Institutional Growth",
+    quote: "When we opened our doors in 2014, our promise was simple: every queer and trans neighbor in Ventura County deserves a permanent harbor they can call home.",
     bio: "Co-founder of Diversity Collective in 2014. Served as Treasurer (2014–2015), President (2015–2018), and continues to steward property management and institutional growth for the Community Resource Center.",
-    photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&h=400&q=80",
-    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&h=400&q=80"
+    extendedBio: [
+      "As a foundational architect of Diversity Collective Ventura County, Steve helped transform a grassroots coalition of local advocates into Ventura County's premier 501(c)(3) LGBTQ+ community resource hub.",
+      "Across a decade of fiduciary leadership — including formative terms as Founding Treasurer and Board President — he spearheaded long-term facility stability so programs like Rainbow Umbrella youth groups and free rapid health clinics have a permanent, accessible home on Portola Road."
+    ],
+    focusAreas: ["Co-Founder Legacy (2014)", "Sanctuary Property Stewardship", "Long-Term Endowment & Growth", "501(c)(3) Fiduciary Governance"],
+    photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=900&h=1100&q=85",
+    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=900&h=1100&q=85"
   },
   {
+    slug: "unique-dowtin",
     name: "Unique Dowtin",
+    pronouns: "she/her",
     role: "Secretary, Board of Directors",
+    tenure: "Board Secretary · Cultural Stewardship",
+    city: "Ventura, CA",
+    committee: "Cultural Arts, Archives & Governance Records",
+    quote: "Preserving our community's stories and creating welcoming circles of learning is how we turn visibility into lasting belonging.",
     bio: "Library professional at The Getty and filmmaker. Unique's work across public library systems fostered her deep dedication to advocacy, lifelong learning, and community building. Since moving to Ventura in 2018, she has volunteered for AIDSWalk, Ventura Pride, and Loud & Queer.",
-    photo: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&h=400&q=80",
-    image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&h=400&q=80"
+    extendedBio: [
+      "Bridging archival curation at The Getty with documentary filmmaking, Unique champions accessible cultural programming and historical preservation across Ventura County's LGBTQ+ ecosystem.",
+      "As Board Secretary, she ensures transparent institutional recordkeeping while energizing signature public gatherings including AIDSWalk Ventura, Ventura County Pride, and Loud & Queer storytelling nights."
+    ],
+    focusAreas: ["Board Governance & Compliance", "Queer Oral History & Archives", "Pride & AIDSWalk Operations", "Youth Literacy & Cultural Arts"],
+    photo: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=900&h=1100&q=85",
+    image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=900&h=1100&q=85"
   },
   {
+    slug: "luis-andrade",
     name: "Luis Andrade",
+    pronouns: "he/him",
     role: "Board Member / Vice President",
+    tenure: "Board Vice President · Risk & Engagement",
+    city: "Oxnard / Ventura, CA",
+    committee: "Corporate Partnerships, Risk & Bilingual Outreach",
+    quote: "Strong financial stewardship and genuine community partnerships make sure our doors stay open for every family across all ten Ventura County cities.",
     bio: "Testing Specialist with Bank of America Global Risk Management with over two decades of experience in the banking and mortgage sectors. Luis leads events for the Bank of America Southern California LGBT+ Pride Chapter and champions community engagement across Ventura County.",
-    photo: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&h=400&q=80",
-    image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&h=400&q=80"
+    extendedBio: [
+      "Bringing more than 20 years of enterprise banking, compliance, and risk governance experience from Bank of America Global Risk Management, Luis reinforces Diversity Collective's audit-grade transparency and sustainability.",
+      "Beyond the boardroom, he bridges corporate allyship networks across Southern California with grassroots bilingual outreach for Latine LGBTQ+ neighbors and families."
+    ],
+    focusAreas: ["Financial Risk & Transparency", "Corporate Allyship & Sponsorship", "Latine & Bilingual Inclusion", "Community Resource Expansion"],
+    photo: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=900&h=1100&q=85",
+    image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=900&h=1100&q=85"
   },
   {
+    slug: "celia-sandhya-daniels",
     name: "Celia Sandhya Daniels",
+    pronouns: "she/her",
     role: "Board Member",
+    tenure: "Healthcare Equity & Policy Advisor",
+    city: "Ventura County, CA",
+    committee: "Health Equity, Workplace Training & Public Policy",
+    quote: "Equity isn't an abstract ideal—it's built when healthcare clinics, employers, and AI systems affirm every human life with dignity.",
     bio: "Healthcare management executive, Founder & CEO of Rebekon Consulting, and prominent advocate focusing on biases in AI, healthcare, and gender equity. Recognized as one of the Top 20 LGBTQ leaders in biopharma and Top 10 LGBTQ+ voices on LinkedIn, Celia also serves on the Workforce Development Board of Ventura County and holds leadership positions with PFLAG and Stonewall Democrats.",
-    photo: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=400&h=400&q=80",
-    image: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=400&h=400&q=80"
+    extendedBio: [
+      "An internationally recognized healthcare strategist and Founder & CEO of Rebekon Consulting, Celia advises boards, biopharma pioneers, and public institutions on eliminating systemic bias across clinical care and emerging AI.",
+      "Locally, her service spans the Workforce Development Board of Ventura County, PFLAG family advocacy, and Stonewall Democrats—directly strengthening Diversity Collective's Diversity SHINES clinic navigation and P.R.I.D.E. workplace education."
+    ],
+    focusAreas: ["Affirming Healthcare Access", "P.R.I.D.E. Executive Education", "County Policy & Workforce Equity", "Intersectional & Trans Advocacy"],
+    photo: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=900&h=1100&q=85",
+    image: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=900&h=1100&q=85"
   },
   {
+    slug: "aj-holmes",
     name: "AJ Holmes",
+    pronouns: "they/them",
     role: "Board Member",
+    tenure: "Youth Advocacy & Grassroots Mobilization",
+    city: "Ventura County, CA",
+    committee: "Youth Sanctuary, Peer Mentorship & Community Action",
+    quote: "When young queer people step into a room and see adults fighting fiercely for their joy, everything changes.",
     bio: "Dedicated community organizer and advocate bringing passionate civic perspective and grassroots support to Diversity Collective's programs and youth outreach.",
-    photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&h=400&q=80",
-    image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&h=400&q=80"
+    extendedBio: [
+      "Rooted in direct grassroots organizing across Ventura County, AJ amplifies the lived priorities of queer youth, mutual-aid organizers, and emerging neighborhood leaders inside board-level decision making.",
+      "Their leadership keeps Diversity Collective grounded in authentic sanctuary values—ensuring youth circles, rapid crisis aid, and civic rallies remain warm, fearless, and community-led."
+    ],
+    focusAreas: ["Youth Sanctuary Empowerment", "Grassroots Community Mobilization", "Peer Mentorship & Safe Harbor", "Intersectionality & Civic Action"],
+    photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=900&h=1100&q=85",
+    image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=900&h=1100&q=85"
   }
 ];
 

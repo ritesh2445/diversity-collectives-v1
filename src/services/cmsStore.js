@@ -15,7 +15,8 @@ import {
   trainingCourses,
   newsArticles,
   galleryPhotos,
-  memoryLaneMilestones
+  memoryLaneMilestones,
+  getBoardMemberSlug
 } from '../data/dcvcData';
 import {
   fetchAllSanityWebsiteData,
@@ -234,9 +235,13 @@ class CmsStoreEngine {
             return {
               ...fb,
               id: b._id,
+              slug: b.slug?.current || b.slug || fb.slug || getBoardMemberSlug(b),
               name: b.name,
               role: b.role,
               bio: b.bio || fb.bio || '',
+              quote: b.quote || fb.quote || '',
+              committee: b.committee || fb.committee || 'Board Governance & Stewardship',
+              tenure: b.tenure || fb.tenure || 'Board of Directors',
               photo,
               image: photo,
               category: 'board',

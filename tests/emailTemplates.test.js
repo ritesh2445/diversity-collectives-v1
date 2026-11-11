@@ -12,7 +12,11 @@ import {
   templateAccessibilityAcknowledgment,
   templateAccessibilityStaffNotification,
   templateDonorAppreciationEmail,
-  templateAdminAlert
+  templateAdminAlert,
+  templateEventRsvpConfirmation,
+  templateEventRsvpStaffNotification,
+  templateInquiryAcknowledgment,
+  templateInquiryStaffNotification
 } from '../worker/src/emailTemplates.js';
 
 describe('Resend Email Templates (12 Professional Templates)', () => {
@@ -156,6 +160,75 @@ describe('Resend Email Templates (12 Professional Templates)', () => {
     assert.match(res.subject, /\[DCVC Security\/Admin Alert\] Business Listing Approved/);
     assert.match(res.html, /admin@diversitycollective\.org/);
     assert.match(res.html, /biz-1/);
+  });
+
+  it('13. Recurring Sustainer Donor Appreciation template renders heartfelt monthly thank-you', () => {
+    const res = templateDonorAppreciationEmail({
+      donorDisplayName: 'Jordan Vance',
+      formattedAmount: '$50',
+      tierName: 'Community Ally',
+      badge: 'ALLY',
+      tagline: 'Keeping Sanctuary Doors Open',
+      impact: 'Sustains weekly youth & trans support circles.',
+      cardUrl: 'https://diversitycollective.org/appreciation-card/dcvc_rec_123',
+      frequency: 'monthly'
+    });
+    assert.match(res.subject, /Recurring Sustainer Appreciation Card & Heartfelt Thanks/);
+    assert.match(res.html, /Jordan Vance/);
+    assert.match(res.html, /A Cute Heartfelt Note for Our Recurring Sustainer Family/);
+    assert.match(res.text, /heartfelt thanks/i);
+  });
+
+  it('14. Event RSVP Confirmation template renders attendee confirmation', () => {
+    const res = templateEventRsvpConfirmation({
+      attendeeName: 'Taylor Brooks',
+      eventTitle: 'Ventura County Pride Gala',
+      eventDate: 'June 20, 2026',
+      eventTime: '6:00 PM',
+      attendeeCount: 2,
+      accommodations: 'ASL interpreter',
+      reference: 'rsvp_abc123'
+    });
+    assert.match(res.subject, /You're Confirmed: Ventura County Pride Gala/);
+    assert.match(res.html, /Taylor Brooks/);
+    assert.match(res.html, /ASL interpreter/);
+    assert.match(res.html, /rsvp_abc123/);
+  });
+
+  it('15. Event RSVP Staff Notification template renders organizer summary', () => {
+    const res = templateEventRsvpStaffNotification({
+      attendeeName: 'Taylor Brooks',
+      attendeeEmail: 'taylor@example.org',
+      attendeePhone: '805-555-0199',
+      eventTitle: 'Ventura County Pride Gala',
+      eventDate: 'June 20, 2026',
+      attendeeCount: 2,
+      reference: 'rsvp_abc123'
+    });
+    assert.match(res.subject, /\[Event RSVP\] Ventura County Pride Gala — Taylor Brooks \(2 seats\)/);
+    assert.match(res.html, /taylor@example\.org/);
+    assert.match(res.html, /805-555-0199/);
+  });
+
+  it('16. Specialized Inquiry Acknowledgment & Staff Notification templates render correctly', () => {
+    const ack = templateInquiryAcknowledgment({
+      type: 'appointment',
+      name: 'Sam Ortiz',
+      subject: 'Gender-Affirming Care Intake'
+    });
+    assert.match(ack.subject, /Confidential Health & Intake Appointment Request Received/);
+    assert.match(ack.html, /Privacy Notice:/);
+
+    const staff = templateInquiryStaffNotification({
+      type: 'community_join',
+      name: 'Sam Ortiz',
+      email: 'sam@example.org',
+      subject: 'Rainbow Umbrella Youth',
+      message: 'Would love to join Thursdays!',
+      reference: 'inq_999'
+    });
+    assert.match(staff.subject, /\[COMMUNITY_JOIN\] Rainbow Umbrella Youth — from Sam Ortiz/);
+    assert.match(staff.html, /Would love to join Thursdays!/);
   });
 
 });

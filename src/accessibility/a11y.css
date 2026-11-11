@@ -24,19 +24,75 @@ html[data-a11y-font-size="150"] { font-size: 24px; }
 html[data-a11y-font-size="175"] { font-size: 28px; }
 html[data-a11y-font-size="200"] { font-size: 32px; }
 
+/* Weighted-Bottom OpenDyslexic Webfont (Actual Dyslexia Typeface) */
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/woff/OpenDyslexic-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/woff/OpenDyslexic-Bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/woff/OpenDyslexic-Italic.woff') format('woff');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
 /* OpenDyslexic / Dyslexia-Optimized Stack */
 html[data-a11y-font-family="opendyslexic"] body,
+html[data-a11y-font-family="opendyslexic"] main,
 html[data-a11y-font-family="opendyslexic"] p,
+html[data-a11y-font-family="opendyslexic"] li,
 html[data-a11y-font-family="opendyslexic"] h1,
 html[data-a11y-font-family="opendyslexic"] h2,
 html[data-a11y-font-family="opendyslexic"] h3,
 html[data-a11y-font-family="opendyslexic"] h4,
 html[data-a11y-font-family="opendyslexic"] a,
 html[data-a11y-font-family="opendyslexic"] span,
+html[data-a11y-font-family="opendyslexic"] label,
 html[data-a11y-font-family="opendyslexic"] button {
-  font-family: 'OpenDyslexic', 'Comic Sans MS', sans-serif !important;
+  font-family: 'OpenDyslexic', 'Lexend', 'Comic Sans MS', sans-serif !important;
   letter-spacing: 0.04em !important;
-  word-spacing: 0.08em !important;
+  word-spacing: 0.1em !important;
+}
+
+/* Lexend (Scientifically Designed to Reduce Visual Crowding for Dyslexia) */
+html[data-a11y-font-family="lexend"] body,
+html[data-a11y-font-family="lexend"] main,
+html[data-a11y-font-family="lexend"] p,
+html[data-a11y-font-family="lexend"] li,
+html[data-a11y-font-family="lexend"] h1,
+html[data-a11y-font-family="lexend"] h2,
+html[data-a11y-font-family="lexend"] h3,
+html[data-a11y-font-family="lexend"] a,
+html[data-a11y-font-family="lexend"] span,
+html[data-a11y-font-family="lexend"] label {
+  font-family: 'Lexend', 'Atkinson Hyperlegible', sans-serif !important;
+}
+
+/* Dyslexia Sanctuary Mode Global Reading Comfort Rules */
+html[data-a11y-dyslexia-mode="true"] main p,
+html[data-a11y-dyslexia-mode="true"] main li {
+  text-align: left !important;
+  max-width: 68ch;
+  margin-bottom: 0.9em;
+}
+
+/* Bionic Reading Anchor Bold Fixation */
+html[data-a11y-bionic="true"] .a11y-bionic-lead {
+  font-weight: 800 !important;
+  color: inherit !important;
 }
 
 /* Atkinson Hyperlegible Stack */

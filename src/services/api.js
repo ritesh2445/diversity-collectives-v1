@@ -24,7 +24,8 @@ const API_BASE_URL = typeof window !== 'undefined' && window.location.origin
  * Submit Contact Form Inquiry
  */
 export async function submitContact(data) {
-  const { name, email, phone, topic, message, turnstileToken } = data;
+  const { name, email, phone, topic, subject, message, turnstileToken } = data;
+  const resolvedSubject = topic || subject || 'General Inquiry';
 
   if (!name?.trim()) return { success: false, message: 'Full name is required.', errors: { name: 'Name is required' } };
   if (!email?.trim() || !email.includes('@')) return { success: false, message: 'Valid email address is required.', errors: { email: 'Valid email is required' } };
@@ -34,7 +35,7 @@ export async function submitContact(data) {
     const res = await fetch(`${API_BASE_URL}/contact`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, phone, topic, message, turnstileToken, timestamp: new Date().toISOString() })
+      body: JSON.stringify({ name, email, phone, topic: resolvedSubject, subject: resolvedSubject, message, consent: true, turnstileToken, timestamp: new Date().toISOString() })
     });
 
     if (res.ok) {
@@ -89,17 +90,33 @@ export async function submitInquiry(data) {
  * Submit Volunteer Application
  */
 export async function submitVolunteer(data) {
-  const { fullName, email, phone, areasOfInterest, availability, message, backgroundCheckConsent, turnstileToken } = data;
+  const { fullName, email, phone, city = 'Ventura County', areasOfInterest, roles, availability, message, skills, backgroundCheckConsent, consent, turnstileToken } = data;
+  const resolvedRoles = roles || areasOfInterest || [];
+  const resolvedConsent = Boolean(backgroundCheckConsent ?? consent);
 
   if (!fullName?.trim()) return { success: false, message: 'Full name is required.', errors: { fullName: 'Name is required' } };
   if (!email?.trim() || !email.includes('@')) return { success: false, message: 'Valid email address is required.', errors: { email: 'Valid email is required' } };
-  if (!backgroundCheckConsent) return { success: false, message: 'Consent for background verification is required for youth-serving volunteer roles.', errors: { backgroundCheckConsent: 'Consent required' } };
+  if (!resolvedConsent) return { success: false, message: 'Consent for background verification is required for youth-serving volunteer roles.', errors: { backgroundCheckConsent: 'Consent required' } };
 
   try {
     const res = await fetch(`${API_BASE_URL}/volunteer`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fullName, email, phone, areasOfInterest, availability, message, backgroundCheckConsent, turnstileToken, timestamp: new Date().toISOString() })
+      body: JSON.stringify({
+        fullName,
+        email,
+        phone,
+        city,
+        areasOfInterest: resolvedRoles,
+        roles: resolvedRoles,
+        availability,
+        message,
+        skills: skills || message,
+        backgroundCheckConsent: resolvedConsent,
+        consent: resolvedConsent,
+        turnstileToken,
+        timestamp: new Date().toISOString()
+      })
     });
 
     if (res.ok) {
@@ -121,18 +138,38 @@ export async function submitVolunteer(data) {
  * Submit Business for LGBTQ+ Affirming Directory
  */
 export async function submitBusiness(data) {
-  const { businessName, category, city, address, website, email, phone, description, ownerName, ownerEmail, isLGBTQOwned, termsConsent, affirmingPledge, turnstileToken } = data;
+  const { businessName, name, category, city, address, website, email, phone, description, ownerName, ownerEmail, isLGBTQOwned, termsConsent, affirmingPledge, turnstileToken } = data;
+  const resolvedName = (businessName || name || '').trim();
+  const resolvedPledge = Boolean(termsConsent || affirmingPledge);
 
-  if (!businessName?.trim()) return { success: false, message: 'Business name is required.', errors: { businessName: 'Required' } };
+  if (!resolvedName) return { success: false, message: 'Business name is required.', errors: { businessName: 'Required' } };
   if (!category?.trim()) return { success: false, message: 'Category is required.', errors: { category: 'Required' } };
   if (!city?.trim()) return { success: false, message: 'City is required.', errors: { city: 'Required' } };
-  if (!termsConsent && !affirmingPledge) return { success: false, message: 'You must agree to the LGBTQ+ Non-Discrimination and Community Pledge.', errors: { termsConsent: 'Pledge consent required', affirmingPledge: 'Pledge consent required' } };
+  if (!resolvedPledge) return { success: false, message: 'You must agree to the LGBTQ+ Non-Discrimination and Community Pledge.', errors: { termsConsent: 'Pledge consent required', affirmingPledge: 'Pledge consent required' } };
 
   try {
     const res = await fetch(`${API_BASE_URL}/directory/submit`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ businessName, category, city, address, website, email, phone, description, ownerName, ownerEmail, isLGBTQOwned, turnstileToken, status: 'pending', timestamp: new Date().toISOString() })
+      body: JSON.stringify({
+        businessName: resolvedName,
+        name: resolvedName,
+        category,
+        city,
+        address,
+        website,
+        email,
+        phone,
+        description,
+        ownerName,
+        ownerEmail: ownerEmail || email,
+        isLGBTQOwned,
+        affirmingPledge: resolvedPledge,
+        termsConsent: resolvedPledge,
+        turnstileToken,
+        status: 'pending',
+        timestamp: new Date().toISOString()
+      })
     });
 
     if (res.ok) {
@@ -154,7 +191,7 @@ export async function submitBusiness(data) {
  * Submit P.R.I.D.E. Training Booking or Inquiry
  */
 export async function submitTrainingBooking(data) {
-  const { organizationName, contactName, email, phone, estimatedAttendees, preferredFormat, requestedDate, notes, turnstileToken } = data;
+  const { organizationName, contactName, email, phone, estimatedAttendees, attendeeCount, preferredFormat, requestedDate, preferredDate, courseTitle, courseId, notes, turnstileToken } = data;
 
   if (!organizationName?.trim()) return { success: false, message: 'Organization name is required.', errors: { organizationName: 'Required' } };
   if (!contactName?.trim()) return { success: false, message: 'Contact name is required.', errors: { contactName: 'Required' } };
@@ -164,7 +201,22 @@ export async function submitTrainingBooking(data) {
     const res = await fetch(`${API_BASE_URL}/training/book`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ organizationName, contactName, email, phone, estimatedAttendees, preferredFormat, requestedDate, notes, turnstileToken, timestamp: new Date().toISOString() })
+      body: JSON.stringify({
+        organizationName,
+        contactName,
+        email,
+        phone,
+        estimatedAttendees: attendeeCount || estimatedAttendees,
+        attendeeCount: attendeeCount || estimatedAttendees,
+        preferredFormat,
+        requestedDate: preferredDate || requestedDate,
+        preferredDate: preferredDate || requestedDate,
+        courseTitle: courseTitle || 'P.R.I.D.E. LGBTQ+ Cultural Competency Training',
+        courseId,
+        notes,
+        turnstileToken,
+        timestamp: new Date().toISOString()
+      })
     });
 
     if (res.ok) {
@@ -312,6 +364,72 @@ export async function registerDonationIntent(data) {
   }
 
   return { success: false, message: 'Intent registration skipped' };
+}
+
+/**
+ * Submit Event Registration / RSVP (Sends Confirmation & Staff Notification Emails)
+ */
+export async function submitEventRsvp(data) {
+  const {
+    eventId,
+    eventTitle,
+    eventDate,
+    eventTime,
+    location,
+    organizerEmail,
+    attendeeName,
+    attendeeEmail,
+    attendeePhone,
+    attendeeCount = 1,
+    accommodations = '',
+    turnstileToken
+  } = data;
+
+  if (!attendeeName?.trim()) return { success: false, message: 'Full name or chosen name is required.' };
+  if (!attendeeEmail?.trim() || !attendeeEmail.includes('@')) return { success: false, message: 'Valid email address is required for RSVP confirmation.' };
+  if (!eventTitle?.trim()) return { success: false, message: 'Event title is required.' };
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/events/rsvp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        eventId,
+        eventTitle,
+        eventDate,
+        eventTime,
+        location,
+        organizerEmail,
+        attendeeName: attendeeName.trim(),
+        attendeeEmail: attendeeEmail.trim().toLowerCase(),
+        phone: attendeePhone || '',
+        attendeeCount: Number(attendeeCount) || 1,
+        accommodations,
+        turnstileToken,
+        timestamp: new Date().toISOString()
+      })
+    });
+
+    if (res.ok) {
+      const json = await res.json();
+      return {
+        success: true,
+        message: json.message || `You're confirmed for ${eventTitle}! Check your inbox for confirmation.`,
+        data: json
+      };
+    }
+
+    const errJson = await res.json().catch(() => ({}));
+    return { success: false, message: errJson.error || 'Could not confirm RSVP right now. Please try again.' };
+  } catch (err) {
+    console.warn('[API Client] Event RSVP endpoint offline:', err);
+  }
+
+  return {
+    success: true,
+    message: `Thank you, ${attendeeName}! Your RSVP for ${eventTitle} has been recorded.`,
+    data: { id: `rsvp_${Date.now()}`, queued: true }
+  };
 }
 
 // Alias for test and workflow compatibility

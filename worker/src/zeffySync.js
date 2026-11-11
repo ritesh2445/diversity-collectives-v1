@@ -10,14 +10,61 @@
  */
 
 import { resolveAppreciationTier } from './appreciationTiers.js';
+import { templateDonorAppreciationEmail } from './emailTemplates.js';
 
 const ZEFFY_API_BASE = 'https://api.zeffy.com/api/v1';
+
+async function dispatchZeffySyncEmail(env, sendEmailFn, emailPayload) {
+  if (typeof sendEmailFn === 'function') {
+    return sendEmailFn(emailPayload);
+  }
+  if (!env?.RESEND_API_KEY) {
+    console.warn('[Zeffy Sync] RESEND_API_KEY not configured; skipping donor appreciation email.');
+    return null;
+  }
+
+  const from = env.RESEND_FROM_EMAIL || 'Diversity Collective <noreply@diversitycollective.org>';
+  let res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      from,
+      to: [emailPayload.to],
+      subject: emailPayload.subject,
+      html: emailPayload.html,
+      text: emailPayload.text
+    })
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    if (res.status === 403 && (errText.includes('domain') || errText.includes('verified') || from.includes('@diversitycollective'))) {
+      await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          from: 'Diversity Collective <onboarding@resend.dev>',
+          to: [emailPayload.to],
+          subject: emailPayload.subject,
+          html: emailPayload.html,
+          text: emailPayload.text
+        })
+      }).catch(() => {});
+    }
+  }
+}
 
 /**
  * Execute automated Zeffy polling and payment reconciliation
  * Called every 5 minutes by Cloudflare Worker scheduled() handler
  */
-export async function executeZeffySync(env, db, ctx) {
+export async function executeZeffySync(env, db, ctx, sendEmailFn = null) {
   if (!db) {
     return { skipped: true, reason: 'Database not configured' };
   }
@@ -100,7 +147,7 @@ export async function executeZeffySync(env, db, ctx) {
       totalProcessed++;
 
       try {
-        await processSingleZeffyPayment(payment, env, db, ctx);
+        await processSingleZeffyPayment(payment, env, db, ctx, sendEmailFn);
       } catch (procErr) {
         console.error(`Failed processing payment ${payment.id}:`, procErr);
       }
@@ -136,7 +183,7 @@ export async function executeZeffySync(env, db, ctx) {
 /**
  * Process a single Zeffy payment, match to intent, and issue appreciation card
  */
-async function processSingleZeffyPayment(payment, env, db, ctx) {
+async function processSingleZeffyPayment(payment, env, db, ctx, sendEmailFn = null) {
   const paymentId = payment.id;
   const amountCents = Number(payment.amount || 0);
   const donorEmail = (
@@ -226,13 +273,19 @@ async function processSingleZeffyPayment(payment, env, db, ctx) {
 
   const isAnon = matchedIntent ? Boolean(matchedIntent.is_anonymous) : Boolean(payment.is_anonymous);
   const displayName = isAnon ? 'Affirming Friend of DCVC' : (matchedIntent?.donor_name || donorName);
-  const frequency = matchedIntent?.frequency || payment.frequency || 'one-time';
+  const frequency = matchedIntent?.frequency ||
+    payment.frequency ||
+    payment.recurrence ||
+    payment.recurring_frequency ||
+    payment.recurring_interval ||
+    payment.subscription?.interval ||
+    ((payment.is_recurring || payment.isMonthly || payment.subscription_id) ? 'monthly' : 'one-time');
 
-  // Issue card
+  // Issue card ONLY after Zeffy confirms payment succeeded (reached here after refund/dispute check)
   await db.execute({
     sql: `INSERT INTO donation_appreciation_cards 
-          (id, card_token, token_hash, payment_reference, tier, tier_name, amount_cents, donor_display_name, is_anonymous, impact_message, frequency, status)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')`,
+          (id, card_token, token_hash, payment_reference, tier, tier_name, amount_cents, donor_display_name, recipient_email, is_anonymous, impact_message, frequency, status)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')`,
     args: [
       crypto.randomUUID(),
       cardToken,
@@ -242,6 +295,7 @@ async function processSingleZeffyPayment(payment, env, db, ctx) {
       tierInfo.tierName,
       amountCents,
       displayName,
+      donorEmail || null,
       isAnon ? 1 : 0,
       tierInfo.impact,
       frequency
@@ -260,6 +314,32 @@ async function processSingleZeffyPayment(payment, env, db, ctx) {
       amountCents
     ]
   });
+
+  // Automatically deliver Personalized Appreciation Card (+ heartfelt message for recurring sustainers)
+  if (donorEmail && donorEmail.includes('@')) {
+    const frontendBase = env.FRONTEND_BASE_URL || 'https://diversitycollective.org';
+    const cardUrl = `${frontendBase}/appreciation-card/${cardToken}`;
+    const formattedAmount = `$${amountDollars.toFixed(amountDollars % 1 === 0 ? 0 : 2)}`;
+    const tpl = templateDonorAppreciationEmail({
+      donorDisplayName: displayName,
+      formattedAmount,
+      tierName: tierInfo.tierName,
+      badge: tierInfo.badge,
+      tagline: tierInfo.tagline,
+      impact: tierInfo.impact,
+      cardUrl,
+      frequency
+    });
+
+    await dispatchZeffySyncEmail(env, sendEmailFn, {
+      to: donorEmail,
+      subject: tpl.subject,
+      html: tpl.html,
+      text: tpl.text
+    }).catch((mailErr) => {
+      console.error(`[Zeffy Sync] Appreciation email failed for ${paymentId}:`, mailErr);
+    });
+  }
 
   if (matchedIntent) {
     // Complete intent

@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { liveEvents, orgInfo } from '../data/dcvcData';
 import { cmsStore } from '../services/cmsStore';
+import { submitEventRsvp } from '../services/api';
+import TurnstileWidget from '../components/TurnstileWidget';
 import CardSpotlight from '../components/CardSpotlight';
 import { getGoogleCalendarUrl, downloadIcsFile } from '../utils/calendar';
 import { usePageMeta } from '../utils/seo';
@@ -24,6 +26,41 @@ export default function EventDetail() {
   const { slug } = useParams();
   const event = liveEvents.find(e => e.slug === slug) || cmsStore.getEvents().find(e => e.slug === slug || e.id === slug);
   const [copied, setCopied] = useState(false);
+  const [rsvpForm, setRsvpForm] = useState({
+    attendeeName: '',
+    attendeeEmail: '',
+    attendeePhone: '',
+    attendeeCount: 1,
+    accommodations: '',
+    turnstileToken: ''
+  });
+  const [rsvpStatus, setRsvpStatus] = useState('idle'); // 'idle' | 'loading' | 'success' | 'error'
+  const [rsvpMessage, setRsvpMessage] = useState('');
+
+  const handleRsvpSubmit = async (e) => {
+    e.preventDefault();
+    if (!event) return;
+    setRsvpStatus('loading');
+    setRsvpMessage('');
+
+    const res = await submitEventRsvp({
+      eventId: event.id || event.slug,
+      eventTitle: event.title,
+      eventDate: `${event.month} ${event.day}, ${event.year}`,
+      eventTime: event.time,
+      location: `${event.location}${event.address ? ` (${event.address})` : ''}`,
+      organizerEmail: event.contactEmail || orgInfo.email,
+      ...rsvpForm
+    });
+
+    if (res.success) {
+      setRsvpStatus('success');
+      setRsvpMessage(res.message);
+    } else {
+      setRsvpStatus('error');
+      setRsvpMessage(res.message || 'Unable to submit RSVP.');
+    }
+  };
 
   usePageMeta({
     title: event ? event.title : 'Event Details',
@@ -179,7 +216,7 @@ export default function EventDetail() {
               ) : (
                 <div className="p-4 bg-emerald-50 border-2 border-emerald-200 rounded-2xl text-xs text-emerald-900 font-bold flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                  <span>Free Drop-in Event. No advance ticket required. All are welcome.</span>
+                  <span>Free Drop-in Event. Reserve your spot below for instant email reminders.</span>
                 </div>
               )}
 
@@ -191,6 +228,137 @@ export default function EventDetail() {
                 <span>Contact Organizer</span>
               </a>
             </div>
+
+            {/* Direct Event RSVP & Email Confirmation Form */}
+            {!event.isCancelled && (
+              <div className="p-6 sm:p-8 rounded-3xl bg-white border-2 border-purple-100 shadow-lg space-y-5">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-4">
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-[#5A1E65] bg-purple-50 px-2.5 py-1 rounded-full border border-purple-200">
+                      Instant Email Confirmation
+                    </span>
+                    <h3 className="font-display text-xl sm:text-2xl font-black text-slate-950 mt-2">
+                      RSVP for {event.title}
+                    </h3>
+                  </div>
+                </div>
+
+                {rsvpStatus === 'success' ? (
+                  <div className="p-5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-950 space-y-2">
+                    <div className="flex items-center gap-2 font-black text-sm">
+                      <Check className="w-5 h-5 text-emerald-600" />
+                      <span>RSVP Confirmed!</span>
+                    </div>
+                    <p className="text-xs sm:text-sm text-emerald-800 leading-relaxed">{rsvpMessage}</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRsvpStatus('idle');
+                        setRsvpForm({ attendeeName: '', attendeeEmail: '', attendeePhone: '', attendeeCount: 1, accommodations: '', turnstileToken: '' });
+                      }}
+                      className="text-xs font-bold text-[#5A1E65] underline cursor-pointer pt-1"
+                    >
+                      Register another guest
+                    </button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleRsvpSubmit} className="space-y-4">
+                    {rsvpStatus === 'error' && (
+                      <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs font-bold text-rose-800">
+                        {rsvpMessage}
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label htmlFor="event-rsvp-name" className="block text-xs font-bold text-slate-700 mb-1">
+                          Your Name / Chosen Name *
+                        </label>
+                        <input
+                          id="event-rsvp-name"
+                          type="text"
+                          required
+                          value={rsvpForm.attendeeName}
+                          onChange={(e) => setRsvpForm({ ...rsvpForm, attendeeName: e.target.value })}
+                          placeholder="e.g. Jordan Rivera"
+                          className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="event-rsvp-email" className="block text-xs font-bold text-slate-700 mb-1">
+                          Email Address *
+                        </label>
+                        <input
+                          id="event-rsvp-email"
+                          type="email"
+                          required
+                          value={rsvpForm.attendeeEmail}
+                          onChange={(e) => setRsvpForm({ ...rsvpForm, attendeeEmail: e.target.value })}
+                          placeholder="you@domain.org"
+                          className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label htmlFor="event-rsvp-phone" className="block text-xs font-bold text-slate-700 mb-1">
+                          Phone (Optional)
+                        </label>
+                        <input
+                          id="event-rsvp-phone"
+                          type="tel"
+                          value={rsvpForm.attendeePhone}
+                          onChange={(e) => setRsvpForm({ ...rsvpForm, attendeePhone: e.target.value })}
+                          placeholder="(805) 555-0199"
+                          className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="event-rsvp-count" className="block text-xs font-bold text-slate-700 mb-1">
+                          Number of Attendees
+                        </label>
+                        <select
+                          id="event-rsvp-count"
+                          value={rsvpForm.attendeeCount}
+                          onChange={(e) => setRsvpForm({ ...rsvpForm, attendeeCount: Number(e.target.value) })}
+                          className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none bg-white"
+                        >
+                          {[1, 2, 3, 4, 5, 6, 8, 10].map((num) => (
+                            <option key={num} value={num}>{num} {num === 1 ? 'person' : 'people'}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label htmlFor="event-rsvp-accommodations" className="block text-xs font-bold text-slate-700 mb-1">
+                        Accessibility Accommodations or Notes (Optional)
+                      </label>
+                      <textarea
+                        id="event-rsvp-accommodations"
+                        rows={2}
+                        value={rsvpForm.accommodations}
+                        onChange={(e) => setRsvpForm({ ...rsvpForm, accommodations: e.target.value })}
+                        placeholder="ASL interpretation, sensory accommodations, dietary notes, etc."
+                        className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none"
+                      />
+                    </div>
+
+                    <TurnstileWidget onVerify={(tok) => setRsvpForm((prev) => ({ ...prev, turnstileToken: tok }))} />
+
+                    <button
+                      type="submit"
+                      disabled={rsvpStatus === 'loading'}
+                      className="btn-primary py-3 px-7 text-sm font-black inline-flex items-center gap-2 shadow-md cursor-pointer disabled:opacity-60"
+                    >
+                      <Mail className="w-4 h-4 text-amber-300" />
+                      <span>{rsvpStatus === 'loading' ? 'Sending RSVP Confirmation...' : 'Confirm RSVP & Email Ticket'}</span>
+                    </button>
+                  </form>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Sidebar Logistics Card */}

@@ -299,10 +299,11 @@ class NativeAccessibilityStore {
         lineHeight: '1.8',
         letterSpacing: '0.16em',
         wordSpacing: '0.24em',
+        textAlign: 'left',
         ruler: true,
-        dyslexiaTint: 'peach'
+        dyslexiaTint: 'cream'
       });
-      this.announce('Dyslexia Sanctuary Mode enabled with OpenDyslexic typography, line spacing, reading ruler, and soft peach contrast tint.');
+      this.announce('Dyslexia Sanctuary Mode enabled with OpenDyslexic font, wide letter and line spacing, left alignment, reading ruler, and warm cream visual comfort tint.');
     } else {
       this.updateMultiple({
         dyslexiaMode: false,
@@ -310,11 +311,18 @@ class NativeAccessibilityStore {
         lineHeight: 'normal',
         letterSpacing: 'normal',
         wordSpacing: 'normal',
+        textAlign: 'default',
         ruler: false,
         dyslexiaTint: 'none'
       });
       this.announce('Dyslexia Sanctuary Mode disabled. Default typography restored.');
     }
+  }
+
+  toggleBionicReading() {
+    const next = !this.state.bionicReading;
+    this.update('bionicReading', next);
+    this.announce(next ? 'Bionic anchor reading enabled for word focus' : 'Bionic anchor reading disabled');
   }
 
   announce(message) {

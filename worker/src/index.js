@@ -63,7 +63,11 @@ import {
   templateAdminAlert,
   templateAdmin2faOtp,
   templateNewsletterWelcome,
-  templateNewsletterBroadcast
+  templateNewsletterBroadcast,
+  templateEventRsvpConfirmation,
+  templateEventRsvpStaffNotification,
+  templateInquiryAcknowledgment,
+  templateInquiryStaffNotification
 } from './emailTemplates.js';
 
 // Helper: Response with standard JSON & CORS
@@ -653,7 +657,9 @@ export default {
         const donorDisplayName = isAnonymous || !rawFullName ? 'Affirming Friend of DCVC' : rawFullName;
 
         const donorEmail = (donorObj.email || data.donor_email || data.email || '').trim().toLowerCase();
-        const frequency = data.frequency || (data.is_recurring || data.isMonthly ? 'monthly' : 'one-time');
+        const frequency = data.frequency ||
+          data.recurring_interval ||
+          ((data.is_recurring || data.isRecurring || data.isMonthly || data.subscription_id) ? 'monthly' : 'one-time');
 
         // 9. Resolve Appreciation Tier & Message
         const tierInfo = resolveAppreciationTier(amountInDollars, env);
@@ -705,88 +711,27 @@ export default {
         const frontendBase = env.FRONTEND_BASE_URL || 'https://diversitycollective.org';
         const cardUrl = `${frontendBase}/appreciation-card/${cardToken}`;
 
-        // 12. Send Personalized Appreciation Email via Resend
+        // 12. Send Personalized Appreciation Email via Resend (with recurring heartfelt message)
         if (donorEmail && donorEmail.includes('@')) {
           const formattedAmount = `$${amountInDollars.toFixed(amountInDollars % 1 === 0 ? 0 : 2)}`;
-          const emailSubject = `Your DCVC Appreciation Card has arrived! 💜 (${tierInfo.tierName})`;
-
-          const html = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-              <meta charset="utf-8">
-              <meta name="viewport" content="width=device-width, initial-scale=1.0">
-              <title>Your Diversity Collective Appreciation Card</title>
-            </head>
-            <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 24px; color: #1e293b;">
-              <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 25px rgba(90, 30, 101, 0.08); border: 1px solid #e2e8f0;">
-                <!-- Header Banner -->
-                <tr>
-                  <td style="padding: 40px 32px; background: linear-gradient(135deg, #5A1E65 0%, #3b0764 100%); text-align: center;">
-                    <span style="display: inline-block; padding: 6px 14px; background-color: rgba(255,255,255,0.15); border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: 1px; color: #fef08a; text-transform: uppercase;">
-                      ${tierInfo.badge}
-                    </span>
-                    <h1 style="color: #ffffff; font-size: 28px; margin: 16px 0 8px 0; font-weight: 800; letter-spacing: -0.5px;">
-                      Thank You, ${donorDisplayName}!
-                    </h1>
-                    <p style="color: #e9d5ff; font-size: 16px; margin: 0; font-style: italic;">
-                      "${tierInfo.tagline}"
-                    </p>
-                  </td>
-                </tr>
-
-                <!-- Card Body -->
-                <tr>
-                  <td style="padding: 36px 32px;">
-                    <p style="font-size: 15px; line-height: 1.6; color: #334155; margin-top: 0;">
-                      We are deeply moved by your generous gift of <strong>${formattedAmount}</strong> ${frequency === 'monthly' ? '(Monthly Sustainer)' : ''}. Your kindness powers our safe harbor for LGBTQ+ individuals and families across Ventura County.
-                    </p>
-
-                    <div style="background-color: #faf5ff; border: 1px solid #e9d5ff; border-radius: 16px; padding: 20px; margin: 24px 0;">
-                      <h4 style="margin: 0 0 8px 0; color: #581c87; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">What Your Gift Makes Possible</h4>
-                      <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #4c1d95;">
-                        ${tierInfo.impact}
-                      </p>
-                    </div>
-
-                    <!-- Interactive Card CTA Button -->
-                    <div style="text-align: center; margin: 32px 0;">
-                      <a href="${cardUrl}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #e11d48 0%, #5A1E65 50%, #6b21a8 100%); color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 800; padding: 16px 36px; border-radius: 16px; box-shadow: 0 8px 20px rgba(90, 30, 101, 0.25);">
-                        Open Your Personalized Card ✨
-                      </a>
-                      <p style="font-size: 12px; color: #64748b; margin-top: 10px;">
-                        Interactive digital card · Shareable keepsake · Downloadable PDF
-                      </p>
-                    </div>
-
-                    <hr style="border: none; border-top: 1px solid #f1f5f9; margin: 32px 0 24px 0;">
-
-                    <!-- Important Non-Profit Disclosures -->
-                    <p style="font-size: 12px; line-height: 1.5; color: #64748b; margin: 0;">
-                      <strong>Tax Receipt Notice:</strong> This appreciation card is an expressive cultural keepsake from our community. Your official 501(c)(3) tax receipt (EIN: 46-5312131) has been issued separately by our giving partner, Zeffy.
-                    </p>
-                  </td>
-                </tr>
-
-                <!-- Footer -->
-                <tr>
-                  <td style="padding: 24px 32px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; text-align: center; font-size: 12px; color: #94a3b8;">
-                    <p style="margin: 0 0 4px 0; font-weight: 700; color: #475569;">Diversity Collective Ventura County, Inc.</p>
-                    <p style="margin: 0 0 8px 0;">2471 Portola Road, Suite 100, Ventura, CA 93003 · (805) 644-LGBT</p>
-                    <p style="margin: 0;"><a href="https://diversitycollective.org" style="color: #6b21a8; text-decoration: underline;">diversitycollective.org</a></p>
-                  </td>
-                </tr>
-              </table>
-            </body>
-            </html>
-          `;
+          const emailTpl = templateDonorAppreciationEmail({
+            donorDisplayName,
+            formattedAmount,
+            tierName: tierInfo.tierName,
+            badge: tierInfo.badge,
+            tagline: tierInfo.tagline,
+            impact: tierInfo.impact,
+            cardUrl,
+            frequency
+          });
 
           await sendEmail({
             apiKey: env.RESEND_API_KEY,
             from: env.RESEND_FROM_EMAIL || 'Diversity Collective <noreply@diversitycollective.org>',
             to: donorEmail,
-            subject: emailSubject,
-            html
+            subject: emailTpl.subject,
+            html: emailTpl.html,
+            text: emailTpl.text
           }).catch(mailErr => console.error('Failed to dispatch card email:', mailErr));
         }
 
@@ -1041,12 +986,17 @@ export default {
         let card = null;
 
         if (intentToken) {
-          // Check if intent was matched and card issued
+          // Check if intent was matched and Zeffy-verified card was issued for this donor
           const intentRes = await db.execute({
             sql: `SELECT di.id, di.status, di.donor_email, di.amount_cents, dac.card_token, dac.status as card_status
                   FROM donation_intents di
-                  LEFT JOIN donation_appreciation_cards dac ON (dac.donor_display_name = di.donor_name OR dac.amount_cents = di.amount_cents)
-                  WHERE di.intent_token = ? LIMIT 1`,
+                  LEFT JOIN donation_appreciation_cards dac ON (
+                    dac.status = 'active' AND (
+                      (dac.recipient_email IS NOT NULL AND lower(dac.recipient_email) = lower(di.donor_email))
+                      OR (lower(dac.donor_display_name) = lower(di.donor_name) AND dac.amount_cents = di.amount_cents)
+                    )
+                  )
+                  WHERE di.intent_token = ? AND di.status = 'completed' LIMIT 1`,
             args: [intentToken]
           });
 
@@ -1205,9 +1155,9 @@ export default {
       }
 
       // =======================================================================
-      // 7. Business Submission (POST /api/directory)
+      // 7. Business Submission (POST /api/directory & /api/directory/submit)
       // =======================================================================
-      if (pathname === '/api/directory' && request.method === 'POST') {
+      if ((pathname === '/api/directory' || pathname === '/api/directory/submit') && request.method === 'POST') {
         const body = await request.json();
         
         const turnstile = await verifyTurnstile(body.turnstileToken, env.TURNSTILE_SECRET_KEY, clientIp);
@@ -1215,12 +1165,16 @@ export default {
           return errorResponse('Security verification failed', 400, turnstile.error, cors);
         }
 
-        if (!body.name || !body.category || !body.city || !body.ownerEmail || !body.affirmingPledge) {
+        const bizName = (body.name || body.businessName || '').trim();
+        const ownerEmail = (body.ownerEmail || body.email || '').trim().toLowerCase();
+        const pledgeAccepted = Boolean(body.affirmingPledge ?? body.termsConsent);
+
+        if (!bizName || !body.category || !body.city || !ownerEmail || !pledgeAccepted) {
           return errorResponse('Please complete all required fields and sign the affirming pledge.', 400, null, cors);
         }
 
         const id = crypto.randomUUID();
-        const slug = (body.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'biz') + '-' + id.substring(0, 6);
+        const slug = (bizName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'biz') + '-' + id.substring(0, 6);
         const db = getDb(env);
 
         if (db) {
@@ -1231,42 +1185,59 @@ export default {
             args: [
               id,
               slug,
-              body.name,
+              bizName,
               body.category,
               body.description || '',
               body.address || '',
               body.city,
               body.zip || '',
               body.phone || '',
-              body.email || '',
+              body.email || ownerEmail,
               body.website || '',
               body.instagram || '',
               body.hours || '',
-              body.ownerName || '',
-              body.ownerEmail
+              body.ownerName || 'Business Representative',
+              ownerEmail
             ]
           });
         }
 
-        await sendEmail({
-          apiKey: env.RESEND_API_KEY,
-          from: env.RESEND_FROM_EMAIL,
-          to: env.DCVC_STAFF_EMAIL || 'info@diversitycollective.org',
-          replyTo: body.ownerEmail,
-          subject: `[New Directory Submission] ${body.name} (${body.city})`,
-          html: `
-            <h2>New Business Directory Listing Pending Review</h2>
-            <p><strong>Business:</strong> ${body.name}</p>
-            <p><strong>Category:</strong> ${body.category}</p>
-            <p><strong>City:</strong> ${body.city}</p>
-            <p><strong>Submitter:</strong> ${body.ownerName} (${body.ownerEmail})</p>
-            <p><strong>Affirming Pledge Signed:</strong> Yes</p>
-          `
-        }).catch(err => console.error('Email notify failed:', err));
+        const staffEmail = templateBusinessModerationNotification({
+          businessName: bizName,
+          category: body.category,
+          city: body.city,
+          ownerName: body.ownerName || 'Business Representative',
+          ownerEmail,
+          reference: id
+        });
+        const ownerAck = templateBusinessAcknowledgment({
+          businessName: bizName,
+          ownerName: body.ownerName || 'Business Partner'
+        });
+
+        await Promise.allSettled([
+          sendEmail({
+            apiKey: env.RESEND_API_KEY,
+            from: env.RESEND_FROM_EMAIL,
+            to: env.DCVC_STAFF_EMAIL || 'info@diversitycollective.org',
+            replyTo: ownerEmail,
+            subject: staffEmail.subject,
+            html: staffEmail.html,
+            text: staffEmail.text
+          }),
+          sendEmail({
+            apiKey: env.RESEND_API_KEY,
+            from: env.RESEND_FROM_EMAIL,
+            to: ownerEmail,
+            subject: ownerAck.subject,
+            html: ownerAck.html,
+            text: ownerAck.text
+          })
+        ]);
 
         return jsonResponse({
           success: true,
-          message: 'Your listing has been submitted for review. DCVC staff will verify and publish your profile within 3–5 business days.',
+          message: 'Your listing has been submitted for review and a confirmation email has been sent.',
           reference: id
         }, 201, cors);
       }
@@ -1282,7 +1253,10 @@ export default {
           return errorResponse('Security verification failed', 400, turnstile.error, cors);
         }
 
-        if (!body.name || !body.email || !body.subject || !body.message) {
+        const contactSubject = (body.subject || body.topic || 'General Inquiry').trim();
+        const contactEmail = (body.email || '').trim().toLowerCase();
+
+        if (!body.name || !contactEmail || !body.message) {
           return errorResponse('Please complete all required fields.', 400, null, cors);
         }
 
@@ -1293,33 +1267,210 @@ export default {
           await db.execute({
             sql: `INSERT INTO contact_submissions (id, name, email, phone, subject, message, consent_given, ip_hash)
                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-            args: [id, body.name, body.email, body.phone || '', body.subject, body.message, body.consent ? 1 : 0, clientIp]
+            args: [id, body.name, contactEmail, body.phone || '', contactSubject, body.message, 1, clientIp]
           });
         }
 
-        await sendEmail({
-          apiKey: env.RESEND_API_KEY,
-          from: env.RESEND_FROM_EMAIL,
-          to: env.DCVC_STAFF_EMAIL || 'info@diversitycollective.org',
-          replyTo: body.email,
-          subject: `[Website Inquiry] ${body.subject} — from ${body.name}`,
-          html: `
-            <h3>New Contact Message Received</h3>
-            <p><strong>Name:</strong> ${body.name}</p>
-            <p><strong>Email:</strong> ${body.email}</p>
-            <p><strong>Phone:</strong> ${body.phone || 'None provided'}</p>
-            <p><strong>Subject:</strong> ${body.subject}</p>
-            <hr />
-            <p><strong>Message:</strong></p>
-            <p style="white-space: pre-wrap;">${body.message}</p>
-          `
-        }).catch(err => console.error('Staff notification failed:', err));
+        const staffTpl = templateContactStaffNotification({
+          name: body.name,
+          email: contactEmail,
+          phone: body.phone || '',
+          subject: contactSubject,
+          message: body.message,
+          reference: id
+        });
+        const userTpl = templateContactAcknowledgment({
+          name: body.name,
+          subject: contactSubject
+        });
+
+        await Promise.allSettled([
+          sendEmail({
+            apiKey: env.RESEND_API_KEY,
+            from: env.RESEND_FROM_EMAIL,
+            to: env.DCVC_STAFF_EMAIL || 'info@diversitycollective.org',
+            replyTo: contactEmail,
+            subject: staffTpl.subject,
+            html: staffTpl.html,
+            text: staffTpl.text
+          }),
+          sendEmail({
+            apiKey: env.RESEND_API_KEY,
+            from: env.RESEND_FROM_EMAIL,
+            to: contactEmail,
+            subject: userTpl.subject,
+            html: userTpl.html,
+            text: userTpl.text
+          })
+        ]);
 
         return jsonResponse({
           success: true,
-          message: 'Thank you! Your message has been sent to our team.',
+          message: 'Thank you! Your message has been sent to our team and a confirmation email is on its way.',
           reference: id
         }, 200, cors);
+      }
+
+      // =======================================================================
+      // 8B. Specialized Inquiries (Appointments, Resources, Community Joins)
+      //     (POST /api/inquiries)
+      // =======================================================================
+      if (pathname === '/api/inquiries' && request.method === 'POST') {
+        const body = await request.json();
+
+        const turnstile = await verifyTurnstile(body.turnstileToken, env.TURNSTILE_SECRET_KEY, clientIp);
+        if (!turnstile.success) {
+          return errorResponse('Security verification failed', 400, turnstile.error, cors);
+        }
+
+        const inquiryType = (body.type || 'general').trim();
+        const name = (body.name || 'Community Member').trim();
+        const email = (body.email || '').trim().toLowerCase();
+        const subject = (body.subject || `${inquiryType} submission`).trim();
+        const message = (body.message || subject).trim();
+
+        if (!email || !email.includes('@')) {
+          return errorResponse('Please provide a valid email address.', 400, null, cors);
+        }
+
+        const id = crypto.randomUUID();
+        const db = getDb(env);
+
+        if (db) {
+          await db.execute({
+            sql: `INSERT INTO contact_submissions (id, name, email, phone, subject, message, consent_given, ip_hash)
+                  VALUES (?, ?, ?, ?, ?, ?, 1, ?)`,
+            args: [id, name, email, body.phone || '', `[${inquiryType.toUpperCase()}] ${subject}`, message, clientIp]
+          }).catch(err => console.warn('Inquiry DB insert note:', err.message));
+        }
+
+        const staffTpl = templateInquiryStaffNotification({
+          type: inquiryType,
+          name,
+          email,
+          phone: body.phone || '',
+          subject,
+          message,
+          reference: id
+        });
+        const userTpl = templateInquiryAcknowledgment({
+          type: inquiryType,
+          name,
+          subject
+        });
+
+        await Promise.allSettled([
+          sendEmail({
+            apiKey: env.RESEND_API_KEY,
+            from: env.RESEND_FROM_EMAIL,
+            to: env.DCVC_STAFF_EMAIL || 'info@diversitycollective.org',
+            replyTo: email,
+            subject: staffTpl.subject,
+            html: staffTpl.html,
+            text: staffTpl.text
+          }),
+          sendEmail({
+            apiKey: env.RESEND_API_KEY,
+            from: env.RESEND_FROM_EMAIL,
+            to: email,
+            subject: userTpl.subject,
+            html: userTpl.html,
+            text: userTpl.text
+          })
+        ]);
+
+        return jsonResponse({
+          success: true,
+          message: 'Your request has been securely recorded and a confirmation email has been sent.',
+          reference: id
+        }, 201, cors);
+      }
+
+      // =======================================================================
+      // 8C. Event Registrations / RSVPs (POST /api/events/rsvp)
+      // =======================================================================
+      if (pathname === '/api/events/rsvp' && request.method === 'POST') {
+        const body = await request.json();
+
+        const turnstile = await verifyTurnstile(body.turnstileToken, env.TURNSTILE_SECRET_KEY, clientIp);
+        if (!turnstile.success) {
+          return errorResponse('Security verification failed', 400, turnstile.error, cors);
+        }
+
+        const eventId = String(body.eventId || body.eventSlug || body.eventTitle || 'community-event').trim();
+        const eventTitle = String(body.eventTitle || '').trim();
+        const attendeeName = String(body.attendeeName || body.name || '').trim();
+        const attendeeEmail = String(body.attendeeEmail || body.email || '').trim().toLowerCase();
+        const attendeeCount = Math.max(1, Math.min(20, parseInt(body.attendeeCount || '1', 10) || 1));
+        const accommodations = String(body.accommodations || body.notes || '').trim();
+        const organizerEmail = String(body.organizerEmail || '').trim().toLowerCase();
+
+        if (!eventTitle || !attendeeName || !attendeeEmail || !attendeeEmail.includes('@')) {
+          return errorResponse('Please provide your name, valid email address, and event details.', 400, null, cors);
+        }
+
+        const id = crypto.randomUUID();
+        const db = getDb(env);
+
+        if (db) {
+          await db.execute({
+            sql: `INSERT INTO event_rsvps (id, event_id, event_title, attendee_name, attendee_email, attendee_count, accessibility_accommodations, status)
+                  VALUES (?, ?, ?, ?, ?, ?, ?, 'confirmed')`,
+            args: [id, eventId, eventTitle, attendeeName, attendeeEmail, attendeeCount, accommodations]
+          }).catch(err => console.warn('Event RSVP DB insert note:', err.message));
+        }
+
+        const attendeeTpl = templateEventRsvpConfirmation({
+          attendeeName,
+          eventTitle,
+          eventDate: body.eventDate || '',
+          eventTime: body.eventTime || '',
+          location: body.location || '2471 Portola Rd, Suite 100, Ventura, CA 93003',
+          attendeeCount,
+          accommodations,
+          reference: id
+        });
+        const staffTpl = templateEventRsvpStaffNotification({
+          attendeeName,
+          attendeeEmail,
+          attendeePhone: body.phone || '',
+          eventTitle,
+          eventDate: body.eventDate || '',
+          eventTime: body.eventTime || '',
+          attendeeCount,
+          accommodations,
+          reference: id
+        });
+
+        const staffTarget = (organizerEmail && organizerEmail.includes('@'))
+          ? organizerEmail
+          : (env.DCVC_STAFF_EMAIL || 'info@diversitycollective.org');
+
+        await Promise.allSettled([
+          sendEmail({
+            apiKey: env.RESEND_API_KEY,
+            from: env.RESEND_FROM_EMAIL,
+            to: attendeeEmail,
+            subject: attendeeTpl.subject,
+            html: attendeeTpl.html,
+            text: attendeeTpl.text
+          }),
+          sendEmail({
+            apiKey: env.RESEND_API_KEY,
+            from: env.RESEND_FROM_EMAIL,
+            to: staffTarget,
+            replyTo: attendeeEmail,
+            subject: staffTpl.subject,
+            html: staffTpl.html,
+            text: staffTpl.text
+          })
+        ]);
+
+        return jsonResponse({
+          success: true,
+          message: `You're confirmed for ${eventTitle}! We sent your RSVP confirmation to ${attendeeEmail}.`,
+          reference: id
+        }, 201, cors);
       }
 
       // =======================================================================
@@ -1333,8 +1484,15 @@ export default {
           return errorResponse('Security verification failed', 400, turnstile.error, cors);
         }
 
-        if (!body.fullName || !body.email || !body.phone || !body.city) {
-          return errorResponse('Please complete all required fields.', 400, null, cors);
+        const fullName = (body.fullName || '').trim();
+        const email = (body.email || '').trim().toLowerCase();
+        const phone = (body.phone || '').trim();
+        const city = (body.city || 'Ventura County').trim();
+        const roles = Array.isArray(body.roles) ? body.roles : (Array.isArray(body.areasOfInterest) ? body.areasOfInterest : []);
+        const consent = Boolean(body.consent ?? body.backgroundCheckConsent);
+
+        if (!fullName || !email || !email.includes('@') || !consent) {
+          return errorResponse('Please complete all required fields and confirm volunteer consent.', 400, null, cors);
         }
 
         const id = crypto.randomUUID();
@@ -1346,22 +1504,53 @@ export default {
                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             args: [
               id,
-              body.fullName,
-              body.email,
-              body.phone,
-              body.city,
+              fullName,
+              email,
+              phone || 'Not provided',
+              city,
               body.availability || '',
-              JSON.stringify(body.roles || []),
-              body.skills || '',
+              JSON.stringify(roles),
+              body.skills || body.message || '',
               body.livedExperience || '',
-              body.consent ? 1 : 0
+              1
             ]
           });
         }
 
+        const staffTpl = templateVolunteerStaffNotification({
+          fullName,
+          email,
+          phone: phone || 'Not provided',
+          city,
+          roles,
+          availability: body.availability || 'Flexible',
+          reference: id
+        });
+        const userTpl = templateVolunteerAcknowledgment({ fullName });
+
+        await Promise.allSettled([
+          sendEmail({
+            apiKey: env.RESEND_API_KEY,
+            from: env.RESEND_FROM_EMAIL,
+            to: env.DCVC_STAFF_EMAIL || 'info@diversitycollective.org',
+            replyTo: email,
+            subject: staffTpl.subject,
+            html: staffTpl.html,
+            text: staffTpl.text
+          }),
+          sendEmail({
+            apiKey: env.RESEND_API_KEY,
+            from: env.RESEND_FROM_EMAIL,
+            to: email,
+            subject: userTpl.subject,
+            html: userTpl.html,
+            text: userTpl.text
+          })
+        ]);
+
         return jsonResponse({
           success: true,
-          message: 'Volunteer application received! Our team will contact you with orientation details.',
+          message: 'Volunteer application received! Confirmation details have been sent to your email.',
           reference: id
         }, 201, cors);
       }
@@ -1372,7 +1561,20 @@ export default {
       if (pathname === '/api/training/book' && request.method === 'POST') {
         const body = await request.json();
 
-        if (!body.organizationName || !body.contactName || !body.email || !body.courseTitle) {
+        const turnstile = await verifyTurnstile(body.turnstileToken, env.TURNSTILE_SECRET_KEY, clientIp);
+        if (!turnstile.success) {
+          return errorResponse('Security verification failed', 400, turnstile.error, cors);
+        }
+
+        const organizationName = (body.organizationName || '').trim();
+        const contactName = (body.contactName || '').trim();
+        const email = (body.email || '').trim().toLowerCase();
+        const courseTitle = (body.courseTitle || 'P.R.I.D.E. LGBTQ+ Cultural Competency Training').trim();
+        const preferredFormat = ['in-person', 'virtual', 'hybrid'].includes(body.preferredFormat) ? body.preferredFormat : 'in-person';
+        const attendees = parseInt(body.attendeeCount || body.estimatedAttendees || '20', 10) || 20;
+        const preferredDate = (body.preferredDate || body.requestedDate || 'Flexible').trim();
+
+        if (!organizationName || !contactName || !email || !email.includes('@')) {
           return errorResponse('Please provide all mandatory booking details.', 400, null, cors);
         }
 
@@ -1385,37 +1587,85 @@ export default {
                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             args: [
               id,
-              body.organizationName,
+              organizationName,
               body.organizationType || '',
-              body.contactName,
-              body.email,
-              body.phone || '',
-              body.courseId || '',
-              body.courseTitle,
-              body.preferredFormat || 'in-person',
-              parseInt(body.attendeeCount || '20', 10),
-              body.preferredDate || '',
+              contactName,
+              email,
+              body.phone || 'Not provided',
+              body.courseId || 'pride-custom',
+              courseTitle,
+              preferredFormat,
+              attendees,
+              preferredDate,
               body.alternativeDate || '',
               body.notes || ''
             ]
           });
         }
 
+        const staffTpl = templateTrainingStaffNotification({
+          organizationName,
+          contactName,
+          email,
+          phone: body.phone || 'Not provided',
+          courseTitle,
+          attendees,
+          preferredFormat,
+          preferredDate,
+          notes: body.notes || ''
+        });
+        const userTpl = templateTrainingAcknowledgment({
+          contactName,
+          organizationName,
+          courseTitle
+        });
+
+        await Promise.allSettled([
+          sendEmail({
+            apiKey: env.RESEND_API_KEY,
+            from: env.RESEND_FROM_EMAIL,
+            to: env.DCVC_STAFF_EMAIL || 'info@diversitycollective.org',
+            replyTo: email,
+            subject: staffTpl.subject,
+            html: staffTpl.html,
+            text: staffTpl.text
+          }),
+          sendEmail({
+            apiKey: env.RESEND_API_KEY,
+            from: env.RESEND_FROM_EMAIL,
+            to: email,
+            subject: userTpl.subject,
+            html: userTpl.html,
+            text: userTpl.text
+          })
+        ]);
+
         return jsonResponse({
           success: true,
-          message: 'Training inquiry received. A coordinator will provide scheduling and proposal details within 2 business days.',
+          message: 'Training inquiry received and confirmation email sent. A coordinator will provide proposal details within 2 business days.',
           reference: id
         }, 201, cors);
       }
 
       // =======================================================================
-      // 11. Accessibility Barrier Reports (POST /api/accessibility/report)
+      // 11. Accessibility Barrier Reports (POST /api/accessibility/report & /api/accessibility/feedback)
       // =======================================================================
-      if (pathname === '/api/accessibility/report' && request.method === 'POST') {
+      if ((pathname === '/api/accessibility/report' || pathname === '/api/accessibility/feedback') && request.method === 'POST') {
         const body = await request.json();
 
-        if (!body.pageUrl || !body.barrierDescription) {
-          return errorResponse('Please describe the barrier and provide the page URL.', 400, null, cors);
+        const turnstile = await verifyTurnstile(body.turnstileToken, env.TURNSTILE_SECRET_KEY, clientIp);
+        if (!turnstile.success) {
+          return errorResponse('Security verification failed', 400, turnstile.error, cors);
+        }
+
+        const pageUrl = (body.pageUrl || '/').trim();
+        const barrierDescription = (body.barrierDescription || '').trim();
+        const assistiveTech = (body.assistiveTech || body.assistiveTechnology || '').trim();
+        const contactName = (body.contactName || body.name || '').trim();
+        const contactEmail = (body.contactEmail || body.email || '').trim().toLowerCase();
+
+        if (!barrierDescription) {
+          return errorResponse('Please describe the accessibility barrier encountered.', 400, null, cors);
         }
 
         const id = crypto.randomUUID();
@@ -1425,16 +1675,48 @@ export default {
           await db.execute({
             sql: `INSERT INTO accessibility_feedback (id, page_url, barrier_description, assistive_tech, contact_name, contact_email)
                   VALUES (?, ?, ?, ?, ?, ?)`,
-            args: [
-              id,
-              body.pageUrl,
-              body.barrierDescription,
-              body.assistiveTech || '',
-              body.contactName || '',
-              body.contactEmail || ''
-            ]
+            args: [id, pageUrl, barrierDescription, assistiveTech, contactName, contactEmail]
           });
         }
+
+        const staffTpl = templateAccessibilityStaffNotification({
+          pageUrl,
+          barrierDescription,
+          assistiveTech: assistiveTech || 'Not specified',
+          contactName: contactName || 'Anonymous Visitor',
+          contactEmail: contactEmail || 'Not provided'
+        });
+
+        const dispatches = [
+          sendEmail({
+            apiKey: env.RESEND_API_KEY,
+            from: env.RESEND_FROM_EMAIL,
+            to: env.DCVC_STAFF_EMAIL || 'info@diversitycollective.org',
+            ...(contactEmail && contactEmail.includes('@') ? { replyTo: contactEmail } : {}),
+            subject: staffTpl.subject,
+            html: staffTpl.html,
+            text: staffTpl.text
+          })
+        ];
+
+        if (contactEmail && contactEmail.includes('@')) {
+          const userTpl = templateAccessibilityAcknowledgment({
+            contactName: contactName || 'Valued Community Member',
+            pageUrl
+          });
+          dispatches.push(
+            sendEmail({
+              apiKey: env.RESEND_API_KEY,
+              from: env.RESEND_FROM_EMAIL,
+              to: contactEmail,
+              subject: userTpl.subject,
+              html: userTpl.html,
+              text: userTpl.text
+            })
+          );
+        }
+
+        await Promise.allSettled(dispatches);
 
         return jsonResponse({
           success: true,

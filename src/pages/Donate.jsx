@@ -199,13 +199,13 @@ export default function Donate() {
                   </span>
                 </div>
                 <p className="text-xs text-slate-600 leading-relaxed">
-                  Every donor receives a personalized digital DCVC Appreciation Card delivered to their inbox. Your gift of ${effectiveAmount} unlocks the <strong>{currentAppreciationTier.title}</strong> tier keepsake.
+                  Your personalized digital DCVC Appreciation Card featuring your donor name is minted &amp; emailed only after <strong>Zeffy confirms your payment</strong>. Recurring sustainers automatically receive a heartfelt thank-you keepsake card with every scheduled gift!
                 </p>
                 <Link
                   to="/appreciation-card/preview"
                   className="inline-flex items-center gap-1 text-[11px] font-bold text-purple-800 hover:text-purple-950 underline pt-0.5"
                 >
-                  <span>Preview all 4 Appreciation Card Tiers</span>
+                  <span>Browse all 4 Sample Appreciation Card Tiers (No Login Needed)</span>
                   <ArrowRight className="w-3 h-3" />
                 </Link>
               </div>

@@ -23,6 +23,7 @@ const DCVC_AMBER = '#f59e0b';
 const DCVC_BG = '#f8fafc';
 const DCVC_ADDRESS = '2471 Portola Road, Suite 100, Ventura, CA 93003';
 const DCVC_PHONE = '(805) 644-LGBT (5428)';
+const DCVC_EMAIL = 'info@diversitycollective.org';
 const DCVC_WEBSITE = 'https://diversitycollective.org';
 
 function baseEmailWrapper({ title, headerSubtitle = '', contentHtml, actionButton = null }) {
@@ -343,17 +344,38 @@ export function templateAccessibilityStaffNotification({ pageUrl, barrierDescrip
  * 11. Donor Appreciation Card Email (to Donor)
  */
 export function templateDonorAppreciationEmail({ donorDisplayName, formattedAmount, tierName, badge, tagline, impact, cardUrl, frequency }) {
-  const title = `Thank You, ${donorDisplayName}!`;
+  const normalizedFreq = String(frequency || 'one-time').toLowerCase();
+  const isRecurring = ['monthly', 'recurring', 'weekly', 'quarterly', 'yearly', 'annual'].includes(normalizedFreq);
+  const frequencyLabel = normalizedFreq === 'yearly' || normalizedFreq === 'annual'
+    ? 'Annual Sustainer'
+    : isRecurring
+      ? 'Monthly Sustainer'
+      : '';
+  const title = isRecurring
+    ? `From Our Hearts to Yours, ${donorDisplayName}! 💜`
+    : `Thank You, ${donorDisplayName}!`;
+  const recurringHeartfeltBlock = isRecurring
+    ? `
+    <div style="background: linear-gradient(135deg, #fff1f2 0%, #fdf4ff 100%); border: 1px solid #fbcfe8; border-radius: 18px; padding: 18px 20px; margin: 18px 0;">
+      <p style="margin: 0 0 6px 0; font-size: 13px; font-weight: 800; color: #9d174d; text-transform: uppercase; letter-spacing: 0.4px;">
+        🌸 A Cute Heartfelt Note for Our Recurring Sustainer Family 💜
+      </p>
+      <p style="margin: 0; font-size: 14px; line-height: 1.65; color: #4c1d95;">
+        Every single cycle your recurring gift arrives, you make someone smile a little brighter at our Ventura Community Resource Center! Because of you, youth peer circles have warm snacks and art supplies, neighbors find compassionate care without judgment, and our pride sanctuary shines year-round. Sending you the biggest collective hug — thank you for walking beside us month after month! 🌈✨
+      </p>
+    </div>`
+    : '';
   const contentHtml = `
     <div style="text-align: center; margin-bottom: 20px;">
       <span style="display: inline-block; padding: 4px 14px; background-color: #faf5ff; border: 1px solid #d8b4fe; border-radius: 999px; font-size: 11px; font-weight: 800; color: #581c87; text-transform: uppercase; letter-spacing: 0.5px;">
-        ${badge || tierName} • ${tierName}
+        ${badge || tierName} • ${tierName}${isRecurring ? ' • 💜 Recurring Sustainer' : ''}
       </span>
     </div>
 
     <p style="font-size: 15px; line-height: 1.6; color: #334155; margin-top: 0;">
-      We are deeply moved by your generous gift of <strong>${formattedAmount}</strong> ${frequency === 'monthly' ? '(Monthly Sustainer)' : ''}. Your kindness powers our safe harbor for LGBTQ+ individuals and families across Ventura County.
+      We are deeply moved by your generous gift of <strong>${formattedAmount}</strong> ${frequencyLabel ? `(${frequencyLabel})` : ''}. Your kindness powers our safe harbor for LGBTQ+ individuals and families across Ventura County.
     </p>
+    ${recurringHeartfeltBlock}
 
     <!-- Static Keepsake Card Preview Block -->
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 24px 0; border: 2px solid #e9d5ff; border-radius: 20px; overflow: hidden; background: linear-gradient(135deg, #fdf4ff 0%, #faf5ff 50%, #f5f3ff 100%);">
@@ -410,12 +432,14 @@ export function templateDonorAppreciationEmail({ donorDisplayName, formattedAmou
   `;
 
   return {
-    subject: `Your DCVC Appreciation Card has arrived! 💜 (${tierName})`,
+    subject: isRecurring
+      ? `Your Recurring Sustainer Appreciation Card & Heartfelt Thanks! 💜🌈 (${tierName})`
+      : `Your DCVC Appreciation Card has arrived! 💜 (${tierName})`,
     html: baseEmailWrapper({ title, headerSubtitle: `"${tagline}"`, contentHtml }),
     text: `Thank you, ${donorDisplayName}!
 
-We are deeply grateful for your generous gift of ${formattedAmount} ${frequency === 'monthly' ? '(Monthly Sustainer)' : ''} to Diversity Collective Ventura County.
-
+We are deeply grateful for your generous gift of ${formattedAmount} ${frequencyLabel ? `(${frequencyLabel})` : ''} to Diversity Collective Ventura County.
+${isRecurring ? '\nEvery single cycle your recurring gift arrives, you keep our sanctuary doors bright, youth circles thriving, and compassionate care free across Ventura County. Sending you the warmest collective hug and heartfelt thanks!\n' : ''}
 Tier: ${tierName} (${badge})
 "${tagline}"
 
@@ -642,5 +666,154 @@ export function templateAdmin2faOtp({ email, otpCode }) {
     text: `Your DCVC Admin verification code is: ${otpCode}\n\nThis code is valid for 5 minutes.\nIf you did not initiate this request, notify DCVC staff immediately.`
   };
 }
+
+/**
+ * 15. Event RSVP Confirmation Email (to Attendee)
+ */
+export function templateEventRsvpConfirmation({
+  attendeeName,
+  eventTitle,
+  eventDate = '',
+  eventTime = '',
+  location = 'DCVC Community Resource Center (2471 Portola Rd, Suite 100, Ventura)',
+  attendeeCount = 1,
+  accommodations = '',
+  reference = ''
+}) {
+  const contentHtml = `
+    <p style="font-size: 15px; line-height: 1.6; margin-top: 0; color: #334155;">
+      Hi <strong>${attendeeName}</strong>,
+    </p>
+    <p style="font-size: 15px; line-height: 1.6; color: #334155;">
+      We are thrilled to save your spot for <strong>${eventTitle}</strong>! You are warmly welcome here.
+    </p>
+
+    <div style="background: linear-gradient(135deg, #faf5ff 0%, #f0fdf4 100%); border: 1px solid #d8b4fe; border-radius: 16px; padding: 20px; margin: 20px 0;">
+      <p style="margin: 0 0 8px 0; font-size: 14px;"><strong>Event:</strong> ${eventTitle}</p>
+      ${eventDate ? `<p style="margin: 0 0 8px 0; font-size: 14px;"><strong>Date:</strong> ${eventDate}</p>` : ''}
+      ${eventTime ? `<p style="margin: 0 0 8px 0; font-size: 14px;"><strong>Time:</strong> ${eventTime}</p>` : ''}
+      <p style="margin: 0 0 8px 0; font-size: 14px;"><strong>Location:</strong> ${location}</p>
+      <p style="margin: 0 0 8px 0; font-size: 14px;"><strong>Reserved Seats:</strong> ${attendeeCount}</p>
+      ${accommodations ? `<p style="margin: 0 0 8px 0; font-size: 14px;"><strong>Accommodations Noted:</strong> ${accommodations}</p>` : ''}
+      ${reference ? `<p style="margin: 0; font-size: 12px; color: #64748b;"><strong>RSVP Confirmation ID:</strong> ${reference}</p>` : ''}
+    </div>
+
+    <p style="font-size: 14px; line-height: 1.6; color: #475569;">
+      Need to update your RSVP or request additional accessibility support? Simply reply to this email or reach us at <a href="mailto:${DCVC_EMAIL}" style="color: ${DCVC_PURPLE}; font-weight: 700;">${DCVC_EMAIL}</a>.
+    </p>
+  `;
+
+  return {
+    subject: `You're Confirmed: ${eventTitle} · Diversity Collective VC`,
+    html: baseEmailWrapper({
+      title: 'Event RSVP Confirmed',
+      headerSubtitle: eventTitle,
+      contentHtml
+    }),
+    text: `Hi ${attendeeName},\n\nYour RSVP for "${eventTitle}" is confirmed!\n${eventDate ? `Date: ${eventDate}\n` : ''}${eventTime ? `Time: ${eventTime}\n` : ''}Location: ${location}\nReserved Seats: ${attendeeCount}\n${accommodations ? `Accommodations: ${accommodations}\n` : ''}${reference ? `Confirmation ID: ${reference}\n` : ''}\nWe look forward to seeing you!\nDiversity Collective Ventura County`
+  };
+}
+
+/**
+ * 16. Event RSVP Notification Email (to DCVC Staff / Organizer)
+ */
+export function templateEventRsvpStaffNotification({
+  attendeeName,
+  attendeeEmail,
+  attendeePhone = '',
+  eventTitle,
+  eventDate = '',
+  eventTime = '',
+  attendeeCount = 1,
+  accommodations = '',
+  reference = ''
+}) {
+  const contentHtml = `
+    <div style="background-color: #faf5ff; border: 1px solid #d8b4fe; border-radius: 12px; padding: 18px; margin-bottom: 18px;">
+      <p style="margin: 0 0 8px 0; font-size: 14px;"><strong>Event:</strong> ${eventTitle}</p>
+      ${eventDate || eventTime ? `<p style="margin: 0 0 8px 0; font-size: 14px;"><strong>When:</strong> ${[eventDate, eventTime].filter(Boolean).join(' · ')}</p>` : ''}
+      <p style="margin: 0 0 8px 0; font-size: 14px;"><strong>Attendee:</strong> ${attendeeName} (&lt;${attendeeEmail}&gt;)</p>
+      ${attendeePhone ? `<p style="margin: 0 0 8px 0; font-size: 14px;"><strong>Phone:</strong> ${attendeePhone}</p>` : ''}
+      <p style="margin: 0 0 8px 0; font-size: 14px;"><strong>Party Size:</strong> ${attendeeCount}</p>
+      <p style="margin: 0 0 8px 0; font-size: 14px;"><strong>Accommodations / Notes:</strong> ${accommodations || 'None specified'}</p>
+      ${reference ? `<p style="margin: 0; font-size: 12px; color: #64748b;"><strong>Reference ID:</strong> ${reference}</p>` : ''}
+    </div>
+  `;
+
+  return {
+    subject: `[Event RSVP] ${eventTitle} — ${attendeeName} (${attendeeCount} ${attendeeCount === 1 ? 'seat' : 'seats'})`,
+    html: baseEmailWrapper({
+      title: 'New Event RSVP',
+      headerSubtitle: 'Calendar Attendance Update',
+      contentHtml
+    }),
+    text: `New Event RSVP for ${eventTitle}\nAttendee: ${attendeeName} (${attendeeEmail})\nSeats: ${attendeeCount}\nAccommodations: ${accommodations || 'None'}\nReference: ${reference}`
+  };
+}
+
+/**
+ * 17. Specialized Inquiry Acknowledgment (Appointments, Resource Submit, Community Circles)
+ */
+export function templateInquiryAcknowledgment({ type = 'general', name = 'Community Friend', subject = 'Your Submission' }) {
+  const labels = {
+    appointment: 'Confidential Health & Intake Appointment Request',
+    resource: 'Ventura County Community Resource Submission',
+    community_join: 'Community Circle Welcome & RSVP',
+    group_proposal: 'New Community Circle Proposal',
+    general: 'Community Inquiry'
+  };
+  const heading = labels[type] || labels.general;
+
+  const contentHtml = `
+    <p style="font-size: 15px; line-height: 1.6; margin-top: 0; color: #334155;">
+      Hi <strong>${name}</strong>,
+    </p>
+    <p style="font-size: 15px; line-height: 1.6; color: #334155;">
+      Thank you for reaching out regarding <strong>${subject}</strong>. We have securely received your ${heading.toLowerCase()} and our Diversity Collective Ventura County care &amp; operations team will respond promptly.
+    </p>
+    ${type === 'appointment' ? `
+    <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 14px 18px; margin: 18px 0; font-size: 13px; color: #166534;">
+      <strong>Privacy Notice:</strong> Appointment requests are handled confidentially by our Wellness Navigation leads. We never share personal or clinical contact info with external parties.
+    </div>` : ''}
+    <p style="font-size: 14px; line-height: 1.6; color: #475569;">
+      Warmly,<br/>
+      <strong>Diversity Collective Ventura County</strong><br/>
+      2471 Portola Rd, Suite 100, Ventura, CA 93003
+    </p>
+  `;
+
+  return {
+    subject: `${heading} Received · Diversity Collective VC`,
+    html: baseEmailWrapper({ title: heading, headerSubtitle: 'Confirmation & Next Steps', contentHtml }),
+    text: `Hi ${name},\n\nThank you for your ${heading.toLowerCase()} regarding "${subject}". Our team has received it and will follow up shortly.\n\nWarmly,\nDiversity Collective Ventura County`
+  };
+}
+
+/**
+ * 18. Specialized Inquiry Staff Notification
+ */
+export function templateInquiryStaffNotification({ type = 'general', name, email, phone = '', subject, message, reference = '' }) {
+  const tag = String(type || 'general').toUpperCase();
+  const contentHtml = `
+    <div style="background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 18px; margin-bottom: 18px;">
+      <p style="margin: 0 0 8px 0; font-size: 14px;"><strong>Category:</strong> ${tag}</p>
+      <p style="margin: 0 0 8px 0; font-size: 14px;"><strong>Name:</strong> ${name || 'Not provided'}</p>
+      <p style="margin: 0 0 8px 0; font-size: 14px;"><strong>Email:</strong> ${email}</p>
+      <p style="margin: 0 0 8px 0; font-size: 14px;"><strong>Phone:</strong> ${phone || 'Not provided'}</p>
+      <p style="margin: 0 0 8px 0; font-size: 14px;"><strong>Subject:</strong> ${subject}</p>
+      ${reference ? `<p style="margin: 0; font-size: 12px; color: #64748b;"><strong>Reference ID:</strong> ${reference}</p>` : ''}
+    </div>
+    <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; font-size: 14px; line-height: 1.6; color: #1e293b; white-space: pre-wrap;">
+      ${message}
+    </div>
+  `;
+
+  return {
+    subject: `[${tag}] ${subject || 'New Submission'} — from ${name || email}`,
+    html: baseEmailWrapper({ title: `New ${tag} Submission`, headerSubtitle: 'DCVC Operations Queue', contentHtml }),
+    text: `New ${tag} Submission\nName: ${name}\nEmail: ${email}\nPhone: ${phone || 'None'}\nSubject: ${subject}\nRef: ${reference}\n\n${message}`
+  };
+}
+
 
 

@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { communityGroups, orgInfo } from '../data/dcvcData';
 import { getCommunityGroupData } from '../data/communityData';
+import { submitInquiry } from '../services/api';
 import CardSpotlight from '../components/CardSpotlight';
 
 export default function Community() {
@@ -79,8 +80,8 @@ export default function Community() {
     setJoinForm({ name: '', email: '', pronouns: '', notes: '' });
   };
 
-  // Handle Join Submit
-  const handleJoinSubmit = (e) => {
+  // Handle Join Submit (Emails facilitator + confirmation to member)
+  const handleJoinSubmit = async (e) => {
     e.preventDefault();
     try {
       const existing = JSON.parse(localStorage.getItem('dcvc_community_joins') || '[]');
@@ -93,11 +94,19 @@ export default function Community() {
     } catch {
       // Fallback
     }
+
+    await submitInquiry({
+      type: 'community_join',
+      name: joinForm.name,
+      email: joinForm.email,
+      subject: `Join Circle: ${activeJoinModal?.name || 'DCVC Community Circle'}`,
+      message: `Circle: ${activeJoinModal?.name}\nPronouns: ${joinForm.pronouns || 'Not provided'}\nAccommodations / Notes: ${joinForm.notes || 'None'}`
+    });
     setJoinSubmitted(true);
   };
 
-  // Handle Propose Submit
-  const handleProposeSubmit = (e) => {
+  // Handle Propose Submit (Emails proposal confirmation + DCVC operations team)
+  const handleProposeSubmit = async (e) => {
     e.preventDefault();
     try {
       const existing = JSON.parse(localStorage.getItem('dcvc_group_proposals') || '[]');
@@ -109,6 +118,15 @@ export default function Community() {
     } catch {
       // Fallback
     }
+
+    await submitInquiry({
+      type: 'group_proposal',
+      name: proposeForm.organizerName,
+      email: proposeForm.organizerEmail,
+      phone: proposeForm.organizerPhone,
+      subject: `New Community Circle Proposal: ${proposeForm.groupTitle}`,
+      message: `Circle Name: ${proposeForm.groupTitle}\nCause/Goal: ${proposeForm.causeOrGoal}\nTarget Audience: ${proposeForm.targetAudience}\nCadence: ${proposeForm.cadence}\nFormat: ${proposeForm.format}\nSupport Needed: ${proposeForm.supportNeeded}`
+    });
     setProposeSubmitted(true);
   };
 
