@@ -15,6 +15,7 @@ crons = ["*/5 * * * *"]
 # ]
 
 [vars]
+ENVIRONMENT = "production"
 ALLOWED_ORIGIN = "https://diversitycollectivevc.org"
 FRONTEND_BASE_URL = "https://diversitycollectivevc.org"
 DCVC_STAFF_EMAIL = "info@diversitycollective.org"

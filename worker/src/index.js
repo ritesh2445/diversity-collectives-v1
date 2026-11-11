@@ -38,7 +38,13 @@ import {
   getTotpUri,
   generateEphemeralOtp,
   generateTempToken,
-  verifyTempToken
+  verifyTempToken,
+  constantTimeEqual,
+  generateRandomSalt,
+  validatePasswordStrength,
+  parseCookies,
+  buildSessionCookie,
+  clearSessionCookie
 } from './adminApi.js';
 import { 
   convertRowsToCsv, 
@@ -92,43 +98,104 @@ function errorResponse(message, status = 400, details = null, extraHeaders = {})
   }, status, extraHeaders);
 }
 
-// Helper: CORS Headers
-function getCorsHeaders(request, env) {
-  const origin = request.headers.get('Origin') || '';
-  const allowed = env.ALLOWED_ORIGIN || '*';
-  
-  // Allow configured origin, localhost for dev, Cloudflare Pages staging, or production domains
-  const isAllowed = allowed === '*' || 
-    origin === allowed || 
-    origin.includes('localhost') || 
-    origin.includes('127.0.0.1') ||
-    origin.endsWith('.pages.dev') ||
-    origin.includes('diversitycollective');
+// Helper: Tightened CORS Headers (Explicit Allowlist Only)
+const TRUSTED_EXACT_ORIGINS = new Set([
+  'https://diversitycollective.org',
+  'https://www.diversitycollective.org',
+  'https://diversitycollectivevc.org',
+  'https://www.diversitycollectivevc.org',
+  'https://diversitycollective.pages.dev',
+  'https://dcvc-api.diversity-collective-vc.workers.dev'
+]);
 
-  return {
-    'Access-Control-Allow-Origin': isAllowed ? (origin || '*') : allowed,
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, X-Zeffy-Signature, x-dcvc-simulation',
-    'Access-Control-Max-Age': '86400'
-  };
+function isTrustedOrigin(origin, env) {
+  if (!origin) return false;
+  const configured = String(env.ALLOWED_ORIGIN || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  if (configured.includes('*')) return true;
+  if (configured.includes(origin)) return true;
+  if (TRUSTED_EXACT_ORIGINS.has(origin)) return true;
+  if (/^https:\/\/[a-z0-9-]+\.diversitycollective\.pages\.dev$/i.test(origin)) return true;
+  if (/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)) return true;
+  return false;
 }
 
-// Helper: Cloudflare Turnstile Verification
-async function verifyTurnstile(token, secretKey, remoteIp) {
-  if (!secretKey || !token) {
-    if (!secretKey) return { success: true, bypassed: true };
+function getCorsHeaders(request, env) {
+  const origin = request.headers.get('Origin') || '';
+  const fallbackOrigin = String(env.ALLOWED_ORIGIN || 'https://diversitycollectivevc.org')
+    .split(',')[0]
+    .trim();
+  const originAllowed = isTrustedOrigin(origin, env);
+  const allowOriginHeader = originAllowed ? origin : fallbackOrigin;
+
+  const headers = {
+    'Access-Control-Allow-Origin': allowOriginHeader,
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, X-Zeffy-Signature, x-dcvc-simulation',
+    'Access-Control-Max-Age': '86400',
+    'Vary': 'Origin'
+  };
+
+  if (originAllowed && allowOriginHeader !== '*') {
+    headers['Access-Control-Allow-Credentials'] = 'true';
+  }
+
+  return headers;
+}
+
+function getAdminJwtSecret(env) {
+  const secret = env.ADMIN_JWT_SECRET || env.JWT_SECRET || '';
+  return typeof secret === 'string' && secret.trim().length >= 16 ? secret.trim() : '';
+}
+
+function resolveRequestAdminToken(request) {
+  const authHeader = request.headers.get('Authorization') || '';
+  const bearer = authHeader.replace(/^Bearer\s+/i, '').trim();
+  if (bearer) return bearer;
+  const cookies = parseCookies(request.headers.get('Cookie') || '');
+  return cookies.dcvc_admin_session || '';
+}
+
+function isCrossOriginRequest(request) {
+  const origin = request.headers.get('Origin') || '';
+  if (!origin) return false;
+  try {
+    return new URL(origin).origin !== new URL(request.url).origin;
+  } catch {
+    return true;
+  }
+}
+
+// Helper: Cloudflare Turnstile Verification (fail-closed for strict admin login)
+async function verifyTurnstile(token, secretKey, remoteIp, env = {}, { strict = false } = {}) {
+  const isDevBypass = !strict && env?.ENVIRONMENT === 'development' && env?.ALLOW_TEST_BYPASS === 'true';
+  const isPreviewFallbackAllowed = !strict && (
+    token === 'cf-preview-bypass-token' ||
+    (typeof token === 'string' && token.startsWith('cf-preview-'))
+  );
+
+  if (!secretKey) {
+    if (isDevBypass || (!strict && env?.ENVIRONMENT === 'test')) {
+      return { success: true, bypassed: true };
+    }
+    return { success: false, error: 'Turnstile security secret key is not configured.' };
+  }
+
+  if (!token || typeof token !== 'string' || !token.trim()) {
     return { success: false, error: 'Missing security verification token' };
   }
 
-  // Graceful fallback bypass for preview domains and development tests
-  if (token === 'cf-preview-bypass-token' || (typeof token === 'string' && token.startsWith('cf-preview-'))) {
+  if (isDevBypass || isPreviewFallbackAllowed) {
     return { success: true, bypassed: true };
   }
 
   try {
     const formData = new FormData();
     formData.append('secret', secretKey);
-    formData.append('response', token);
+    formData.append('response', token.trim());
     if (remoteIp) formData.append('remoteip', remoteIp);
 
     const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
@@ -137,10 +204,8 @@ async function verifyTurnstile(token, secretKey, remoteIp) {
     });
 
     const outcome = await res.json();
-
-    // If Cloudflare returns invalid secret (e.g. key mismatch in staging), log and allow graceful fallback
-    if (!outcome.success && outcome['error-codes']?.includes('invalid-input-secret')) {
-      console.warn('[Turnstile] Server secret key rejected by Cloudflare; allowing graceful fallback on staging');
+    if (!strict && !outcome.success && outcome['error-codes']?.includes('invalid-input-secret')) {
+      console.warn('[Turnstile] Server secret key rejected; public form graceful fallback');
       return { success: true, bypassed: true };
     }
 
@@ -151,42 +216,95 @@ async function verifyTurnstile(token, secretKey, remoteIp) {
   }
 }
 
-// Rate-limiting map for administrative authentication (in-memory per Worker isolate)
+// In-memory rate-limit mirror (secondary backup; primary persisted in Turso `admin_rate_limits`)
 const adminLoginAttempts = new Map();
 
-function checkAdminRateLimit(ip) {
-  const key = ip || 'unknown';
+function checkAdminRateLimitMemory(key) {
   const now = Date.now();
   const record = adminLoginAttempts.get(key);
   if (!record) return { allowed: true };
-
   if (record.lockedUntil && now < record.lockedUntil) {
-    const remainingMins = Math.ceil((record.lockedUntil - now) / 60000);
-    return { allowed: false, remainingMins };
+    return { allowed: false, remainingMins: Math.max(1, Math.ceil((record.lockedUntil - now) / 60000)) };
   }
-
-  // Reset if window has elapsed (15 minutes)
   if (now - record.firstAttempt > 15 * 60 * 1000) {
     adminLoginAttempts.delete(key);
     return { allowed: true };
   }
-
   return { allowed: true };
 }
 
-function recordAdminFailure(ip) {
-  const key = ip || 'unknown';
-  const now = Date.now();
-  const record = adminLoginAttempts.get(key) || { count: 0, firstAttempt: now };
-  record.count += 1;
-  if (record.count >= 5) {
-    record.lockedUntil = now + (15 * 60 * 1000); // 15-minute lock
+async function checkPersistentRateLimit(db, key) {
+  if (!key) return { allowed: true };
+  const mem = checkAdminRateLimitMemory(key);
+  if (!mem.allowed) return mem;
+  if (!db) return mem;
+
+  try {
+    const now = Date.now();
+    const res = await db.execute({
+      sql: `SELECT count, first_attempt, locked_until FROM admin_rate_limits WHERE key = ? LIMIT 1`,
+      args: [key]
+    });
+    if (res.rows.length === 0) return { allowed: true };
+    const row = res.rows[0];
+    const lockedUntil = Number(row.locked_until || 0);
+    const firstAttempt = Number(row.first_attempt || 0);
+    if (lockedUntil && now < lockedUntil) {
+      return { allowed: false, remainingMins: Math.max(1, Math.ceil((lockedUntil - now) / 60000)) };
+    }
+    if (firstAttempt && now - firstAttempt > 15 * 60 * 1000) {
+      await db.execute({ sql: `DELETE FROM admin_rate_limits WHERE key = ?`, args: [key] }).catch(() => {});
+    }
+  } catch {
+    // Table may not exist before initial migration; rely on in-memory mirror
   }
-  adminLoginAttempts.set(key, record);
+  return { allowed: true };
 }
 
-function clearAdminFailures(ip) {
-  adminLoginAttempts.delete(ip || 'unknown');
+async function recordPersistentFailure(db, key, maxAttempts = 5, lockMs = 15 * 60 * 1000) {
+  if (!key) return;
+  const now = Date.now();
+  const memRecord = adminLoginAttempts.get(key);
+  const nextMem = (!memRecord || now - memRecord.firstAttempt > lockMs)
+    ? { count: 1, firstAttempt: now, lockedUntil: null }
+    : { ...memRecord, count: memRecord.count + 1 };
+  if (nextMem.count >= maxAttempts) {
+    nextMem.lockedUntil = now + lockMs;
+  }
+  adminLoginAttempts.set(key, nextMem);
+
+  if (!db) return;
+  try {
+    const res = await db.execute({
+      sql: `SELECT count, first_attempt FROM admin_rate_limits WHERE key = ? LIMIT 1`,
+      args: [key]
+    });
+    let count = 1;
+    let firstAttempt = now;
+    if (res.rows.length > 0) {
+      const prevFirst = Number(res.rows[0].first_attempt || now);
+      if (now - prevFirst <= lockMs) {
+        count = Number(res.rows[0].count || 0) + 1;
+        firstAttempt = prevFirst;
+      }
+    }
+    const lockedUntil = count >= maxAttempts ? now + lockMs : null;
+    await db.execute({
+      sql: `INSERT OR REPLACE INTO admin_rate_limits (key, count, first_attempt, locked_until) VALUES (?, ?, ?, ?)`,
+      args: [key, count, firstAttempt, lockedUntil]
+    });
+  } catch {
+    // Ignore if migrations haven't created admin_rate_limits yet
+  }
+}
+
+async function clearPersistentFailures(db, key) {
+  if (!key) return;
+  adminLoginAttempts.delete(key);
+  if (!db) return;
+  try {
+    await db.execute({ sql: `DELETE FROM admin_rate_limits WHERE key = ?`, args: [key] });
+  } catch {}
 }
 
 function maskEmailForDisplay(email) {
@@ -755,9 +873,12 @@ export default {
       // =======================================================================
       if (pathname === '/api/webhooks/zeffy/reconcile' && request.method === 'POST') {
         const authHeader = (request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '').trim();
+        const cookieToken = resolveRequestAdminToken(request);
         const apiKey = env.ZEFFY_API_KEY;
-        const adminAuth = await verifyAuthToken(authHeader, env.ADMIN_JWT_SECRET || env.JWT_SECRET || 'dcvc_admin_jwt_secret_2026');
-        const isAuthorized = (apiKey && authHeader === apiKey) || Boolean(adminAuth);
+        const jwtSecret = getAdminJwtSecret(env);
+        const adminAuth = jwtSecret ? await verifyAuthToken(authHeader || cookieToken, jwtSecret) : null;
+        const isApiKeyMatch = Boolean(apiKey && authHeader && constantTimeEqual(authHeader, apiKey));
+        const isAuthorized = isApiKeyMatch || Boolean(adminAuth);
 
         if (!isAuthorized) {
           return errorResponse('Unauthorized reconciliation request', 401, null, cors);
@@ -870,8 +991,10 @@ export default {
       // Hardened: Requires Admin Authentication in production; cryptographically minted tokens
       // =======================================================================
       if (pathname === '/api/appreciation-cards/simulate' && request.method === 'POST') {
-        const isDev = !env.ENVIRONMENT || env.ENVIRONMENT === 'development' || env.ENVIRONMENT === 'test';
-        const user = await verifyAuthToken(request, env);
+        const isDev = env.ENVIRONMENT === 'development' || env.ENVIRONMENT === 'test';
+        const jwtSecret = getAdminJwtSecret(env);
+        const simToken = resolveRequestAdminToken(request);
+        const user = jwtSecret ? await verifyAuthToken(simToken, jwtSecret) : null;
 
         if (!isDev && (!user || user.role !== 'admin')) {
           return errorResponse('Forbidden: Simulation requires DCVC Administrator credentials', 403, null, cors);
@@ -1890,108 +2013,145 @@ export default {
       }
 
       // =======================================================================
-      // 15. Administrative API (Role-Based Access Control)
+      // 15. Administrative API (Hardened Auth, MFA, Session Revocation & RBAC)
       // =======================================================================
       if (pathname.startsWith('/api/admin/')) {
+        const adminCors = {
+          ...cors,
+          'Cache-Control': 'no-store, no-cache, must-revalidate, private',
+          'Pragma': 'no-cache'
+        };
+        const jwtSecret = getAdminJwtSecret(env);
+        if (!jwtSecret) {
+          return errorResponse('Administrative signing secret is not configured on the server.', 500, null, adminCors);
+        }
+
+        const crossOrigin = isCrossOriginRequest(request);
+        const db = getDb(env);
+
+        // Self-heal additive security columns/tables once per Worker isolate
+        if (db && !globalThis.__dcvcAdminSchemaEnsured) {
+          globalThis.__dcvcAdminSchemaEnsured = true;
+          const patchSql = [
+            `CREATE TABLE IF NOT EXISTS admin_rate_limits (key TEXT PRIMARY KEY, count INTEGER DEFAULT 0, first_attempt INTEGER NOT NULL, locked_until INTEGER)`,
+            `CREATE TABLE IF NOT EXISTS admin_revoked_tokens (jti TEXT PRIMARY KEY, user_id TEXT, expires_at INTEGER NOT NULL, revoked_at TEXT DEFAULT (datetime('now')))`,
+            `CREATE TABLE IF NOT EXISTS admin_used_temp_tokens (jti TEXT PRIMARY KEY, attempts INTEGER DEFAULT 0, consumed INTEGER DEFAULT 0, expires_at INTEGER NOT NULL)`,
+            `ALTER TABLE admin_users ADD COLUMN token_version INTEGER DEFAULT 1`,
+            `ALTER TABLE admin_users ADD COLUMN must_change_password INTEGER DEFAULT 0`,
+            `ALTER TABLE admin_users ADD COLUMN password_updated_at TEXT`,
+            `ALTER TABLE admin_users ADD COLUMN last_totp_step INTEGER DEFAULT 0`
+          ];
+          for (const sql of patchSql) {
+            await db.execute({ sql, args: [] }).catch(() => {});
+          }
+        }
+
         // 15.1 Admin Authentication: Login (POST /api/admin/auth/login)
         if (pathname === '/api/admin/auth/login' && request.method === 'POST') {
-          const rateCheck = checkAdminRateLimit(clientIp);
-          if (!rateCheck.allowed) {
-            return errorResponse(`Too many failed login attempts. Please try again in ${rateCheck.remainingMins} minutes.`, 429, null, cors);
-          }
-
           const body = await request.json().catch(() => ({}));
           const email = (body.email || '').toLowerCase().trim();
           const password = body.password || '';
 
           if (!email || !password) {
-            return errorResponse('Email and password are required', 400, null, cors);
+            return errorResponse('Email and password are required', 400, null, adminCors);
           }
 
-          // Optional Turnstile verification if token is provided or secret is set
-          if (body.turnstileToken) {
-            const turnstile = await verifyTurnstile(body.turnstileToken, env.TURNSTILE_SECRET_KEY, clientIp);
+          const ipRateKey = `login:ip:${clientIp || 'unknown'}`;
+          const emailRateKey = `login:email:${email}`;
+          const ipRateCheck = await checkPersistentRateLimit(db, ipRateKey);
+          if (!ipRateCheck.allowed) {
+            return errorResponse(`Too many failed login attempts. Please try again in ${ipRateCheck.remainingMins} minutes.`, 429, null, adminCors);
+          }
+          const emailRateCheck = await checkPersistentRateLimit(db, emailRateKey);
+          if (!emailRateCheck.allowed) {
+            return errorResponse(`This account is temporarily locked due to failed attempts. Please try again in ${emailRateCheck.remainingMins} minutes.`, 429, null, adminCors);
+          }
+
+          // Strict Turnstile verification whenever secret key is configured (no bypass tokens)
+          if (env.TURNSTILE_SECRET_KEY) {
+            const turnstile = await verifyTurnstile(body.turnstileToken, env.TURNSTILE_SECRET_KEY, clientIp, env, { strict: true });
             if (!turnstile.success) {
-              return errorResponse('Security verification failed. Please try again.', 400, turnstile.error, cors);
+              return errorResponse('Security verification failed. Please complete the Cloudflare Turnstile check.', 400, turnstile.error, adminCors);
             }
           }
 
-          const db = getDb(env);
+          if (!db) {
+            return errorResponse('Authentication database is unavailable.', 503, null, adminCors);
+          }
+
           let userRow = null;
-
-          if (db) {
-            try {
-              const userRes = await db.execute({
-                sql: `SELECT id, email, name, role, password_hash, salt, mfa_enabled, mfa_secret, is_active FROM admin_users WHERE email = ? LIMIT 1`,
-                args: [email]
-              });
-              if (userRes.rows.length > 0) {
-                userRow = userRes.rows[0];
-              }
-            } catch (err) {
-              console.warn('Could not query admin_users table:', err.message);
+          try {
+            const userRes = await db.execute({
+              sql: `SELECT id, email, name, role, password_hash, salt, mfa_enabled, mfa_secret, is_active, COALESCE(token_version, 1) AS token_version, COALESCE(must_change_password, 0) AS must_change_password
+                    FROM admin_users WHERE email = ? LIMIT 1`,
+              args: [email]
+            });
+            if (userRes.rows.length > 0) {
+              userRow = userRes.rows[0];
             }
-          }
-
-          // Fallback test account ONLY when database is completely unconfigured (offline local unit testing)
-          if (!userRow && !db) {
-            const devSalt = 'dcvc_salt_2026';
-            const expectedHash = await hashPassword('DCVC-Admin-2026!', devSalt);
-            userRow = {
-              id: 'adm-dev-1',
-              email: 'admin@diversitycollective.org',
-              name: 'Tess Allen (Executive Director)',
-              role: 'admin',
-              password_hash: expectedHash,
-              salt: devSalt,
-              mfa_enabled: 0,
-              mfa_secret: null,
-              is_active: 1
-            };
+          } catch (err) {
+            console.error('Admin user lookup failed:', err.message);
+            return errorResponse('Authentication service temporarily unavailable.', 503, null, adminCors);
           }
 
           if (!userRow) {
-            recordAdminFailure(clientIp);
-            return errorResponse('Invalid email or password', 401, null, cors);
+            await Promise.all([
+              recordPersistentFailure(db, ipRateKey),
+              recordPersistentFailure(db, emailRateKey)
+            ]);
+            return errorResponse('Invalid email or password', 401, null, adminCors);
           }
 
           if (!userRow.is_active) {
-            return errorResponse('Account is deactivated. Please contact a system administrator.', 403, null, cors);
+            return errorResponse('Account is deactivated. Please contact a system administrator.', 403, null, adminCors);
           }
 
           const computedHash = await hashPassword(password, userRow.salt);
-          const isLegacySeededHash = userRow.password_hash === '8b5a794966c62c2f0fcf6408226068222383c27e3848b61e27a69623e1e07297' && password === 'DCVC-Admin-2026!';
-
-          if (computedHash !== userRow.password_hash && !isLegacySeededHash) {
-            recordAdminFailure(clientIp);
-            return errorResponse('Invalid email or password', 401, null, cors);
-          }
-
-          // If legacy migration seed hash was present, auto-upgrade in database to computed PBKDF2 hash
-          if (isLegacySeededHash && db) {
-            ctx.waitUntil(
-              db.execute({
-                sql: `UPDATE admin_users SET password_hash = ? WHERE id = ?`,
-                args: [computedHash, userRow.id]
-              }).catch(e => console.error('Failed to auto-upgrade legacy admin password hash:', e))
-            );
+          if (!constantTimeEqual(computedHash, userRow.password_hash)) {
+            await Promise.all([
+              recordPersistentFailure(db, ipRateKey),
+              recordPersistentFailure(db, emailRateKey),
+              logAdminAction(db, {
+                userId: userRow.id,
+                userEmail: userRow.email,
+                action: 'admin_login_failed_password',
+                targetType: 'auth',
+                targetId: userRow.id,
+                ip: clientIp
+              })
+            ]);
+            return errorResponse('Invalid email or password', 401, null, adminCors);
           }
 
           // Password verified successfully: clear failure counts
-          clearAdminFailures(clientIp);
+          await Promise.all([
+            clearPersistentFailures(db, ipRateKey),
+            clearPersistentFailures(db, emailRateKey)
+          ]);
 
-          const jwtSecret = env.ADMIN_JWT_SECRET || env.JWT_SECRET || 'dcvc_admin_jwt_secret_2026';
           const maskedEmail = maskEmailForDisplay(userRow.email);
+          const tempJti = crypto.randomUUID();
+          const tokenVersion = Number(userRow.token_version || 1);
+          const mustChangePassword = Boolean(userRow.must_change_password);
+          const tempExp = Math.floor(Date.now() / 1000) + 300;
 
           // Case A: User has TOTP Authenticator App configured
           if (userRow.mfa_enabled && userRow.mfa_secret) {
             const tempToken = await generateTempToken({
+              jti: tempJti,
               userId: userRow.id,
               email: userRow.email,
               name: userRow.name,
               role: userRow.role,
+              tv: tokenVersion,
+              mustChangePassword,
               mfaType: 'totp'
             }, jwtSecret, 300);
+
+            await db.execute({
+              sql: `INSERT OR REPLACE INTO admin_used_temp_tokens (jti, attempts, consumed, expires_at) VALUES (?, 0, 0, ?)`,
+              args: [tempJti, tempExp]
+            }).catch(() => {});
 
             return jsonResponse({
               success: true,
@@ -2000,21 +2160,31 @@ export default {
               tempToken,
               email: maskedEmail,
               message: 'Please enter the 6-digit code from your authenticator app.'
-            }, 200, cors);
+            }, 200, adminCors);
           }
 
           // Case B: User has not yet paired an authenticator app -> Dispatches 6-digit OTP code to registered admin email
           const emailOtp = generateEphemeralOtp(6);
-          const emailOtpHash = await hashPassword(emailOtp, 'dcvc_mfa_otp');
+          const otpSalt = generateRandomSalt(16);
+          const emailOtpHash = await hashPassword(emailOtp, otpSalt);
 
           const tempToken = await generateTempToken({
+            jti: tempJti,
             userId: userRow.id,
             email: userRow.email,
             name: userRow.name,
             role: userRow.role,
+            tv: tokenVersion,
+            mustChangePassword,
             mfaType: 'email',
+            emailOtpSalt: otpSalt,
             emailOtpHash
           }, jwtSecret, 300);
+
+          await db.execute({
+            sql: `INSERT OR REPLACE INTO admin_used_temp_tokens (jti, attempts, consumed, expires_at) VALUES (?, 0, 0, ?)`,
+            args: [tempJti, tempExp]
+          }).catch(() => {});
 
           // Dispatch verification code via Resend
           const emailContent = templateAdmin2faOtp({ email: userRow.email, otpCode: emailOtp });
@@ -2036,87 +2206,167 @@ export default {
             tempToken,
             email: maskedEmail,
             message: `A single-use 6-digit verification code has been dispatched to ${maskedEmail}.`
-          }, 200, cors);
+          }, 200, adminCors);
         }
 
         // 15.2 Admin 2FA Code Verification (POST /api/admin/auth/2fa/verify)
         if (pathname === '/api/admin/auth/2fa/verify' && request.method === 'POST') {
+          const ip2faKey = `2fa:ip:${clientIp || 'unknown'}`;
+          const ip2faCheck = await checkPersistentRateLimit(db, ip2faKey);
+          if (!ip2faCheck.allowed) {
+            return errorResponse(`Too many invalid security code attempts. Try again in ${ip2faCheck.remainingMins} minutes.`, 429, null, adminCors);
+          }
+
           const body = await request.json().catch(() => ({}));
           const { tempToken, code } = body;
           const cleanCode = (code || '').replace(/\s+/g, '').trim();
 
           if (!tempToken || !cleanCode) {
-            return errorResponse('Verification token and 6-digit code are required.', 400, null, cors);
+            return errorResponse('Verification token and security code are required.', 400, null, adminCors);
           }
 
-          const jwtSecret = env.ADMIN_JWT_SECRET || env.JWT_SECRET || 'dcvc_admin_jwt_secret_2026';
           const tempPayload = await verifyTempToken(tempToken, jwtSecret);
-
-          if (!tempPayload) {
-            return errorResponse('Your verification session has expired. Please sign in again.', 401, null, cors);
+          if (!tempPayload || !tempPayload.jti) {
+            return errorResponse('Your verification session has expired. Please sign in again.', 401, null, adminCors);
           }
 
-          const db = getDb(env);
+          if (!db) {
+            return errorResponse('Authentication database is unavailable.', 503, null, adminCors);
+          }
 
-          // Verify Code based on MFA Type (with recovery code support for staging & emergency recovery)
-          const isRecoveryCode = cleanCode === (env.ADMIN_RECOVERY_CODE || '992026');
+          // Single-use & max-attempt check for 2FA temp token
+          let currentTempAttempts = 0;
+          try {
+            const tRes = await db.execute({
+              sql: `SELECT attempts, consumed FROM admin_used_temp_tokens WHERE jti = ? LIMIT 1`,
+              args: [tempPayload.jti]
+            });
+            if (tRes.rows.length > 0) {
+              if (Number(tRes.rows[0].consumed) === 1 || Number(tRes.rows[0].attempts) >= 5) {
+                return errorResponse('This verification session is no longer valid. Please sign in again.', 401, null, adminCors);
+              }
+              currentTempAttempts = Number(tRes.rows[0].attempts || 0);
+            }
+          } catch {}
+
+          // Recovery code ONLY valid if explicitly provisioned in Worker secrets with high entropy (>= 10 chars)
+          const configuredRecovery = typeof env.ADMIN_RECOVERY_CODE === 'string' && env.ADMIN_RECOVERY_CODE.trim().length >= 10
+            ? env.ADMIN_RECOVERY_CODE.trim()
+            : '';
+          const isRecoveryCode = Boolean(configuredRecovery && constantTimeEqual(cleanCode, configuredRecovery));
+
+          let matchedTotpStep = 0;
+          let mfaVerified = false;
 
           if (tempPayload.mfaType === 'totp') {
-            let mfaSecret = null;
-            if (db) {
-              const uRes = await db.execute({
-                sql: `SELECT mfa_secret FROM admin_users WHERE id = ? LIMIT 1`,
-                args: [tempPayload.userId]
-              });
-              if (uRes.rows.length > 0) mfaSecret = uRes.rows[0].mfa_secret;
+            const uRes = await db.execute({
+              sql: `SELECT mfa_secret, COALESCE(last_totp_step, 0) AS last_totp_step, is_active FROM admin_users WHERE id = ? LIMIT 1`,
+              args: [tempPayload.userId]
+            });
+            if (uRes.rows.length === 0 || !uRes.rows[0].is_active) {
+              return errorResponse('Account unavailable.', 403, null, adminCors);
             }
 
-            const isValidTotp = isRecoveryCode || (await verifyTotpCode(mfaSecret, cleanCode));
-            if (!isValidTotp) {
-              return errorResponse('Invalid 6-digit authenticator code. Please check your authenticator app and try again.', 400, null, cors);
+            if (isRecoveryCode) {
+              mfaVerified = true;
+            } else {
+              const totpCheck = await verifyTotpCode(uRes.rows[0].mfa_secret, cleanCode, {
+                returnStep: true,
+                lastUsedStep: Number(uRes.rows[0].last_totp_step || 0)
+              });
+              mfaVerified = totpCheck.valid;
+              matchedTotpStep = totpCheck.matchedStep;
             }
           } else if (tempPayload.mfaType === 'email') {
-            const computedCodeHash = await hashPassword(cleanCode, 'dcvc_mfa_otp');
-            if (computedCodeHash !== tempPayload.emailOtpHash && !isRecoveryCode) {
-              return errorResponse('Invalid 6-digit verification code. Please check your email or enter your recovery code.', 400, null, cors);
+            if (isRecoveryCode) {
+              mfaVerified = true;
+            } else if (/^\d{6}$/.test(cleanCode)) {
+              const computedCodeHash = await hashPassword(cleanCode, tempPayload.emailOtpSalt || 'dcvc_mfa_otp');
+              mfaVerified = constantTimeEqual(computedCodeHash, tempPayload.emailOtpHash || '');
             }
           } else {
-            return errorResponse('Unsupported 2FA verification type.', 400, null, cors);
+            return errorResponse('Unsupported 2FA verification type.', 400, null, adminCors);
           }
 
-          // Code verified: Issue persistent 12-hour session JWT
+          if (!mfaVerified) {
+            const nextAttempts = currentTempAttempts + 1;
+            const exhaust = nextAttempts >= 5 ? 1 : 0;
+            await Promise.all([
+              recordPersistentFailure(db, ip2faKey, 8, 15 * 60 * 1000),
+              db.execute({
+                sql: `INSERT OR REPLACE INTO admin_used_temp_tokens (jti, attempts, consumed, expires_at) VALUES (?, ?, ?, ?)`,
+                args: [tempPayload.jti, nextAttempts, exhaust, Number(tempPayload.exp || Math.floor(Date.now() / 1000) + 300)]
+              }).catch(() => {}),
+              logAdminAction(db, {
+                userId: tempPayload.userId,
+                userEmail: tempPayload.email,
+                action: 'admin_2fa_failed',
+                targetType: 'auth',
+                targetId: tempPayload.userId,
+                details: { mfaType: tempPayload.mfaType, attempts: nextAttempts },
+                ip: clientIp
+              })
+            ]);
+
+            if (exhaust) {
+              return errorResponse('Too many incorrect verification attempts. Please sign in again.', 429, null, adminCors);
+            }
+            return errorResponse('Invalid 6-digit verification code. Please verify and try again.', 400, null, adminCors);
+          }
+
+          // Burn temp token immediately so it can never be replayed
+          await Promise.all([
+            db.execute({
+              sql: `INSERT OR REPLACE INTO admin_used_temp_tokens (jti, attempts, consumed, expires_at) VALUES (?, ?, 1, ?)`,
+              args: [tempPayload.jti, currentTempAttempts, Number(tempPayload.exp || Math.floor(Date.now() / 1000) + 300)]
+            }).catch(() => {}),
+            clearPersistentFailures(db, ip2faKey)
+          ]);
+
+          // Read latest token_version and password status before issuing JWT
+          const freshUserRes = await db.execute({
+            sql: `SELECT COALESCE(token_version, 1) AS token_version, COALESCE(must_change_password, 0) AS must_change_password, mfa_enabled FROM admin_users WHERE id = ? LIMIT 1`,
+            args: [tempPayload.userId]
+          });
+          const freshRow = freshUserRes.rows[0] || {};
+          const tokenVersion = Number(freshRow.token_version || tempPayload.tv || 1);
+          const mustChangePassword = Boolean(freshRow.must_change_password);
+          const sessionDurationSec = 8 * 3600;
+
           const sessionPayload = {
             id: tempPayload.userId,
             email: tempPayload.email,
             name: tempPayload.name,
-            role: tempPayload.role
+            role: tempPayload.role,
+            tv: tokenVersion
           };
 
-          const token = await generateAuthToken(sessionPayload, jwtSecret);
+          const token = await generateAuthToken(sessionPayload, jwtSecret, sessionDurationSec);
 
-          // Record audit log and update last_login_at
-          if (db) {
-            ctx.waitUntil(
-              db.batch([
-                {
-                  sql: `UPDATE admin_users SET last_login_at = datetime('now') WHERE id = ?`,
-                  args: [tempPayload.userId]
-                },
-                {
-                  sql: `INSERT INTO admin_audit_logs (id, user_id, user_email, action, target_type, target_id, details, ip_address)
-                        VALUES (?, ?, ?, 'admin_login_success', 'auth', ?, ?, ?)`,
-                  args: [
-                    crypto.randomUUID(),
-                    tempPayload.userId,
-                    tempPayload.email,
-                    tempPayload.userId,
-                    JSON.stringify({ mfaType: tempPayload.mfaType, userAgent: request.headers.get('user-agent') }),
-                    clientIp
-                  ]
-                }
-              ], 'deferred').catch(e => console.error('Failed to log admin login:', e))
-            );
-          }
+          const batchOps = [
+            {
+              sql: matchedTotpStep > 0
+                ? `UPDATE admin_users SET last_login_at = datetime('now'), last_totp_step = ? WHERE id = ?`
+                : `UPDATE admin_users SET last_login_at = datetime('now') WHERE id = ?`,
+              args: matchedTotpStep > 0 ? [matchedTotpStep, tempPayload.userId] : [tempPayload.userId]
+            },
+            {
+              sql: `INSERT INTO admin_audit_logs (id, user_id, user_email, action, target_type, target_id, details, ip_address)
+                    VALUES (?, ?, ?, ?, 'auth', ?, ?, ?)`,
+              args: [
+                crypto.randomUUID(),
+                tempPayload.userId,
+                tempPayload.email,
+                isRecoveryCode ? 'admin_recovery_code_login' : 'admin_login_success',
+                tempPayload.userId,
+                JSON.stringify({ mfaType: tempPayload.mfaType, usedRecoveryCode: isRecoveryCode, userAgent: request.headers.get('user-agent') }),
+                clientIp
+              ]
+            }
+          ];
+          ctx.waitUntil(
+            db.batch(batchOps, 'deferred').catch(e => console.error('Failed to log admin login:', e))
+          );
 
           return jsonResponse({
             success: true,
@@ -2126,29 +2376,67 @@ export default {
               email: tempPayload.email,
               name: tempPayload.name,
               role: tempPayload.role,
-              mfaEnabled: tempPayload.mfaType === 'totp'
+              mfaEnabled: Boolean(freshRow.mfa_enabled ?? (tempPayload.mfaType === 'totp')),
+              mustChangePassword
             }
-          }, 200, cors);
+          }, 200, {
+            ...adminCors,
+            'Set-Cookie': buildSessionCookie(token, { crossOrigin, maxAgeSec: sessionDurationSec })
+          });
         }
 
         // 15.3 Admin 2FA Resend Email Code (POST /api/admin/auth/2fa/resend)
         if (pathname === '/api/admin/auth/2fa/resend' && request.method === 'POST') {
-          const body = await request.json().catch(() => ({}));
-          const { tempToken } = body;
-          const jwtSecret = env.ADMIN_JWT_SECRET || env.JWT_SECRET || 'dcvc_admin_jwt_secret_2026';
-          const tempPayload = await verifyTempToken(tempToken, jwtSecret);
-
-          if (!tempPayload) {
-            return errorResponse('Verification session has expired. Please sign in again.', 401, null, cors);
+          const resendKey = `2fa:resend:${clientIp || 'unknown'}`;
+          const resendRate = await checkPersistentRateLimit(db, resendKey);
+          if (!resendRate.allowed) {
+            return errorResponse(`Too many code resend requests. Please try again in ${resendRate.remainingMins} minutes.`, 429, null, adminCors);
           }
 
+          const body = await request.json().catch(() => ({}));
+          const { tempToken } = body;
+          const tempPayload = await verifyTempToken(tempToken, jwtSecret);
+
+          if (!tempPayload || !tempPayload.jti) {
+            return errorResponse('Verification session has expired. Please sign in again.', 401, null, adminCors);
+          }
+
+          if (db) {
+            const tRes = await db.execute({
+              sql: `SELECT consumed FROM admin_used_temp_tokens WHERE jti = ? LIMIT 1`,
+              args: [tempPayload.jti]
+            }).catch(() => ({ rows: [] }));
+            if (tRes.rows.length > 0 && Number(tRes.rows[0].consumed) === 1) {
+              return errorResponse('Verification session is no longer active. Please sign in again.', 401, null, adminCors);
+            }
+            // Burn old tempToken JTI immediately so only the newly minted OTP stays valid
+            await db.execute({
+              sql: `INSERT OR REPLACE INTO admin_used_temp_tokens (jti, attempts, consumed, expires_at) VALUES (?, 0, 1, ?)`,
+              args: [tempPayload.jti, Number(tempPayload.exp || Math.floor(Date.now() / 1000) + 300)]
+            }).catch(() => {});
+          }
+
+          await recordPersistentFailure(db, resendKey, 5, 10 * 60 * 1000);
+
           const freshOtp = generateEphemeralOtp(6);
-          const freshOtpHash = await hashPassword(freshOtp, 'dcvc_mfa_otp');
+          const freshSalt = generateRandomSalt(16);
+          const freshOtpHash = await hashPassword(freshOtp, freshSalt);
+          const nextJti = crypto.randomUUID();
+          const nextExp = Math.floor(Date.now() / 1000) + 300;
 
           const newTempToken = await generateTempToken({
             ...tempPayload,
+            jti: nextJti,
+            emailOtpSalt: freshSalt,
             emailOtpHash: freshOtpHash
           }, jwtSecret, 300);
+
+          if (db) {
+            await db.execute({
+              sql: `INSERT OR REPLACE INTO admin_used_temp_tokens (jti, attempts, consumed, expires_at) VALUES (?, 0, 0, ?)`,
+              args: [nextJti, nextExp]
+            }).catch(() => {});
+          }
 
           const emailContent = templateAdmin2faOtp({ email: tempPayload.email, otpCode: freshOtp });
           ctx.waitUntil(
@@ -2166,37 +2454,207 @@ export default {
             success: true,
             tempToken: newTempToken,
             message: `A fresh verification code has been dispatched to ${maskEmailForDisplay(tempPayload.email)}.`
-          }, 200, cors);
+          }, 200, adminCors);
         }
 
         // =====================================================================
-        // Middleware: Verify Admin Authorization for all protected /api/admin/* endpoints
+        // Middleware: Verify Admin Authorization, Session Revocation & Active User
         // =====================================================================
-        const authHeader = request.headers.get('Authorization') || '';
-        const token = authHeader.replace(/^Bearer\s+/i, '').trim();
-        const jwtSecret = env.ADMIN_JWT_SECRET || env.JWT_SECRET || 'dcvc_admin_jwt_secret_2026';
+        const token = resolveRequestAdminToken(request);
         const authUser = await verifyAuthToken(token, jwtSecret);
 
         if (!authUser) {
-          return errorResponse('Unauthorized. Valid admin session token required.', 401, null, cors);
+          return errorResponse('Unauthorized. Valid admin session token required.', 401, null, adminCors);
+        }
+
+        if (db) {
+          const userId = authUser.id || authUser.userId;
+          // Reject revoked tokens
+          if (authUser.jti) {
+            const revRes = await db.execute({
+              sql: `SELECT jti FROM admin_revoked_tokens WHERE jti = ? LIMIT 1`,
+              args: [authUser.jti]
+            }).catch(() => ({ rows: [] }));
+            if (revRes.rows.length > 0) {
+              return errorResponse('Session has been signed out or revoked. Please sign in again.', 401, null, {
+                ...adminCors,
+                'Set-Cookie': clearSessionCookie({ crossOrigin })
+              });
+            }
+          }
+
+          // Verify user still exists, is active, and token_version matches
+          const activeRes = await db.execute({
+            sql: `SELECT is_active, COALESCE(token_version, 1) AS token_version, COALESCE(must_change_password, 0) AS must_change_password, mfa_enabled FROM admin_users WHERE id = ? LIMIT 1`,
+            args: [userId]
+          }).catch(() => ({ rows: [] }));
+
+          if (activeRes.rows.length === 0 || !activeRes.rows[0].is_active) {
+            return errorResponse('Administrative account is disabled or unavailable.', 401, null, {
+              ...adminCors,
+              'Set-Cookie': clearSessionCookie({ crossOrigin })
+            });
+          }
+
+          const dbVersion = Number(activeRes.rows[0].token_version || 1);
+          const tokenVersion = Number(authUser.tv || 1);
+          if (dbVersion !== tokenVersion) {
+            return errorResponse('Session invalidated due to password change or global sign-out. Please sign in again.', 401, null, {
+              ...adminCors,
+              'Set-Cookie': clearSessionCookie({ crossOrigin })
+            });
+          }
+
+          authUser.mfaEnabled = Boolean(activeRes.rows[0].mfa_enabled);
+          authUser.mustChangePassword = Boolean(activeRes.rows[0].must_change_password);
+          authUser.tokenVersion = dbVersion;
         }
 
         // 15.4 Current User Profile (GET /api/admin/auth/me)
         if (pathname === '/api/admin/auth/me' && request.method === 'GET') {
-          const db = getDb(env);
-          let mfaEnabled = false;
-          if (db) {
-            try {
-              const uRes = await db.execute({
-                sql: `SELECT mfa_enabled FROM admin_users WHERE id = ? LIMIT 1`,
-                args: [authUser.id || authUser.userId]
-              });
-              if (uRes.rows.length > 0) {
-                mfaEnabled = Boolean(uRes.rows[0].mfa_enabled);
-              }
-            } catch {}
+          return jsonResponse({
+            success: true,
+            user: {
+              id: authUser.id || authUser.userId,
+              email: authUser.email,
+              name: authUser.name,
+              role: authUser.role,
+              mfaEnabled: Boolean(authUser.mfaEnabled),
+              mustChangePassword: Boolean(authUser.mustChangePassword)
+            }
+          }, 200, adminCors);
+        }
+
+        // 15.4b Logout Single Session (POST /api/admin/auth/logout)
+        if (pathname === '/api/admin/auth/logout' && request.method === 'POST') {
+          if (db && authUser.jti) {
+            await db.execute({
+              sql: `INSERT OR IGNORE INTO admin_revoked_tokens (jti, user_id, expires_at) VALUES (?, ?, ?)`,
+              args: [authUser.jti, authUser.id || authUser.userId, Number(authUser.exp || Math.floor(Date.now() / 1000) + 28800)]
+            }).catch(() => {});
+            await logAdminAction(db, {
+              userId: authUser.id || authUser.userId,
+              userEmail: authUser.email,
+              action: 'admin_logout',
+              targetType: 'auth',
+              ip: clientIp
+            });
           }
-          return jsonResponse({ success: true, user: { ...authUser, mfaEnabled } }, 200, cors);
+          return jsonResponse({ success: true, message: 'Signed out cleanly.' }, 200, {
+            ...adminCors,
+            'Set-Cookie': clearSessionCookie({ crossOrigin })
+          });
+        }
+
+        // 15.4c Revoke All Sessions Everywhere (POST /api/admin/auth/logout-all)
+        if (pathname === '/api/admin/auth/logout-all' && request.method === 'POST') {
+          if (!db) {
+            return errorResponse('Database unavailable.', 503, null, adminCors);
+          }
+          await db.execute({
+            sql: `UPDATE admin_users SET token_version = COALESCE(token_version, 1) + 1 WHERE id = ?`,
+            args: [authUser.id || authUser.userId]
+          });
+          await logAdminAction(db, {
+            userId: authUser.id || authUser.userId,
+            userEmail: authUser.email,
+            action: 'admin_logout_all_sessions',
+            targetType: 'auth',
+            ip: clientIp
+          });
+          return jsonResponse({
+            success: true,
+            message: 'All active sessions for this account have been revoked.'
+          }, 200, {
+            ...adminCors,
+            'Set-Cookie': clearSessionCookie({ crossOrigin })
+          });
+        }
+
+        // 15.4d Change Password & Rotate Session Version (POST /api/admin/auth/change-password)
+        if (pathname === '/api/admin/auth/change-password' && request.method === 'POST') {
+          if (!db) {
+            return errorResponse('Database not available to update credentials.', 503, null, adminCors);
+          }
+          const body = await request.json().catch(() => ({}));
+          const { currentPassword, newPassword, code } = body;
+
+          if (!currentPassword || !newPassword) {
+            return errorResponse('Current password and new password are required.', 400, null, adminCors);
+          }
+
+          const strengthCheck = validatePasswordStrength(newPassword);
+          if (!strengthCheck.valid) {
+            return errorResponse(strengthCheck.error, 400, null, adminCors);
+          }
+
+          if (constantTimeEqual(String(currentPassword), String(newPassword))) {
+            return errorResponse('New password must differ from your current password.', 400, null, adminCors);
+          }
+
+          const userId = authUser.id || authUser.userId;
+          const uRes = await db.execute({
+            sql: `SELECT password_hash, salt, mfa_enabled, mfa_secret, COALESCE(token_version, 1) AS token_version, COALESCE(last_totp_step, 0) AS last_totp_step FROM admin_users WHERE id = ? LIMIT 1`,
+            args: [userId]
+          });
+          if (uRes.rows.length === 0) {
+            return errorResponse('Account record not found.', 404, null, adminCors);
+          }
+
+          const uRow = uRes.rows[0];
+          const computedCurrent = await hashPassword(currentPassword, uRow.salt);
+          if (!constantTimeEqual(computedCurrent, uRow.password_hash)) {
+            return errorResponse('Current password is incorrect.', 401, null, adminCors);
+          }
+
+          if (uRow.mfa_enabled && uRow.mfa_secret) {
+            const cleanCode = (code || '').replace(/\s+/g, '').trim();
+            if (!cleanCode) {
+              return errorResponse('Your 6-digit Authenticator App code is required to change your password.', 400, null, adminCors);
+            }
+            const totpCheck = await verifyTotpCode(uRow.mfa_secret, cleanCode, {
+              returnStep: true,
+              lastUsedStep: Number(uRow.last_totp_step || 0)
+            });
+            if (!totpCheck.valid) {
+              return errorResponse('Invalid 6-digit Authenticator App code.', 400, null, adminCors);
+            }
+          }
+
+          const nextSalt = generateRandomSalt(16);
+          const nextHash = await hashPassword(newPassword, nextSalt);
+          const nextVersion = Number(uRow.token_version || 1) + 1;
+
+          await db.execute({
+            sql: `UPDATE admin_users SET password_hash = ?, salt = ?, must_change_password = 0, token_version = ?, password_updated_at = datetime('now') WHERE id = ?`,
+            args: [nextHash, nextSalt, nextVersion, userId]
+          });
+
+          await logAdminAction(db, {
+            userId,
+            userEmail: authUser.email,
+            action: 'admin_password_changed',
+            targetType: 'auth',
+            ip: clientIp
+          });
+
+          const sessionDurationSec = 8 * 3600;
+          const refreshedToken = await generateAuthToken({
+            id: userId,
+            email: authUser.email,
+            name: authUser.name,
+            role: authUser.role,
+            tv: nextVersion
+          }, jwtSecret, sessionDurationSec);
+
+          return jsonResponse({
+            success: true,
+            token: refreshedToken,
+            message: 'Password updated cleanly and all prior sessions were revoked.'
+          }, 200, {
+            ...adminCors,
+            'Set-Cookie': buildSessionCookie(refreshedToken, { crossOrigin, maxAgeSec: sessionDurationSec })
+          });
         }
 
         // 15.5 Generate Authenticator App (TOTP) Secret & Enrollment URI (POST /api/admin/auth/2fa/setup)
@@ -2211,7 +2669,7 @@ export default {
             otpauthUri,
             formattedKey,
             email: authUser.email
-          }, 200, cors);
+          }, 200, adminCors);
         }
 
         // 15.6 Confirm & Activate Authenticator App 2FA (POST /api/admin/auth/2fa/confirm)
@@ -2221,19 +2679,18 @@ export default {
           const cleanCode = (code || '').replace(/\s+/g, '').trim();
 
           if (!secret || !cleanCode) {
-            return errorResponse('Secret key and 6-digit confirmation code are required.', 400, null, cors);
+            return errorResponse('Secret key and 6-digit confirmation code are required.', 400, null, adminCors);
           }
 
-          const isValid = await verifyTotpCode(secret, cleanCode);
-          if (!isValid) {
-            return errorResponse('Invalid 6-digit code. Please verify the code displayed in your authenticator app and try again.', 400, null, cors);
+          const totpCheck = await verifyTotpCode(secret, cleanCode, { returnStep: true });
+          if (!totpCheck.valid) {
+            return errorResponse('Invalid 6-digit code. Please verify the code displayed in your authenticator app and try again.', 400, null, adminCors);
           }
 
-          const db = getDb(env);
           if (db) {
             await db.execute({
-              sql: `UPDATE admin_users SET mfa_enabled = 1, mfa_secret = ? WHERE id = ?`,
-              args: [secret, authUser.id || authUser.userId]
+              sql: `UPDATE admin_users SET mfa_enabled = 1, mfa_secret = ?, last_totp_step = ? WHERE id = ?`,
+              args: [secret, totpCheck.matchedStep || 0, authUser.id || authUser.userId]
             });
             await logAdminAction(db, {
               userId: authUser.id || authUser.userId,
@@ -2247,7 +2704,7 @@ export default {
           return jsonResponse({
             success: true,
             message: 'Authenticator App (TOTP) 2FA successfully configured and activated!'
-          }, 200, cors);
+          }, 200, adminCors);
         }
 
         // 15.7 Disable Authenticator App 2FA (POST /api/admin/auth/2fa/disable)
@@ -2255,35 +2712,42 @@ export default {
           const body = await request.json().catch(() => ({}));
           const { password, code } = body;
 
-          const db = getDb(env);
           if (!db) {
-            return errorResponse('Database not available to modify security settings.', 500, null, cors);
+            return errorResponse('Database not available to modify security settings.', 500, null, adminCors);
           }
 
           const userRes = await db.execute({
-            sql: `SELECT password_hash, salt, mfa_secret FROM admin_users WHERE id = ? LIMIT 1`,
+            sql: `SELECT password_hash, salt, mfa_enabled, mfa_secret, COALESCE(last_totp_step, 0) AS last_totp_step FROM admin_users WHERE id = ? LIMIT 1`,
             args: [authUser.id || authUser.userId]
           });
 
           if (userRes.rows.length === 0) {
-            return errorResponse('User record not found.', 404, null, cors);
+            return errorResponse('User record not found.', 404, null, adminCors);
           }
 
           const u = userRes.rows[0];
           const computedHash = await hashPassword(password || '', u.salt);
-          if (computedHash !== u.password_hash) {
-            return errorResponse('Incorrect current password.', 400, null, cors);
+          if (!constantTimeEqual(computedHash, u.password_hash)) {
+            return errorResponse('Incorrect current password.', 400, null, adminCors);
           }
 
-          if (u.mfa_secret && code) {
-            const isValid = await verifyTotpCode(u.mfa_secret, code);
-            if (!isValid) {
-              return errorResponse('Invalid 6-digit authenticator code.', 400, null, cors);
+          // Mandatory 6-digit TOTP verification whenever TOTP is active (cannot be skipped)
+          if (u.mfa_enabled && u.mfa_secret) {
+            const cleanCode = (code || '').replace(/\s+/g, '').trim();
+            if (!cleanCode) {
+              return errorResponse('Your 6-digit authenticator code is required to disable 2FA.', 400, null, adminCors);
+            }
+            const totpCheck = await verifyTotpCode(u.mfa_secret, cleanCode, {
+              returnStep: true,
+              lastUsedStep: Number(u.last_totp_step || 0)
+            });
+            if (!totpCheck.valid) {
+              return errorResponse('Invalid 6-digit authenticator code.', 400, null, adminCors);
             }
           }
 
           await db.execute({
-            sql: `UPDATE admin_users SET mfa_enabled = 0, mfa_secret = NULL WHERE id = ?`,
+            sql: `UPDATE admin_users SET mfa_enabled = 0, mfa_secret = NULL, last_totp_step = 0 WHERE id = ?`,
             args: [authUser.id || authUser.userId]
           });
 
@@ -2298,7 +2762,7 @@ export default {
           return jsonResponse({
             success: true,
             message: 'Two-factor authentication disabled.'
-          }, 200, cors);
+          }, 200, adminCors);
         }
 
         // 15.8 Gallery Photo Upload to GitHub & jsDelivr CDN (POST /api/admin/gallery/upload)

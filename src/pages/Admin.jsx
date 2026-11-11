@@ -163,6 +163,15 @@ export default function Admin() {
   const [disableTotpCode, setDisableTotpCode] = useState('');
   const [disableTotpLoading, setDisableTotpLoading] = useState(false);
 
+  // Password Rotation & Session Control State
+  const [currentPwd, setCurrentPwd] = useState('');
+  const [newPwd, setNewPwd] = useState('');
+  const [confirmPwd, setConfirmPwd] = useState('');
+  const [pwdTotpCode, setPwdTotpCode] = useState('');
+  const [pwdLoading, setPwdLoading] = useState(false);
+  const [pwdStatus, setPwdStatus] = useState(null);
+  const [logoutAllLoading, setLogoutAllLoading] = useState(false);
+
   // Active Tab: 'hero' | 'appearance' | 'cms' | 'inbox' | 'gallery' | 'security'
   const [activeTab, setActiveTab] = useState('hero');
   const [appearanceSubTab, setAppearanceSubTab] = useState('theme'); // 'theme' | 'cards'
@@ -214,16 +223,14 @@ export default function Admin() {
   const [galleryActionStatus, setGalleryActionStatus] = useState(null);
   const [copiedCdnId, setCopiedCdnId] = useState(null);
 
-  // Load user session on mount
+  // Load user session on mount (supports both Bearer token and HttpOnly cookie session)
   useEffect(() => {
-    if (token) {
-      fetchCurrentUser();
-    }
+    fetchCurrentUser();
   }, [token]);
 
   // Load tab data
   useEffect(() => {
-    if (user && token) {
+    if (user) {
       if (activeTab === 'inbox') {
         if (inboxSubTab === 'newsletter') fetchSubscriberStats();
         if (inboxSubTab === 'directory') fetchPendingBusinesses();
@@ -280,10 +287,8 @@ export default function Admin() {
     try {
       const res = await fetch(`${API_BASE_URL}/admin/gallery/upload`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
+        credentials: 'include',
+        headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           title: uploadTitle.trim(),
           category: uploadCategory,
@@ -335,7 +340,8 @@ export default function Admin() {
     try {
       const res = await fetch(`${API_BASE_URL}/admin/gallery/${id}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include',
+        headers: buildAuthHeaders()
       });
       const data = await res.json();
       if (data.success) {
@@ -349,36 +355,59 @@ export default function Admin() {
     }
   };
 
+  const buildAuthHeaders = (extra = {}) => ({
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    ...extra
+  });
+
+  const clearClientSession = () => {
+    sessionStorage.removeItem('dcvc_admin_token');
+    localStorage.removeItem('dcvc_admin_token');
+    setToken('');
+    setUser(null);
+    setPending2fa(null);
+  };
+
   const fetchCurrentUser = async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/admin/auth/me`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include',
+        headers: buildAuthHeaders()
       });
       if (res.ok) {
         const data = await res.json();
         setUser(data.user);
+        if (data.user?.mustChangePassword) {
+          setActiveTab('security');
+        }
       } else {
-        handleLogout();
+        clearClientSession();
       }
     } catch {
-      handleLogout();
+      if (token) clearClientSession();
     }
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setAuthLoading(true);
     setAuthError('');
     setTwoFactorSuccessMsg('');
 
+    if (!turnstileToken) {
+      setAuthError('Please complete the security verification check before signing in.');
+      return;
+    }
+
+    setAuthLoading(true);
     try {
       const res = await fetch(`${API_BASE_URL}/admin/auth/login`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           email: loginEmail, 
           password: loginPassword,
-          turnstileToken: turnstileToken || undefined
+          turnstileToken
         })
       });
       const data = await res.json();
@@ -391,7 +420,6 @@ export default function Admin() {
         return;
       }
 
-      // Fallback Direct Token (if 2FA was already completed in session)
       if (data.success && data.token) {
         sessionStorage.setItem('dcvc_admin_token', data.token);
         localStorage.removeItem('dcvc_admin_token');
@@ -411,8 +439,8 @@ export default function Admin() {
   const handleVerify2fa = async (e) => {
     if (e) e.preventDefault();
     const cleanCode = (twoFactorCode || '').replace(/\s+/g, '').trim();
-    if (!cleanCode || cleanCode.length !== 6) {
-      setAuthError('Please enter a valid 6-digit security code.');
+    if (!cleanCode || cleanCode.length < 6) {
+      setAuthError('Please enter your 6-digit security code.');
       return;
     }
 
@@ -421,6 +449,7 @@ export default function Admin() {
     try {
       const res = await fetch(`${API_BASE_URL}/admin/auth/2fa/verify`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tempToken: pending2fa.tempToken,
@@ -437,8 +466,11 @@ export default function Admin() {
         setPending2fa(null);
         setTwoFactorCode('');
         setTwoFactorSuccessMsg('');
+        if (data.user?.mustChangePassword) {
+          setActiveTab('security');
+        }
       } else {
-        setAuthError(data.error || 'Invalid 6-digit code. Please verify and try again.');
+        setAuthError(data.error || 'Invalid security code. Please verify and try again.');
       }
     } catch {
       setAuthError('Network communication failure during 2FA verification.');
@@ -454,6 +486,7 @@ export default function Admin() {
     try {
       const res = await fetch(`${API_BASE_URL}/admin/auth/2fa/resend`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tempToken: pending2fa.tempToken })
       });
@@ -476,10 +509,8 @@ export default function Admin() {
     try {
       const res = await fetch(`${API_BASE_URL}/admin/auth/2fa/setup`, {
         method: 'POST',
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+        credentials: 'include',
+        headers: buildAuthHeaders({ 'Content-Type': 'application/json' })
       });
       const data = await res.json();
       if (data.success) {
@@ -507,10 +538,8 @@ export default function Admin() {
     try {
       const res = await fetch(`${API_BASE_URL}/admin/auth/2fa/confirm`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
+        credentials: 'include',
+        headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           secret: setupTotpData.secret,
           code: clean
@@ -538,18 +567,20 @@ export default function Admin() {
       setSetupTotpStatus({ success: false, message: 'Password is required to disable 2FA.' });
       return;
     }
+    if (user?.mfaEnabled && disableTotpCode.replace(/\s+/g, '').trim().length !== 6) {
+      setSetupTotpStatus({ success: false, message: 'Your 6-digit Authenticator App code is required to disable 2FA.' });
+      return;
+    }
 
     setDisableTotpLoading(true);
     try {
       const res = await fetch(`${API_BASE_URL}/admin/auth/2fa/disable`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
+        credentials: 'include',
+        headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           password: disableTotpPassword,
-          code: disableTotpCode.trim() || undefined
+          code: disableTotpCode.trim()
         })
       });
       const data = await res.json();
@@ -569,18 +600,81 @@ export default function Admin() {
     }
   };
 
-  const handleLogout = () => {
-    sessionStorage.removeItem('dcvc_admin_token');
-    localStorage.removeItem('dcvc_admin_token');
-    setToken('');
-    setUser(null);
-    setPending2fa(null);
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    setPwdStatus(null);
+    if (newPwd !== confirmPwd) {
+      setPwdStatus({ success: false, message: 'New passwords do not match.' });
+      return;
+    }
+    if (newPwd.length < 12) {
+      setPwdStatus({ success: false, message: 'New password must be at least 12 characters with upper/lowercase, number, and symbol.' });
+      return;
+    }
+
+    setPwdLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/auth/change-password`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({
+          currentPassword: currentPwd,
+          newPassword: newPwd,
+          code: user?.mfaEnabled ? pwdTotpCode.trim() : undefined
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (data.token) {
+          sessionStorage.setItem('dcvc_admin_token', data.token);
+          setToken(data.token);
+        }
+        setUser(prev => ({ ...prev, mustChangePassword: false }));
+        setCurrentPwd('');
+        setNewPwd('');
+        setConfirmPwd('');
+        setPwdTotpCode('');
+        setPwdStatus({ success: true, message: data.message || 'Password updated cleanly.' });
+      } else {
+        setPwdStatus({ success: false, message: data.error || 'Could not update password.' });
+      }
+    } catch {
+      setPwdStatus({ success: false, message: 'Network error updating password.' });
+    } finally {
+      setPwdLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await fetch(`${API_BASE_URL}/admin/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: buildAuthHeaders()
+      });
+    } catch {}
+    clearClientSession();
+  };
+
+  const handleLogoutAll = async () => {
+    setLogoutAllLoading(true);
+    try {
+      await fetch(`${API_BASE_URL}/admin/auth/logout-all`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: buildAuthHeaders()
+      });
+    } catch {}
+    setLogoutAllLoading(false);
+    clearClientSession();
   };
 
   const fetchSubscriberStats = async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/admin/newsletter/subscribers`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include',
+        headers: buildAuthHeaders()
       });
       if (res.ok) {
         const data = await res.json();
@@ -594,7 +688,8 @@ export default function Admin() {
   const fetchPendingBusinesses = async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/admin/directory?status=pending`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include',
+        headers: buildAuthHeaders()
       });
       if (res.ok) {
         const data = await res.json();
@@ -608,7 +703,8 @@ export default function Admin() {
   const fetchInquiries = async (type) => {
     try {
       const res = await fetch(`${API_BASE_URL}/admin/inquiries?type=${type}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include',
+        headers: buildAuthHeaders()
       });
       if (res.ok) {
         const data = await res.json();
@@ -638,10 +734,8 @@ export default function Admin() {
     try {
       const res = await fetch(`${API_BASE_URL}/admin/newsletter/send`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
+        credentials: 'include',
+        headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           subject,
           preheader,
@@ -687,10 +781,8 @@ export default function Admin() {
     try {
       const res = await fetch(`${API_BASE_URL}/admin/directory/${id}/moderate`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
+        credentials: 'include',
+        headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ status })
       });
       if (res.ok) {
@@ -2101,6 +2193,18 @@ export default function Admin() {
                 </div>
               )}
 
+              {user?.mustChangePassword && (
+                <div className="p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 text-xs text-amber-950 flex items-start gap-3">
+                  <ShieldAlert className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-extrabold">Action Required: Rotate Default Password</p>
+                    <p className="mt-0.5 text-amber-900">
+                      This account is using a baseline seeded password. Please set a unique 12+ character passphrase below immediately.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Active User Information Box */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
@@ -2113,10 +2217,21 @@ export default function Admin() {
                   <span className="text-sm font-extrabold text-[#5A1E65] block mt-1 uppercase tracking-wide">{user?.role}</span>
                   <span className="text-xs text-slate-500">Role-Based Access Control</span>
                 </div>
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Session Duration</span>
-                  <span className="text-sm font-extrabold text-slate-900 block mt-1">12 Hours (Active)</span>
-                  <span className="text-xs text-slate-500">In-memory HMAC JWT session</span>
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between gap-2">
+                  <div>
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Session Security</span>
+                    <span className="text-sm font-extrabold text-slate-900 block mt-1">8 Hours (Revocable)</span>
+                    <span className="text-xs text-slate-500">HttpOnly Cookie + Versioned JTI</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleLogoutAll}
+                    disabled={logoutAllLoading}
+                    className="mt-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-200 bg-white hover:bg-rose-50 text-rose-700 text-[11px] font-bold cursor-pointer disabled:opacity-50"
+                  >
+                    <LogOut className="w-3 h-3" />
+                    <span>{logoutAllLoading ? 'Revoking...' : 'Sign Out All Devices'}</span>
+                  </button>
                 </div>
               </div>
 
@@ -2252,6 +2367,101 @@ export default function Admin() {
                 )}
               </div>
             </div>
+
+            {/* Password Rotation Card */}
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xs space-y-5">
+              <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
+                <div className="w-10 h-10 rounded-xl bg-purple-100 text-[#5A1E65] flex items-center justify-center">
+                  <Lock className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">Change Staff Password</h3>
+                  <p className="text-xs text-slate-500">
+                    Requires at least 12 characters with uppercase, lowercase, number, and symbol. Rotating your password revokes older sessions everywhere.
+                  </p>
+                </div>
+              </div>
+
+              {pwdStatus && (
+                <div className={`p-4 rounded-2xl text-xs flex items-center gap-3 ${
+                  pwdStatus.success
+                    ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
+                    : 'bg-rose-50 border border-rose-200 text-rose-800'
+                }`}>
+                  {pwdStatus.success ? (
+                    <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                  )}
+                  <span>{pwdStatus.message}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleChangePassword} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1 sm:col-span-2">
+                  <label className="text-xs font-bold text-slate-700 block">Current Password</label>
+                  <input
+                    type="password"
+                    required
+                    value={currentPwd}
+                    onChange={(e) => setCurrentPwd(e.target.value)}
+                    autoComplete="current-password"
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-[#5A1E65] text-sm outline-none"
+                    placeholder="Enter current password"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 block">New Strong Password (12+ chars)</label>
+                  <input
+                    type="password"
+                    required
+                    minLength={12}
+                    value={newPwd}
+                    onChange={(e) => setNewPwd(e.target.value)}
+                    autoComplete="new-password"
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-[#5A1E65] text-sm outline-none"
+                    placeholder="At least 12 mixed characters"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 block">Confirm New Password</label>
+                  <input
+                    type="password"
+                    required
+                    minLength={12}
+                    value={confirmPwd}
+                    onChange={(e) => setConfirmPwd(e.target.value)}
+                    autoComplete="new-password"
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-[#5A1E65] text-sm outline-none"
+                    placeholder="Re-enter new password"
+                  />
+                </div>
+                {user?.mfaEnabled && (
+                  <div className="space-y-1 sm:col-span-2">
+                    <label className="text-xs font-bold text-slate-700 block">6-Digit Authenticator App Code</label>
+                    <input
+                      type="text"
+                      required
+                      inputMode="numeric"
+                      maxLength={6}
+                      value={pwdTotpCode}
+                      onChange={(e) => setPwdTotpCode(e.target.value.replace(/\D/g, ''))}
+                      className="w-48 px-4 py-2.5 rounded-xl border border-slate-300 focus:border-[#5A1E65] text-center font-mono tracking-widest text-sm outline-none"
+                      placeholder="000000"
+                    />
+                  </div>
+                )}
+                <div className="sm:col-span-2 pt-1">
+                  <button
+                    type="submit"
+                    disabled={pwdLoading}
+                    className="px-5 py-2.5 rounded-xl bg-[#5A1E65] hover:bg-purple-900 text-white font-extrabold text-xs shadow-sm transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                  >
+                    {pwdLoading ? 'Updating Password...' : 'Update Password & Revoke Old Sessions'}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         )}
 
@@ -2270,7 +2480,7 @@ export default function Admin() {
                 Disable Authenticator App (2FA)
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Enter your staff password to deactivate Authenticator App 2FA. Future sign-ins will fall back to single-use Email verification codes.
+                Enter your staff password and current 6-digit authenticator code to deactivate TOTP 2FA. Future sign-ins will still enforce Email OTP codes.
               </p>
             </div>
 
@@ -2288,9 +2498,11 @@ export default function Admin() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700 block">Authenticator Code (Optional)</label>
+                <label className="text-xs font-bold text-slate-700 block">Authenticator Code (Required)</label>
                 <input
                   type="text"
+                  required={Boolean(user?.mfaEnabled)}
+                  inputMode="numeric"
                   maxLength={6}
                   value={disableTotpCode}
                   onChange={(e) => setDisableTotpCode(e.target.value.replace(/\D/g, ''))}

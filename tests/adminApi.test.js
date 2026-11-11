@@ -14,7 +14,13 @@ import {
   getTotpUri,
   generateEphemeralOtp,
   generateTempToken,
-  verifyTempToken
+  verifyTempToken,
+  constantTimeEqual,
+  generateRandomSalt,
+  validatePasswordStrength,
+  parseCookies,
+  buildSessionCookie,
+  clearSessionCookie
 } from '../worker/src/adminApi.js';
 
 describe('Admin Authentication & RBAC Engine', () => {
@@ -203,6 +209,68 @@ describe('Admin Authentication & RBAC Engine', () => {
     assert.strictEqual(otp2.length, 6);
     assert.ok(/^\d{6}$/.test(otp1));
     assert.ok(/^\d{6}$/.test(otp2));
+  });
+
+  it('13. fails closed when JWT signing secret is missing or too short', async () => {
+    await assert.rejects(() => generateAuthToken({ id: 'adm-1' }, ''), /secret/i);
+    await assert.rejects(() => generateTempToken({ userId: 'adm-1' }, 'short'), /secret/i);
+    assert.strictEqual(await verifyAuthToken('a.b.c', ''), null);
+    assert.strictEqual(await verifyTempToken('a.b.c', ''), null);
+  });
+
+  it('14. rejects JWT algorithm confusion (alg: none) and TEMP_2FA token misuse', async () => {
+    const noneHeader = Buffer.from(JSON.stringify({ alg: 'none', typ: 'JWT' })).toString('base64url');
+    const body = Buffer.from(JSON.stringify({ id: 'adm-1', role: 'admin', exp: 9999999999 })).toString('base64url');
+    assert.strictEqual(await verifyAuthToken(`${noneHeader}.${body}.`, secret), null);
+
+    const tempTok = await generateTempToken({ userId: 'adm-1', role: 'admin' }, secret, 300);
+    assert.strictEqual(await verifyAuthToken(tempTok, secret), null);
+  });
+
+  it('15. blocks TOTP replay within the same time step', async () => {
+    const totpSecret = generateTotpSecret(20);
+    const fixedMs = 1700000010 * 1000;
+    const code = await generateTotpCode(totpSecret, Math.floor(fixedMs / 1000));
+
+    const first = await verifyTotpCode(totpSecret, code, { timestamp: fixedMs, returnStep: true });
+    assert.strictEqual(first.valid, true);
+    assert.ok(first.matchedStep > 0);
+
+    const replay = await verifyTotpCode(totpSecret, code, {
+      timestamp: fixedMs,
+      lastUsedStep: first.matchedStep,
+      returnStep: true
+    });
+    assert.strictEqual(replay.valid, false);
+  });
+
+  it('16. validates password complexity and rejects default installation passphrases', () => {
+    assert.strictEqual(validatePasswordStrength('short').valid, false);
+    assert.strictEqual(validatePasswordStrength('alllowercase12!').valid, false);
+    assert.strictEqual(validatePasswordStrength('DCVC-Admin-2026!').valid, false);
+    assert.strictEqual(validatePasswordStrength('Sanctuary#2026!Strong').valid, true);
+
+    const salt1 = generateRandomSalt(16);
+    const salt2 = generateRandomSalt(16);
+    assert.strictEqual(salt1.length, 32);
+    assert.notStrictEqual(salt1, salt2);
+    assert.strictEqual(constantTimeEqual('abc123', 'abc123'), true);
+    assert.strictEqual(constantTimeEqual('abc123', 'abc124'), false);
+    assert.strictEqual(constantTimeEqual('abc123', 'abc1234'), false);
+  });
+
+  it('17. builds and parses HttpOnly admin session cookies safely', () => {
+    const cookieStr = buildSessionCookie('jwt.tok.en', { crossOrigin: false, maxAgeSec: 28800 });
+    assert.ok(cookieStr.includes('HttpOnly'));
+    assert.ok(cookieStr.includes('Secure'));
+    assert.ok(cookieStr.includes('SameSite=Strict'));
+
+    const parsed = parseCookies('foo=bar; dcvc_admin_session=jwt.tok.en; theme=light');
+    assert.strictEqual(parsed.dcvc_admin_session, 'jwt.tok.en');
+
+    const cleared = clearSessionCookie({ crossOrigin: true });
+    assert.ok(cleared.includes('Max-Age=0'));
+    assert.ok(cleared.includes('SameSite=None'));
   });
 
 });

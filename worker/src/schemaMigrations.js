@@ -245,12 +245,42 @@ export const SCHEMA_STATEMENTS = [
     mfa_enabled INTEGER DEFAULT 0,
     mfa_secret TEXT,
     is_active INTEGER DEFAULT 1,
+    token_version INTEGER DEFAULT 1,
+    must_change_password INTEGER DEFAULT 0,
+    password_updated_at TEXT,
+    last_totp_step INTEGER DEFAULT 0,
     created_at TEXT DEFAULT (datetime('now')),
     last_login_at TEXT
   )`,
 
   `CREATE INDEX IF NOT EXISTS idx_admin_users_email ON admin_users (email)`,
   `CREATE INDEX IF NOT EXISTS idx_admin_users_role ON admin_users (role, is_active)`,
+
+  // 11b. Persistent Edge Rate Limiting, Session Revocation & 2FA Anti-Replay Tables
+  `CREATE TABLE IF NOT EXISTS admin_rate_limits (
+    key TEXT PRIMARY KEY,
+    count INTEGER DEFAULT 0,
+    first_attempt INTEGER NOT NULL,
+    locked_until INTEGER
+  )`,
+
+  `CREATE TABLE IF NOT EXISTS admin_revoked_tokens (
+    jti TEXT PRIMARY KEY,
+    user_id TEXT,
+    expires_at INTEGER NOT NULL,
+    revoked_at TEXT DEFAULT (datetime('now'))
+  )`,
+
+  `CREATE INDEX IF NOT EXISTS idx_admin_revoked_exp ON admin_revoked_tokens (expires_at)`,
+
+  `CREATE TABLE IF NOT EXISTS admin_used_temp_tokens (
+    jti TEXT PRIMARY KEY,
+    attempts INTEGER DEFAULT 0,
+    consumed INTEGER DEFAULT 0,
+    expires_at INTEGER NOT NULL
+  )`,
+
+  `CREATE INDEX IF NOT EXISTS idx_admin_temp_exp ON admin_used_temp_tokens (expires_at)`,
 
   // 12. Admin Audit Logs
   `CREATE TABLE IF NOT EXISTS admin_audit_logs (
@@ -365,14 +395,14 @@ export const INITIAL_SEEDS = [
     args: []
   },
 
-  // Seed Administrative Users (PBKDF2-SHA256 salted hash for 'DCVC-Admin-2026!')
+  // Seed Baseline Admin Accounts ONLY if absent (never overwrite existing rotated passwords or 2FA secrets)
   {
-    sql: `INSERT OR REPLACE INTO admin_users (id, email, name, role, password_hash, salt, is_active)
+    sql: `INSERT OR IGNORE INTO admin_users (id, email, name, role, password_hash, salt, is_active, must_change_password, token_version)
           VALUES 
-          ('adm-1', 'admin@diversitycollective.org', 'Tess Allen (Executive Director)', 'admin', '7b50f4cc95a9d7b234780c529e9f5c330da5a3ca8114eafb003ccd47c11e4dd5', 'dcvc_salt_2026', 1),
-          ('adm-2', 'moderator@diversitycollective.org', 'Community Directory Moderator', 'approver', '7b50f4cc95a9d7b234780c529e9f5c330da5a3ca8114eafb003ccd47c11e4dd5', 'dcvc_salt_2026', 1),
-          ('adm-3', 'editor@diversitycollective.org', 'Communications Specialist', 'editor', '7b50f4cc95a9d7b234780c529e9f5c330da5a3ca8114eafb003ccd47c11e4dd5', 'dcvc_salt_2026', 1),
-          ('adm-4', 'board-observer@diversitycollective.org', 'Board Secretary (Audit)', 'read_only', '7b50f4cc95a9d7b234780c529e9f5c330da5a3ca8114eafb003ccd47c11e4dd5', 'dcvc_salt_2026', 1)`,
+          ('adm-1', 'admin@diversitycollective.org', 'Tess Allen (Executive Director)', 'admin', '7b50f4cc95a9d7b234780c529e9f5c330da5a3ca8114eafb003ccd47c11e4dd5', 'dcvc_salt_2026', 1, 1, 1),
+          ('adm-2', 'moderator@diversitycollective.org', 'Community Directory Moderator', 'approver', '7b50f4cc95a9d7b234780c529e9f5c330da5a3ca8114eafb003ccd47c11e4dd5', 'dcvc_salt_2026', 1, 1, 1),
+          ('adm-3', 'editor@diversitycollective.org', 'Communications Specialist', 'editor', '7b50f4cc95a9d7b234780c529e9f5c330da5a3ca8114eafb003ccd47c11e4dd5', 'dcvc_salt_2026', 1, 1, 1),
+          ('adm-4', 'board-observer@diversitycollective.org', 'Board Secretary (Audit)', 'read_only', '7b50f4cc95a9d7b234780c529e9f5c330da5a3ca8114eafb003ccd47c11e4dd5', 'dcvc_salt_2026', 1, 1, 1)`,
     args: []
   },
 
@@ -454,6 +484,22 @@ export async function runAllMigrations(db) {
           results.errors.push({ statementIndex: i + j + 1, error: singleErr.message });
         }
       }
+    }
+  }
+
+  // Idempotent column upgrades for existing admin_users tables
+  const alterStatements = [
+    `ALTER TABLE admin_users ADD COLUMN token_version INTEGER DEFAULT 1`,
+    `ALTER TABLE admin_users ADD COLUMN must_change_password INTEGER DEFAULT 0`,
+    `ALTER TABLE admin_users ADD COLUMN password_updated_at TEXT`,
+    `ALTER TABLE admin_users ADD COLUMN last_totp_step INTEGER DEFAULT 0`
+  ];
+  for (const sql of alterStatements) {
+    try {
+      await db.execute({ sql, args: [] });
+      results.executedStatements++;
+    } catch {
+      // Column already exists on migrated databases
     }
   }
 
