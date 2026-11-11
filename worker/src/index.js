@@ -457,7 +457,10 @@ export default {
         const body = await request.json().catch(() => ({}));
         const message = body.message || body.prompt || '';
 
-        const chatResult = await processChatRequest(message, env, clientIp);
+        const chatResult = await processChatRequest(message, env, clientIp, {
+          history: body.history,
+          siteContext: body.siteContext
+        });
 
         if (!chatResult.success) {
           return jsonResponse({

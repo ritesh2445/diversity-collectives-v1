@@ -12,6 +12,8 @@
  *  - Negative hallucination fallback matching DCVC verification standards
  */
 
+import { searchSiteWithSuggestions } from '../utils/smartSiteSearch.js';
+
 export const EXACT_FALLBACK_MESSAGE = 
   "I couldn't find verified information about that on the DCVC website. Please contact the Diversity Collective team for confirmation.";
 
@@ -292,10 +294,153 @@ export function checkClientDomainBoundary(query) {
 }
 
 /**
- * Execute client-side conversational assistant
- * 100% Free, Unlimited, Instant, Zero Quota
+ * Handle casual greetings, small talk, emotional check-ins & conversational friendliness
  */
-export function executeClientChat(query) {
+function handleCasualConversation(rawQuery, lowerQuery) {
+  // Strip repeated letters for casual words ("hiiii", "helloooo", "thxxxx")
+  const norm = lowerQuery
+    .replace(/[!?.~,]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const collapsed = norm.replace(/([a-z])\1{2,}/g, '$1');
+
+  const containsSpecificTopic = /\b(test|testing|hiv|sti|std|hour|hours|open|address|where|location|donate|donation|zeffy|event|events|gala|prom|volunteer|training|workshop|directory|doctor|sponsor|partner|board|staff|dyslexia|bionic|appointment|appreciation|card|rainbow|unicorn|trans|free|cost|phone|email)\b/i.test(norm);
+
+  if (!containsSpecificTopic) {
+    // Greetings: hi, hello, hey, good morning, yo, sup, hola, namaste
+    if (/^(hi|hii|hey|hello|helo|hola|namaste|yo|sup|whats up|what s up|good morning|morning|good afternoon|good evening|gm|howdy|luna|hey luna|hi luna|hello luna)(\s+(there|luna|everyone|team|friend|folks))?$/.test(collapsed)) {
+      return {
+        success: true,
+        answer: `Hey there! 💜 I'm **Luna**, your Diversity Collective Ventura County guide.\n\nHow's your day going? Ask me casually or ask about **free rapid testing**, **upcoming events**, **youth & trans circles**, **dyslexia reading tools**, **board leadership**, or **how to volunteer or donate** — I search across the latest site info for you!`,
+        citations: [
+          { title: 'Explore Programs', url: '/programs' },
+          { title: 'Upcoming Events', url: '/events' },
+          { title: 'Community Circles', url: '/community' }
+        ],
+        mode: 'client-conversational'
+      };
+    }
+
+    // How are you / small talk check-ins
+    if (/\b(how are you|how r u|how are u|hows it going|how is it going|how have you been|what are you doing|whats up|what up|all good|how do you do)\b/.test(collapsed)) {
+      return {
+        success: true,
+        answer: `Doing wonderfully, thank you for asking! ✨ I'm always energized to help connect neighbors across Ventura County with affirming resources, events, and safe spaces.\n\nHow are you doing today? Anything I can look up for you on the site?`,
+        citations: [
+          { title: 'Community Center', url: '/programs/community-resource-center' },
+          { title: 'Events Calendar', url: '/events' }
+        ],
+        mode: 'client-conversational'
+      };
+    }
+
+    // Who are you / what can you do
+    if (/\b(who are you|what are you|what is luna|tell me about yourself|are you real|are you a bot|what can you do|help me)\b/.test(collapsed)) {
+      return {
+        success: true,
+        answer: `I'm **Luna**, Diversity Collective Ventura County's free interactive guide! 🌈\n\nI read live across DCVC's **Programs, Upcoming Events, Board Profiles, P.R.I.D.E. Training, Community Circles, Affirming Directory, News, and Accessibility tools** (even if there are spelling typos!). Try asking me *"When does Rainbow Umbrella meet?"*, *"Who is Roland Catabona?"*, or *"Are there upcoming events?"*`,
+        citations: [
+          { title: 'About DCVC', url: '/about' },
+          { title: 'Programs Overview', url: '/programs' }
+        ],
+        mode: 'client-conversational'
+      };
+    }
+
+    // Gratitude
+    if (/^(thanks|thank you|thank u|thx|ty|tysm|appreciate it|much appreciated|cheers|gracias|cool thanks|awesome thanks|perfect thanks)$/.test(collapsed) || /\b(thank you|thanks so much|thank u|tysm)\b/.test(collapsed)) {
+      return {
+        success: true,
+        answer: `You're so welcome! 💜 Anytime you need hours, event updates, community groups, or accessibility tips, I'm right here. You are always welcome at Diversity Collective!`,
+        citations: [{ title: 'Home', url: '/' }],
+        mode: 'client-conversational'
+      };
+    }
+
+    // Casual reactions / acknowledgments / laughter
+    if (/^(ok|okay|k|cool|nice|awesome|great|sounds good|got it|amazing|love it|haha|hehe|lol|yay)$/.test(collapsed)) {
+      return {
+        success: true,
+        answer: `Awesome! ✨ Let me know whenever you want to explore anything else — events, support circles, training workshops, or our Community Resource Center.`,
+        citations: [{ title: 'Programs & Center', url: '/programs' }],
+        mode: 'client-conversational'
+      };
+    }
+
+    // Goodbyes
+    if (/^(bye|goodbye|see ya|see you|take care|goodnight|gn|ttyl|later|cya)$/.test(collapsed)) {
+      return {
+        success: true,
+        answer: `Take wonderful care of yourself! 🌈 Our doors at **2471 Portola Rd, Suite 100, Ventura** are open Mon–Fri 1:00–5:00 PM whenever you want to drop by. Have a bright day!`,
+        citations: [{ title: 'Visit Us', url: '/contact' }],
+        mode: 'client-conversational'
+      };
+    }
+
+    // Emotional support / lonely / nervous / new in town
+    if (/\b(lonely|alone|anxious|stressed|sad|nervous|isolated|new here|new in town|no friends|need someone|overwhelmed|scared)\b/.test(collapsed)) {
+      return {
+        success: true,
+        answer: `Sending you a warm, genuine welcome — you don't have to navigate things alone. 💜\n\n• **Weekly Community Circles:** Drop into our welcoming peer groups like [Rainbow Umbrella Youth (13–23)](/programs/rainbow-umbrella), [Trans & Non-Binary Peer Support](/programs/trans-support), or browse all [Community Circles](/community).\n• **Mental Health Care Navigation:** Free, confidential referrals to affirming counselors at [Wellness & Care](/programs/mental-health) or book an intake on [Appointments](/appointments).\n• **24/7 Talk Lines:** Call/text **988** or The Trevor Project (**1-866-488-7386**) anytime you need immediate support.`,
+        citations: [
+          { title: 'Community Circles', url: '/community' },
+          { title: 'Mental Health Care', url: '/programs/mental-health' },
+          { title: 'Resources & Helplines', url: '/resources' }
+        ],
+        mode: 'client-conversational'
+      };
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Format retrieved live website hits into an accurate, readable conversational answer
+ */
+function buildDynamicSiteAnswer(searchResult, rawQuery) {
+  const hits = (searchResult?.results || []).filter((r) => r.score >= 28);
+  if (hits.length === 0) return null;
+
+  const top = hits[0];
+  const secondary = hits.slice(1, 3).filter((r) => r.score >= 30);
+  const typoNote = searchResult.correctedQuery
+    ? `*(Showing live site results for "${searchResult.correctedQuery}")*\n\n`
+    : '';
+
+  const bullets = secondary.map(
+    (item) => `• **[${item.title}](${item.url})**${item.subtitle ? ` — ${item.subtitle}` : ''}`
+  );
+
+  let intro = '';
+  if (top.type === 'Board Member') {
+    intro = `**${top.title}** serves on our Board of Directors as **${top.subtitle}**.\n\n${top.snippet}\n\nExplore their full editorial profile at [${top.title}](${top.url}).`;
+  } else if (top.type === 'Event') {
+    intro = `Here are the latest details for **[${top.title}](${top.url})** (${top.subtitle}):\n\n${top.snippet}`;
+  } else if (top.type === 'News') {
+    intro = `From DCVC News — **[${top.title}](${top.url})** (${top.subtitle}):\n\n${top.snippet}`;
+  } else {
+    intro = `Here's what I found across our live site for **[${top.title}](${top.url})**${top.subtitle ? ` (${top.subtitle})` : ''}:\n\n${top.snippet}`;
+  }
+
+  const answer = `${typoNote}${intro}${bullets.length ? `\n\nRelated pages:\n${bullets.join('\n')}` : ''}`;
+  const citations = hits.slice(0, 3).map((h) => ({ title: h.title.split('·')[0].trim(), url: h.url }));
+
+  return {
+    success: true,
+    answer,
+    citations,
+    mode: 'client-unlimited'
+  };
+}
+
+/**
+ * Execute client-side conversational assistant
+ * 100% Free, Unlimited, Instant, Zero Quota — Grounded in live CMS & site search
+ */
+export function executeClientChat(query, options = {}) {
+  const { history = [], customSnapshot = null } = options;
+
   if (!query || typeof query !== "string") {
     return {
       success: false,
@@ -305,10 +450,11 @@ export function executeClientChat(query) {
     };
   }
 
-  const q = query.trim().toLowerCase();
+  const rawTrimmed = query.trim();
+  const rawLower = rawTrimmed.toLowerCase();
 
-  // 1. Boundary & Safety Checks
-  const boundaries = checkClientDomainBoundary(q);
+  // 1. Boundary & Safety Checks (evaluated on raw query first)
+  const boundaries = checkClientDomainBoundary(rawLower);
 
   if (boundaries.isCrisis) {
     return {
@@ -365,7 +511,7 @@ export function executeClientChat(query) {
   }
 
   // 2. Reject Alien Nouns (Zero-Hallucination Guard)
-  if (ALIEN_NOUNS.some(alien => q.includes(alien))) {
+  if (ALIEN_NOUNS.some(alien => rawLower.includes(alien))) {
     return {
       success: true,
       answer: `${EXACT_FALLBACK_MESSAGE} Visit our [Contact Page](${DCVC_CONTACT_URL}) or email info@diversitycollective.org.`,
@@ -374,10 +520,36 @@ export function executeClientChat(query) {
     };
   }
 
-  // 3. Domain Matching & Response Synthesis
+  // 3. Casual Greetings, Small Talk & Conversational Check-Ins
+  const casualReply = handleCasualConversation(rawTrimmed, rawLower);
+  if (casualReply) {
+    return casualReply;
+  }
 
-  // Events & Calendar (and past events check)
-  if (q.includes("event") || q.includes("pride") || q.includes("gala") || q.includes("prom")) {
+  // 4. Context-aware follow-up enrichment if user refers to prior turn ("tell me more", "when is it?")
+  let effectiveQuery = rawTrimmed;
+  if (/^(tell me more|more info|more details|where is it|when is that|how do i join|sign up|who leads it)\??$/i.test(rawTrimmed) && Array.isArray(history) && history.length > 0) {
+    const prevUserMsg = [...history].reverse().find((m) => m.role === 'user' && m.text);
+    if (prevUserMsg) {
+      effectiveQuery = `${prevUserMsg.text} ${rawTrimmed}`;
+    }
+  }
+
+  // 5. Run Live Sitewide Search + Fuzzy Typo Correction
+  const siteSearch = searchSiteWithSuggestions(effectiveQuery, { limit: 6, customSnapshot });
+  const q = `${effectiveQuery} ${siteSearch.correctedQuery || ''}`.toLowerCase();
+
+  // Check if query targets a Board Member directly (unless historical event or urgent rule applies)
+  const topHit = siteSearch.results?.[0];
+  if (topHit && ['Board Member', 'Staff'].includes(topHit.type) && topHit.score >= 42) {
+    const dynamicSpecific = buildDynamicSiteAnswer(siteSearch, rawTrimmed);
+    if (dynamicSpecific) return dynamicSpecific;
+  }
+
+  // 6. High-Precision Verified Domain Synthesis (enriched with live Sanity records)
+
+  // Events & Calendar (and past events check + live upcoming event details)
+  if (q.includes("event") || q.includes("pride") || q.includes("gala") || q.includes("prom") || q.includes("festival") || q.includes("calendar")) {
     if (q.includes("2023") || q.includes("2024") || q.includes("past") || q.includes("last year")) {
       return {
         success: true,
@@ -386,11 +558,18 @@ export function executeClientChat(query) {
         mode: "client-unlimited"
       };
     }
-    if (!q.includes("free") && !q.includes("hiv")) {
+    if (!q.includes("free") && !q.includes("hiv") && !q.includes("training") && !q.includes("workshop")) {
+      const liveEventHits = (siteSearch.results || []).filter((r) => r.type === 'Event').slice(0, 3);
+      const liveHighlights = liveEventHits.length
+        ? `\n\nLatest highlights on our calendar:\n${liveEventHits.map((e) => `• **[${e.title}](${e.url})** — ${e.subtitle}`).join('\n')}`
+        : '';
       return {
         success: true,
-        answer: `Diversity Collective hosts premier regional events including the seaside **Ventura County Pride Festival** (held each August at Promenade Park), the annual **Diversity Gala** benefit, and youth **Pride Prom**. Check our active schedules, tickets, and volunteer opportunities at [Events Calendar](/events).`,
-        citations: [{ title: "Events Calendar", url: "/events" }],
+        answer: `Diversity Collective hosts premier regional events including the seaside **Ventura County Pride Festival** (held each August at Promenade Park), the annual **Diversity Gala** benefit, and youth **Pride Prom**. Check our active schedules, RSVPs, and volunteer opportunities at [Events Calendar](/events).${liveHighlights}`,
+        citations: [
+          { title: "Events Calendar", url: "/events" },
+          ...liveEventHits.map((e) => ({ title: e.title, url: e.url }))
+        ],
         mode: "client-unlimited"
       };
     }
@@ -409,17 +588,23 @@ export function executeClientChat(query) {
     return {
       success: true,
       answer: `Yes! Diversity Collective provides **free, confidential rapid HIV and STI screenings** (Hepatitis C, Syphilis, Chlamydia, Gonorrhea) through our [Diversity SHINES](/programs/diversity-shines) clinic at the Community Resource Center (2471 Portola Road, Suite 100, Ventura). Results are available in 15–20 minutes with zero insurance or payment required. Learn more at [Diversity SHINES](/programs/diversity-shines).`,
-      citations: [{ title: "Diversity SHINES Free Testing", url: "/programs/diversity-shines" }],
+      citations: [
+        { title: "Diversity SHINES Free Testing", url: "/programs/diversity-shines" },
+        { title: "Book Appointment", url: "/appointments" }
+      ],
       mode: "client-unlimited"
     };
   }
 
-  // Donations & Giving via Zeffy
-  if (q.includes("donate") || q.includes("donation") || q.includes("zeffy") || q.includes("contribute")) {
+  // Donations, Appreciation Cards & Giving via Zeffy
+  if (q.includes("donate") || q.includes("donation") || q.includes("zeffy") || q.includes("contribute") || q.includes("appreciation card") || q.includes("keepsake")) {
     return {
       success: true,
-      answer: `You can support Diversity Collective at [Donate to DCVC](/donate). We use **Zeffy**, a 100% zero-fee nonprofit platform, ensuring 100% of your gift reaches local programs. All donations are tax-deductible under 501(c)(3) EIN: 46-5312131. Every donation unlocks an animated [DCVC Appreciation Card](/appreciation-card/preview) keepsake!`,
-      citations: [{ title: "Donate via Zeffy", url: "/donate" }],
+      answer: `You can support Diversity Collective at [Donate to DCVC](/donate). We use **Zeffy**, a 100% zero-fee nonprofit platform, ensuring 100% of your gift reaches local programs. All donations are tax-deductible under 501(c)(3) EIN: 46-5312131. Confirmed donations unlock a personalized [DCVC Appreciation Card](/appreciation-card/preview) keepsake — and recurring sustainers receive heartfelt thank-you emails automatically!`,
+      citations: [
+        { title: "Donate via Zeffy", url: "/donate" },
+        { title: "Appreciation Card Preview", url: "/appreciation-card/preview" }
+      ],
       mode: "client-unlimited"
     };
   }
@@ -438,8 +623,21 @@ export function executeClientChat(query) {
   if (q.includes("training") || q.includes("workshop") || q.includes("cultural competency")) {
     return {
       success: true,
-      answer: `Diversity Collective offers professional LGBTQ+ cultural competency and workplace training. Fees are structured on a non-profit/civic sliding scale versus commercial rates based on workshop length and participant count. Organizations can request a customized fee proposal at [Training Booking](/training/book).`,
-      citations: [{ title: "Training Services", url: "/training" }],
+      answer: `Diversity Collective offers professional LGBTQ+ cultural competency and workplace training (**P.R.I.D.E. Cultural Competency Workshop** & sector modules). Fees are structured on a non-profit/civic sliding scale versus commercial rates based on group size and needs. Organizations can request a customized fee proposal at [Training Booking](/training/book).`,
+      citations: [
+        { title: "Training Services", url: "/training" },
+        { title: "Request Proposal", url: "/training/book" }
+      ],
+      mode: "client-unlimited"
+    };
+  }
+
+  // Dyslexia & Accessibility Support Tools
+  if (q.includes("dyslexia") || q.includes("bionic") || q.includes("opendyslexic") || q.includes("lexend") || q.includes("accessibility") || q.includes("focus audio")) {
+    return {
+      success: true,
+      answer: `Diversity Collective includes a built-in **Accessibility & Dyslexia Support Suite** (press **Alt + A** or click the **Accessibility** launcher)! Features include 1-click **Dyslexia Sanctuary Mode**, **OpenDyslexic, Lexend & Atkinson Hyperlegible** fonts, **Bionic Anchor Reading**, **Irlen color comfort overlays**, **ambient Focus Audio**, and a reading ruler. Learn more at [Accessibility Statement](/accessibility).`,
+      citations: [{ title: "Accessibility Tools", url: "/accessibility" }],
       mode: "client-unlimited"
     };
   }
@@ -467,7 +665,7 @@ export function executeClientChat(query) {
     };
   }
 
-  // Contact Information (Must check email / phone before address keyword in 'email address')
+  // Contact Information
   if (q.includes("email") || q.includes("phone") || q.includes("call") || q.includes("contact") || q.includes("number")) {
     return {
       success: true,
@@ -534,7 +732,7 @@ export function executeClientChat(query) {
   }
 
   // Rainbow Umbrella specifics
-  if (q.includes("rainbow umbrella") || q.includes("ru")) {
+  if (q.includes("rainbow umbrella") || /\bru\b/.test(q)) {
     return {
       success: true,
       answer: `[Rainbow Umbrella](/programs/rainbow-umbrella) is Ventura County's premier youth peer group for LGBTQ+ and allied youth **ages 13 through 23**. Meetings take place every **Friday evening from 5:30 PM to 7:30 PM PT** at the Community Resource Center (2471 Portola Road, Suite 100, Ventura) with free food, games, and adult facilitators.`,
@@ -573,17 +771,13 @@ export function executeClientChat(query) {
     };
   }
 
-  // Contact Information
-  if (q.includes("phone") || q.includes("email") || q.includes("call") || q.includes("contact") || q.includes("number")) {
-    return {
-      success: true,
-      answer: `You can reach Diversity Collective at **(805) 644-LGBT (5428)** or by email at **info@diversitycollective.org**. Our administrative offices and Community Resource Center are located at 2471 Portola Road, Suite 100, Ventura, CA 93003. View full staff directory and inquiry forms at [Contact Us](/contact).`,
-      citations: [{ title: "Contact Us", url: "/contact" }],
-      mode: "client-unlimited"
-    };
+  // 7. General Live Sitewide Match Fallback (Board Members, Staff, Resources, Community Circles, Dynamic Sanity Data)
+  const dynamicAnswer = buildDynamicSiteAnswer(siteSearch, rawTrimmed);
+  if (dynamicAnswer) {
+    return dynamicAnswer;
   }
 
-  // Fallback for unverified or unmatched questions
+  // 8. Final Honest Unverified Fallback
   return {
     success: true,
     answer: `${EXACT_FALLBACK_MESSAGE} Visit our [Contact Page](${DCVC_CONTACT_URL}) or email info@diversitycollective.org.`,

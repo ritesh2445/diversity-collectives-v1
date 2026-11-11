@@ -92,10 +92,15 @@ export default function AskDcvcChatbot() {
     }
   }, [messages, isOpen]);
 
-  // Focus input when opened
+  // Focus input when opened (and send any pending query passed from Search modal)
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => inputRef.current?.focus(), 150);
+      if (pendingQueryRef.current) {
+        const queued = pendingQueryRef.current;
+        pendingQueryRef.current = '';
+        handleSend(queued);
+      }
     }
   }, [isOpen]);
 
@@ -133,9 +138,16 @@ export default function AskDcvcChatbot() {
     }
   }, [isOpen]);
 
-  // External voice / programmatic triggers for hands-free mic control
+  // External voice / programmatic / search triggers for hands-free & search handoff
+  const pendingQueryRef = useRef('');
   useEffect(() => {
-    const handleOpen = () => setIsOpen(true);
+    const handleOpen = (e) => {
+      const incoming = e?.detail?.query;
+      if (typeof incoming === 'string' && incoming.trim()) {
+        pendingQueryRef.current = incoming.trim();
+      }
+      setIsOpen(true);
+    };
     const handleClose = () => setIsOpen(false);
     const handleToggle = () => setIsOpen(prev => !prev);
 
@@ -155,6 +167,7 @@ export default function AskDcvcChatbot() {
     if (!textToSend || isLoading) return;
 
     const userMessageId = `user_${Date.now()}`;
+    const recentHistory = messages.slice(-6);
     const newMessages = [
       ...messages,
       {
@@ -170,7 +183,7 @@ export default function AskDcvcChatbot() {
     setIsLoading(true);
 
     try {
-      const response = await askDcvcChat(textToSend);
+      const response = await askDcvcChat(textToSend, recentHistory);
       setMessages([
         ...newMessages,
         {
@@ -349,7 +362,7 @@ export default function AskDcvcChatbot() {
     <>
       {/* Floating Action Button (Bottom Right: Home screen only, long-press to hide) */}
       {!isOpen && location.pathname === '/' && !isDismissed && (
-        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-30 select-none print:hidden">
+        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[80] select-none print:hidden">
           {/* Hide Confirmation Popover (long press or right click) */}
           {showHidePrompt && (
             <div 
@@ -602,7 +615,7 @@ export default function AskDcvcChatbot() {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value.slice(0, 300))}
-              placeholder="Ask about testing, hours, youth groups..."
+              placeholder="Say hi or ask anything about DCVC..."
               maxLength={300}
               disabled={isLoading}
               className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all"

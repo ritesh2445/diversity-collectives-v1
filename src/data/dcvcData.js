@@ -161,9 +161,9 @@ export const programsList = [
     schedule: "Scheduled by appointment & request",
     location: "On-site at DCVC or at your corporate / school campus",
     summary: "Parents & Professionals' Responsibility for Inclusion, Diversity, and Equity — intensive cultural competency training created with Ventura County Behavioral Health.",
-    description: "This 4-hour P.R.I.D.E. curriculum equips organizations with the knowledge, language, and cultural competency needed to serve LGBTQ+ individuals with dignity. Research shows that having even one affirming adult reduces suicide risk in LGBTQ+ youth by more than 40%.",
+    description: "This P.R.I.D.E. curriculum equips organizations with the knowledge, language, and cultural competency needed to serve LGBTQ+ individuals with dignity. Research shows that having even one affirming adult reduces suicide risk in LGBTQ+ youth by more than 40%.",
     amenities: [
-      "4-hour interactive workshop led by certified community educators",
+      "Interactive workshop led by certified community educators",
       "Examination of unconscious bias, terminology, and legal protections",
       "Ventura County-specific demographic and healthcare data",
       "Customizable modules for healthcare, schools, and workplaces"
@@ -759,10 +759,10 @@ export const staffMembers = [
 export const trainingCourses = [
   {
     slug: "pride-cultural-competency",
-    title: "P.R.I.D.E. 4-Hour Cultural Competency Workshop",
+    title: "P.R.I.D.E. Cultural Competency Workshop",
     badge: "Foundational Certification",
     format: "In-Person or Interactive Virtual",
-    duration: "4 Hours",
+    duration: "Tailored Session",
     targetAudience: "Educators, Healthcare Teams, Corporate Staff & Youth Advocates",
     summary: "Parents & Professionals' Responsibility for Inclusion, Diversity, and Equity — intensive cultural competency curriculum developed in collaboration with Ventura County Behavioral Health.",
     learningObjectives: [

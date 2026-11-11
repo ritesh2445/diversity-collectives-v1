@@ -16,10 +16,12 @@ import {
   HeartHandshake,
   MapPin,
   ChevronRight,
-  ChevronDown
+  ChevronDown,
+  Search
 } from 'lucide-react';
 import TraditionalAccessibilityIcon from './icons/TraditionalAccessibilityIcon';
 import LanguageSelector from './LanguageSelector';
+import SmartSearchModal from './SmartSearchModal';
 import { orgInfo } from '../data/dcvcData';
 import { a11yStore } from '../accessibility/a11yStore';
 import { translationService } from '../services/translationService';
@@ -29,6 +31,7 @@ export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [currentLang, setCurrentLang] = useState(() => translationService.getLanguage());
   const location = useLocation();
   const moreDropdownRef = useRef(null);
@@ -48,10 +51,11 @@ export default function Header() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Close mobile drawer and dropdown upon route change
+  // Close mobile drawer, search modal, and dropdown upon route change
   useEffect(() => {
     setMobileMenuOpen(false);
     setMoreOpen(false);
+    setSearchOpen(false);
   }, [location.pathname]);
 
   // Close "More" dropdown when clicking outside or pressing Escape
@@ -88,16 +92,25 @@ export default function Header() {
     };
   }, [mobileMenuOpen]);
 
-  // Global Alt + A hotkey for toggling Accessibility Companion
+  // Global Alt + A hotkey (Accessibility) and Ctrl/Cmd + K hotkey (Site Search)
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.altKey && (e.key === 'a' || e.key === 'A')) {
         e.preventDefault();
         a11yStore.toggleToolbar();
       }
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        setSearchOpen((prev) => !prev);
+      }
     };
+    const handleOpenSearch = () => setSearchOpen(true);
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('openSiteSearch', handleOpenSearch);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('openSiteSearch', handleOpenSearch);
+    };
   }, []);
 
   const handleQuickExit = () => {
@@ -253,6 +266,21 @@ export default function Header() {
 
             {/* Right CTAs - Guaranteed zero cropping */}
             <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 min-w-fit">
+              {/* Smart Sitewide Search Trigger (Always visible in navbar) */}
+              <button
+                type="button"
+                onClick={() => setSearchOpen(true)}
+                className="inline-flex items-center gap-1.5 h-7 sm:h-8 px-2 sm:px-2.5 rounded-full border border-purple-200/90 bg-white hover:bg-purple-50 hover:border-[#5A1E65] text-slate-800 hover:text-[#5A1E65] transition-all flex-shrink-0 cursor-pointer shadow-2xs"
+                title="Search Website (Ctrl/Cmd + K)"
+                aria-label="Search across Diversity Collective website"
+              >
+                <Search className="w-3.5 h-3.5 text-[#5A1E65] flex-shrink-0" />
+                <span className="hidden md:inline text-xs font-bold">{translationService.t('nav_search', 'Search')}</span>
+                <kbd className="hidden 2xl:inline-block px-1.5 py-0.5 text-[9px] font-mono font-bold text-slate-500 bg-slate-100 rounded border border-slate-200 leading-none">
+                  ⌘K
+                </kbd>
+              </button>
+
               {/* Language Selector Dropdown (Desktop & Tablet: hidden on mobile < sm, available in mobile drawer) */}
               <div className="hidden sm:block">
                 <LanguageSelector variant="header" />
@@ -364,6 +392,19 @@ export default function Header() {
 
               {/* Mobile Language Selector Chips */}
               <LanguageSelector variant="mobile" className="pb-3" />
+
+              {/* Mobile Smart Search Trigger */}
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setSearchOpen(true);
+                }}
+                className="flex items-center gap-2.5 w-full py-2.5 px-3.5 rounded-xl bg-white border border-purple-200 hover:border-[#5A1E65] text-slate-600 text-xs font-semibold shadow-2xs cursor-pointer text-left"
+              >
+                <Search className="w-4 h-4 text-[#5A1E65] flex-shrink-0" />
+                <span>Search programs, events, board, resources...</span>
+              </button>
 
               {/* Chat with Luna (AI Community Guide) Quick Action */}
               <button
@@ -506,6 +547,9 @@ export default function Header() {
           </div>
         </div>
       )}
+
+      {/* Smart Sitewide Search & Spell-Check Modal */}
+      <SmartSearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
     </>
   );
 }

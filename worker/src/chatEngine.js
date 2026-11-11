@@ -297,9 +297,41 @@ export function synthesizeVerifiedAnswer(bestMatch, query) {
 }
 
 /**
+ * Handle casual small-talk / greetings warmly on Worker side too
+ */
+function handleCasualWorkerGreeting(cleanMessage) {
+  const norm = cleanMessage.toLowerCase().replace(/[!?.~,]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const collapsed = norm.replace(/([a-z])\1{2,}/g, '$1');
+  if (/^(hi|hii|hey|hello|helo|hola|namaste|yo|sup|good morning|morning|good afternoon|good evening|gm|howdy|luna|hey luna|hi luna|hello luna)(\s+(there|luna|everyone|friend))?$/.test(collapsed)) {
+    return {
+      answer: `Hey there! 💜 I'm **Luna**, your Diversity Collective Ventura County guide. How can I help you today? Ask me about free HIV/STI testing, upcoming events, youth & trans circles, board leadership, training, or support resources!`,
+      citations: [
+        { title: 'Programs', url: '/programs' },
+        { title: 'Events Calendar', url: '/events' }
+      ]
+    };
+  }
+  if (/^(how are you|how r u|whats up|what s up|thanks|thank you|thank u|thx|ty|bye|goodbye)$/.test(collapsed)) {
+    const isThanks = /thank|thx|ty/.test(collapsed);
+    const isBye = /bye/.test(collapsed);
+    return {
+      answer: isBye
+        ? `Take care! 🌈 Visit our Resource Center at 2471 Portola Rd, Suite 100, Ventura Mon–Fri 1–5 PM anytime.`
+        : isThanks
+          ? `You're so welcome! 💜 Let me know anytime you want to look something up on Diversity Collective.`
+          : `Doing great, thank you for asking! ✨ What can I help you explore across Diversity Collective today?`,
+      citations: [{ title: 'Community Resource Center', url: '/programs/community-resource-center' }]
+    };
+  }
+  return null;
+}
+
+/**
  * Master Chat Processing Function
  */
-export async function processChatRequest(userMessage, env = {}, clientIp = '') {
+export async function processChatRequest(userMessage, env = {}, clientIp = '', options = {}) {
+  const { history = [], siteContext = [] } = options;
+
   // 1. Rate Limiting Check
   const rateLimit = checkRateLimit(clientIp, 10, 60000);
   if (!rateLimit.allowed) {
@@ -345,8 +377,24 @@ export async function processChatRequest(userMessage, env = {}, clientIp = '') {
     };
   }
 
-  // 5. Fallback if no matching verified knowledge found
-  if (searchResult.isFallbackRequired) {
+  // 4b. Handle casual greetings / small talk warmly
+  const casualGreeting = handleCasualWorkerGreeting(cleanMessage);
+  if (casualGreeting) {
+    return {
+      success: true,
+      answer: casualGreeting.answer,
+      citations: casualGreeting.citations,
+      rateLimitRemaining: rateLimit.remaining,
+      mode: "conversational"
+    };
+  }
+
+  const validSiteContext = Array.isArray(siteContext)
+    ? siteContext.filter((item) => item && item.title && item.url).slice(0, 5)
+    : [];
+
+  // 5. Fallback ONLY if NEITHER knowledgeBase NOR live siteContext has matching verified info
+  if (searchResult.isFallbackRequired && validSiteContext.length === 0) {
     return {
       success: true,
       answer: `${EXACT_FALLBACK_MESSAGE} Please reach out at [Contact DCVC](${DCVC_CONTACT_URL}) or email info@diversitycollective.org.`,
@@ -359,26 +407,46 @@ export async function processChatRequest(userMessage, env = {}, clientIp = '') {
   // 6. If Cloudflare Workers AI is available and enabled
   if (env.AI && typeof env.AI.run === 'function') {
     try {
-      const retrievedContext = buildRetrievedContext(searchResult.matches);
-      const systemPrompt = buildChatbotSystemPrompt(retrievedContext);
+      const kbContext = searchResult.matches?.length ? buildRetrievedContext(searchResult.matches) : '';
+      const liveContextText = validSiteContext.length
+        ? `\n\nLIVE WEBSITE & SANITY RECORDS:\n${validSiteContext.map((c, idx) => `${idx + 1}. [${c.type || 'Page'}] ${c.title} (${c.url})${c.subtitle ? ` — ${c.subtitle}` : ''}: ${c.snippet || ''}`).join('\n')}`
+        : '';
+      const combinedContext = `${kbContext}${liveContextText}`.trim();
+      const systemPrompt = `${buildChatbotSystemPrompt(combinedContext)}\nRespond warmly as Luna, DCVC's helpful community guide. If casual or misspelled, be understanding and answer clearly from the context above using markdown links [Title](/route).`;
       const model = env.AI_MODEL || '@cf/meta/llama-3.1-8b-instruct-fp8';
+
+      const sanitizedHistory = Array.isArray(history)
+        ? history
+            .filter((h) => h && (h.role === 'user' || h.role === 'assistant') && typeof h.content === 'string')
+            .slice(-4)
+            .map((h) => ({ role: h.role, content: h.content.slice(0, 300) }))
+        : [];
 
       const aiResponse = await env.AI.run(model, {
         messages: [
           { role: 'system', content: systemPrompt },
+          ...sanitizedHistory,
           { role: 'user', content: cleanMessage }
         ],
-        max_tokens: 384,
-        temperature: 0.1
+        max_tokens: 400,
+        temperature: 0.25
       });
 
       const rawAnswer = aiResponse?.response?.trim() || '';
 
       if (rawAnswer) {
+        const mergedCitations = [];
+        const seenUrls = new Set();
+        for (const item of [...(searchResult.matches || []).map((m) => ({ title: m.title, url: m.officialUrl })), ...validSiteContext.map((c) => ({ title: c.title, url: c.url }))]) {
+          if (item?.url && !seenUrls.has(item.url)) {
+            seenUrls.add(item.url);
+            mergedCitations.push(item);
+          }
+        }
         return {
           success: true,
           answer: rawAnswer,
-          citations: searchResult.matches.map(m => ({ title: m.title, url: m.officialUrl })),
+          citations: mergedCitations.slice(0, 4),
           rateLimitRemaining: rateLimit.remaining,
           mode: "workers-ai",
           model
@@ -403,7 +471,23 @@ export async function processChatRequest(userMessage, env = {}, clientIp = '') {
     }
   }
 
-  // 7. Deterministic Verified Synthesis (for tests, dev mode, or zero-neuron offline operation)
+  // 7. Deterministic Verified Synthesis (prefer live siteContext when it matches specific page/entity words)
+  const queryTokens = cleanMessage.toLowerCase().split(/\s+/).filter((w) => w.length >= 4 && !['tell', 'about', 'what', 'when', 'where', 'with', 'this', 'that', 'from'].includes(w));
+  const topLiveHit = validSiteContext[0];
+  const liveTitleLower = String(topLiveHit?.title || '').toLowerCase();
+  const kbTitleLower = String(searchResult.bestMatch?.title || '').toLowerCase();
+  const liveSpecificMatch = topLiveHit && queryTokens.some((tok) => liveTitleLower.includes(tok) && !kbTitleLower.includes(tok));
+
+  if (topLiveHit && (!searchResult.bestMatch || liveSpecificMatch)) {
+    return {
+      success: true,
+      answer: `Here is what our latest website records show for **[${topLiveHit.title}](${topLiveHit.url})**${topLiveHit.subtitle ? ` (${topLiveHit.subtitle})` : ''}:\n\n${topLiveHit.snippet}`,
+      citations: validSiteContext.slice(0, 3).map((c) => ({ title: c.title, url: c.url })),
+      rateLimitRemaining: rateLimit.remaining,
+      mode: "live-site-grounding"
+    };
+  }
+
   const synthesized = synthesizeVerifiedAnswer(searchResult.bestMatch, cleanMessage);
   return {
     success: true,

@@ -55,7 +55,7 @@ async function dispatchZeffySyncEmail(env, sendEmailFn, emailPayload) {
           html: emailPayload.html,
           text: emailPayload.text
         })
-      }).catch(() => {});
+      }).catch(() => { });
     }
   }
 }

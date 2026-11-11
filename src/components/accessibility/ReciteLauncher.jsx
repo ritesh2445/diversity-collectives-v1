@@ -67,7 +67,7 @@ export default function ReciteLauncher() {
   };
 
   return (
-    <div className="fixed bottom-4 left-4 sm:bottom-6 sm:left-6 z-30 select-none">
+    <div className="fixed bottom-4 left-4 sm:bottom-6 sm:left-6 z-[80] select-none">
       {/* Hide Confirmation Popover (triggered on long press or right click) */}
       {showHidePrompt && (
         <div 

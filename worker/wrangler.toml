@@ -26,9 +26,8 @@ APPRECIATION_TIER_2_MIN = "50"   # Pride Advocate ($50 - $149)
 APPRECIATION_TIER_3_MIN = "150"  # Rainbow Champion ($150 - $499)
 APPRECIATION_TIER_4_MIN = "500"  # Visionary Benefactor ($500+)
 
-# Ask DCVC Free AI Chatbot Configuration
-# Must remain disabled until the final environment configuration
-CHATBOT_ENABLED = "false"
+# Ask DCVC / Luna Free AI Chatbot Configuration
+CHATBOT_ENABLED = "true"
 AI_MODEL = "@cf/meta/llama-3.1-8b-instruct-fp8"
 
 # Cloudflare Workers AI Binding (Free Tier: 10,000 neurons/day)

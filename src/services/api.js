@@ -6,6 +6,7 @@
  */
 
 import { executeClientChat } from './localKnowledgeEngine.js';
+import { searchSiteWithSuggestions } from '../utils/smartSiteSearch.js';
 
 const API_BASE_URL = typeof window !== 'undefined' && window.location.origin
   ? (import.meta.env?.VITE_API_URL || import.meta.env?.VITE_API_BASE_URL || 'https://dcvc-api.diversity-collective-vc.workers.dev/api')
@@ -303,39 +304,71 @@ export async function subscribeNewsletter(email, turnstileToken) {
  * 2. Instant Zero-Quota Client-Side Knowledge Engine (100% Free, Unlimited, Instant, Zero Quota)
  * $0 recurring cost, 100% free community assistant
  */
-export async function askDcvcChat(message) {
+export async function askDcvcChat(message, history = []) {
   if (!message?.trim()) {
     return { success: false, message: 'Message cannot be empty.' };
   }
 
   const cleanMessage = message.trim();
+  const compactHistory = Array.isArray(history)
+    ? history.slice(-6).map((m) => ({
+        role: m.role === 'user' ? 'user' : 'assistant',
+        content: String(m.text || m.content || '').slice(0, 320)
+      }))
+    : [];
 
-  // Try live Cloudflare Worker endpoint if available
+  // Retrieve live website + Sanity CMS matches right away (with typo tolerance)
+  const siteSearch = searchSiteWithSuggestions(cleanMessage, { limit: 5 });
+  const siteContext = (siteSearch.results || []).slice(0, 5).map((r) => ({
+    type: r.type,
+    title: r.title,
+    subtitle: r.subtitle || '',
+    snippet: String(r.snippet || '').slice(0, 320),
+    url: r.url
+  }));
+
+  // Evaluate local smart knowledge engine first for instant casual small talk & safety boundaries
+  const localResult = executeClientChat(cleanMessage, { history: compactHistory });
+  if (localResult.mode === 'client-conversational') {
+    return localResult;
+  }
+
+  // Try live Cloudflare Worker endpoint (Workers AI grounded with live siteContext + conversation history)
   try {
     const res = await fetch(`${API_BASE_URL}/chat`, {
       method: 'POST',
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
         'x-dcvc-simulation': 'true'
       },
-      body: JSON.stringify({ message: cleanMessage })
+      body: JSON.stringify({
+        message: cleanMessage,
+        history: compactHistory,
+        siteContext
+      })
     });
 
     if (res.ok) {
       const json = await res.json();
+      // If Worker returned fallback while our local live Sanity index found specific records, prefer local rich answer
+      if (json.mode === 'fallback' && siteContext.length > 0 && !localResult.answer?.includes("couldn't find verified information")) {
+        return localResult;
+      }
       return {
         success: true,
         answer: json.answer,
-        citations: json.citations || [],
+        citations: (json.citations && json.citations.length > 0)
+          ? json.citations
+          : siteContext.slice(0, 3).map((s) => ({ title: s.title, url: s.url })),
         mode: json.mode || 'live'
       };
     }
   } catch (err) {
-    // Backend offline / network unreachable -> fall through to client-side unlimited engine
+    // Backend offline / network unreachable -> fall through to smart client-side engine
   }
 
-  // 100% Free, Truly Unlimited Local Knowledge Engine (0 Neurons, 0 Quota, 0 Latency)
-  return executeClientChat(cleanMessage);
+  // Smart client-side retrieval + NLU grounded in live CMS data
+  return localResult;
 }
 
 /**

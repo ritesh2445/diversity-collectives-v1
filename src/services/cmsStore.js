@@ -17,13 +17,13 @@ import {
   galleryPhotos,
   memoryLaneMilestones,
   getBoardMemberSlug
-} from '../data/dcvcData';
+} from '../data/dcvcData.js';
 import {
   fetchAllSanityWebsiteData,
   optimizeSanityImageUrl,
   preloadImageUrls
-} from '../lib/sanity';
-import { setActiveHeroTheme } from './heroThemeStore';
+} from '../lib/sanity.js';
+import { setActiveHeroTheme } from './heroThemeStore.js';
 
 const CMS_STORAGE_KEY = 'dcvc_live_cms_data';
 const LAYOUT_STORAGE_KEY = 'dcvc_admin_custom_layout';
@@ -350,7 +350,7 @@ class CmsStoreEngine {
           code: t.code,
           slug: t.slug,
           title: t.title,
-          duration: t.duration || '2 to 4 Hours',
+          duration: t.duration || 'Tailored Session',
           targetAudience: t.audience || '',
           format: t.format || ['In-Person', 'Virtual', 'Hybrid'],
           summary: t.description || '',
@@ -502,6 +502,10 @@ class CmsStoreEngine {
     })();
 
     return this._syncPromise;
+  }
+
+  getAllData() {
+    return this.data;
   }
 
   getSponsors() {
