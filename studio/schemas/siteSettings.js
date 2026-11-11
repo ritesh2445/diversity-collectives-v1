@@ -215,7 +215,7 @@ export default {
               { title: 'Design 6: Modern Architectural Split', value: 'architectural' }
             ]
           },
-          initialValue: 'spotlight'
+          initialValue: 'aurora'
         }
       ]
     },

@@ -41,6 +41,45 @@ import {
   HERO_THEMES 
 } from '../services/heroThemeStore';
 
+const DEFAULT_HERO_SUBTITLE =
+  "Diversity Collective is Ventura County's premier cultural sanctuary and clinical wellness home — delivering free rapid health testing, youth peer programs, mutual aid, and intersectional advocacy across all 10 county cities.";
+
+const HERO_SUBTEXT_HIGHLIGHTS = [
+  { phrase: 'free rapid health testing', className: 'font-extrabold text-[#5A1E65]' },
+  { phrase: 'youth peer programs', className: 'font-extrabold text-rose-600' },
+  { phrase: 'safe youth spaces', className: 'font-extrabold text-rose-600' },
+  { phrase: 'mutual aid', className: 'font-extrabold text-amber-600' },
+  { phrase: 'intersectional advocacy', className: 'font-extrabold text-indigo-700' },
+  { phrase: 'LGBTQ+ advocacy', className: 'font-extrabold text-[#5A1E65]' },
+  { phrase: 'cultural sanctuary', className: 'font-extrabold text-purple-800' },
+  { phrase: 'clinical wellness home', className: 'font-extrabold text-teal-700' },
+  { phrase: 'trauma-informed community wellness', className: 'font-extrabold text-teal-700' },
+  { phrase: 'all 10 county cities', className: 'font-extrabold text-teal-700' },
+  { phrase: 'every city in Ventura County', className: 'font-extrabold text-indigo-700' }
+];
+
+const HERO_HIGHLIGHT_REGEX = new RegExp(
+  `(${HERO_SUBTEXT_HIGHLIGHTS.map((h) => h.phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`,
+  'gi'
+);
+
+function renderHighlightedHeroSubtext(text) {
+  const safeText = typeof text === 'string' && text.trim() ? text : DEFAULT_HERO_SUBTITLE;
+  return safeText.split(HERO_HIGHLIGHT_REGEX).map((part, idx) => {
+    const match = HERO_SUBTEXT_HIGHLIGHTS.find(
+      (h) => h.phrase.toLowerCase() === part.toLowerCase()
+    );
+    if (match) {
+      return (
+        <span key={idx} className={match.className}>
+          {part}
+        </span>
+      );
+    }
+    return <React.Fragment key={idx}>{part}</React.Fragment>;
+  });
+}
+
 function LotusIcon({ className = "w-6 h-6" }) {
   return (
     <svg 
@@ -498,22 +537,22 @@ export default function Home() {
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-80"></span>
                     <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-gradient-to-tr from-emerald-600 to-teal-400 shadow-[0_0_10px_rgba(16,185,129,0.7)]"></span>
                   </span>
-                  <span className="text-xs sm:text-sm font-semibold text-slate-800 leading-snug truncate">
+                  <span className="text-xs sm:text-sm font-bold text-slate-900 leading-snug truncate">
                     {sanctuaryStatus.isOpenNow ? (
                       <>
                         <strong className="text-emerald-700 font-extrabold">Sanctuary Open Now</strong>{' '}
-                        <span className="text-purple-300 font-bold">•</span>{' '}
-                        <span className="text-slate-800 font-semibold">Mon–Fri 1:00 PM – 5:00 PM</span>{' '}
-                        <span className="text-purple-300 font-bold">•</span>{' '}
-                        <strong className="bg-gradient-to-r from-purple-700 via-pink-600 to-[#5A1E65] bg-clip-text text-transparent font-extrabold">Free HIV/STI Screenings</strong>
+                        <span className="text-rose-400 font-black">•</span>{' '}
+                        <span className="text-slate-900 font-bold">Mon–Fri 1:00 PM – 5:00 PM</span>{' '}
+                        <span className="text-amber-500 font-black">•</span>{' '}
+                        <strong className="bg-gradient-to-r from-[#5A1E65] via-rose-600 to-indigo-700 bg-clip-text text-transparent font-extrabold">Free HIV/STI Screenings</strong>
                       </>
                     ) : (
                       <>
-                        <strong className="text-purple-900 font-bold">Sanctuary Open Today</strong>{' '}
-                        <span className="text-purple-300 font-bold">•</span>{' '}
-                        <span className="text-slate-800 font-semibold">Mon–Fri 1:00 PM – 5:00 PM</span>{' '}
-                        <span className="text-purple-300 font-bold">•</span>{' '}
-                        <strong className="bg-gradient-to-r from-purple-700 via-pink-600 to-[#5A1E65] bg-clip-text text-transparent font-extrabold">Free HIV/STI Screenings</strong>
+                        <strong className="text-[#5A1E65] font-extrabold">Sanctuary Open Today</strong>{' '}
+                        <span className="text-rose-400 font-black">•</span>{' '}
+                        <span className="text-slate-900 font-bold">Mon–Fri 1:00 PM – 5:00 PM</span>{' '}
+                        <span className="text-amber-500 font-black">•</span>{' '}
+                        <strong className="bg-gradient-to-r from-[#5A1E65] via-rose-600 to-indigo-700 bg-clip-text text-transparent font-extrabold">Free HIV/STI Screenings</strong>
                       </>
                     )}
                   </span>
@@ -577,15 +616,15 @@ export default function Home() {
                     </span>
                   </h1>
 
-                  <p className="text-sm sm:text-base md:text-lg text-slate-600 leading-relaxed font-normal max-w-xl pt-0.5">
-                    {customHeroProps?.description || "Diversity Collective is Ventura County's premier cultural sanctuary and clinical wellness home — delivering free rapid health testing, youth peer programs, mutual aid, and intersectional advocacy across all 10 county cities."}
+                  <p className="text-[15.5px] sm:text-[17px] md:text-[1.15rem] text-slate-900 leading-[1.68] font-semibold tracking-[-0.01em] max-w-xl pt-1 antialiased">
+                    {renderHighlightedHeroSubtext(customHeroProps?.subtitle || customHeroProps?.description)}
                   </p>
                 </div>
 
                 {/* 3 Action Buttons (Horizontal layout matching reference mockup) */}
                 <div className="flex flex-wrap items-center gap-3 pt-1">
                   <Link 
-                    to={customHeroProps?.primaryCtaUrl || "/programs"} 
+                    to={customHeroProps?.primaryCtaLink || customHeroProps?.primaryCtaUrl || "/programs"} 
                     className="inline-flex items-center justify-center gap-2 text-sm font-extrabold !text-white text-white bg-gradient-to-r from-[#5A1E65] via-purple-700 to-indigo-600 hover:from-purple-900 hover:to-indigo-700 py-3 sm:py-3.5 px-6 sm:px-7 rounded-full shadow-md hover:shadow-lg transition-all"
                   >
                     <span className="!text-white text-white font-extrabold">{customHeroProps?.primaryCtaText || "Explore Free Programs"}</span>
@@ -593,7 +632,7 @@ export default function Home() {
                   </Link>
 
                   <Link 
-                    to={customHeroProps?.secondaryCtaUrl || "/contact"} 
+                    to={customHeroProps?.secondaryCtaLink || customHeroProps?.secondaryCtaUrl || "/contact"} 
                     className="inline-flex items-center justify-center gap-2 text-sm font-extrabold text-slate-800 bg-white hover:bg-purple-50/50 py-3 sm:py-3.5 px-5 sm:px-6 rounded-full border-2 border-purple-200/90 shadow-2xs hover:shadow-sm hover:border-purple-400 transition-all"
                   >
                     <MapPin className="w-4 h-4 text-[#5A1E65]" />
@@ -824,17 +863,27 @@ export default function Home() {
               <div className="lg:col-span-7 xl:col-span-6 flex flex-col justify-center gap-5 sm:gap-6 z-10 pb-6 sm:pb-8 lg:pb-12">
                 <div className="flex flex-col gap-2.5 sm:gap-3.5">
                   
-                  {/* Authentic Unboxed Eyebrow Typography Matching Reference Mockup */}
-                  <div className="text-[10.5px] sm:text-xs font-black uppercase tracking-[0.22em] text-slate-800/90 self-start">
-                    ESTABLISHED 2014 • VENTURA COUNTY 501(C)(3) NONPROFIT
+                  {/* Crisp Bold Eyebrow Typography with Colored Accents */}
+                  <div className="inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] sm:text-xs font-black uppercase tracking-[0.2em] text-slate-900 self-start">
+                    {customHeroProps?.eyebrow ? (
+                      <span>{customHeroProps.eyebrow}</span>
+                    ) : (
+                      <>
+                        <span className="text-[#5A1E65]">Established 2014</span>
+                        <span className="text-rose-500" aria-hidden="true">•</span>
+                        <span className="text-slate-900">Ventura County</span>
+                        <span className="text-teal-700" aria-hidden="true">•</span>
+                        <span className="text-indigo-700">501(c)(3) Nonprofit</span>
+                      </>
+                    )}
                   </div>
 
                   {/* Editorial Headline: Bold Sans "You Are", Enhanced Italic Serif Gradient "Always Welcome" with Gentle Curved Bend Underline, and Bold Sans "Here." */}
                   <h1 className="font-display text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-[4.25rem] xl:text-[4.85rem] font-black tracking-tight text-slate-950 leading-[1.08] sm:leading-[1.04]">
-                    <span className="block">You Are</span>
+                    <span className="block">{customHeroProps?.titleLine1 || 'You Are'}</span>
                     <span className="block mt-1 sm:mt-1.5">
                       <span className="font-serif italic font-semibold tracking-[-0.015em] bg-gradient-to-r from-[#4A0E4E] via-[#8B1A8F] via-[#D91B5C] via-[#E11D48] via-[#EA580C] via-[#F97316] to-[#F59E0B] bg-clip-text text-transparent relative inline-block mr-2.5 sm:mr-3.5 pb-1 sm:pb-1.5">
-                        Always Welcome
+                        {customHeroProps?.titleAccentWord || 'Always Welcome'}
                         <svg 
                           className="absolute -bottom-1 sm:-bottom-1.5 left-0 w-full h-2 sm:h-3 overflow-visible pointer-events-none" 
                           viewBox="0 0 100 8" 
@@ -858,13 +907,13 @@ export default function Home() {
                           />
                         </svg>
                       </span>
-                      <span className="font-display font-black text-slate-950 inline-block">Here.</span>
+                      <span className="font-display font-black text-slate-950 inline-block">{customHeroProps?.titleLine2 || 'Here.'}</span>
                     </span>
                   </h1>
 
-                  {/* Verified Non-AI Authentic DCVC Mission Copy with Highlighted Accents */}
-                  <p className="text-sm sm:text-base md:text-lg text-slate-700 leading-relaxed font-normal max-w-xl pt-0.5">
-                    Diversity Collective is Ventura County's premier cultural sanctuary and clinical wellness home — delivering <span className="font-bold text-[#5A1E65]">free rapid health testing</span>, <span className="font-bold text-rose-700">youth peer programs</span>, <span className="font-bold text-amber-700">mutual aid</span>, and intersectional advocacy across all 10 county cities.
+                  {/* Bolder, Cleaner DCVC Mission Copy with Crisp Colored Font Highlights */}
+                  <p className="text-[15.5px] sm:text-[17px] md:text-[1.16rem] text-slate-900 leading-[1.68] font-semibold tracking-[-0.01em] max-w-xl pt-1 antialiased">
+                    {renderHighlightedHeroSubtext(customHeroProps?.subtitle || customHeroProps?.description)}
                   </p>
                 </div>
 
@@ -872,33 +921,33 @@ export default function Home() {
                 <div className="flex flex-col gap-3 w-full sm:max-w-md pt-1 relative z-30">
                   {/* 1. Primary CTA - Explore Free Programs */}
                   <Link 
-                    to="/programs" 
+                    to={customHeroProps?.primaryCtaLink || customHeroProps?.primaryCtaUrl || "/programs"} 
                     className="w-full inline-flex items-center justify-center gap-2.5 text-sm sm:text-base font-extrabold !text-white text-white bg-gradient-to-r from-[#5A1E65] via-[#8B1A8F] via-[#C026D3] to-[#7C3AED] hover:from-[#4A0E4F] hover:to-[#6D28D9] active:scale-[0.99] py-3.5 sm:py-4 px-7 rounded-full shadow-lg shadow-purple-900/30 hover:shadow-xl hover:shadow-purple-700/40 hover:scale-[1.01] transition-all text-center group btn-shimmer"
                   >
-                    <span className="!text-white text-white font-extrabold">Explore Free Programs</span>
+                    <span className="!text-white text-white font-extrabold">{customHeroProps?.primaryCtaText || "Explore Free Programs"}</span>
                     <ArrowRight className="w-4 h-4 !text-white text-white group-hover:translate-x-1.5 transition-transform" />
                   </Link>
 
                   {/* 2. Secondary CTA - Visit Sanctuary */}
                   <Link 
-                    to="/contact" 
+                    to={customHeroProps?.secondaryCtaLink || customHeroProps?.secondaryCtaUrl || "/contact"} 
                     className="w-full inline-flex items-center justify-center gap-2.5 text-sm sm:text-base font-extrabold text-slate-800 bg-white/95 hover:bg-white active:scale-[0.99] py-3.5 px-6 rounded-full border-2 border-purple-200/90 hover:border-purple-400 shadow-xs hover:shadow-md hover:scale-[1.01] transition-all text-center group"
                   >
                     <div className="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
                       <MapPin className="w-3.5 h-3.5 text-[#5A1E65]" />
                     </div>
-                    <span>Visit Sanctuary</span>
+                    <span>{customHeroProps?.secondaryCtaText || "Visit Sanctuary"}</span>
                   </Link>
 
                   {/* 3. Tertiary CTA - Email Us */}
                   <a
-                    href="mailto:info@diversitycollective.org"
+                    href={`mailto:${customHeroProps?.emailAddress || 'info@diversitycollective.org'}`}
                     className="w-full inline-flex items-center justify-center gap-2.5 text-sm sm:text-base font-extrabold text-slate-800 bg-white/95 hover:bg-white active:scale-[0.99] py-3.5 px-6 rounded-full border-2 border-purple-200/90 hover:border-purple-400 shadow-xs hover:shadow-md hover:scale-[1.01] transition-all text-center group"
                   >
                     <div className="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
                       <Mail className="w-3.5 h-3.5 text-[#5A1E65]" />
                     </div>
-                    <span>info@diversitycollective.org</span>
+                    <span>{customHeroProps?.emailAddress || 'info@diversitycollective.org'}</span>
                   </a>
                 </div>
 
@@ -967,8 +1016,8 @@ export default function Home() {
                 <h1 className="font-fraunces text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight text-slate-950 leading-[1.1]">
                   {activeThemeObj.headline}
                 </h1>
-                <p className="text-base sm:text-lg text-slate-700 leading-relaxed font-normal pt-1">
-                  {activeThemeObj.description}
+                <p className="text-base sm:text-lg text-slate-900 leading-relaxed font-semibold pt-1 antialiased">
+                  {renderHighlightedHeroSubtext(activeThemeObj.description)}
                 </p>
               </div>
 

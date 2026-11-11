@@ -182,17 +182,17 @@ async function runSeed() {
         titleAccentWord: 'Always Welcome',
         titleLine2: 'Here.',
         subtitle:
-          "Since 2014, Diversity Collective has championed LGBTQ+ advocacy, safe youth spaces, and trauma-informed community wellness across every city in Ventura County.",
+          "Diversity Collective is Ventura County's premier cultural sanctuary and clinical wellness home — delivering free rapid health testing, youth peer programs, mutual aid, and intersectional advocacy across all 10 county cities.",
         primaryCtaText: 'Explore Free Programs',
         primaryCtaLink: '/programs',
         secondaryCtaText: 'Visit Sanctuary',
-        secondaryCtaLink: '/programs/community-resource-center',
+        secondaryCtaLink: '/contact',
         emailAddress: orgInfo.email || 'info@diversitycollective.org',
         ...(heroSpotlightRef ? { spotlightImage: heroSpotlightRef } : {}),
         cardTitle: 'Community Resource Center',
         cardSubtitle: '2471 Portola Rd, Suite 100 · Open Mon–Fri 1:00–5:00 PM',
         helplineText: 'Helpline: (805) 644-5428 · 24/7 Crisis: Dial 988',
-        heroTheme: 'spotlight'
+        heroTheme: 'aurora'
       },
       theme: {
         btnPrimaryBg: '#5A1E65',
