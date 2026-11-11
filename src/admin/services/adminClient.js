@@ -405,91 +405,116 @@ export async function deleteStaffUser(userId) {
 }
 
 // ----------------------------------------------------------------------------
-// 5. Drag & Drop Page & Block Design Editor
+// 5. Drag & Drop Page & Block Design Editor (Matches Live Homepage Sections)
 // ----------------------------------------------------------------------------
 export const DEFAULT_PAGE_BLOCKS = [
   {
-    id: 'block-status',
-    type: 'status_pill',
-    title: 'Live Sanctuary Open Status Pill',
-    enabled: true,
-    props: {
-      headline: 'Sanctuary Open Today',
-      schedule: 'Mon–Fri 1:00 PM – 5:00 PM',
-      serviceTag: 'Free HIV/STI Screenings',
-      linkUrl: '/programs/community-resource-center'
-    }
-  },
-  {
     id: 'block-hero',
     type: 'hero_banner',
-    title: 'Flagship Hero Declaration',
+    title: 'Hero Section & Sanctuary Bar',
     enabled: true,
     props: {
-      eyebrow: 'ESTABLISHED 2014 • VENTURA COUNTY 501(C)(3) NONPROFIT',
+      statusHeadline: 'Sanctuary Open Today',
+      statusSchedule: 'Mon–Fri 1:00 PM – 5:00 PM',
+      statusTag: 'Free HIV/STI Screenings',
+      helplineText: 'Helpline: (805) 644-5428 · 24/7 Crisis: Dial 988',
+      eyebrow: 'ESTABLISHED 2014 · VENTURA COUNTY 501(C)(3) NONPROFIT',
       titleLine1: 'You Are',
-      titleAccentWord: 'Always',
-      titleLine2: 'Welcome Here.',
+      titleAccentWord: 'Always Welcome',
+      titleLine2: 'Here.',
       description: "Diversity Collective is Ventura County's premier cultural sanctuary and clinical wellness home — delivering free rapid health testing, youth peer programs, mutual aid, and intersectional advocacy across all 10 county cities.",
       primaryCtaText: 'Explore Free Programs',
       primaryCtaUrl: '/programs',
       secondaryCtaText: 'Visit Sanctuary',
       secondaryCtaUrl: '/contact',
-      phoneText: '(805) 644-LGBT (5428)',
-      phoneUrl: 'tel:8056445428',
+      emailAddress: 'info@diversitycollective.org',
       photoUrl: '/images/community-gathering.jpg',
-      locationBadge: '2471 Portola Road, Suite 100, Ventura'
-    }
-  },
-  {
-    id: 'block-wave',
-    type: 'wave_ribbon',
-    title: 'Full-Bleed Continuous Wave River',
-    enabled: true,
-    props: {
-      gradientTheme: 'electric_pride',
-      hasWhiteStroke: true,
-      hasCrestHighlight: true,
-      motionSpeed: 'standard'
-    }
-  },
-  {
-    id: 'block-pillars',
-    type: 'four_pillars',
-    title: '4-Pillars Accent Strip',
-    enabled: true,
-    props: {
-      pillars: [
-        { id: 'people', label: 'PEOPLE', icon: 'Users', url: '/community' },
-        { id: 'safety', label: 'SAFETY', icon: 'Shield', url: '/programs/community-resource-center' },
-        { id: 'wellness', label: 'WELLNESS', icon: 'Lotus', url: '/programs/diversity-shines' },
-        { id: 'opportunity', label: 'OPPORTUNITY', icon: 'Heart', url: '/donate' }
-      ]
+      locationBadge: '2471 Portola Road, Suite 100, Ventura',
+      cardTitle: 'Community Resource Center',
+      cardSubtitle: 'Physical safe harbor & clinical navigation'
     }
   },
   {
     id: 'block-stats',
     type: 'impact_stats',
-    title: 'Impact Milestones & Counters',
+    title: '10-Year Impact Milestones',
     enabled: true,
     props: {
       stat1Number: '10+',
       stat1Label: 'Years of Community Service',
       stat2Number: '5,000+',
-      stat2Label: 'Free Health Screenings',
+      stat2Label: 'Health Screenings',
       stat3Number: '1,200+',
-      stat3Label: 'LGBTQ+ Youth Empowered'
+      stat3Label: 'Youth Empowered'
+    }
+  },
+  {
+    id: 'block-directory',
+    type: 'directory_cta',
+    title: 'Affirming Business Directory Spotlight',
+    enabled: true,
+    props: {
+      headline: 'Shop, Dine & Connect Safely.',
+      ctaText: 'Explore Full Directory'
+    }
+  },
+  {
+    id: 'block-programs',
+    type: 'programs_section',
+    title: 'Free Programs & Clinical Care',
+    enabled: true,
+    props: {
+      headline: 'Programs Built for Every Age & Stage.',
+      ctaText: 'View All Programs'
+    }
+  },
+  {
+    id: 'block-events',
+    type: 'events_section',
+    title: 'Upcoming Community Gatherings',
+    enabled: true,
+    props: {
+      headline: 'Events & Safe Spaces Across Ventura County.',
+      ctaText: 'Open Full Calendar'
     }
   },
   {
     id: 'block-giving',
     type: 'zeffy_giving',
-    title: 'Zero-Fee Community Giving Callout',
+    title: 'Support Our Mission (0% Fee Zeffy)',
     enabled: true,
     props: {
       headline: 'Fueling Dignity & Free Healthcare in Ventura County',
       description: '100% of your gift supports confidential rapid HIV/STI testing, peer youth circles, and cultural safe harbors with 0% platform fees via Zeffy.',
       ctaText: 'Support Our Community'
+    }
+  },
+  {
+    id: 'block-training',
+    type: 'training_cta',
+    title: 'Inclusive Workplace & School Training',
+    enabled: true,
+    props: {
+      headline: 'Building Safer Campuses & Workplaces.',
+      ctaText: 'Book a Training'
+    }
+  },
+  {
+    id: 'block-voices',
+    type: 'community_voices',
+    title: 'Community Stories & Voices',
+    enabled: true,
+    props: {
+      headline: 'Voices From Our Ventura County Family.'
+    }
+  },
+  {
+    id: 'block-newsletter',
+    type: 'newsletter_section',
+    title: 'Newsletter & Final Sanctuary CTA',
+    enabled: true,
+    props: {
+      headline: 'Stay Connected With Our Sanctuary.'
     }
   }
 ];
@@ -498,7 +523,14 @@ export function getSavedPageLayout() {
   const stored = localStorage.getItem('dcvc_admin_custom_layout');
   if (stored) {
     try {
-      return JSON.parse(stored);
+      const parsed = JSON.parse(stored);
+      // Upgrade outdated legacy hero layout automatically if it predates live Hero parity
+      const hasLegacyStatusOnly = parsed.some(b => b.type === 'status_pill');
+      const heroBlock = parsed.find(b => b.type === 'hero_banner');
+      if (hasLegacyStatusOnly || (heroBlock && !heroBlock.props?.emailAddress && heroBlock.props?.phoneText)) {
+        return DEFAULT_PAGE_BLOCKS;
+      }
+      return parsed;
     } catch {
       return DEFAULT_PAGE_BLOCKS;
     }
@@ -508,6 +540,9 @@ export function getSavedPageLayout() {
 
 export function savePageLayout(blocks) {
   localStorage.setItem('dcvc_admin_custom_layout', JSON.stringify(blocks));
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('dcvc_layout_updated'));
+  }
   recordLocalAuditLog('save_drag_and_drop_layout', 'layout', 'homepage');
   return { success: true, timestamp: new Date().toISOString() };
 }

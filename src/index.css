@@ -430,23 +430,27 @@ img {
    share background colour utility classes.
    ========================================================================== */
 
-/* --- Amber / Yellow buttons: black text --- */
+/* --- Amber / Yellow buttons: black text (exact token match prevents hover false-positives) --- */
 button.btn-amber,
 a.btn-amber,
 button.btn-yellow,
 a.btn-yellow,
-button[class*="bg-amber-400"],
-a[class*="bg-amber-400"],
-button[class*="bg-amber-300"],
-a[class*="bg-amber-300"],
-button[class*="bg-yellow-400"],
-a[class*="bg-yellow-400"],
-button[class*="bg-yellow-300"],
-a[class*="bg-yellow-300"],
-button[class*="from-amber-"],
-a[class*="from-amber-"],
-button[class*="from-yellow-"],
-a[class*="from-yellow-"] {
+button[class~="bg-amber-400"],
+a[class~="bg-amber-400"],
+button[class~="bg-amber-300"],
+a[class~="bg-amber-300"],
+button[class~="bg-yellow-400"],
+a[class~="bg-yellow-400"],
+button[class~="bg-yellow-300"],
+a[class~="bg-yellow-300"],
+button[class~="from-amber-400"],
+a[class~="from-amber-400"],
+button[class~="from-amber-300"],
+a[class~="from-amber-300"],
+button[class~="from-yellow-400"],
+a[class~="from-yellow-400"],
+button[class~="from-yellow-300"],
+a[class~="from-yellow-300"] {
   color: #020617 !important;
 }
 
@@ -454,65 +458,69 @@ button.btn-amber *,
 a.btn-amber *,
 button.btn-yellow *,
 a.btn-yellow *,
-button[class*="bg-amber-400"] *,
-a[class*="bg-amber-400"] *,
-button[class*="bg-amber-300"] *,
-a[class*="bg-amber-300"] *,
-button[class*="bg-yellow-400"] *,
-a[class*="bg-yellow-400"] *,
-button[class*="bg-yellow-300"] *,
-a[class*="bg-yellow-300"] *,
-button[class*="from-amber-"] *,
-a[class*="from-amber-"] *,
-button[class*="from-yellow-"] *,
-a[class*="from-yellow-"] * {
+button[class~="bg-amber-400"] *,
+a[class~="bg-amber-400"] *,
+button[class~="bg-amber-300"] *,
+a[class~="bg-amber-300"] *,
+button[class~="bg-yellow-400"] *,
+a[class~="bg-yellow-400"] *,
+button[class~="bg-yellow-300"] *,
+a[class~="bg-yellow-300"] *,
+button[class~="from-amber-400"] *,
+a[class~="from-amber-400"] *,
+button[class~="from-amber-300"] *,
+a[class~="from-amber-300"] *,
+button[class~="from-yellow-400"] *,
+a[class~="from-yellow-400"] *,
+button[class~="from-yellow-300"] *,
+a[class~="from-yellow-300"] * {
   color: #020617 !important;
   stroke: #020617 !important;
 }
 
-/* --- Purple / dark CTA buttons: crisp white text --- */
+/* --- Purple / dark CTA buttons: crisp white text (exact token match) --- */
 .btn-primary,
 .btn-primary *,
-button[class*="bg-[#5A1E65]"],
-a[class*="bg-[#5A1E65]"],
-button[class*="bg-purple-900"],
-a[class*="bg-purple-900"],
-button[class*="bg-purple-800"],
-a[class*="bg-purple-800"],
-button[class*="bg-purple-950"],
-a[class*="bg-purple-950"],
-button[class*="from-rose-600"],
-a[class*="from-rose-600"],
-button[class*="from-purple-900"],
-a[class*="from-purple-900"] {
+button[class~="bg-[#5A1E65]"],
+a[class~="bg-[#5A1E65]"],
+button[class~="bg-purple-900"],
+a[class~="bg-purple-900"],
+button[class~="bg-purple-800"],
+a[class~="bg-purple-800"],
+button[class~="bg-purple-950"],
+a[class~="bg-purple-950"],
+button[class~="from-rose-600"],
+a[class~="from-rose-600"],
+button[class~="from-purple-900"],
+a[class~="from-purple-900"] {
   color: #FFFFFF !important;
 }
 
-button[class*="bg-[#5A1E65]"] span,
-a[class*="bg-[#5A1E65]"] span,
-button[class*="bg-[#5A1E65]"] strong,
-a[class*="bg-[#5A1E65]"] strong,
-button[class*="bg-purple-900"] span,
-a[class*="bg-purple-900"] span,
-button[class*="bg-purple-900"] strong,
-a[class*="bg-purple-900"] strong,
-button[class*="bg-purple-800"] span,
-a[class*="bg-purple-800"] span,
-button[class*="bg-purple-950"] span,
-a[class*="bg-purple-950"] span,
-button[class*="from-rose-600"] span,
-a[class*="from-rose-600"] span,
-button[class*="from-purple-900"] span,
-a[class*="from-purple-900"] span {
+button[class~="bg-[#5A1E65]"] span,
+a[class~="bg-[#5A1E65]"] span,
+button[class~="bg-[#5A1E65]"] strong,
+a[class~="bg-[#5A1E65]"] strong,
+button[class~="bg-purple-900"] span,
+a[class~="bg-purple-900"] span,
+button[class~="bg-purple-900"] strong,
+a[class~="bg-purple-900"] strong,
+button[class~="bg-purple-800"] span,
+a[class~="bg-purple-800"] span,
+button[class~="bg-purple-950"] span,
+a[class~="bg-purple-950"] span,
+button[class~="from-rose-600"] span,
+a[class~="from-rose-600"] span,
+button[class~="from-purple-900"] span,
+a[class~="from-purple-900"] span {
   color: #FFFFFF !important;
 }
 
-button[class*="bg-[#5A1E65]"] svg:not([class*="text-amber-"]):not([class*="text-rose-"]):not([class*="text-emerald-"]),
-a[class*="bg-[#5A1E65]"] svg:not([class*="text-amber-"]):not([class*="text-rose-"]):not([class*="text-emerald-"]),
-button[class*="bg-purple-900"] svg:not([class*="text-amber-"]):not([class*="text-rose-"]):not([class*="text-emerald-"]),
-a[class*="bg-purple-900"] svg:not([class*="text-amber-"]):not([class*="text-rose-"]):not([class*="text-emerald-"]),
-button[class*="from-rose-600"] svg:not([class*="text-amber-"]):not([class*="text-rose-"]):not([class*="text-emerald-"]),
-a[class*="from-rose-600"] svg:not([class*="text-amber-"]):not([class*="text-rose-"]):not([class*="text-emerald-"]) {
+button[class~="bg-[#5A1E65]"] svg:not([class*="text-amber-"]):not([class*="text-rose-"]):not([class*="text-emerald-"]),
+a[class~="bg-[#5A1E65]"] svg:not([class*="text-amber-"]):not([class*="text-rose-"]):not([class*="text-emerald-"]),
+button[class~="bg-purple-900"] svg:not([class*="text-amber-"]):not([class*="text-rose-"]):not([class*="text-emerald-"]),
+a[class~="bg-purple-900"] svg:not([class*="text-amber-"]):not([class*="text-rose-"]):not([class*="text-emerald-"]),
+button[class~="from-rose-600"] svg:not([class*="text-amber-"]):not([class*="text-rose-"]):not([class*="text-emerald-"]),
+a[class~="from-rose-600"] svg:not([class*="text-amber-"]):not([class*="text-rose-"]):not([class*="text-emerald-"]) {
   stroke: #FFFFFF !important;
   color: #FFFFFF !important;
 }
@@ -1392,6 +1400,51 @@ body {
   height: 0 !important;
   width: 0 !important;
   overflow: hidden !important;
+}
+
+/* ==========================================================================
+   ADMIN WORKSPACE ISOLATION (Properly Layered for Tailwind v4)
+   Protects the Administrative Portal from site-wide theme fonts/button styles
+   and prevents white-on-white or dark-on-dark contrast defects.
+   ========================================================================== */
+@layer base {
+  .admin-workspace {
+    color: #0F172A;
+    background-color: #F8FAFC;
+    font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-display: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-sans: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --text-heading: #0F172A;
+    --text-body: #334155;
+  }
+
+  .admin-workspace h1,
+  .admin-workspace h2,
+  .admin-workspace h3,
+  .admin-workspace h4,
+  .admin-workspace h5,
+  .admin-workspace h6,
+  .admin-workspace p {
+    color: inherit;
+  }
+
+  .admin-workspace input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]),
+  .admin-workspace textarea,
+  .admin-workspace select {
+    color: #0F172A;
+    background-color: #FFFFFF;
+  }
+
+  .admin-workspace input::placeholder,
+  .admin-workspace textarea::placeholder {
+    color: #64748B;
+    opacity: 1;
+  }
+
+  .admin-workspace select option {
+    color: #0F172A;
+    background-color: #FFFFFF;
+  }
 }
 
 

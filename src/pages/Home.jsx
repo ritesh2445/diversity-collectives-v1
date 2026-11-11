@@ -179,6 +179,15 @@ export default function Home() {
   const [selectedEventCategory, setSelectedEventCategory] = useState('all');
   const [expandedProgram, setExpandedProgram] = useState(null);
   const [activeThemeId, setActiveThemeId] = useState(getActiveHeroTheme);
+  const [customLayoutBlocks, setCustomLayoutBlocks] = useState(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const stored = localStorage.getItem('dcvc_admin_custom_layout');
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
   const [customHeroProps, setCustomHeroProps] = useState(() => {
     if (typeof window === 'undefined') return null;
     try {
@@ -200,6 +209,7 @@ export default function Home() {
         const stored = localStorage.getItem('dcvc_admin_custom_layout');
         if (stored) {
           const blocks = JSON.parse(stored);
+          setCustomLayoutBlocks(blocks);
           const heroBlock = blocks.find(b => b.type === 'hero_banner' && b.enabled !== false);
           setCustomHeroProps(heroBlock?.props || null);
         }
@@ -214,6 +224,18 @@ export default function Home() {
       window.removeEventListener('dcvc_layout_updated', handleLayoutUpdate);
     };
   }, []);
+
+  const getSectionStyle = (blockType, fallbackOrder) => {
+    if (!Array.isArray(customLayoutBlocks) || customLayoutBlocks.length === 0) {
+      return { order: fallbackOrder };
+    }
+    const idx = customLayoutBlocks.findIndex(b => b.type === blockType);
+    if (idx === -1) return { order: fallbackOrder };
+    if (customLayoutBlocks[idx].enabled === false) {
+      return { display: 'none' };
+    }
+    return { order: idx + 1 };
+  };
 
   useEffect(() => {
     const unsubscribe = subscribeToHeroTheme((themeId) => {
@@ -391,13 +413,16 @@ export default function Home() {
   };
 
   return (
-    <div className="bg-transparent text-slate-800">
+    <div className="bg-transparent text-slate-800 flex flex-col">
 
       {/* ====================================================================
           HERO SECTION: DYNAMIC MULTI-THEME DISPATCHER
           Vibrant Multi-Color Aurora Canvas with Rich Gradients & Eye-Catchy Aesthetics
           ==================================================================== */}
-      <section className="relative overflow-hidden pt-3 sm:pt-6 bg-[#FAF7F2] border-b border-purple-200/60">
+      <section
+        style={getSectionStyle('hero_banner', 1)}
+        className="relative overflow-hidden pt-3 sm:pt-6 bg-[#FAF7F2] border-b border-purple-200/60"
+      >
         
         {/* Full-Bleed Ambient Radiant Aurora Atmosphere & Back Ribbon Stream (z-0) */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
@@ -444,7 +469,7 @@ export default function Home() {
 
               <div className="hidden sm:inline-flex items-center gap-2 text-slate-700 bg-white/90 px-4 py-1.5 rounded-full border border-purple-200/70 text-xs font-semibold shadow-2xs">
                 <Phone className="w-3.5 h-3.5 text-purple-700" />
-                <span>Helpline: <strong className="text-purple-900">(805) 644-5428</strong> · 24/7 Crisis: <strong className="text-rose-700">Dial 988</strong></span>
+                <span>{customHeroProps?.helplineText || 'Helpline: (805) 644-5428 · 24/7 Crisis: Dial 988'}</span>
               </div>
             </div>
           ) : (
@@ -562,9 +587,9 @@ export default function Home() {
                   </Link>
 
                   <a
-                    href="mailto:info@diversitycollective.org"
-                    aria-label="Send email to info@diversitycollective.org"
-                    title="Send email to info@diversitycollective.org"
+                    href={`mailto:${customHeroProps?.emailAddress || 'info@diversitycollective.org'}`}
+                    aria-label={`Send email to ${customHeroProps?.emailAddress || 'info@diversitycollective.org'}`}
+                    title={`Send email to ${customHeroProps?.emailAddress || 'info@diversitycollective.org'}`}
                     className="w-12 h-12 rounded-full border-2 border-purple-200/90 bg-white hover:bg-purple-50 text-[#5A1E65] hover:text-purple-900 shadow-2xs hover:shadow-sm hover:border-purple-400 flex items-center justify-center transition-all cursor-pointer flex-shrink-0"
                   >
                     <Mail className="w-5 h-5 text-[#5A1E65]" />
@@ -748,10 +773,10 @@ export default function Home() {
                       </div>
                       <div>
                         <h4 className="font-bold text-xs sm:text-sm text-slate-900 leading-tight">
-                          Community Resource Center
+                          {customHeroProps?.cardTitle || 'Community Resource Center'}
                         </h4>
                         <p className="text-[11px] text-slate-500 font-medium">
-                          Physical safe harbor & clinical navigation
+                          {customHeroProps?.cardSubtitle || 'Physical safe harbor & clinical navigation'}
                         </p>
                       </div>
                     </div>
@@ -1238,7 +1263,7 @@ export default function Home() {
       {/* ====================================================================
           IMPACT NUMBERS: ANIMATED COUNT-UP WITH GLASS SPOTLIGHT
           ==================================================================== */}
-      <section className="py-14 md:py-20 bg-gradient-to-b from-purple-100/40 via-teal-100/30 to-amber-100/30 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
+      <section style={getSectionStyle('impact_stats', 2)} className="py-14 md:py-20 bg-gradient-to-b from-purple-100/40 via-teal-100/30 to-amber-100/30 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
         <div className="container-clean">
           
           <div className="max-w-2xl mb-10 flex flex-col gap-3">
@@ -1292,7 +1317,7 @@ export default function Home() {
       {/* ====================================================================
           LGBTQ+ AFFIRMING BUSINESS DIRECTORY SPOTLIGHT
           ==================================================================== */}
-      <section className="py-14 md:py-20 bg-white border-b border-slate-100 scroll-reveal">
+      <section style={getSectionStyle('directory_cta', 3)} className="py-14 md:py-20 bg-white border-b border-slate-100 scroll-reveal">
         <div className="container-clean">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
             <div className="flex flex-col gap-3 max-w-2xl">
@@ -1349,7 +1374,7 @@ export default function Home() {
       {/* ====================================================================
           PROGRAMS DIRECTORY: COLLISION-PROOF EXPANDABLE CARDS
           ==================================================================== */}
-      <section className="py-14 md:py-20 bg-gradient-to-b from-amber-100/30 via-rose-100/30 to-purple-100/40 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
+      <section style={getSectionStyle('programs_section', 4)} className="py-14 md:py-20 bg-gradient-to-b from-amber-100/30 via-rose-100/30 to-purple-100/40 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
         <div className="container-clean">
           
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
@@ -1518,7 +1543,7 @@ export default function Home() {
       {/* ====================================================================
           RESOURCE CENTER SANCTUARY: CALM 2-COLUMN ARCHITECTURE
           ==================================================================== */}
-      <section className="py-14 md:py-20 bg-gradient-to-b from-purple-100/40 via-indigo-100/30 to-teal-100/30 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
+      <section style={getSectionStyle('training_cta', 5)} className="py-14 md:py-20 bg-gradient-to-b from-purple-100/40 via-indigo-100/30 to-teal-100/30 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
         <div className="container-clean">
           
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
@@ -1650,7 +1675,7 @@ export default function Home() {
       {/* ====================================================================
           FLAGSHIP COMMUNITY RESOURCE CENTER & SANCTUARY
           ==================================================================== */}
-      <section className="py-14 md:py-20 bg-gradient-to-b from-teal-100/30 via-purple-100/40 to-amber-100/30 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
+      <section style={getSectionStyle('training_cta', 5)} className="py-14 md:py-20 bg-gradient-to-b from-teal-100/30 via-purple-100/40 to-amber-100/30 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
         <div className="container-clean">
           <div className="p-8 sm:p-12 rounded-3xl bg-white/95 border-2 border-purple-200/80 shadow-xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-7 space-y-4">
@@ -1704,7 +1729,7 @@ export default function Home() {
       {/* ====================================================================
           HIGHLY EYE-CATCHING & BEAUTIFUL GIVING STUDIO (Addressing User Feedback)
           ==================================================================== */}
-      <section id="giving" className="py-16 md:py-24 bg-gradient-to-b from-amber-100/30 via-purple-100/50 to-purple-950/25 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
+      <section id="giving" style={getSectionStyle('zeffy_giving', 6)} className="py-16 md:py-24 bg-gradient-to-b from-amber-100/30 via-purple-100/50 to-purple-950/25 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
         
         {/* Ambient Specular Backdrops */}
         <div 
@@ -1946,7 +1971,7 @@ export default function Home() {
       {/* ====================================================================
           UPCOMING EVENTS: BALANCED ROWS WITH GLASS CARDS
           ==================================================================== */}
-      <section className="py-14 md:py-20 bg-gradient-to-b from-purple-100/40 via-rose-100/30 to-amber-100/30 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
+      <section style={getSectionStyle('events_section', 5)} className="py-14 md:py-20 bg-gradient-to-b from-purple-100/40 via-rose-100/30 to-amber-100/30 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
         <div className="container-clean">
           
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
@@ -2056,7 +2081,7 @@ export default function Home() {
       {/* ====================================================================
           TESTIMONIALS & COMMUNITY VOICES: 3D EDITORIAL GRID
           ==================================================================== */}
-      <section className="py-14 md:py-20 bg-gradient-to-b from-amber-100/30 via-purple-100/40 to-indigo-100/35 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
+      <section style={getSectionStyle('community_voices', 8)} className="py-14 md:py-20 bg-gradient-to-b from-amber-100/30 via-purple-100/40 to-indigo-100/35 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
         <div className="container-clean">
           
           <div className="max-w-2xl mx-auto text-center mb-10 flex flex-col items-center gap-3">
@@ -2151,7 +2176,7 @@ export default function Home() {
       {/* ====================================================================
           NEWSLETTER SIGNUP DISPATCH
           ==================================================================== */}
-      <section className="py-12 bg-white">
+      <section style={getSectionStyle('newsletter_section', 9)} className="py-12 bg-white">
         <div className="container-clean">
           <NewsletterSignup />
         </div>
@@ -2160,7 +2185,7 @@ export default function Home() {
       {/* ====================================================================
           FINAL CALL TO ACTION: LUXURY 3D AURORA ARCHITECTURE
           ==================================================================== */}
-      <section className="py-20 md:py-28 aurora-bg text-white relative overflow-hidden scroll-reveal">
+      <section style={{ order: 10 }} className="py-20 md:py-28 aurora-bg text-white relative overflow-hidden scroll-reveal">
         
         {/* Specular Ambient Glow Orbs */}
         <div 

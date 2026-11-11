@@ -98,14 +98,14 @@ function AppLayout() {
 
   if (isAdminRoute) {
     return (
-      <div className="bg-slate-950 text-slate-100 min-h-screen font-sans selection:bg-purple-600 selection:text-white">
+      <div className="admin-workspace bg-slate-50 text-slate-900 min-h-screen font-sans selection:bg-purple-600 selection:text-white">
         <ScrollToTop />
         <main id="main-content" tabIndex="-1" className="min-h-screen focus:outline-none">
           <Suspense fallback={
-            <div className="min-h-screen flex items-center justify-center bg-slate-950 text-purple-300" role="status" aria-label="Loading Admin">
+            <div className="min-h-screen flex items-center justify-center bg-slate-50 text-[#5A1E65]" role="status" aria-label="Loading Admin">
               <div className="flex flex-col items-center gap-3">
-                <div className="w-8 h-8 border-3 border-purple-500/30 border-t-purple-400 rounded-full animate-spin" />
-                <span className="text-xs font-semibold uppercase tracking-widest text-slate-400">Loading DCVC Admin Suite...</span>
+                <div className="w-8 h-8 border-3 border-purple-200 border-t-[#5A1E65] rounded-full animate-spin" />
+                <span className="text-xs font-semibold uppercase tracking-widest text-slate-600">Loading DCVC Admin Suite...</span>
               </div>
             </div>
           }>
