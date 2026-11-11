@@ -36,6 +36,11 @@ export const DEFAULT_THEME_SETTINGS = {
   btnDonateText: '#020617',
   btnDonateHoverBg: '#FACC15',
 
+  // Top Navigation Bar Buttons
+  navBtnText: '#000000',
+  navBtnActiveBg: '#5A1E65',
+  navBtnActiveText: '#FFFFFF',
+
   // Typography Stacks
   headingFont: 'Plus Jakarta Sans', // 'Plus Jakarta Sans', 'Playfair Display', 'Syne', 'Outfit', 'Cinzel', 'Inter'
   bodyFont: 'Plus Jakarta Sans',    // 'Plus Jakarta Sans', 'Inter', 'Roboto', 'OpenDyslexic', 'Arial'
@@ -76,6 +81,11 @@ export function applySiteThemeToDOM(theme) {
   root.style.setProperty('--dcvc-btn-donate-bg', theme.btnDonateBg);
   root.style.setProperty('--dcvc-btn-donate-text', theme.btnDonateText);
 
+  // Top Navigation Bar Button Colors
+  root.style.setProperty('--dcvc-nav-text', theme.navBtnText || '#000000');
+  root.style.setProperty('--dcvc-nav-active-bg', theme.navBtnActiveBg || theme.btnPrimaryBg || '#5A1E65');
+  root.style.setProperty('--dcvc-nav-active-text', theme.navBtnActiveText || '#FFFFFF');
+
   // Fonts
   if (theme.headingFont) {
     root.style.setProperty('--font-display', `'${theme.headingFont}', sans-serif`);
@@ -105,6 +115,7 @@ export default function SiteThemeStudio({ onThemeSaved }) {
       localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(theme));
       applySiteThemeToDOM(theme);
       window.dispatchEvent(new CustomEvent('dcvc-site-theme-updated', { detail: theme }));
+      window.dispatchEvent(new CustomEvent('SITE_THEME_UPDATED', { detail: theme }));
       setSaveToast('Global site styles & button colors published successfully!');
       if (onThemeSaved) onThemeSaved(theme);
       setTimeout(() => setSaveToast(''), 4000);
@@ -466,6 +477,75 @@ export default function SiteThemeStudio({ onThemeSaved }) {
                     value={theme.btnDonateBg}
                     onChange={(e) => handleColorChange('btnDonateBg', e.target.value)}
                     className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 text-xs font-mono font-bold"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Top Navigation Bar Customization */}
+          <div className="space-y-3 pt-3 border-t border-slate-100">
+            <span className="text-xs font-bold text-slate-800 uppercase tracking-wider block">
+              3. Top Navigation Bar Buttons
+            </span>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                  Nav Font Color
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={theme.navBtnText || '#000000'}
+                    onChange={(e) => handleColorChange('navBtnText', e.target.value)}
+                    className="w-8 h-8 rounded-lg border border-slate-300 p-0.5 cursor-pointer flex-shrink-0"
+                  />
+                  <input
+                    type="text"
+                    value={theme.navBtnText || '#000000'}
+                    onChange={(e) => handleColorChange('navBtnText', e.target.value)}
+                    className="w-full px-2 py-1.5 rounded-xl border border-slate-300 text-xs font-mono font-bold"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                  Active / Hover Bg
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={theme.navBtnActiveBg || '#5A1E65'}
+                    onChange={(e) => handleColorChange('navBtnActiveBg', e.target.value)}
+                    className="w-8 h-8 rounded-lg border border-slate-300 p-0.5 cursor-pointer flex-shrink-0"
+                  />
+                  <input
+                    type="text"
+                    value={theme.navBtnActiveBg || '#5A1E65'}
+                    onChange={(e) => handleColorChange('navBtnActiveBg', e.target.value)}
+                    className="w-full px-2 py-1.5 rounded-xl border border-slate-300 text-xs font-mono font-bold"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                  Active Font Color
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={theme.navBtnActiveText || '#FFFFFF'}
+                    onChange={(e) => handleColorChange('navBtnActiveText', e.target.value)}
+                    className="w-8 h-8 rounded-lg border border-slate-300 p-0.5 cursor-pointer flex-shrink-0"
+                  />
+                  <input
+                    type="text"
+                    value={theme.navBtnActiveText || '#FFFFFF'}
+                    onChange={(e) => handleColorChange('navBtnActiveText', e.target.value)}
+                    className="w-full px-2 py-1.5 rounded-xl border border-slate-300 text-xs font-mono font-bold"
                   />
                 </div>
               </div>

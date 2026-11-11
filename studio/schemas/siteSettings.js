@@ -257,6 +257,33 @@ export default {
           initialValue: '#FBBF24'
         },
         {
+          name: 'btnDonateText',
+          title: 'Donate Button Font Color (Hex)',
+          type: 'string',
+          initialValue: '#020617'
+        },
+        {
+          name: 'navBtnText',
+          title: 'Nav Bar Button Font Color (Hex)',
+          description: 'Text color for top navigation bar buttons (About, Programs, Community, Events, Resources, More).',
+          type: 'string',
+          initialValue: '#000000'
+        },
+        {
+          name: 'navBtnActiveBg',
+          title: 'Nav Bar Active/Hover Background (Hex)',
+          description: 'Pill background color for active or hovered top navigation buttons.',
+          type: 'string',
+          initialValue: '#5A1E65'
+        },
+        {
+          name: 'navBtnActiveText',
+          title: 'Nav Bar Active/Hover Font Color (Hex)',
+          description: 'Text color for active or hovered top navigation buttons.',
+          type: 'string',
+          initialValue: '#FFFFFF'
+        },
+        {
           name: 'btnPrimaryRadius',
           title: 'Button Corner Style',
           type: 'string',

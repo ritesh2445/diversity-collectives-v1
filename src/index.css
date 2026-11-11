@@ -360,8 +360,8 @@ img {
   white-space: nowrap;
   flex-shrink: 0;
   border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.95);
-  color: #0F172A;
+  background: var(--dcvc-btn-secondary-bg, rgba(255, 255, 255, 0.95));
+  color: var(--dcvc-btn-secondary-text, #0F172A);
   border: 1.5px solid rgba(203, 213, 225, 0.9);
   transition: all 0.25s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
@@ -421,6 +421,37 @@ img {
   color: #7F1D1D;
 }
 
+/* Top Navigation Bar Buttons (Synced with SiteThemeStudio & Sanity siteSettings.theme) */
+.nav-bar-btn {
+  color: var(--dcvc-nav-text, #000000);
+}
+
+.nav-bar-btn:hover,
+.nav-bar-btn.nav-bar-btn-active {
+  background: var(--dcvc-nav-active-bg, linear-gradient(90deg, #5A1E65 0%, #7E22CE 100%));
+  color: var(--dcvc-nav-active-text, #FFFFFF);
+}
+
+.nav-bar-btn:hover svg,
+.nav-bar-btn.nav-bar-btn-active svg {
+  color: var(--dcvc-nav-active-text, #FFFFFF);
+}
+
+.nav-support-btn {
+  background: var(--dcvc-btn-secondary-bg, #FFFFFF);
+  color: var(--dcvc-btn-secondary-text, #334155);
+}
+
+.nav-donate-btn {
+  background: var(--dcvc-btn-donate-bg, #FDE047);
+  color: var(--dcvc-btn-donate-text, #020617);
+}
+
+.nav-donate-btn *,
+.nav-donate-btn svg {
+  color: var(--dcvc-btn-donate-text, #020617);
+}
+
 /* ==========================================================================
    BUTTON & LINK ACCESSIBILITY CONTRAST ENFORCEMENT (WCAG 2.2 AAA)
    - Yellow/Amber BUTTONS only: Strict black/charcoal text (#020617)
@@ -478,9 +509,7 @@ a[class~="from-yellow-300"] * {
   stroke: #020617 !important;
 }
 
-/* --- Purple / dark CTA buttons: crisp white text (exact token match) --- */
-.btn-primary,
-.btn-primary *,
+/* --- Purple / dark CTA buttons: crisp white text (exact token match; .btn-primary uses --dcvc-btn-primary-text) --- */
 button[class~="bg-[#5A1E65]"],
 a[class~="bg-[#5A1E65]"],
 button[class~="bg-purple-900"],

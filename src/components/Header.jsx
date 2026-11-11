@@ -23,6 +23,7 @@ import LanguageSelector from './LanguageSelector';
 import { orgInfo } from '../data/dcvcData';
 import { a11yStore } from '../accessibility/a11yStore';
 import { translationService } from '../services/translationService';
+import '../services/cmsStore';
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
@@ -187,9 +188,9 @@ export default function Header() {
                   <Link
                     key={item.to}
                     to={item.to}
-                    className={`px-2.5 2xl:px-3 py-1.5 2xl:py-2 text-xs 2xl:text-sm font-bold rounded-full transition-all whitespace-nowrap ${isActive
-                        ? 'text-white bg-gradient-to-r from-[#5A1E65] to-purple-700 shadow-md shadow-purple-500/20'
-                        : 'text-black hover:text-white hover:bg-gradient-to-r hover:from-[#5A1E65] hover:to-purple-700'
+                    className={`nav-bar-btn px-2.5 2xl:px-3 py-1.5 2xl:py-2 text-xs 2xl:text-sm font-bold rounded-full transition-all whitespace-nowrap ${isActive
+                        ? 'nav-bar-btn-active shadow-md shadow-purple-500/20'
+                        : ''
                       }`}
                   >
                     {item.label}
@@ -205,9 +206,9 @@ export default function Header() {
                   onMouseEnter={() => setMoreOpen(true)}
                   aria-expanded={moreOpen}
                   aria-haspopup="true"
-                  className={`px-2.5 py-1.5 text-xs font-bold rounded-full transition-all whitespace-nowrap inline-flex items-center gap-1 cursor-pointer ${isSecondaryActive || moreOpen
-                      ? 'text-white bg-gradient-to-r from-[#5A1E65] to-purple-700 shadow-md shadow-purple-500/20'
-                      : 'text-black hover:text-white hover:bg-gradient-to-r hover:from-[#5A1E65] hover:to-purple-700'
+                  className={`nav-bar-btn px-2.5 py-1.5 text-xs font-bold rounded-full transition-all whitespace-nowrap inline-flex items-center gap-1 cursor-pointer ${isSecondaryActive || moreOpen
+                      ? 'nav-bar-btn-active shadow-md shadow-purple-500/20'
+                      : ''
                     }`}
                 >
                   <span>More</span>
@@ -229,17 +230,17 @@ export default function Header() {
                             key={item.to}
                             to={item.to}
                             onClick={() => setMoreOpen(false)}
-                            className={`flex items-start gap-2.5 p-2 rounded-xl transition-all ${isActive
-                                ? 'bg-gradient-to-r from-[#5A1E65] to-purple-700 text-white font-bold shadow-xs'
-                                : 'text-black font-bold hover:bg-purple-100 hover:text-[#5A1E65]'
+                            className={`nav-bar-btn flex items-start gap-2.5 p-2 rounded-xl transition-all group ${isActive
+                                ? 'nav-bar-btn-active font-bold shadow-xs'
+                                : 'font-bold'
                               }`}
                           >
-                            <div className={`p-1.5 rounded-lg shrink-0 mt-0.5 ${isActive ? 'bg-white/20 text-white' : 'bg-purple-100/70 text-[#5A1E65]'}`}>
+                            <div className={`p-1.5 rounded-lg shrink-0 mt-0.5 ${isActive ? 'bg-white/20' : 'bg-purple-100/70 text-[#5A1E65] group-hover:bg-white/20'}`}>
                               <ItemIcon className="w-3.5 h-3.5" />
                             </div>
                             <div className="flex flex-col min-w-0">
-                              <span className={`text-xs font-bold leading-tight ${isActive ? 'text-white' : 'text-black'}`}>{item.label}</span>
-                              <span className={`text-[10px] leading-tight mt-0.5 truncate ${isActive ? 'text-purple-100' : 'text-slate-500'}`}>{item.desc}</span>
+                              <span className="text-xs font-bold leading-tight">{item.label}</span>
+                              <span className={`text-[10px] leading-tight mt-0.5 truncate ${isActive ? 'opacity-90' : 'text-slate-500 group-hover:text-white/90'}`}>{item.desc}</span>
                             </div>
                           </Link>
                         );
@@ -282,7 +283,7 @@ export default function Header() {
               {/* Get Support (Large desktop screens 1600px+) */}
               <Link
                 to="/programs"
-                className="hidden 2xl:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-700 hover:text-[#5A1E65] border border-slate-200 hover:border-purple-300 rounded-full transition-colors bg-white shadow-2xs flex-shrink-0 whitespace-nowrap"
+                className="nav-support-btn hidden 2xl:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold hover:text-[#5A1E65] border border-slate-200 hover:border-purple-300 rounded-full transition-colors shadow-2xs flex-shrink-0 whitespace-nowrap"
               >
                 <LifeBuoy className="w-3.5 h-3.5 text-[#5A1E65]" />
                 <span>{translationService.t('nav_get_support', 'Get Support')}</span>
@@ -291,9 +292,9 @@ export default function Header() {
               {/* Official Donate Action - Warm Gold Pill (Never Cropped) */}
               <Link
                 to="/donate"
-                className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-4 py-1.5 sm:py-2 text-[11px] sm:text-xs font-extrabold tracking-wide text-slate-950 bg-[#FDE047] hover:bg-[#FACC15] active:bg-[#EAB308] border border-amber-300/80 rounded-full shadow-xs hover:shadow-md transition-all flex-shrink-0 whitespace-nowrap z-10"
+                className="nav-donate-btn inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-4 py-1.5 sm:py-2 text-[11px] sm:text-xs font-extrabold tracking-wide hover:brightness-95 border border-amber-300/80 rounded-full shadow-xs hover:shadow-md transition-all flex-shrink-0 whitespace-nowrap z-10"
               >
-                <Heart className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-current text-slate-950 flex-shrink-0" />
+                <Heart className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-current flex-shrink-0" />
                 <span className="font-extrabold">{translationService.t('nav_donate', 'Donate')}</span>
               </Link>
 
@@ -416,28 +417,27 @@ export default function Header() {
                     key={item.to}
                     to={item.to}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center justify-between py-2.5 px-3 rounded-xl transition-all group ${isActive
-                        ? 'bg-gradient-to-r from-[#5A1E65] to-purple-800 text-white font-bold shadow-md'
-                        : 'text-black font-bold hover:bg-purple-50'
+                    className={`nav-bar-btn flex items-center justify-between py-2.5 px-3 rounded-xl transition-all group ${isActive
+                        ? 'nav-bar-btn-active font-bold shadow-md'
+                        : 'font-bold'
                       }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-800 group-hover:bg-purple-100 group-hover:text-[#5A1E65]'
+                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${isActive ? 'bg-white/20' : 'bg-slate-100 text-slate-800 group-hover:bg-white/20'
                         }`}>
                         <ItemIcon className="w-4 h-4" />
                       </div>
                       <div>
-                        <span className={`font-bold text-sm block ${isActive ? 'text-white' : 'text-black'
-                          }`}>
+                        <span className="font-bold text-sm block">
                           {item.label}
                         </span>
-                        <span className={`text-[11px] block ${isActive ? 'text-purple-100' : 'text-slate-500'
+                        <span className={`text-[11px] block ${isActive ? 'opacity-90' : 'text-slate-500 group-hover:text-white/90'
                           }`}>
                           {item.desc}
                         </span>
                       </div>
                     </div>
-                    <ChevronRight className={`w-4 h-4 transition-transform group-hover:translate-x-0.5 ${isActive ? 'text-white' : 'text-slate-400'
+                    <ChevronRight className={`w-4 h-4 transition-transform group-hover:translate-x-0.5 ${isActive ? '' : 'text-slate-400 group-hover:text-white'
                       }`} />
                   </Link>
                 );

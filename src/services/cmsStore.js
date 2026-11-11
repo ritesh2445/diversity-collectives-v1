@@ -460,6 +460,10 @@ class CmsStoreEngine {
               ...(ss.theme.btnSecondaryBg ? { btnSecondaryBg: ss.theme.btnSecondaryBg } : {}),
               ...(ss.theme.btnSecondaryText ? { btnSecondaryText: ss.theme.btnSecondaryText } : {}),
               ...(ss.theme.btnDonateBg ? { btnDonateBg: ss.theme.btnDonateBg } : {}),
+              ...(ss.theme.btnDonateText ? { btnDonateText: ss.theme.btnDonateText } : {}),
+              ...(ss.theme.navBtnText ? { navBtnText: ss.theme.navBtnText } : {}),
+              ...(ss.theme.navBtnActiveBg ? { navBtnActiveBg: ss.theme.navBtnActiveBg } : {}),
+              ...(ss.theme.navBtnActiveText ? { navBtnActiveText: ss.theme.navBtnActiveText } : {}),
               ...(ss.theme.btnPrimaryRadius ? { btnPrimaryRadius: ss.theme.btnPrimaryRadius } : {}),
               ...(ss.theme.cardRadius ? { cardRadius: ss.theme.cardRadius } : {}),
               ...(ss.theme.headingFont ? { headingFont: ss.theme.headingFont } : {}),
@@ -473,6 +477,10 @@ class CmsStoreEngine {
             if (mergedTheme.btnSecondaryBg) root.style.setProperty('--dcvc-btn-secondary-bg', mergedTheme.btnSecondaryBg);
             if (mergedTheme.btnSecondaryText) root.style.setProperty('--dcvc-btn-secondary-text', mergedTheme.btnSecondaryText);
             if (mergedTheme.btnDonateBg) root.style.setProperty('--dcvc-btn-donate-bg', mergedTheme.btnDonateBg);
+            if (mergedTheme.btnDonateText) root.style.setProperty('--dcvc-btn-donate-text', mergedTheme.btnDonateText);
+            if (mergedTheme.navBtnText) root.style.setProperty('--dcvc-nav-text', mergedTheme.navBtnText);
+            if (mergedTheme.navBtnActiveBg) root.style.setProperty('--dcvc-nav-active-bg', mergedTheme.navBtnActiveBg);
+            if (mergedTheme.navBtnActiveText) root.style.setProperty('--dcvc-nav-active-text', mergedTheme.navBtnActiveText);
             if (mergedTheme.headingFont) root.style.setProperty('--font-display', `'${mergedTheme.headingFont}', sans-serif`);
             if (mergedTheme.bodyFont) root.style.setProperty('--font-sans', `'${mergedTheme.bodyFont}', sans-serif`);
             if (mergedTheme.cardRadius) root.style.setProperty('--dcvc-card-radius', mergedTheme.cardRadius);
