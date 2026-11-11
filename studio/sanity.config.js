@@ -1,6 +1,7 @@
 import { defineConfig } from 'sanity';
 import { structureTool } from 'sanity/structure';
 import { schemaTypes } from './schemas';
+import AdminPanelTool from './components/AdminPanelTool';
 
 export default defineConfig({
   name: 'default',
@@ -53,6 +54,15 @@ export default defineConfig({
               )
           ])
     })
+  ],
+
+  tools: (prev) => [
+    ...prev,
+    {
+      name: 'admin-panel',
+      title: 'Website Admin Panel',
+      component: AdminPanelTool
+    }
   ],
 
   schema: {

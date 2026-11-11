@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "sanity": "^3.40.0",
-    "styled-components": "^6.1.8"
+    "styled-components": "^6.1.15"
   },
   "devDependencies": {
     "@sanity/cli": "^3.40.0"

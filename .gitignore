@@ -34,3 +34,6 @@ backups/*.enc
 backups/*-manifest.json
 backups/tmp/
 
+# Sanity runtime cache
+.sanity/
+
