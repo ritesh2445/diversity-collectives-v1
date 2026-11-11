@@ -23,13 +23,9 @@ export default function ReciteLauncher() {
     return unsubscribe;
   }, []);
 
-  // Hotkey: Alt + A
+  // Close open toolbar on Escape (Alt + A is handled globally in Header.jsx so it doesn't double-toggle)
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.altKey && (e.key === 'a' || e.key === 'A')) {
-        e.preventDefault();
-        a11yStore.toggleToolbar();
-      }
       if (e.key === 'Escape' && toolbarOpen) {
         a11yStore.update('toolbarOpen', false);
       }

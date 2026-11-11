@@ -311,7 +311,7 @@ class NativeAccessibilityStore {
         lineHeight: 'normal',
         letterSpacing: 'normal',
         wordSpacing: 'normal',
-        textAlign: 'default',
+        textAlign: 'normal',
         ruler: false,
         dyslexiaTint: 'none'
       });

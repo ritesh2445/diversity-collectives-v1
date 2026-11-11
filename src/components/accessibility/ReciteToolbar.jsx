@@ -46,7 +46,8 @@ import {
 export default function ReciteToolbar() {
   const navigate = useNavigate();
   const [settings, setSettings] = useState(a11yStore.getState());
-  const [activeFlyout, setActiveFlyout] = useState(null); // 'music' | 'font' | 'focusText' | 'lang' | 'color' | 'dict' | 'guide'
+  const [activeFlyout, setActiveFlyout] = useState(null); // 'music' | 'font' | 'focusText' | 'dyslexia' | 'lang' | 'color' | 'dict' | 'guide'
+  const [flyoutLeft, setFlyoutLeft] = useState(12);
   
   // Audio Speech state
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -245,7 +246,10 @@ export default function ReciteToolbar() {
     targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
     window.speechSynthesis.cancel();
-    const utterance = createAccessibleUtterance(targetElement.innerText, femaleVoice, 0.95);
+    if (window.speechSynthesis.paused) {
+      window.speechSynthesis.resume();
+    }
+    const utterance = createAccessibleUtterance(targetElement.innerText, femaleVoice, settings.speechRate || 0.95);
 
     utterance.onstart = () => setIsSpeaking(true);
     utterance.onend = () => {
@@ -263,6 +267,10 @@ export default function ReciteToolbar() {
 
   // Play / Pause
   const handlePlayPause = () => {
+    if (!('speechSynthesis' in window)) {
+      alert('Speech synthesis is not supported on this device.');
+      return;
+    }
     if (isSpeaking) {
       if (window.speechSynthesis.paused) {
         window.speechSynthesis.resume();
@@ -277,7 +285,10 @@ export default function ReciteToolbar() {
       const selected = window.getSelection()?.toString().trim();
       if (selected) {
         window.speechSynthesis.cancel();
-        const utterance = createAccessibleUtterance(selected, femaleVoice, 0.95);
+        if (window.speechSynthesis.paused) {
+          window.speechSynthesis.resume();
+        }
+        const utterance = createAccessibleUtterance(selected, femaleVoice, settings.speechRate || 0.95);
         utterance.onstart = () => setIsSpeaking(true);
         utterance.onend = () => setIsSpeaking(false);
         window.speechSynthesis.speak(utterance);
@@ -320,6 +331,8 @@ export default function ReciteToolbar() {
       return;
     }
 
+    // Unlock audio context synchronously on click gesture before awaiting playback
+    focusAudio.init();
     focusAudio.setVolume(musicVolume);
     const started = trackName === 'focus'
       ? await focusAudio.playFocusTrack()
@@ -823,6 +836,44 @@ export default function ReciteToolbar() {
     a11yStore.announce(`Theme set to ${themes[nextIdx]}`);
   };
 
+  // Anchored flyout opener so panels render outside overflow-x-auto clipping container
+  const openFlyout = (name, e, panelWidth = 320) => {
+    if (activeFlyout === name) {
+      setActiveFlyout(null);
+      return;
+    }
+    if (name === 'music') {
+      focusAudio.init();
+    }
+    if (name === 'dict') {
+      const sel = window.getSelection()?.toString().trim();
+      if (sel) {
+        setDictWord(sel);
+        setTimeout(() => handleLookup(), 50);
+      }
+    }
+    if (e?.currentTarget && typeof window !== 'undefined') {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const maxLeft = Math.max(12, window.innerWidth - panelWidth - 12);
+      setFlyoutLeft(Math.max(12, Math.min(rect.left, maxLeft)));
+    }
+    setActiveFlyout(name);
+  };
+
+  const handleResetAll = () => {
+    focusAudio.stop();
+    setMusicPlaying(false);
+    setActiveTrack(null);
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    setIsSpeaking(false);
+    clearHighlight();
+    setActiveFlyout(null);
+    translationService.setLanguage('en');
+    a11yStore.resetAll();
+  };
+
   // Close flyout on outside click
   useEffect(() => {
     const handleOutside = (e) => {
@@ -937,93 +988,21 @@ export default function ReciteToolbar() {
             ================================================================ */}
         <div className="flex items-center gap-1 px-1 border-l border-slate-800 flex-shrink-0">
           
-          {/* Focus Audio Button & Dropdown Flyout */}
+          {/* Focus Audio Button & Dropdown Flyout Trigger */}
           <div className="relative">
             <button
-              onClick={() => setActiveFlyout(activeFlyout === 'music' ? null : 'music')}
+              type="button"
+              onClick={(e) => openFlyout('music', e, 320)}
               className={`w-9 h-9 rounded-md flex items-center justify-center relative transition-all cursor-pointer ${
-                musicPlaying ? 'bg-[#059669] text-white ring-2 ring-emerald-400' : 'bg-[#059669] text-white hover:bg-[#047857]'
+                musicPlaying ? 'bg-[#059669] text-white ring-2 ring-emerald-300' : 'bg-[#059669] text-white hover:bg-[#047857]'
               }`}
               title="Focus Audio (Royalty-free ambient tones for reading)"
               aria-haspopup="true"
               aria-expanded={activeFlyout === 'music'}
             >
               <Music className="w-4 h-4" />
-              <div className="w-5 h-0.5 bg-emerald-300 rounded-full absolute bottom-1" />
+              <div className={`w-5 h-0.5 rounded-full absolute bottom-1 ${musicPlaying ? 'bg-amber-300 animate-pulse' : 'bg-emerald-300'}`} />
             </button>
-
-            {/* Exact Focus Audio Flyout Dialog matching user request */}
-            {activeFlyout === 'music' && (
-              <div className="absolute top-full left-0 mt-2 w-80 p-5 bg-[#0B1528] text-white rounded-2xl shadow-2xl border-2 border-slate-700 z-[100002] space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-extrabold text-base text-white tracking-tight">Focus Audio</h3>
-                  <button
-                    onClick={() => setActiveFlyout(null)}
-                    className="text-slate-400 hover:text-white p-1 rounded cursor-pointer"
-                    aria-label="Close Focus Audio"
-                  >
-                    ✕
-                  </button>
-                </div>
-
-                {/* Volume Slider */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-3 text-xs font-semibold text-slate-300">
-                    <span className="flex items-center gap-1.5">
-                      <Volume2 className="w-4 h-4 text-emerald-400" />
-                      <span>Volume</span>
-                    </span>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.05"
-                      value={musicVolume}
-                      onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
-                      className="flex-1 accent-emerald-400 cursor-pointer"
-                    />
-                  </div>
-                </div>
-
-                {/* Status Message */}
-                <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px] text-slate-300 flex items-start gap-2">
-                  <span className="text-emerald-400 font-bold">{musicPlaying ? '♪' : '⏸'}</span>
-                  <p>
-                    {musicError
-                      ? musicError
-                      : musicPlaying
-                        ? `Now playing: ${activeTrack === 'focus' ? 'Focus 432Hz Ambient Resonance' : 'Deeper Reading Brown Rain Noise'}`
-                        : 'Audio paused. Click a track below to start playing royalty-free calming soundscapes.'}
-                  </p>
-                </div>
-
-                {/* Track 1: Focus */}
-                <button
-                  onClick={() => handleToggleFocusTrack('focus')}
-                  className={`w-full py-3 px-4 rounded-xl font-bold text-xs flex items-center justify-between transition-all cursor-pointer border ${
-                    activeTrack === 'focus' && musicPlaying
-                      ? 'bg-emerald-600 border-emerald-400 text-white shadow-lg shadow-emerald-900/40'
-                      : 'bg-slate-900 border-slate-800 text-slate-200 hover:bg-slate-800 hover:border-slate-700'
-                  }`}
-                >
-                  <span className="font-bold text-sm">Focus (432Hz Calm)</span>
-                  {activeTrack === 'focus' && musicPlaying ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current" />}
-                </button>
-
-                {/* Track 2: Deeper Reading */}
-                <button
-                  onClick={() => handleToggleFocusTrack('deeper')}
-                  className={`w-full py-3 px-4 rounded-xl font-bold text-xs flex items-center justify-between transition-all cursor-pointer border ${
-                    activeTrack === 'deeper' && musicPlaying
-                      ? 'bg-emerald-600 border-emerald-400 text-white shadow-lg shadow-emerald-900/40'
-                      : 'bg-slate-900 border-slate-800 text-slate-200 hover:bg-slate-800 hover:border-slate-700'
-                  }`}
-                >
-                  <span className="font-bold text-sm">Deeper Reading (Brown Noise)</span>
-                  {activeTrack === 'deeper' && musicPlaying ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current" />}
-                </button>
-              </div>
-            )}
           </div>
 
           {/* Microphone / Voice Recognition Navigation */}
@@ -1067,7 +1046,8 @@ export default function ReciteToolbar() {
           {/* Aa: Font Style Dropdown */}
           <div className="relative">
             <button
-              onClick={() => setActiveFlyout(activeFlyout === 'font' ? null : 'font')}
+              type="button"
+              onClick={(e) => openFlyout('font', e, 288)}
               className={`w-9 h-9 rounded-md bg-[#0284C7] hover:bg-[#0369A1] text-white font-black text-xs flex items-center justify-center transition-colors cursor-pointer ${
                 activeFlyout === 'font' ? 'ring-2 ring-sky-300' : ''
               }`}
@@ -1077,104 +1057,13 @@ export default function ReciteToolbar() {
             >
               Aa
             </button>
-
-            {activeFlyout === 'font' && (
-              <div className="absolute top-full left-0 mt-2 w-72 p-4 bg-[#0B1528] text-white rounded-2xl shadow-2xl border-2 border-slate-700 z-[100002] space-y-3">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-                  <span className="font-extrabold text-xs text-sky-400 uppercase tracking-wider">Font Family</span>
-                  <button onClick={() => setActiveFlyout(null)} className="text-slate-400 hover:text-white text-xs">✕</button>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { id: 'default', label: 'Default Sanctuary' },
-                    { id: 'opendyslexic', label: 'OpenDyslexic' },
-                    { id: 'lexend', label: 'Lexend Reader' },
-                    { id: 'atkinson', label: 'Atkinson Legible' },
-                    { id: 'arial', label: 'Arial Clean' },
-                    { id: 'comicsans', label: 'Comic Sans' },
-                    { id: 'verdana', label: 'Verdana' },
-                  ].map(f => (
-                    <button
-                      key={f.id}
-                      onClick={() => {
-                        a11yStore.update('fontFamily', f.id);
-                        a11yStore.announce(`Font set to ${f.label}`);
-                      }}
-                      className={`p-2 rounded-xl text-xs font-semibold text-left border cursor-pointer ${
-                        settings.fontFamily === f.id
-                          ? 'bg-sky-600 text-white border-sky-400'
-                          : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800'
-                      }`}
-                    >
-                      {f.label}
-                    </button>
-                  ))}
-                </div>
-
-                {/* 1-Click Dyslexia Mode Sanctuary Preset */}
-                <div className="pt-2 border-t border-slate-800">
-                  <button
-                    type="button"
-                    onClick={() => a11yStore.toggleDyslexiaMode()}
-                    className={`w-full py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-between transition-all cursor-pointer ${
-                      settings.dyslexiaMode
-                        ? 'bg-amber-400 text-slate-950 shadow-md ring-2 ring-amber-300'
-                        : 'bg-purple-900/60 hover:bg-purple-800 text-purple-200 border border-purple-500/40'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 text-left">
-                      <span className="text-base">📖</span>
-                      <div>
-                        <span className="block font-black">Dyslexia Sanctuary Mode</span>
-                        <span className="block text-[10px] opacity-80">OpenDyslexic + 1.8x Line Spacing + Tint</span>
-                      </div>
-                    </div>
-                    <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-black/20">
-                      {settings.dyslexiaMode ? 'ON' : 'OFF'}
-                    </span>
-                  </button>
-
-                  {/* Reading Tint Picker (Irlen Syndrome Relief) */}
-                  <div className="pt-2">
-                    <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                      Visual Stress Comfort Tint:
-                    </span>
-                    <div className="grid grid-cols-5 gap-1.5 text-center">
-                      {[
-                        { id: 'none', label: 'None', bg: 'bg-slate-800' },
-                        { id: 'peach', label: 'Peach', bg: 'bg-[#ffe5b4] text-slate-900' },
-                        { id: 'cream', label: 'Cream', bg: 'bg-[#fffdd0] text-slate-900' },
-                        { id: 'mint', label: 'Mint', bg: 'bg-[#e2f8ee] text-slate-900' },
-                        { id: 'sky', label: 'Sky', bg: 'bg-[#e0f2fe] text-slate-900' },
-                      ].map((t) => (
-                        <button
-                          key={t.id}
-                          type="button"
-                          onClick={() => {
-                            a11yStore.update('dyslexiaTint', t.id);
-                            a11yStore.announce(`Dyslexia reading tint set to ${t.label}`);
-                          }}
-                          className={`p-1 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${t.bg} ${
-                            settings.dyslexiaTint === t.id
-                              ? 'ring-2 ring-amber-400 border-white'
-                              : 'border-slate-700 opacity-80 hover:opacity-100'
-                          }`}
-                        >
-                          {t.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* FT: Focus Text / Spacing */}
           <div className="relative">
             <button
-              onClick={() => setActiveFlyout(activeFlyout === 'focusText' ? null : 'focusText')}
+              type="button"
+              onClick={(e) => openFlyout('focusText', e, 288)}
               className={`w-9 h-9 rounded-md bg-[#0284C7] hover:bg-[#0369A1] text-white font-black text-xs flex items-center justify-center transition-colors cursor-pointer ${
                 activeFlyout === 'focusText' ? 'ring-2 ring-sky-300' : ''
               }`}
@@ -1184,51 +1073,6 @@ export default function ReciteToolbar() {
             >
               FT
             </button>
-
-            {activeFlyout === 'focusText' && (
-              <div className="absolute top-full left-0 mt-2 w-72 p-4 bg-[#0B1528] text-white rounded-2xl shadow-2xl border-2 border-slate-700 z-[100002] space-y-4">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-                  <span className="font-extrabold text-xs text-sky-400 uppercase tracking-wider">Text Spacing (WCAG 1.4.12)</span>
-                  <button onClick={() => setActiveFlyout(null)} className="text-slate-400 hover:text-white text-xs">✕</button>
-                </div>
-
-                {/* Line Height */}
-                <div>
-                  <span className="text-[11px] font-bold text-slate-400 block mb-1">Line Height</span>
-                  <div className="grid grid-cols-4 gap-1">
-                    {['normal', '1.5', '1.8', '2.0'].map(val => (
-                      <button
-                        key={val}
-                        onClick={() => a11yStore.update('lineHeight', val)}
-                        className={`p-1 text-xs rounded border cursor-pointer ${
-                          settings.lineHeight === val ? 'bg-sky-600 border-sky-400 text-white' : 'bg-slate-900 border-slate-800 text-slate-300'
-                        }`}
-                      >
-                        {val === 'normal' ? 'Def' : val}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Letter Spacing */}
-                <div>
-                  <span className="text-[11px] font-bold text-slate-400 block mb-1">Character Spacing</span>
-                  <div className="grid grid-cols-4 gap-1">
-                    {['normal', '0.12em', '0.16em', '0.2em'].map(val => (
-                      <button
-                        key={val}
-                        onClick={() => a11yStore.update('letterSpacing', val)}
-                        className={`p-1 text-xs rounded border cursor-pointer ${
-                          settings.letterSpacing === val ? 'bg-sky-600 border-sky-400 text-white' : 'bg-slate-900 border-slate-800 text-slate-300'
-                        }`}
-                      >
-                        {val === 'normal' ? 'Def' : val}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Plus: Font Size Increase */}
@@ -1244,7 +1088,8 @@ export default function ReciteToolbar() {
           {/* DEDICATED DYSLEXIA SUPPORT SUITE BUTTON + FLYOUT */}
           <div className="relative">
             <button
-              onClick={() => setActiveFlyout(activeFlyout === 'dyslexia' ? null : 'dyslexia')}
+              type="button"
+              onClick={(e) => openFlyout('dyslexia', e, 320)}
               className={`h-9 px-2.5 rounded-md font-black text-xs flex items-center gap-1.5 transition-all cursor-pointer ${
                 settings.dyslexiaMode || settings.bionicReading || settings.dyslexiaTint !== 'none' || settings.fontFamily === 'opendyslexic' || settings.fontFamily === 'lexend'
                   ? 'bg-amber-400 text-slate-950 ring-2 ring-amber-300 shadow-sm'
@@ -1257,136 +1102,6 @@ export default function ReciteToolbar() {
               <BookOpen className="w-3.5 h-3.5" />
               <span>Dyslexia</span>
             </button>
-
-            {activeFlyout === 'dyslexia' && (
-              <div className="absolute top-full left-0 mt-2 w-80 p-4 bg-[#0B1528] text-white rounded-2xl shadow-2xl border-2 border-amber-400/50 z-[100002] space-y-3.5">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-                  <div>
-                    <span className="font-extrabold text-xs text-amber-300 uppercase tracking-wider block">Dyslexia Reading Support</span>
-                    <span className="text-[10px] text-slate-400">Visual stress, tracking & crowding aids</span>
-                  </div>
-                  <button onClick={() => setActiveFlyout(null)} className="text-slate-400 hover:text-white text-xs p-1 cursor-pointer">✕</button>
-                </div>
-
-                {/* 1-Click Master Dyslexia Profile */}
-                <button
-                  type="button"
-                  onClick={() => a11yStore.toggleDyslexiaMode()}
-                  className={`w-full py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-between transition-all cursor-pointer ${
-                    settings.dyslexiaMode
-                      ? 'bg-amber-400 text-slate-950 shadow-md ring-2 ring-amber-300'
-                      : 'bg-purple-900/70 hover:bg-purple-800 text-purple-100 border border-purple-500/40'
-                  }`}
-                >
-                  <div className="text-left">
-                    <span className="block font-black">1-Click Dyslexia Mode</span>
-                    <span className="block text-[10px] opacity-80">OpenDyslexic + Wide Spacing + Ruler + Cream Tint</span>
-                  </div>
-                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-black/20">
-                    {settings.dyslexiaMode ? 'ON' : 'OFF'}
-                  </span>
-                </button>
-
-                {/* Bionic Anchor Reading Toggle */}
-                <button
-                  type="button"
-                  onClick={() => a11yStore.toggleBionicReading()}
-                  className={`w-full py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-between transition-all cursor-pointer border ${
-                    settings.bionicReading
-                      ? 'bg-sky-500 text-slate-950 border-sky-300 shadow-sm'
-                      : 'bg-slate-900 text-slate-200 border-slate-700 hover:bg-slate-800'
-                  }`}
-                >
-                  <div className="text-left">
-                    <span className="block font-extrabold"><strong>Bio</strong>nic <strong>An</strong>chor <strong>Rea</strong>ding</span>
-                    <span className="block text-[10px] opacity-80">Guides eye fixation cleanly across words</span>
-                  </div>
-                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-black/20">
-                    {settings.bionicReading ? 'ON' : 'OFF'}
-                  </span>
-                </button>
-
-                {/* Dyslexia Fonts */}
-                <div>
-                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Dyslexia-Friendly Typefaces</span>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {[
-                      { id: 'opendyslexic', label: 'OpenDyslexic' },
-                      { id: 'lexend', label: 'Lexend' },
-                      { id: 'atkinson', label: 'Atkinson' },
-                      { id: 'default', label: 'Standard Font' },
-                    ].map((f) => (
-                      <button
-                        key={f.id}
-                        type="button"
-                        onClick={() => {
-                          a11yStore.update('fontFamily', f.id);
-                          a11yStore.announce(`Font set to ${f.label}`);
-                        }}
-                        className={`p-1.5 rounded-lg text-xs font-bold border text-left cursor-pointer ${
-                          settings.fontFamily === f.id
-                            ? 'bg-sky-600 text-white border-sky-300'
-                            : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800'
-                        }`}
-                      >
-                        {f.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Irlen / Visual Stress Color Overlays */}
-                <div>
-                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Visual Stress Overlays (Irlen Relief)</span>
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {[
-                      { id: 'none', label: 'Off', bg: 'bg-slate-800 text-slate-200' },
-                      { id: 'cream', label: 'Warm Cream', bg: 'bg-[#fffdd0] text-slate-900' },
-                      { id: 'peach', label: 'Soft Peach', bg: 'bg-[#ffe5b4] text-slate-900' },
-                      { id: 'yellow', label: 'Pale Yellow', bg: 'bg-[#fef9c3] text-slate-900' },
-                      { id: 'mint', label: 'Calm Mint', bg: 'bg-[#e2f8ee] text-slate-900' },
-                      { id: 'sky', label: 'Soft Sky', bg: 'bg-[#e0f2fe] text-slate-900' },
-                    ].map((t) => (
-                      <button
-                        key={t.id}
-                        type="button"
-                        onClick={() => {
-                          a11yStore.update('dyslexiaTint', t.id);
-                          a11yStore.announce(`Dyslexia reading overlay set to ${t.label}`);
-                        }}
-                        className={`py-1.5 px-2 rounded-lg text-[11px] font-bold border cursor-pointer transition-all ${t.bg} ${
-                          settings.dyslexiaTint === t.id ? 'ring-2 ring-amber-400 border-white' : 'border-slate-700 opacity-85 hover:opacity-100'
-                        }`}
-                      >
-                        {t.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Word Spacing & Tracking Quick Toggles */}
-                <div className="grid grid-cols-2 gap-1.5 pt-1 border-t border-slate-800">
-                  <button
-                    type="button"
-                    onClick={() => a11yStore.toggleRuler()}
-                    className={`py-1.5 px-2 rounded-lg text-[11px] font-bold border cursor-pointer ${
-                      settings.ruler ? 'bg-amber-400 text-slate-950 border-amber-300' : 'bg-slate-900 text-slate-300 border-slate-700'
-                    }`}
-                  >
-                    Line Ruler: {settings.ruler ? 'ON' : 'OFF'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => a11yStore.toggleScreenMask()}
-                    className={`py-1.5 px-2 rounded-lg text-[11px] font-bold border cursor-pointer ${
-                      settings.screenMask ? 'bg-amber-400 text-slate-950 border-amber-300' : 'bg-slate-900 text-slate-300 border-slate-700'
-                    }`}
-                  >
-                    Focus Band: {settings.screenMask ? 'ON' : 'OFF'}
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         </div>
 
@@ -1398,7 +1113,8 @@ export default function ReciteToolbar() {
           {/* Translation Button: 文 A */}
           <div className="relative">
             <button
-              onClick={() => setActiveFlyout(activeFlyout === 'lang' ? null : 'lang')}
+              type="button"
+              onClick={(e) => openFlyout('lang', e, 256)}
               className={`w-9 h-9 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white flex items-center justify-center transition-colors cursor-pointer font-bold text-xs ${
                 activeFlyout === 'lang' ? 'ring-2 ring-purple-400' : ''
               }`}
@@ -1408,81 +1124,22 @@ export default function ReciteToolbar() {
             >
               <Languages className="w-4 h-4" />
             </button>
-
-            {activeFlyout === 'lang' && (
-              <div className="absolute top-full left-0 mt-2 w-64 p-3 bg-[#0B1528] text-white rounded-2xl shadow-2xl border-2 border-slate-700 z-[100002] space-y-2 max-h-72 overflow-y-auto no-scrollbar">
-                <div className="flex items-center justify-between pb-1 border-b border-slate-800">
-                  <span className="font-extrabold text-xs text-purple-400 uppercase tracking-wider block">Translate Page</span>
-                  <span className="text-[10px] text-slate-400 font-mono">{SUPPORTED_LANGUAGES.length} Languages</span>
-                </div>
-                {SUPPORTED_LANGUAGES.map(l => (
-                  <button
-                    key={l.code}
-                    onClick={() => {
-                      translationService.setLanguage(l.code);
-                      a11yStore.update('currentLanguage', l.code);
-                      a11yStore.announce(`Language set to ${l.nativeName}`);
-                      setActiveFlyout(null);
-                    }}
-                    className={`w-full p-2 text-xs font-bold rounded-lg text-left flex items-center justify-between cursor-pointer transition-colors ${
-                      settings.currentLanguage === l.code ? 'bg-[#5A1E65] text-white' : 'hover:bg-slate-800 text-slate-300'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 truncate">
-                      <span className="text-base leading-none">{l.flag}</span>
-                      <span className="truncate">{l.nativeName}</span>
-                      <span className="text-[10px] text-slate-400 font-normal">({l.label})</span>
-                    </div>
-                    {settings.currentLanguage === l.code && <Check className="w-3.5 h-3.5 text-amber-300 flex-shrink-0" />}
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
 
           {/* Color Wheel: Rainbow Palette */}
           <div className="relative">
             <button
-              onClick={() => setActiveFlyout(activeFlyout === 'color' ? null : 'color')}
-              className="w-9 h-9 rounded-md bg-slate-800 hover:bg-slate-700 text-amber-300 flex items-center justify-center transition-colors cursor-pointer"
+              type="button"
+              onClick={(e) => openFlyout('color', e, 288)}
+              className={`w-9 h-9 rounded-md bg-slate-800 hover:bg-slate-700 text-amber-300 flex items-center justify-center transition-colors cursor-pointer ${
+                activeFlyout === 'color' ? 'ring-2 ring-amber-300' : ''
+              }`}
               title="Color Palette & Contrast Themes"
               aria-haspopup="true"
               aria-expanded={activeFlyout === 'color'}
             >
               <Palette className="w-4 h-4" />
             </button>
-
-            {activeFlyout === 'color' && (
-              <div className="absolute top-full left-0 mt-2 w-72 p-4 bg-[#0B1528] text-white rounded-2xl shadow-2xl border-2 border-slate-700 z-[100002] space-y-2">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-                  <span className="font-extrabold text-xs text-amber-400 uppercase tracking-wider">Colour Schemes</span>
-                  <button onClick={() => setActiveFlyout(null)} className="text-slate-400 hover:text-white text-xs">✕</button>
-                </div>
-                {[
-                  { id: 'default', label: 'Standard Colors' },
-                  { id: 'yellow-on-black', label: 'Yellow on Black' },
-                  { id: 'black-on-yellow', label: 'Black on Yellow' },
-                  { id: 'white-on-blue', label: 'White on Dark Blue' },
-                  { id: 'black-on-peach', label: 'Black on Soft Peach' },
-                  { id: 'inverted', label: 'Invert Colors' },
-                  { id: 'monochrome', label: 'Monochrome Grayscale' },
-                ].map(theme => (
-                  <button
-                    key={theme.id}
-                    onClick={() => {
-                      a11yStore.update('colorTheme', theme.id);
-                      a11yStore.announce(`Theme set to ${theme.label}`);
-                    }}
-                    className={`w-full p-2 rounded-xl text-xs font-bold text-left border flex items-center justify-between cursor-pointer ${
-                      settings.colorTheme === theme.id ? 'bg-[#5A1E65] text-white border-purple-400' : 'bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800'
-                    }`}
-                  >
-                    <span>{theme.label}</span>
-                    {settings.colorTheme === theme.id && <Check className="w-3.5 h-3.5 text-amber-300" />}
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
         </div>
 
@@ -1580,63 +1237,17 @@ export default function ReciteToolbar() {
           {/* Dictionary A-Z: Purple square */}
           <div className="relative">
             <button
-              onClick={() => {
-                setActiveFlyout(activeFlyout === 'dict' ? null : 'dict');
-                if (activeFlyout !== 'dict') {
-                  const sel = window.getSelection()?.toString().trim();
-                  if (sel) {
-                    setDictWord(sel);
-                    setTimeout(() => handleLookup(), 50);
-                  }
-                }
-              }}
-              className="w-9 h-9 rounded-md bg-[#7C3AED] hover:bg-[#6D28D9] text-white flex items-center justify-center transition-colors cursor-pointer"
+              type="button"
+              onClick={(e) => openFlyout('dict', e, 320)}
+              className={`w-9 h-9 rounded-md bg-[#7C3AED] hover:bg-[#6D28D9] text-white flex items-center justify-center transition-colors cursor-pointer ${
+                activeFlyout === 'dict' ? 'ring-2 ring-purple-300' : ''
+              }`}
               title="Dictionary Lookup (A-Z)"
               aria-haspopup="true"
               aria-expanded={activeFlyout === 'dict'}
             >
               <BookOpen className="w-4 h-4" />
             </button>
-
-            {activeFlyout === 'dict' && (
-              <div className="absolute top-full right-0 mt-2 w-80 p-4 bg-[#0B1528] text-white rounded-2xl shadow-2xl border-2 border-slate-700 z-[100002] space-y-3">
-                <div className="flex items-center justify-between pb-1 border-b border-slate-800">
-                  <span className="font-extrabold text-xs text-purple-400 uppercase tracking-wider">Dictionary Lookup</span>
-                  <button onClick={() => setActiveFlyout(null)} className="text-slate-400 hover:text-white text-xs">✕</button>
-                </div>
-
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={dictWord}
-                    onChange={(e) => setDictWord(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleLookup()}
-                    placeholder="Enter or select word..."
-                    className="flex-1 px-3 py-1.5 text-xs bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-purple-400"
-                  />
-                  <button
-                    onClick={handleLookup}
-                    className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-lg cursor-pointer"
-                  >
-                    Lookup
-                  </button>
-                </div>
-
-                {dictLoading && <p className="text-xs text-slate-400 py-2">Looking up definition...</p>}
-
-                {dictDefinition && (
-                  <div className="max-h-48 overflow-y-auto space-y-2 text-xs pt-1">
-                    <span className="font-extrabold text-white text-sm block">{dictDefinition.word}</span>
-                    {dictDefinition.meanings?.map((m, i) => (
-                      <div key={i} className="p-2 bg-slate-900 rounded-lg border border-slate-800">
-                        <span className="italic font-bold text-purple-400 block">{m.partOfSpeech}:</span>
-                        <p className="text-slate-300">{m.definitions[0]?.definition}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
           </div>
 
           {/* Download Audio Transcript: Olive/Bronze square */}
@@ -1652,35 +1263,22 @@ export default function ReciteToolbar() {
           {/* User Guide: Crimson square */}
           <div className="relative">
             <button
-              onClick={() => setActiveFlyout(activeFlyout === 'guide' ? null : 'guide')}
-              className="w-9 h-9 rounded-md bg-[#E11D48] hover:bg-[#BE123C] text-white flex items-center justify-center transition-colors cursor-pointer"
+              type="button"
+              onClick={(e) => openFlyout('guide', e, 320)}
+              className={`w-9 h-9 rounded-md bg-[#E11D48] hover:bg-[#BE123C] text-white flex items-center justify-center transition-colors cursor-pointer ${
+                activeFlyout === 'guide' ? 'ring-2 ring-rose-300' : ''
+              }`}
               title="Accessibility Guide"
               aria-haspopup="true"
               aria-expanded={activeFlyout === 'guide'}
             >
               <BookMarked className="w-4 h-4" />
             </button>
-
-            {activeFlyout === 'guide' && (
-              <div className="absolute top-full right-0 mt-2 w-80 p-4 bg-[#0B1528] text-white rounded-2xl shadow-2xl border-2 border-slate-700 z-[100002] space-y-2">
-                <div className="flex items-center justify-between pb-1 border-b border-slate-800">
-                  <span className="font-extrabold text-xs text-rose-400 uppercase tracking-wider">Features Guide</span>
-                  <button onClick={() => setActiveFlyout(null)} className="text-slate-400 hover:text-white text-xs">✕</button>
-                </div>
-                <div className="max-h-56 overflow-y-auto space-y-2 text-xs text-slate-300">
-                  <p><strong>Speech Controls:</strong> Plays page text with natural US female voice and highlights active reading blocks.</p>
-                  <p><strong>Focus Audio:</strong> 100% royalty-free ambient harmonic tones & soothing brown noise for ADHD and deep reading focus.</p>
-                  <p><strong>Text & Font:</strong> Scales font sizes, sets dyslexia fonts, and adjusts WCAG text spacing.</p>
-                  <p><strong>Ruler & Mask:</strong> Eliminates visual distractions with isolated letterbox aperture.</p>
-                  <p><strong>Hotkeys:</strong> Press <kbd className="px-1 bg-slate-800 border rounded">Alt + A</kbd> to toggle ribbon anytime.</p>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Reset Settings: Dark Gray square */}
           <button
-            onClick={() => a11yStore.resetAll()}
+            onClick={handleResetAll}
             className="w-9 h-9 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
             title="Reset All Accessibility Settings to Defaults"
             aria-label="Reset All Settings"
@@ -1724,6 +1322,467 @@ export default function ReciteToolbar() {
         </div>
 
       </div>
+
+      {/* UNCLIPPED ANCHORED FLYOUT PANELS (Rendered outside overflow-x-auto row) */}
+      {activeFlyout && (
+        <div
+          style={{ left: `${flyoutLeft}px` }}
+          className="fixed top-[52px] z-[100002] max-w-[calc(100vw-24px)]"
+        >
+          {activeFlyout === 'music' && (
+            <div className="w-80 max-w-full p-5 bg-[#0B1528] text-white rounded-2xl shadow-2xl border-2 border-slate-700 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-extrabold text-base text-white tracking-tight">Focus Audio</h3>
+                <button
+                  type="button"
+                  onClick={() => setActiveFlyout(null)}
+                  className="text-slate-400 hover:text-white p-1 rounded cursor-pointer"
+                  aria-label="Close Focus Audio"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-3 text-xs font-semibold text-slate-300">
+                  <span className="flex items-center gap-1.5">
+                    <Volume2 className="w-4 h-4 text-emerald-400" />
+                    <span>Volume</span>
+                  </span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value={musicVolume}
+                    onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
+                    className="flex-1 accent-emerald-400 cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px] text-slate-300 flex items-start gap-2">
+                <span className="text-emerald-400 font-bold">{musicPlaying ? '♪' : '⏸'}</span>
+                <p>
+                  {musicError
+                    ? musicError
+                    : musicPlaying
+                      ? `Now playing: ${activeTrack === 'focus' ? 'Focus 432Hz Ambient Resonance' : 'Deeper Reading Brown Rain Noise'}`
+                      : 'Audio paused. Click a track below to start playing royalty-free calming soundscapes.'}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleToggleFocusTrack('focus')}
+                className={`w-full py-3 px-4 rounded-xl font-bold text-xs flex items-center justify-between transition-all cursor-pointer border ${
+                  activeTrack === 'focus' && musicPlaying
+                    ? 'bg-emerald-600 border-emerald-400 text-white shadow-lg shadow-emerald-900/40'
+                    : 'bg-slate-900 border-slate-800 text-slate-200 hover:bg-slate-800 hover:border-slate-700'
+                }`}
+              >
+                <span className="font-bold text-sm">Focus (432Hz Calm)</span>
+                {activeTrack === 'focus' && musicPlaying ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current" />}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleToggleFocusTrack('deeper')}
+                className={`w-full py-3 px-4 rounded-xl font-bold text-xs flex items-center justify-between transition-all cursor-pointer border ${
+                  activeTrack === 'deeper' && musicPlaying
+                    ? 'bg-emerald-600 border-emerald-400 text-white shadow-lg shadow-emerald-900/40'
+                    : 'bg-slate-900 border-slate-800 text-slate-200 hover:bg-slate-800 hover:border-slate-700'
+                }`}
+              >
+                <span className="font-bold text-sm">Deeper Reading (Brown Noise)</span>
+                {activeTrack === 'deeper' && musicPlaying ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current" />}
+              </button>
+            </div>
+          )}
+
+          {activeFlyout === 'font' && (
+            <div className="w-72 max-w-full p-4 bg-[#0B1528] text-white rounded-2xl shadow-2xl border-2 border-slate-700 space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                <span className="font-extrabold text-xs text-sky-400 uppercase tracking-wider">Font Family</span>
+                <button type="button" onClick={() => setActiveFlyout(null)} className="text-slate-400 hover:text-white text-xs cursor-pointer">✕</button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { id: 'default', label: 'Default Sanctuary' },
+                  { id: 'opendyslexic', label: 'OpenDyslexic' },
+                  { id: 'lexend', label: 'Lexend Reader' },
+                  { id: 'atkinson', label: 'Atkinson Legible' },
+                  { id: 'arial', label: 'Arial Clean' },
+                  { id: 'comicsans', label: 'Comic Sans' },
+                  { id: 'verdana', label: 'Verdana' },
+                ].map(f => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => {
+                      a11yStore.update('fontFamily', f.id);
+                      a11yStore.announce(`Font set to ${f.label}`);
+                    }}
+                    className={`p-2 rounded-xl text-xs font-semibold text-left border cursor-pointer ${
+                      settings.fontFamily === f.id
+                        ? 'bg-sky-600 text-white border-sky-400'
+                        : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800'
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="pt-2 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => a11yStore.toggleDyslexiaMode()}
+                  className={`w-full py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-between transition-all cursor-pointer ${
+                    settings.dyslexiaMode
+                      ? 'bg-amber-400 text-slate-950 shadow-md ring-2 ring-amber-300'
+                      : 'bg-purple-900/60 hover:bg-purple-800 text-purple-200 border border-purple-500/40'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 text-left">
+                    <span className="text-base">📖</span>
+                    <div>
+                      <span className="block font-black">Dyslexia Sanctuary Mode</span>
+                      <span className="block text-[10px] opacity-80">OpenDyslexic + 1.8x Line Spacing + Tint</span>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-black/20">
+                    {settings.dyslexiaMode ? 'ON' : 'OFF'}
+                  </span>
+                </button>
+
+                <div className="pt-2">
+                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                    Visual Stress Comfort Tint:
+                  </span>
+                  <div className="grid grid-cols-5 gap-1.5 text-center">
+                    {[
+                      { id: 'none', label: 'None', bg: 'bg-slate-800' },
+                      { id: 'peach', label: 'Peach', bg: 'bg-[#ffe5b4] text-slate-900' },
+                      { id: 'cream', label: 'Cream', bg: 'bg-[#fffdd0] text-slate-900' },
+                      { id: 'mint', label: 'Mint', bg: 'bg-[#e2f8ee] text-slate-900' },
+                      { id: 'sky', label: 'Sky', bg: 'bg-[#e0f2fe] text-slate-900' },
+                    ].map((t) => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => {
+                          a11yStore.update('dyslexiaTint', t.id);
+                          a11yStore.announce(`Dyslexia reading tint set to ${t.label}`);
+                        }}
+                        className={`p-1 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${t.bg} ${
+                          settings.dyslexiaTint === t.id
+                            ? 'ring-2 ring-amber-400 border-white'
+                            : 'border-slate-700 opacity-80 hover:opacity-100'
+                        }`}
+                      >
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeFlyout === 'focusText' && (
+            <div className="w-72 max-w-full p-4 bg-[#0B1528] text-white rounded-2xl shadow-2xl border-2 border-slate-700 space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                <span className="font-extrabold text-xs text-sky-400 uppercase tracking-wider">Text Spacing (WCAG 1.4.12)</span>
+                <button type="button" onClick={() => setActiveFlyout(null)} className="text-slate-400 hover:text-white text-xs cursor-pointer">✕</button>
+              </div>
+
+              <div>
+                <span className="text-[11px] font-bold text-slate-400 block mb-1">Line Height</span>
+                <div className="grid grid-cols-4 gap-1">
+                  {['normal', '1.5', '1.8', '2.0'].map(val => (
+                    <button
+                      key={val}
+                      type="button"
+                      onClick={() => a11yStore.update('lineHeight', val)}
+                      className={`p-1 text-xs rounded border cursor-pointer ${
+                        settings.lineHeight === val ? 'bg-sky-600 border-sky-400 text-white' : 'bg-slate-900 border-slate-800 text-slate-300'
+                      }`}
+                    >
+                      {val === 'normal' ? 'Def' : val}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <span className="text-[11px] font-bold text-slate-400 block mb-1">Character Spacing</span>
+                <div className="grid grid-cols-4 gap-1">
+                  {['normal', '0.12em', '0.16em', '0.2em'].map(val => (
+                    <button
+                      key={val}
+                      type="button"
+                      onClick={() => a11yStore.update('letterSpacing', val)}
+                      className={`p-1 text-xs rounded border cursor-pointer ${
+                        settings.letterSpacing === val ? 'bg-sky-600 border-sky-400 text-white' : 'bg-slate-900 border-slate-800 text-slate-300'
+                      }`}
+                    >
+                      {val === 'normal' ? 'Def' : val}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeFlyout === 'dyslexia' && (
+            <div className="w-80 max-w-full p-4 bg-[#0B1528] text-white rounded-2xl shadow-2xl border-2 border-amber-400/50 space-y-3.5">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                <div>
+                  <span className="font-extrabold text-xs text-amber-300 uppercase tracking-wider block">Dyslexia Reading Support</span>
+                  <span className="text-[10px] text-slate-400">Visual stress, tracking & crowding aids</span>
+                </div>
+                <button type="button" onClick={() => setActiveFlyout(null)} className="text-slate-400 hover:text-white text-xs p-1 cursor-pointer">✕</button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => a11yStore.toggleDyslexiaMode()}
+                className={`w-full py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-between transition-all cursor-pointer ${
+                  settings.dyslexiaMode
+                    ? 'bg-amber-400 text-slate-950 shadow-md ring-2 ring-amber-300'
+                    : 'bg-purple-900/70 hover:bg-purple-800 text-purple-100 border border-purple-500/40'
+                }`}
+              >
+                <div className="text-left">
+                  <span className="block font-black">1-Click Dyslexia Mode</span>
+                  <span className="block text-[10px] opacity-80">OpenDyslexic + Wide Spacing + Ruler + Cream Tint</span>
+                </div>
+                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-black/20">
+                  {settings.dyslexiaMode ? 'ON' : 'OFF'}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => a11yStore.toggleBionicReading()}
+                className={`w-full py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-between transition-all cursor-pointer border ${
+                  settings.bionicReading
+                    ? 'bg-sky-500 text-slate-950 border-sky-300 shadow-sm'
+                    : 'bg-slate-900 text-slate-200 border-slate-700 hover:bg-slate-800'
+                }`}
+              >
+                <div className="text-left">
+                  <span className="block font-extrabold"><strong>Bio</strong>nic <strong>An</strong>chor <strong>Rea</strong>ding</span>
+                  <span className="block text-[10px] opacity-80">Guides eye fixation cleanly across words</span>
+                </div>
+                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-black/20">
+                  {settings.bionicReading ? 'ON' : 'OFF'}
+                </span>
+              </button>
+
+              <div>
+                <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Dyslexia-Friendly Typefaces</span>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {[
+                    { id: 'opendyslexic', label: 'OpenDyslexic' },
+                    { id: 'lexend', label: 'Lexend' },
+                    { id: 'atkinson', label: 'Atkinson' },
+                    { id: 'default', label: 'Standard Font' },
+                  ].map((f) => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => {
+                        a11yStore.update('fontFamily', f.id);
+                        a11yStore.announce(`Font set to ${f.label}`);
+                      }}
+                      className={`p-1.5 rounded-lg text-xs font-bold border text-left cursor-pointer ${
+                        settings.fontFamily === f.id
+                          ? 'bg-sky-600 text-white border-sky-300'
+                          : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800'
+                      }`}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Visual Stress Overlays (Irlen Relief)</span>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {[
+                    { id: 'none', label: 'Off', bg: 'bg-slate-800 text-slate-200' },
+                    { id: 'cream', label: 'Warm Cream', bg: 'bg-[#fffdd0] text-slate-900' },
+                    { id: 'peach', label: 'Soft Peach', bg: 'bg-[#ffe5b4] text-slate-900' },
+                    { id: 'yellow', label: 'Pale Yellow', bg: 'bg-[#fef9c3] text-slate-900' },
+                    { id: 'mint', label: 'Calm Mint', bg: 'bg-[#e2f8ee] text-slate-900' },
+                    { id: 'sky', label: 'Soft Sky', bg: 'bg-[#e0f2fe] text-slate-900' },
+                  ].map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => {
+                        a11yStore.update('dyslexiaTint', t.id);
+                        a11yStore.announce(`Dyslexia reading overlay set to ${t.label}`);
+                      }}
+                      className={`py-1.5 px-2 rounded-lg text-[11px] font-bold border cursor-pointer transition-all ${t.bg} ${
+                        settings.dyslexiaTint === t.id ? 'ring-2 ring-amber-400 border-white' : 'border-slate-700 opacity-85 hover:opacity-100'
+                      }`}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-1.5 pt-1 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => a11yStore.toggleRuler()}
+                  className={`py-1.5 px-2 rounded-lg text-[11px] font-bold border cursor-pointer ${
+                    settings.ruler ? 'bg-amber-400 text-slate-950 border-amber-300' : 'bg-slate-900 text-slate-300 border-slate-700'
+                  }`}
+                >
+                  Line Ruler: {settings.ruler ? 'ON' : 'OFF'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => a11yStore.toggleScreenMask()}
+                  className={`py-1.5 px-2 rounded-lg text-[11px] font-bold border cursor-pointer ${
+                    settings.screenMask ? 'bg-amber-400 text-slate-950 border-amber-300' : 'bg-slate-900 text-slate-300 border-slate-700'
+                  }`}
+                >
+                  Focus Band: {settings.screenMask ? 'ON' : 'OFF'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {activeFlyout === 'lang' && (
+            <div className="w-64 max-w-full p-3 bg-[#0B1528] text-white rounded-2xl shadow-2xl border-2 border-slate-700 space-y-2 max-h-72 overflow-y-auto no-scrollbar">
+              <div className="flex items-center justify-between pb-1 border-b border-slate-800">
+                <span className="font-extrabold text-xs text-purple-400 uppercase tracking-wider block">Translate Page</span>
+                <span className="text-[10px] text-slate-400 font-mono">{SUPPORTED_LANGUAGES.length} Languages</span>
+              </div>
+              {SUPPORTED_LANGUAGES.map(l => (
+                <button
+                  key={l.code}
+                  type="button"
+                  onClick={() => {
+                    translationService.setLanguage(l.code);
+                    a11yStore.update('currentLanguage', l.code);
+                    a11yStore.announce(`Language set to ${l.nativeName}`);
+                    setActiveFlyout(null);
+                  }}
+                  className={`w-full p-2 text-xs font-bold rounded-lg text-left flex items-center justify-between cursor-pointer transition-colors ${
+                    settings.currentLanguage === l.code ? 'bg-[#5A1E65] text-white' : 'hover:bg-slate-800 text-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 truncate">
+                    <span className="text-base leading-none">{l.flag}</span>
+                    <span className="truncate">{l.nativeName}</span>
+                    <span className="text-[10px] text-slate-400 font-normal">({l.label})</span>
+                  </div>
+                  {settings.currentLanguage === l.code && <Check className="w-3.5 h-3.5 text-amber-300 flex-shrink-0" />}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {activeFlyout === 'color' && (
+            <div className="w-72 max-w-full p-4 bg-[#0B1528] text-white rounded-2xl shadow-2xl border-2 border-slate-700 space-y-2">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                <span className="font-extrabold text-xs text-amber-400 uppercase tracking-wider">Colour Schemes</span>
+                <button type="button" onClick={() => setActiveFlyout(null)} className="text-slate-400 hover:text-white text-xs cursor-pointer">✕</button>
+              </div>
+              {[
+                { id: 'default', label: 'Standard Colors' },
+                { id: 'yellow-on-black', label: 'Yellow on Black' },
+                { id: 'black-on-yellow', label: 'Black on Yellow' },
+                { id: 'white-on-blue', label: 'White on Dark Blue' },
+                { id: 'black-on-peach', label: 'Black on Soft Peach' },
+                { id: 'inverted', label: 'Invert Colors' },
+                { id: 'monochrome', label: 'Monochrome Grayscale' },
+              ].map(theme => (
+                <button
+                  key={theme.id}
+                  type="button"
+                  onClick={() => {
+                    a11yStore.update('colorTheme', theme.id);
+                    a11yStore.announce(`Theme set to ${theme.label}`);
+                  }}
+                  className={`w-full p-2 rounded-xl text-xs font-bold text-left border flex items-center justify-between cursor-pointer ${
+                    settings.colorTheme === theme.id ? 'bg-[#5A1E65] text-white border-purple-400' : 'bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800'
+                  }`}
+                >
+                  <span>{theme.label}</span>
+                  {settings.colorTheme === theme.id && <Check className="w-3.5 h-3.5 text-amber-300" />}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {activeFlyout === 'dict' && (
+            <div className="w-80 max-w-full p-4 bg-[#0B1528] text-white rounded-2xl shadow-2xl border-2 border-slate-700 space-y-3">
+              <div className="flex items-center justify-between pb-1 border-b border-slate-800">
+                <span className="font-extrabold text-xs text-purple-400 uppercase tracking-wider">Dictionary Lookup</span>
+                <button type="button" onClick={() => setActiveFlyout(null)} className="text-slate-400 hover:text-white text-xs cursor-pointer">✕</button>
+              </div>
+
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={dictWord}
+                  onChange={(e) => setDictWord(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleLookup()}
+                  placeholder="Enter or select word..."
+                  className="flex-1 px-3 py-1.5 text-xs bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-purple-400"
+                />
+                <button
+                  type="button"
+                  onClick={handleLookup}
+                  className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-lg cursor-pointer"
+                >
+                  Lookup
+                </button>
+              </div>
+
+              {dictLoading && <p className="text-xs text-slate-400 py-2">Looking up definition...</p>}
+
+              {dictDefinition && (
+                <div className="max-h-48 overflow-y-auto space-y-2 text-xs pt-1">
+                  <span className="font-extrabold text-white text-sm block">{dictDefinition.word}</span>
+                  {dictDefinition.meanings?.map((m, i) => (
+                    <div key={i} className="p-2 bg-slate-900 rounded-lg border border-slate-800">
+                      <span className="italic font-bold text-purple-400 block">{m.partOfSpeech}:</span>
+                      <p className="text-slate-300">{m.definitions[0]?.definition}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeFlyout === 'guide' && (
+            <div className="w-80 max-w-full p-4 bg-[#0B1528] text-white rounded-2xl shadow-2xl border-2 border-slate-700 space-y-2">
+              <div className="flex items-center justify-between pb-1 border-b border-slate-800">
+                <span className="font-extrabold text-xs text-rose-400 uppercase tracking-wider">Features Guide</span>
+                <button type="button" onClick={() => setActiveFlyout(null)} className="text-slate-400 hover:text-white text-xs cursor-pointer">✕</button>
+              </div>
+              <div className="max-h-56 overflow-y-auto space-y-2 text-xs text-slate-300">
+                <p><strong>Speech Controls:</strong> Plays page text with natural US female voice and highlights active reading blocks.</p>
+                <p><strong>Focus Audio:</strong> 100% royalty-free ambient harmonic tones & soothing brown noise for ADHD and deep reading focus.</p>
+                <p><strong>Dyslexia Support:</strong> 1-click OpenDyslexic font, Bionic anchor reading, Irlen color overlays & line guide.</p>
+                <p><strong>Ruler & Mask:</strong> Eliminates visual distractions with isolated letterbox aperture.</p>
+                <p><strong>Hotkeys:</strong> Press <kbd className="px-1 bg-slate-800 border rounded">Alt + A</kbd> to toggle ribbon anytime.</p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )}
 

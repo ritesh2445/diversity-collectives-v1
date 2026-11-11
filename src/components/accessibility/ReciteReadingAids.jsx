@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { a11yStore } from '../../accessibility/a11yStore';
-import { applyBionicReading } from '../../accessibility/bionicReader';
+import { applyBionicReading, clearBionicReading } from '../../accessibility/bionicReader';
 
 export default function ReciteReadingAids() {
   const location = useLocation();
@@ -77,25 +77,62 @@ export default function ReciteReadingAids() {
     window.addEventListener('pointermove', handlePointerMove, { passive: true });
     document.addEventListener('selectionchange', handleSelection);
 
-      return () => {
-        window.removeEventListener('pointermove', handlePointerMove);
-        document.removeEventListener('selectionchange', handleSelection);
-        if (rafIdRef.current) {
-          cancelAnimationFrame(rafIdRef.current);
-        }
-      };
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      document.removeEventListener('selectionchange', handleSelection);
+      if (rafIdRef.current) {
+        cancelAnimationFrame(rafIdRef.current);
+      }
+    };
   }, [settings.ruler, settings.screenMask, settings.magnifier, settings.cursorHighlight]);
 
-  // Apply Bionic Anchor Reading when enabled and re-apply after route transitions
+  // Apply Bionic Anchor Reading when enabled and re-apply cleanly on dynamic updates
   useEffect(() => {
-    const run = () => applyBionicReading(Boolean(settings.bionicReading));
-    run();
-    if (!settings.bionicReading) return undefined;
+    if (!settings.bionicReading) {
+      clearBionicReading();
+      return undefined;
+    }
 
-    const timer = setTimeout(run, 350);
+    let debounceTimer = null;
+    let isApplying = false;
+
+    const runApply = () => {
+      if (isApplying) return;
+      isApplying = true;
+      try {
+        applyBionicReading(true);
+      } finally {
+        isApplying = false;
+      }
+    };
+
+    runApply();
+    const delayedTimer = setTimeout(runApply, 320);
+
+    const mainEl = document.querySelector('main');
+    const observer =
+      mainEl && typeof MutationObserver !== 'undefined'
+        ? new MutationObserver((mutations) => {
+            if (isApplying) return;
+            const hasRelevantMutation = mutations.some((m) => {
+              const targetEl = m.target?.nodeType === 1 ? m.target : m.target?.parentElement;
+              return !targetEl?.closest?.('.a11y-bionic-ghost');
+            });
+            if (!hasRelevantMutation) return;
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(runApply, 160);
+          })
+        : null;
+
+    if (observer && mainEl) {
+      observer.observe(mainEl, { childList: true, subtree: true });
+    }
+
     return () => {
-      clearTimeout(timer);
-      applyBionicReading(false);
+      clearTimeout(delayedTimer);
+      clearTimeout(debounceTimer);
+      if (observer) observer.disconnect();
+      clearBionicReading();
     };
   }, [settings.bionicReading, location.pathname]);
 
@@ -159,31 +196,31 @@ export default function ReciteReadingAids() {
       {/* 5. Dyslexia & Visual Stress Comfort Tint Overlays (Irlen Syndrome Relief) */}
       {settings.dyslexiaTint === 'peach' && (
         <div 
-          className="fixed inset-0 pointer-events-none z-[85] bg-[#ffe5b4]/20 mix-blend-multiply transition-opacity duration-300" 
+          className="fixed inset-0 pointer-events-none z-[9000] bg-[#fed7aa]/42 mix-blend-multiply transition-opacity duration-300" 
           aria-hidden="true" 
         />
       )}
       {settings.dyslexiaTint === 'cream' && (
         <div 
-          className="fixed inset-0 pointer-events-none z-[85] bg-[#fffdd0]/25 mix-blend-multiply transition-opacity duration-300" 
+          className="fixed inset-0 pointer-events-none z-[9000] bg-[#fef3c7]/48 mix-blend-multiply transition-opacity duration-300" 
           aria-hidden="true" 
         />
       )}
       {settings.dyslexiaTint === 'mint' && (
         <div 
-          className="fixed inset-0 pointer-events-none z-[85] bg-[#e2f8ee]/25 mix-blend-multiply transition-opacity duration-300" 
+          className="fixed inset-0 pointer-events-none z-[9000] bg-[#bbf7d0]/38 mix-blend-multiply transition-opacity duration-300" 
           aria-hidden="true" 
         />
       )}
       {settings.dyslexiaTint === 'sky' && (
         <div 
-          className="fixed inset-0 pointer-events-none z-[85] bg-[#e0f2fe]/20 mix-blend-multiply transition-opacity duration-300" 
+          className="fixed inset-0 pointer-events-none z-[9000] bg-[#bae6fd]/40 mix-blend-multiply transition-opacity duration-300" 
           aria-hidden="true" 
         />
       )}
       {settings.dyslexiaTint === 'yellow' && (
         <div 
-          className="fixed inset-0 pointer-events-none z-[85] bg-[#fef9c3]/28 mix-blend-multiply transition-opacity duration-300" 
+          className="fixed inset-0 pointer-events-none z-[9000] bg-[#fef08a]/42 mix-blend-multiply transition-opacity duration-300" 
           aria-hidden="true" 
         />
       )}

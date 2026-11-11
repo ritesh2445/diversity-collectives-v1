@@ -52,106 +52,137 @@ html[data-a11y-font-size="200"] { font-size: 32px; }
 /* OpenDyslexic / Dyslexia-Optimized Stack */
 html[data-a11y-font-family="opendyslexic"] body,
 html[data-a11y-font-family="opendyslexic"] main,
-html[data-a11y-font-family="opendyslexic"] p,
-html[data-a11y-font-family="opendyslexic"] li,
-html[data-a11y-font-family="opendyslexic"] h1,
-html[data-a11y-font-family="opendyslexic"] h2,
-html[data-a11y-font-family="opendyslexic"] h3,
-html[data-a11y-font-family="opendyslexic"] h4,
-html[data-a11y-font-family="opendyslexic"] a,
-html[data-a11y-font-family="opendyslexic"] span,
-html[data-a11y-font-family="opendyslexic"] label,
-html[data-a11y-font-family="opendyslexic"] button {
+html[data-a11y-font-family="opendyslexic"] main *:not(svg):not(path):not(.a11y-toolbar-isolated):not(.a11y-toolbar-isolated *),
+html[data-a11y-font-family="opendyslexic"] header#main-header a,
+html[data-a11y-font-family="opendyslexic"] footer *:not(svg):not(path) {
   font-family: 'OpenDyslexic', 'Lexend', 'Comic Sans MS', sans-serif !important;
   letter-spacing: 0.04em !important;
-  word-spacing: 0.1em !important;
+  word-spacing: 0.12em !important;
 }
 
 /* Lexend (Scientifically Designed to Reduce Visual Crowding for Dyslexia) */
 html[data-a11y-font-family="lexend"] body,
 html[data-a11y-font-family="lexend"] main,
-html[data-a11y-font-family="lexend"] p,
-html[data-a11y-font-family="lexend"] li,
-html[data-a11y-font-family="lexend"] h1,
-html[data-a11y-font-family="lexend"] h2,
-html[data-a11y-font-family="lexend"] h3,
-html[data-a11y-font-family="lexend"] a,
-html[data-a11y-font-family="lexend"] span,
-html[data-a11y-font-family="lexend"] label {
+html[data-a11y-font-family="lexend"] main *:not(svg):not(path):not(.a11y-toolbar-isolated):not(.a11y-toolbar-isolated *),
+html[data-a11y-font-family="lexend"] header#main-header a,
+html[data-a11y-font-family="lexend"] footer *:not(svg):not(path) {
   font-family: 'Lexend', 'Atkinson Hyperlegible', sans-serif !important;
 }
 
 /* Dyslexia Sanctuary Mode Global Reading Comfort Rules */
 html[data-a11y-dyslexia-mode="true"] main p,
-html[data-a11y-dyslexia-mode="true"] main li {
+html[data-a11y-dyslexia-mode="true"] main li,
+html[data-a11y-dyslexia-mode="true"] main blockquote {
   text-align: left !important;
   max-width: 68ch;
   margin-bottom: 0.9em;
+  --text-body: #0F172A;
 }
 
-/* Bionic Reading Anchor Bold Fixation */
+/* Bionic Reading Anchor Bold Fixation (High Contrast Stem vs Rest) */
 html[data-a11y-bionic="true"] .a11y-bionic-lead {
-  font-weight: 800 !important;
+  font-weight: 900 !important;
+  opacity: 1 !important;
   color: inherit !important;
+}
+html[data-a11y-bionic="true"] .a11y-bionic-tail {
+  font-weight: 400 !important;
+  opacity: 0.8 !important;
 }
 
 /* Atkinson Hyperlegible Stack */
 html[data-a11y-font-family="atkinson"] body,
-html[data-a11y-font-family="atkinson"] p,
-html[data-a11y-font-family="atkinson"] h1,
-html[data-a11y-font-family="atkinson"] h2,
-html[data-a11y-font-family="atkinson"] h3,
-html[data-a11y-font-family="atkinson"] a,
-html[data-a11y-font-family="atkinson"] span {
+html[data-a11y-font-family="atkinson"] main,
+html[data-a11y-font-family="atkinson"] main *:not(svg):not(path):not(.a11y-toolbar-isolated):not(.a11y-toolbar-isolated *) {
   font-family: 'Atkinson Hyperlegible', 'Trebuchet MS', Verdana, sans-serif !important;
 }
 
 /* Arial */
 html[data-a11y-font-family="arial"] body,
-html[data-a11y-font-family="arial"] p,
-html[data-a11y-font-family="arial"] h1,
-html[data-a11y-font-family="arial"] h2,
-html[data-a11y-font-family="arial"] a {
+html[data-a11y-font-family="arial"] main,
+html[data-a11y-font-family="arial"] main *:not(svg):not(path):not(.a11y-toolbar-isolated):not(.a11y-toolbar-isolated *) {
   font-family: Arial, Helvetica, sans-serif !important;
 }
 
 /* Comic Sans (Proven dyslexic aid with distinct letterforms) */
 html[data-a11y-font-family="comicsans"] body,
-html[data-a11y-font-family="comicsans"] p,
-html[data-a11y-font-family="comicsans"] h1,
-html[data-a11y-font-family="comicsans"] h2,
-html[data-a11y-font-family="comicsans"] a {
+html[data-a11y-font-family="comicsans"] main,
+html[data-a11y-font-family="comicsans"] main *:not(svg):not(path):not(.a11y-toolbar-isolated):not(.a11y-toolbar-isolated *) {
   font-family: 'Comic Sans MS', cursive, sans-serif !important;
 }
 
 /* Verdana (Widely spaced high legibility humanist grotesque) */
 html[data-a11y-font-family="verdana"] body,
-html[data-a11y-font-family="verdana"] p,
-html[data-a11y-font-family="verdana"] h1,
-html[data-a11y-font-family="verdana"] h2,
-html[data-a11y-font-family="verdana"] a {
+html[data-a11y-font-family="verdana"] main,
+html[data-a11y-font-family="verdana"] main *:not(svg):not(path):not(.a11y-toolbar-isolated):not(.a11y-toolbar-isolated *) {
   font-family: Verdana, Geneva, Tahoma, sans-serif !important;
 }
 
 /* --------------------------------------------------------------------------
    3. Spacing & Text Alignment
    -------------------------------------------------------------------------- */
-html[data-a11y-line-height="1.5"] body, html[data-a11y-line-height="1.5"] p { line-height: 1.5 !important; }
-html[data-a11y-line-height="1.8"] body, html[data-a11y-line-height="1.8"] p { line-height: 1.8 !important; }
-html[data-a11y-line-height="2.0"] body, html[data-a11y-line-height="2.0"] p { line-height: 2.0 !important; }
+html[data-a11y-line-height="1.5"] body,
+html[data-a11y-line-height="1.5"] main p,
+html[data-a11y-line-height="1.5"] main li,
+html[data-a11y-line-height="1.5"] main blockquote,
+html[data-a11y-line-height="1.5"] main span:not(.a11y-bionic-lead):not(.a11y-bionic-tail) { line-height: 1.5 !important; }
 
-html[data-a11y-letter-spacing="0.12em"] body, html[data-a11y-letter-spacing="0.12em"] p { letter-spacing: 0.12em !important; }
-html[data-a11y-letter-spacing="0.16em"] body, html[data-a11y-letter-spacing="0.16em"] p { letter-spacing: 0.16em !important; }
-html[data-a11y-letter-spacing="0.2em"] body, html[data-a11y-letter-spacing="0.2em"] p { letter-spacing: 0.2em !important; }
+html[data-a11y-line-height="1.8"] body,
+html[data-a11y-line-height="1.8"] main p,
+html[data-a11y-line-height="1.8"] main li,
+html[data-a11y-line-height="1.8"] main blockquote,
+html[data-a11y-line-height="1.8"] main span:not(.a11y-bionic-lead):not(.a11y-bionic-tail) { line-height: 1.8 !important; }
 
-html[data-a11y-word-spacing="0.16em"] body, html[data-a11y-word-spacing="0.16em"] p { word-spacing: 0.16em !important; }
-html[data-a11y-word-spacing="0.24em"] body, html[data-a11y-word-spacing="0.24em"] p { word-spacing: 0.24em !important; }
-html[data-a11y-word-spacing="0.32em"] body, html[data-a11y-word-spacing="0.32em"] p { word-spacing: 0.32em !important; }
+html[data-a11y-line-height="2.0"] body,
+html[data-a11y-line-height="2.0"] main p,
+html[data-a11y-line-height="2.0"] main li,
+html[data-a11y-line-height="2.0"] main blockquote,
+html[data-a11y-line-height="2.0"] main span:not(.a11y-bionic-lead):not(.a11y-bionic-tail) { line-height: 2.0 !important; }
 
-html[data-a11y-text-align="left"] body, html[data-a11y-text-align="left"] p { text-align: left !important; }
-html[data-a11y-text-align="center"] body, html[data-a11y-text-align="center"] p { text-align: center !important; }
-html[data-a11y-text-align="right"] body, html[data-a11y-text-align="right"] p { text-align: right !important; }
-html[data-a11y-text-align="justify"] body, html[data-a11y-text-align="justify"] p { text-align: justify !important; }
+html[data-a11y-letter-spacing="0.12em"] body,
+html[data-a11y-letter-spacing="0.12em"] main p,
+html[data-a11y-letter-spacing="0.12em"] main li,
+html[data-a11y-letter-spacing="0.12em"] main blockquote,
+html[data-a11y-letter-spacing="0.12em"] main h1,
+html[data-a11y-letter-spacing="0.12em"] main h2,
+html[data-a11y-letter-spacing="0.12em"] main h3 { letter-spacing: 0.12em !important; }
+
+html[data-a11y-letter-spacing="0.16em"] body,
+html[data-a11y-letter-spacing="0.16em"] main p,
+html[data-a11y-letter-spacing="0.16em"] main li,
+html[data-a11y-letter-spacing="0.16em"] main blockquote,
+html[data-a11y-letter-spacing="0.16em"] main h1,
+html[data-a11y-letter-spacing="0.16em"] main h2,
+html[data-a11y-letter-spacing="0.16em"] main h3 { letter-spacing: 0.16em !important; }
+
+html[data-a11y-letter-spacing="0.2em"] body,
+html[data-a11y-letter-spacing="0.2em"] main p,
+html[data-a11y-letter-spacing="0.2em"] main li,
+html[data-a11y-letter-spacing="0.2em"] main blockquote,
+html[data-a11y-letter-spacing="0.2em"] main h1,
+html[data-a11y-letter-spacing="0.2em"] main h2,
+html[data-a11y-letter-spacing="0.2em"] main h3 { letter-spacing: 0.2em !important; }
+
+html[data-a11y-word-spacing="0.16em"] body,
+html[data-a11y-word-spacing="0.16em"] main p,
+html[data-a11y-word-spacing="0.16em"] main li { word-spacing: 0.16em !important; }
+
+html[data-a11y-word-spacing="0.24em"] body,
+html[data-a11y-word-spacing="0.24em"] main p,
+html[data-a11y-word-spacing="0.24em"] main li { word-spacing: 0.24em !important; }
+
+html[data-a11y-word-spacing="0.32em"] body,
+html[data-a11y-word-spacing="0.32em"] main p,
+html[data-a11y-word-spacing="0.32em"] main li { word-spacing: 0.32em !important; }
+
+html[data-a11y-text-align="left"] main p,
+html[data-a11y-text-align="left"] main li { text-align: left !important; }
+html[data-a11y-text-align="center"] main p,
+html[data-a11y-text-align="center"] main li { text-align: center !important; }
+html[data-a11y-text-align="right"] main p,
+html[data-a11y-text-align="right"] main li { text-align: right !important; }
+html[data-a11y-text-align="justify"] main p,
+html[data-a11y-text-align="justify"] main li { text-align: justify !important; }
 
 /* --------------------------------------------------------------------------
    4. Recite Me Color Wheels & Themes (Colour Theme Button)
@@ -161,6 +192,11 @@ html[data-a11y-text-align="justify"] body, html[data-a11y-text-align="justify"] 
 html[data-a11y-theme="yellow-on-black"] body,
 html[data-a11y-theme="yellow-on-black"] #root,
 html[data-a11y-theme="yellow-on-black"] main,
+html[data-a11y-theme="yellow-on-black"] main section,
+html[data-a11y-theme="yellow-on-black"] main article,
+html[data-a11y-theme="yellow-on-black"] main aside,
+html[data-a11y-theme="yellow-on-black"] main div[class*="bg-[#"],
+html[data-a11y-theme="yellow-on-black"] footer,
 html[data-a11y-theme="yellow-on-black"] .bg-white,
 html[data-a11y-theme="yellow-on-black"] .bg-slate-50,
 html[data-a11y-theme="yellow-on-black"] .bg-purple-50 {
@@ -169,14 +205,19 @@ html[data-a11y-theme="yellow-on-black"] .bg-purple-50 {
   color: #FFFF00 !important;
   border-color: #FFFF00 !important;
 }
-html[data-a11y-theme="yellow-on-black"] h1,
-html[data-a11y-theme="yellow-on-black"] h2,
-html[data-a11y-theme="yellow-on-black"] h3,
-html[data-a11y-theme="yellow-on-black"] p,
-html[data-a11y-theme="yellow-on-black"] span {
+html[data-a11y-theme="yellow-on-black"] main h1,
+html[data-a11y-theme="yellow-on-black"] main h2,
+html[data-a11y-theme="yellow-on-black"] main h3,
+html[data-a11y-theme="yellow-on-black"] main h4,
+html[data-a11y-theme="yellow-on-black"] main p,
+html[data-a11y-theme="yellow-on-black"] main li,
+html[data-a11y-theme="yellow-on-black"] main span,
+html[data-a11y-theme="yellow-on-black"] footer p,
+html[data-a11y-theme="yellow-on-black"] footer span {
   color: #FFFF00 !important;
 }
-html[data-a11y-theme="yellow-on-black"] a {
+html[data-a11y-theme="yellow-on-black"] main a,
+html[data-a11y-theme="yellow-on-black"] footer a {
   color: #00FFFF !important;
   text-decoration: underline !important;
 }
@@ -185,6 +226,11 @@ html[data-a11y-theme="yellow-on-black"] a {
 html[data-a11y-theme="black-on-yellow"] body,
 html[data-a11y-theme="black-on-yellow"] #root,
 html[data-a11y-theme="black-on-yellow"] main,
+html[data-a11y-theme="black-on-yellow"] main section,
+html[data-a11y-theme="black-on-yellow"] main article,
+html[data-a11y-theme="black-on-yellow"] main aside,
+html[data-a11y-theme="black-on-yellow"] main div[class*="bg-[#"],
+html[data-a11y-theme="black-on-yellow"] footer,
 html[data-a11y-theme="black-on-yellow"] .bg-white,
 html[data-a11y-theme="black-on-yellow"] .bg-slate-50,
 html[data-a11y-theme="black-on-yellow"] .bg-purple-50 {
@@ -193,14 +239,19 @@ html[data-a11y-theme="black-on-yellow"] .bg-purple-50 {
   color: #000000 !important;
   border-color: #000000 !important;
 }
-html[data-a11y-theme="black-on-yellow"] h1,
-html[data-a11y-theme="black-on-yellow"] h2,
-html[data-a11y-theme="black-on-yellow"] h3,
-html[data-a11y-theme="black-on-yellow"] p,
-html[data-a11y-theme="black-on-yellow"] span {
+html[data-a11y-theme="black-on-yellow"] main h1,
+html[data-a11y-theme="black-on-yellow"] main h2,
+html[data-a11y-theme="black-on-yellow"] main h3,
+html[data-a11y-theme="black-on-yellow"] main h4,
+html[data-a11y-theme="black-on-yellow"] main p,
+html[data-a11y-theme="black-on-yellow"] main li,
+html[data-a11y-theme="black-on-yellow"] main span,
+html[data-a11y-theme="black-on-yellow"] footer p,
+html[data-a11y-theme="black-on-yellow"] footer span {
   color: #000000 !important;
 }
-html[data-a11y-theme="black-on-yellow"] a {
+html[data-a11y-theme="black-on-yellow"] main a,
+html[data-a11y-theme="black-on-yellow"] footer a {
   color: #0000EE !important;
   text-decoration: underline !important;
 }
@@ -209,6 +260,11 @@ html[data-a11y-theme="black-on-yellow"] a {
 html[data-a11y-theme="white-on-blue"] body,
 html[data-a11y-theme="white-on-blue"] #root,
 html[data-a11y-theme="white-on-blue"] main,
+html[data-a11y-theme="white-on-blue"] main section,
+html[data-a11y-theme="white-on-blue"] main article,
+html[data-a11y-theme="white-on-blue"] main aside,
+html[data-a11y-theme="white-on-blue"] main div[class*="bg-[#"],
+html[data-a11y-theme="white-on-blue"] footer,
 html[data-a11y-theme="white-on-blue"] .bg-white,
 html[data-a11y-theme="white-on-blue"] .bg-slate-50,
 html[data-a11y-theme="white-on-blue"] .bg-purple-50 {
@@ -217,14 +273,19 @@ html[data-a11y-theme="white-on-blue"] .bg-purple-50 {
   color: #FFFFFF !important;
   border-color: #38BDF8 !important;
 }
-html[data-a11y-theme="white-on-blue"] h1,
-html[data-a11y-theme="white-on-blue"] h2,
-html[data-a11y-theme="white-on-blue"] h3,
-html[data-a11y-theme="white-on-blue"] p,
-html[data-a11y-theme="white-on-blue"] span {
+html[data-a11y-theme="white-on-blue"] main h1,
+html[data-a11y-theme="white-on-blue"] main h2,
+html[data-a11y-theme="white-on-blue"] main h3,
+html[data-a11y-theme="white-on-blue"] main h4,
+html[data-a11y-theme="white-on-blue"] main p,
+html[data-a11y-theme="white-on-blue"] main li,
+html[data-a11y-theme="white-on-blue"] main span,
+html[data-a11y-theme="white-on-blue"] footer p,
+html[data-a11y-theme="white-on-blue"] footer span {
   color: #FFFFFF !important;
 }
-html[data-a11y-theme="white-on-blue"] a {
+html[data-a11y-theme="white-on-blue"] main a,
+html[data-a11y-theme="white-on-blue"] footer a {
   color: #FDE047 !important;
   text-decoration: underline !important;
 }
@@ -233,15 +294,27 @@ html[data-a11y-theme="white-on-blue"] a {
 html[data-a11y-theme="black-on-peach"] body,
 html[data-a11y-theme="black-on-peach"] #root,
 html[data-a11y-theme="black-on-peach"] main,
+html[data-a11y-theme="black-on-peach"] main section,
+html[data-a11y-theme="black-on-peach"] main article,
+html[data-a11y-theme="black-on-peach"] main aside,
+html[data-a11y-theme="black-on-peach"] main div[class*="bg-[#"],
+html[data-a11y-theme="black-on-peach"] footer,
 html[data-a11y-theme="black-on-peach"] .bg-white,
-html[data-a11y-theme="black-on-peach"] .bg-slate-50 {
+html[data-a11y-theme="black-on-peach"] .bg-slate-50,
+html[data-a11y-theme="black-on-peach"] .bg-purple-50 {
   background-color: #FDE8E1 !important;
   background-image: none !important;
   color: #111827 !important;
 }
-html[data-a11y-theme="black-on-peach"] h1,
-html[data-a11y-theme="black-on-peach"] h2,
-html[data-a11y-theme="black-on-peach"] p {
+html[data-a11y-theme="black-on-peach"] main h1,
+html[data-a11y-theme="black-on-peach"] main h2,
+html[data-a11y-theme="black-on-peach"] main h3,
+html[data-a11y-theme="black-on-peach"] main h4,
+html[data-a11y-theme="black-on-peach"] main p,
+html[data-a11y-theme="black-on-peach"] main li,
+html[data-a11y-theme="black-on-peach"] main span,
+html[data-a11y-theme="black-on-peach"] footer p,
+html[data-a11y-theme="black-on-peach"] footer span {
   color: #111827 !important;
 }
 
@@ -263,30 +336,49 @@ html[data-a11y-theme="monochrome"] #root {
 html[data-a11y-theme="custom"] body,
 html[data-a11y-theme="custom"] #root,
 html[data-a11y-theme="custom"] main,
+html[data-a11y-theme="custom"] main section,
+html[data-a11y-theme="custom"] main article,
+html[data-a11y-theme="custom"] main aside,
+html[data-a11y-theme="custom"] main div[class*="bg-[#"],
+html[data-a11y-theme="custom"] footer,
 html[data-a11y-theme="custom"] .bg-white,
-html[data-a11y-theme="custom"] p,
-html[data-a11y-theme="custom"] h1,
-html[data-a11y-theme="custom"] h2,
-html[data-a11y-theme="custom"] h3,
-html[data-a11y-theme="custom"] span {
+html[data-a11y-theme="custom"] .bg-slate-50,
+html[data-a11y-theme="custom"] .bg-purple-50 {
   background-color: var(--recite-custom-bg) !important;
   color: var(--recite-custom-text) !important;
   background-image: none !important;
 }
-html[data-a11y-theme="custom"] a {
+html[data-a11y-theme="custom"] main h1,
+html[data-a11y-theme="custom"] main h2,
+html[data-a11y-theme="custom"] main h3,
+html[data-a11y-theme="custom"] main h4,
+html[data-a11y-theme="custom"] main p,
+html[data-a11y-theme="custom"] main li,
+html[data-a11y-theme="custom"] main span,
+html[data-a11y-theme="custom"] footer p,
+html[data-a11y-theme="custom"] footer span {
+  color: var(--recite-custom-text) !important;
+}
+html[data-a11y-theme="custom"] main a,
+html[data-a11y-theme="custom"] footer a {
   color: var(--recite-custom-link) !important;
+  text-decoration: underline !important;
 }
 
 /* --------------------------------------------------------------------------
-   5. Recite Me Plain Text Mode (Strips graphics & styling)
+   5. Recite Me Plain Text Mode (Strips graphics & styling inside main only)
    -------------------------------------------------------------------------- */
-html[data-a11y-plain-text="true"] img,
-html[data-a11y-plain-text="true"] svg:not(.recite-ui-icon),
-html[data-a11y-plain-text="true"] video,
-html[data-a11y-plain-text="true"] [class*="gradient"],
-html[data-a11y-plain-text="true"] [class*="aura-orb"],
-html[data-a11y-plain-text="true"] [class*="blur-"] {
+html[data-a11y-plain-text="true"] main img,
+html[data-a11y-plain-text="true"] main svg:not(.recite-ui-icon),
+html[data-a11y-plain-text="true"] main video,
+html[data-a11y-plain-text="true"] main [class*="aura-orb"],
+html[data-a11y-plain-text="true"] main [class*="blur-"] {
   display: none !important;
+}
+html[data-a11y-plain-text="true"] main [class*="gradient"] {
+  background-image: none !important;
+  -webkit-text-fill-color: currentColor !important;
+  color: #111827 !important;
 }
 html[data-a11y-plain-text="true"] body {
   background: #FFFFFF !important;

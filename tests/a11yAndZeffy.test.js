@@ -6,6 +6,7 @@ import {
   a11yStore
 } from '../src/accessibility/a11yStore.js';
 import { focusAudio } from '../src/accessibility/focusAudio.js';
+import { applyBionicReading, clearBionicReading } from '../src/accessibility/bionicReader.js';
 import { searchSiteWithSuggestions } from '../src/utils/smartSiteSearch.js';
 import { executeClientChat } from '../src/services/localKnowledgeEngine.js';
 import { processChatRequest } from '../worker/src/chatEngine.js';
@@ -44,17 +45,26 @@ describe('Dyslexia Accessibility & Focus Audio Engine', () => {
     const toggledOff = a11yStore.getState();
     assert.strictEqual(toggledOff.dyslexiaMode, false);
     assert.strictEqual(toggledOff.fontFamily, 'default');
+    assert.strictEqual(toggledOff.textAlign, 'normal');
 
     a11yStore.toggleBionicReading();
     assert.strictEqual(a11yStore.getState().bionicReading, true);
     a11yStore.resetAll();
   });
 
-  it('gracefully handles focusAudio play/stop calls when Web Audio API is unavailable (SSR / Node)', async () => {
-    const played = await focusAudio.playFocusTrack('rain');
-    assert.strictEqual(played, false);
+  it('gracefully handles focusAudio & bionicReader APIs safely when DOM / Web Audio are unavailable (SSR / Node)', async () => {
+    focusAudio.init();
+    focusAudio.setVolume(0.75);
+    assert.strictEqual(focusAudio.volume, 0.75);
+    for (const trackId of ['rain', 'brown-noise', 'ocean', 'chimes', 'silence']) {
+      const played = await focusAudio.playFocusTrack(trackId);
+      assert.strictEqual(played, false);
+    }
     focusAudio.stop();
     assert.strictEqual(focusAudio.activeTrack, null);
+
+    assert.doesNotThrow(() => applyBionicReading(null));
+    assert.doesNotThrow(() => clearBionicReading(null));
   });
 });
 

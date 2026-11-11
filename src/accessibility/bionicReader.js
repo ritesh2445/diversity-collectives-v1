@@ -2,11 +2,15 @@
 // DIVERSITY COLLECTIVE VENTURA COUNTY — BIONIC / SYLLABLE ANCHOR READER
 // Bolds the initial fixation stem of words inside <main> to help dyslexic
 // and neurodivergent readers track word boundaries effortlessly.
-// Safely restores original DOM Text nodes when disabled.
+// Safely preserves React's original DOM Text nodes to prevent reconciliation errors.
 // ==========================================================================
 
-const BIONIC_WRAPPER_CLASS = 'a11y-bionic-word';
+const BIONIC_GHOST_CLASS = 'a11y-bionic-ghost';
+const BIONIC_WORD_CLASS = 'a11y-bionic-word';
 const BIONIC_LEAD_CLASS = 'a11y-bionic-lead';
+const BIONIC_TAIL_CLASS = 'a11y-bionic-tail';
+
+const ORIGINAL_TEXT_MAP = new WeakMap();
 
 const SKIP_TAGS = new Set([
   'SCRIPT',
@@ -34,22 +38,25 @@ function getFixationLength(word) {
 
 export function clearBionicReading(root = typeof document !== 'undefined' ? document.querySelector('main') : null) {
   if (!root || typeof document === 'undefined') return;
-  const wrapped = root.querySelectorAll(`.${BIONIC_WRAPPER_CLASS}`);
-  wrapped.forEach((span) => {
-    const parent = span.parentNode;
-    if (!parent) return;
-    const textNode = document.createTextNode(span.textContent || '');
-    parent.replaceChild(textNode, span);
+
+  const ghosts = root.querySelectorAll(`.${BIONIC_GHOST_CLASS}`);
+  ghosts.forEach((ghost) => {
+    const prev = ghost.previousSibling;
+    if (prev && prev.nodeType === 3 && ORIGINAL_TEXT_MAP.has(prev)) {
+      prev.nodeValue = ORIGINAL_TEXT_MAP.get(prev);
+      ORIGINAL_TEXT_MAP.delete(prev);
+    }
+    ghost.remove();
   });
-  root.normalize();
 }
 
 export function applyBionicReading(enabled, root = typeof document !== 'undefined' ? document.querySelector('main') : null) {
   if (!root || typeof document === 'undefined') return;
 
-  // Always clean prior transforms first so re-runs stay idempotent
-  clearBionicReading(root);
-  if (!enabled) return;
+  if (!enabled) {
+    clearBionicReading(root);
+    return;
+  }
 
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
@@ -57,7 +64,11 @@ export function applyBionicReading(enabled, root = typeof document !== 'undefine
       const parent = node.parentElement;
       if (!parent) return NodeFilter.FILTER_REJECT;
       if (SKIP_TAGS.has(parent.tagName)) return NodeFilter.FILTER_REJECT;
-      if (parent.closest('.a11y-toolbar-isolated, .recite-toolbar-isolated, [aria-hidden="true"]')) {
+      if (
+        parent.closest(
+          `.${BIONIC_GHOST_CLASS}, .a11y-toolbar-isolated, .recite-toolbar-isolated, [aria-hidden="true"]`
+        )
+      ) {
         return NodeFilter.FILTER_REJECT;
       }
       return NodeFilter.FILTER_ACCEPT;
@@ -76,27 +87,40 @@ export function applyBionicReading(enabled, root = typeof document !== 'undefine
     const tokens = value.split(/([A-Za-zÀ-ÿ]+)/);
     if (tokens.length <= 1) return;
 
-    const fragment = document.createDocumentFragment();
+    let hasWord = false;
+    const ghost = document.createElement('span');
+    ghost.className = BIONIC_GHOST_CLASS;
+
     tokens.forEach((part) => {
       if (!part) return;
       if (/^[A-Za-zÀ-ÿ]+$/.test(part) && part.length >= 2) {
+        hasWord = true;
         const splitAt = getFixationLength(part);
         const wrapper = document.createElement('span');
-        wrapper.className = BIONIC_WRAPPER_CLASS;
+        wrapper.className = BIONIC_WORD_CLASS;
 
         const lead = document.createElement('strong');
         lead.className = BIONIC_LEAD_CLASS;
         lead.textContent = part.slice(0, splitAt);
 
+        const tail = document.createElement('span');
+        tail.className = BIONIC_TAIL_CLASS;
+        tail.textContent = part.slice(splitAt);
+
         wrapper.appendChild(lead);
-        wrapper.appendChild(document.createTextNode(part.slice(splitAt)));
-        fragment.appendChild(wrapper);
+        wrapper.appendChild(tail);
+        ghost.appendChild(wrapper);
       } else {
-        fragment.appendChild(document.createTextNode(part));
+        ghost.appendChild(document.createTextNode(part));
       }
     });
 
-    node.parentNode?.replaceChild(fragment, node);
+    if (!hasWord || !node.parentNode) return;
+
+    // Keep the exact original React Text node attached inside parentNode (just empty)
+    // so React state updates / unmounts can still remove or update it cleanly without NotFoundError.
+    ORIGINAL_TEXT_MAP.set(node, value);
+    node.nodeValue = '';
+    node.parentNode.insertBefore(ghost, node.nextSibling);
   });
 }
-
