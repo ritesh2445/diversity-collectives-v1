@@ -1,10 +1,19 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, Heart, MapPin, Phone, Mail, ShieldCheck } from 'lucide-react';
 import LanguageSelector from './LanguageSelector';
 import { orgInfo, sponsorsList } from '../data/dcvcData';
+import { cmsStore } from '../services/cmsStore';
 
 export default function Footer() {
+  const [sponsors, setSponsors] = useState(() => cmsStore.getSponsors?.() || sponsorsList);
+
+  useEffect(() => {
+    return cmsStore.subscribe(() => {
+      const next = cmsStore.getSponsors?.();
+      if (Array.isArray(next) && next.length > 0) setSponsors(next);
+    });
+  }, []);
   return (
     <>
       <div className="h-1 pride-rainbow-bar w-full" aria-hidden="true" />
@@ -43,7 +52,7 @@ export default function Footer() {
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4 w-full">
-            {sponsorsList.map((sponsor) => (
+            {sponsors.map((sponsor) => (
               <a
                 key={sponsor.shortName}
                 href={sponsor.url}

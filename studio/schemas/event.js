@@ -21,9 +21,28 @@ export default {
     {
       name: 'date',
       title: 'Date Text',
-      description: 'Clear date string (e.g. Saturday, August 15, 2026).',
+      description: 'Clear date string (e.g. Saturday, August 15, 2026 or OCT 05, 2026).',
       type: 'string',
       validation: (Rule) => Rule.required()
+    },
+    {
+      name: 'month',
+      title: 'Month Badge (3 Letters)',
+      description: 'Short month badge for cards (e.g. OCT, NOV).',
+      type: 'string'
+    },
+    {
+      name: 'day',
+      title: 'Day Number (2 Digits)',
+      description: 'Day number for calendar cards (e.g. 05, 19).',
+      type: 'string'
+    },
+    {
+      name: 'year',
+      title: 'Year',
+      description: '4-digit year (e.g. 2026).',
+      type: 'string',
+      initialValue: '2026'
     },
     {
       name: 'time',
@@ -33,10 +52,16 @@ export default {
     },
     {
       name: 'location',
-      title: 'Location & Address',
-      description: 'Park, venue name, or street address.',
+      title: 'Venue Name',
+      description: 'Park or venue name.',
       type: 'string',
       validation: (Rule) => Rule.required()
+    },
+    {
+      name: 'address',
+      title: 'Street Address',
+      description: 'Full street address for maps.',
+      type: 'string'
     },
     {
       name: 'category',
@@ -105,6 +130,19 @@ export default {
       name: 'capacity',
       title: 'Attendee Limit',
       description: 'Maximum number of participants (leave blank if unlimited).',
+      type: 'number'
+    },
+    {
+      name: 'featured',
+      title: 'Feature on Homepage?',
+      description: 'Highlight this event in featured sections.',
+      type: 'boolean',
+      initialValue: false
+    },
+    {
+      name: 'order',
+      title: 'Display Order',
+      description: 'Lower numbers appear first.',
       type: 'number'
     }
   ],

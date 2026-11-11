@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   ArrowRight, 
@@ -9,9 +9,19 @@ import {
   Eye
 } from 'lucide-react';
 import { orgInfo, boardMembers, sponsorsList } from '../data/dcvcData';
+import { cmsStore } from '../services/cmsStore';
 import CardSpotlight from '../components/CardSpotlight';
 
 export default function About() {
+  const [board, setBoard] = useState(() => cmsStore.getBoardMembers?.() || boardMembers);
+  const [sponsors, setSponsors] = useState(() => cmsStore.getSponsors?.() || sponsorsList);
+
+  useEffect(() => {
+    return cmsStore.subscribe(() => {
+      setBoard(cmsStore.getBoardMembers?.() || boardMembers);
+      setSponsors(cmsStore.getSponsors?.() || sponsorsList);
+    });
+  }, []);
   return (
     <div className="pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
       
@@ -144,7 +154,7 @@ export default function About() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 perspective-1000">
-          {boardMembers.map((member) => (
+          {board.map((member) => (
             <CardSpotlight 
               key={member.name}
               className="glass-card p-7 rounded-2xl border-2 border-slate-200/80 hover:border-purple-300 interactive-card-3d flex flex-col justify-between"
@@ -206,7 +216,7 @@ export default function About() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto perspective-1000">
-            {sponsorsList.map((sponsor) => (
+            {sponsors.map((sponsor) => (
               <a
                 key={sponsor.shortName}
                 href={sponsor.url}

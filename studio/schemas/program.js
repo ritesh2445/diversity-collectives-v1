@@ -65,9 +65,22 @@ export default {
     {
       name: 'heroImage',
       title: 'Cover Photo',
-      description: 'Main high-resolution photo displayed at the top of the program page.',
+      description: 'Main high-resolution photo displayed at the top of the program page (served via Sanity CDN).',
       type: 'image',
       options: { hotspot: true }
+    },
+    {
+      name: 'imageFit',
+      title: 'Image Framing',
+      description: 'Use Contain for square logos so edges never crop.',
+      type: 'string',
+      options: {
+        list: [
+          { title: 'Cover (Fill Frame)', value: 'cover' },
+          { title: 'Contain (Preserve Full Logo/Graphic)', value: 'contain' }
+        ]
+      },
+      initialValue: 'cover'
     },
     {
       name: 'accentColor',

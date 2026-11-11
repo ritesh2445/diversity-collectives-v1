@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Sparkles, 
@@ -12,6 +12,7 @@ import {
   Building
 } from 'lucide-react';
 import { trainingCourses } from '../data/dcvcData';
+import { cmsStore } from '../services/cmsStore';
 import CardSpotlight from '../components/CardSpotlight';
 import { usePageMeta } from '../utils/seo';
 
@@ -21,6 +22,15 @@ export default function Training() {
     description: 'Ventura County cultural competency and LGBTQ+ equity workshops for educators, healthcare staff, corporate teams, and youth advocates.',
     canonicalPath: '/training'
   });
+
+  const [courses, setCourses] = useState(() => cmsStore.getTrainings?.() || trainingCourses);
+
+  useEffect(() => {
+    return cmsStore.subscribe(() => {
+      const next = cmsStore.getTrainings?.();
+      if (Array.isArray(next) && next.length > 0) setCourses(next);
+    });
+  }, []);
 
   return (
     <div className="pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
@@ -80,7 +90,7 @@ export default function Training() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {trainingCourses.map((course) => (
+          {courses.map((course) => (
             <CardSpotlight
               key={course.slug}
               className="p-8 rounded-3xl bg-white border-2 border-slate-200 hover:border-purple-300 shadow-md flex flex-col justify-between gap-6"

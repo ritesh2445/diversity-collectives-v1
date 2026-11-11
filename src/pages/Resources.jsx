@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Phone, 
@@ -13,15 +13,25 @@ import {
   PlusCircle 
 } from 'lucide-react';
 import { resourcesDirectory, orgInfo } from '../data/dcvcData';
+import { cmsStore } from '../services/cmsStore';
 import CardSpotlight from '../components/CardSpotlight';
 
 export default function Resources() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [dirGroups, setDirGroups] = useState(() => cmsStore.getResources() || resourcesDirectory);
 
-  const categories = ['All', 'Crisis & Immediate Helplines', 'Health & Sexual Wellness', 'Youth & Family Support', 'Senior & Community Resources'];
+  useEffect(() => {
+    return cmsStore.subscribe((data) => {
+      if (Array.isArray(data?.resources) && data.resources.length > 0 && data.resources[0]?.items) {
+        setDirGroups(data.resources);
+      }
+    });
+  }, []);
 
-  const filteredCategories = resourcesDirectory.map(cat => {
+  const categories = ['All', ...dirGroups.map((g) => g.category)];
+
+  const filteredCategories = dirGroups.map(cat => {
     let items = cat.items;
     
     if (selectedCategory !== 'All' && cat.category !== selectedCategory) {

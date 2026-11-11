@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, ArrowRight, Heart, Award, ShieldCheck, Mail } from 'lucide-react';
 import { sponsorsList, orgInfo } from '../data/dcvcData';
+import { cmsStore } from '../services/cmsStore';
 import { usePageMeta } from '../utils/seo';
 
 export default function Sponsors() {
@@ -11,16 +12,24 @@ export default function Sponsors() {
     canonicalPath: '/sponsors'
   });
 
+  const [sponsors, setSponsors] = useState(() => cmsStore.getSponsors?.() || sponsorsList);
+
+  useEffect(() => {
+    return cmsStore.subscribe(() => {
+      setSponsors(cmsStore.getSponsors?.() || sponsorsList);
+    });
+  }, []);
+
   const sponsorshipTiers = [
     {
       tier: "Foundational Community Health Partners",
       desc: "Providing sustained, multi-year operating support and clinical integration for Diversity SHINES and Community Resource Center wellness.",
-      sponsors: [sponsorsList[0], sponsorsList[1]]
+      sponsors: sponsors.slice(0, 2)
     },
     {
       tier: "Technology & Digital Accessibility Champions",
       desc: "Empowering our digital platforms, communications reach, and universal accessibility compliance.",
-      sponsors: [sponsorsList[2]]
+      sponsors: sponsors.slice(2)
     }
   ];
 

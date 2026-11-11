@@ -30,6 +30,7 @@ import {
   liveEvents,
   businessDirectorySeed 
 } from '../data/dcvcData';
+import { cmsStore } from '../services/cmsStore';
 import AnimatedCounter from '../components/AnimatedCounter';
 import CardSpotlight from '../components/CardSpotlight';
 import NewsletterSignup from '../components/NewsletterSignup';
@@ -178,7 +179,19 @@ export default function Home() {
   const [heroService, setHeroService] = useState('testing');
   const [selectedEventCategory, setSelectedEventCategory] = useState('all');
   const [expandedProgram, setExpandedProgram] = useState(null);
+  const [cmsPrograms, setCmsPrograms] = useState(() => cmsStore.getPrograms() || programsList);
+  const [cmsEvents, setCmsEvents] = useState(() => cmsStore.getEvents() || liveEvents);
+  const [cmsSettings, setCmsSettings] = useState(() => cmsStore.getSettings() || orgInfo);
   const [activeThemeId, setActiveThemeId] = useState(getActiveHeroTheme);
+
+  useEffect(() => {
+    const unsubscribe = cmsStore.subscribe((data) => {
+      if (data?.programs) setCmsPrograms(data.programs);
+      if (data?.events) setCmsEvents(data.events);
+      if (data?.settings) setCmsSettings(data.settings);
+    });
+    return unsubscribe;
+  }, []);
   const [customLayoutBlocks, setCustomLayoutBlocks] = useState(() => {
     if (typeof window === 'undefined') return null;
     try {
@@ -359,7 +372,7 @@ export default function Home() {
     { id: 'center', label: 'Drop-In Center' }
   ];
 
-  const filteredPrograms = programsList.filter(program => {
+  const filteredPrograms = (cmsPrograms || programsList).filter(program => {
     if (selectedCategory === 'all') return true;
     if (selectedCategory === 'youth') return program.slug === 'rainbow-umbrella';
     if (selectedCategory === 'kids') return program.slug === 'little-unicorns';
@@ -375,11 +388,12 @@ export default function Home() {
     { id: 'culture', label: 'Social & Cultural' }
   ];
 
-  const filteredEvents = liveEvents.filter(evt => {
+  const filteredEvents = (cmsEvents || liveEvents).filter(evt => {
     if (selectedEventCategory === 'all') return true;
-    if (selectedEventCategory === 'youth') return evt.category.toLowerCase().includes('youth') || evt.category.toLowerCase().includes('umbrella');
-    if (selectedEventCategory === 'health') return evt.category.toLowerCase().includes('health') || evt.category.toLowerCase().includes('wellness');
-    if (selectedEventCategory === 'culture') return evt.category.toLowerCase().includes('cultural') || evt.category.toLowerCase().includes('social') || evt.category.toLowerCase().includes('pride');
+    const cat = (evt.category || '').toLowerCase();
+    if (selectedEventCategory === 'youth') return cat.includes('youth') || cat.includes('umbrella');
+    if (selectedEventCategory === 'health') return cat.includes('health') || cat.includes('wellness');
+    if (selectedEventCategory === 'culture') return cat.includes('cultural') || cat.includes('social') || cat.includes('pride') || cat.includes('culture');
     return true;
   });
 
@@ -737,9 +751,11 @@ export default function Home() {
                 >
                   <div className="relative overflow-hidden aspect-[4/3]">
                     <img 
-                      src={customHeroProps?.photoUrl || "/images/community-gathering.jpg"} 
+                      src={customHeroProps?.spotlightImage || customHeroProps?.photoUrl || "/images/community-gathering.jpg"} 
                       alt="Diversity Collective Ventura County community members gathering"
                       className="w-full h-full object-cover"
+                      fetchPriority="high"
+                      decoding="async"
                       onError={(e) => {
                         e.target.src = "/images/hero-community.jpg";
                       }}
