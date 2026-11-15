@@ -1927,7 +1927,43 @@ main p.font-serif.italic.text-xs:not(:is(footer, .admin-workspace) *) {
    across all supported languages (Spanish, German, Vietnamese, Tagalog, etc.)
    ========================================================================== */
 
-/* 1. All buttons, CTA links, and button pills must be resilient flex containers */
+/* ==========================================================================
+   UNIVERSAL MULTI-LANGUAGE AUTO-SCALING SYSTEM (ALL 25 LANGUAGES)
+   Requirement: Exact component, frame, button, page, and box sizes matching English.
+   When text expands in non-English languages (e.g. Greek, German, Spanish, Arabic),
+   font-size scales down dynamically inside pills, buttons, headers, and cards
+   WITHOUT altering component layout, container boundaries, or breaking lines.
+   ========================================================================== */
+
+/* Universal font normalization for Google Translate injection */
+font {
+  font-family: inherit !important;
+  font-size: inherit !important;
+  font-weight: inherit !important;
+  line-height: inherit !important;
+  letter-spacing: inherit !important;
+  color: inherit !important;
+  background-color: transparent !important;
+  white-space: inherit !important;
+}
+
+/* 1. Header Navigation Bar (Never wrap mid-word or break into multiple vertical lines) */
+.nav-bar-btn {
+  white-space: nowrap !important;
+}
+
+html.translated-ltr .nav-bar-btn,
+html.translated-rtl .nav-bar-btn,
+html:not([lang="en"]) .nav-bar-btn {
+  white-space: nowrap !important;
+  font-size: clamp(0.66rem, 0.78vw, 0.8rem) !important;
+  padding-left: 0.35rem !important;
+  padding-right: 0.35rem !important;
+  letter-spacing: -0.015em !important;
+  line-height: 1 !important;
+}
+
+/* 2. All Action Buttons, CTAs, and Navigation Pills (Preserve exact English component geometry) */
 button,
 a.btn-primary,
 a.btn-secondary,
@@ -1938,39 +1974,13 @@ a.btn-dark,
 .btn-vibrant-coral,
 .btn-dark,
 [class*="btn-"],
-.nav-bar-btn,
 .nav-donate-btn,
 .nav-support-btn,
 [role="button"] {
   box-sizing: border-box;
   max-width: 100%;
-  min-width: 0;
-  overflow-wrap: break-word;
-  word-break: normal;
-  hyphens: auto;
 }
 
-/* 2. All child elements (spans, fonts, text nodes) inside any button */
-button *,
-a.btn-primary *,
-a.btn-secondary *,
-a.btn-vibrant-coral *,
-a.btn-dark *,
-.btn-primary *,
-.btn-secondary *,
-.btn-vibrant-coral *,
-.btn-dark *,
-[class*="btn-"] *,
-.nav-bar-btn *,
-.nav-donate-btn *,
-.nav-support-btn *,
-[role="button"] * {
-  max-width: 100%;
-  overflow-wrap: break-word;
-  word-break: normal;
-}
-
-/* 3. Global Translated state rules (Google Translate and DCVC Language Switch) */
 html.translated-ltr button,
 html.translated-rtl button,
 html:not([lang="en"]) button,
@@ -1980,29 +1990,22 @@ html:not([lang="en"]) a[class*="rounded-"],
 html.translated-ltr [class*="btn-"],
 html.translated-rtl [class*="btn-"],
 html:not([lang="en"]) [class*="btn-"],
-html.translated-ltr .nav-bar-btn,
-html.translated-rtl .nav-bar-btn,
-html:not([lang="en"]) .nav-bar-btn,
 html.translated-ltr .nav-donate-btn,
 html.translated-rtl .nav-donate-btn,
-html:not([lang="en"]) .nav-donate-btn {
-  white-space: normal !important;
-  text-wrap: balance !important;
-  overflow-wrap: break-word !important;
-  word-break: normal !important;
-  hyphens: auto !important;
-  font-size: clamp(0.72rem, 2.4vw, 0.9rem) !important;
-  line-height: 1.25 !important;
-  height: auto !important;
-  min-height: min-content !important;
+html:not([lang="en"]) .nav-donate-btn,
+html.translated-ltr .nav-support-btn,
+html.translated-rtl .nav-support-btn,
+html:not([lang="en"]) .nav-support-btn {
+  white-space: nowrap !important;
+  font-size: clamp(0.65rem, 0.85vw, 0.82rem) !important;
+  line-height: normal !important;
+  letter-spacing: -0.01em !important;
 }
 
+/* Child elements inside buttons and pills must inherit single-line layout and font scaling */
 html.translated-ltr button *,
 html.translated-rtl button *,
 html:not([lang="en"]) button *,
-html.translated-ltr a[class*="rounded-"] *,
-html.translated-rtl a[class*="rounded-"] *,
-html:not([lang="en"]) a[class*="rounded-"] *,
 html.translated-ltr [class*="btn-"] *,
 html.translated-rtl [class*="btn-"] *,
 html:not([lang="en"]) [class*="btn-"] *,
@@ -2012,12 +2015,81 @@ html:not([lang="en"]) .nav-bar-btn *,
 html.translated-ltr .nav-donate-btn *,
 html.translated-rtl .nav-donate-btn *,
 html:not([lang="en"]) .nav-donate-btn * {
-  white-space: normal !important;
-  overflow-wrap: break-word !important;
-  word-break: normal !important;
+  white-space: nowrap !important;
   font-size: inherit !important;
   line-height: inherit !important;
-  max-width: 100% !important;
+  color: inherit !important;
+}
+
+/* 3. Hero Status Banner Pill (Single-line auto-hug with auto-scaling font) */
+.hero-status-pill {
+  white-space: nowrap !important;
+}
+
+html.translated-ltr .hero-status-pill,
+html.translated-rtl .hero-status-pill,
+html:not([lang="en"]) .hero-status-pill {
+  font-size: clamp(0.62rem, 0.82vw, 0.82rem) !important;
+}
+
+html.translated-ltr .hero-status-pill *,
+html.translated-rtl .hero-status-pill *,
+html:not([lang="en"]) .hero-status-pill * {
+  white-space: nowrap !important;
+  font-size: inherit !important;
+}
+
+/* 4. Floating Action Buttons (Accessibility & Luna Launchers) */
+#accessibility-launcher-button,
+#ask-luna-launcher-button {
+  white-space: nowrap !important;
+}
+
+#accessibility-launcher-button *,
+#ask-luna-launcher-button * {
+  white-space: nowrap !important;
+}
+
+html.translated-ltr #accessibility-launcher-button,
+html.translated-rtl #accessibility-launcher-button,
+html:not([lang="en"]) #accessibility-launcher-button,
+html.translated-ltr #ask-luna-launcher-button,
+html.translated-rtl #ask-luna-launcher-button,
+html:not([lang="en"]) #ask-luna-launcher-button {
+  font-size: clamp(0.65rem, 0.8vw, 0.75rem) !important;
+}
+
+/* 5. Main Hero Headlines (Scale down in translated languages so layout doesn't inflate) */
+html.translated-ltr h1,
+html.translated-rtl h1,
+html:not([lang="en"]) h1 {
+  font-size: clamp(1.85rem, 4.2vw, 3.85rem) !important;
+  line-height: 1.1 !important;
+  letter-spacing: -0.02em !important;
+}
+
+/* 6. Cards and Grid Component Boxes (Preserve identical card sizes & aspect ratios) */
+html.translated-ltr .card,
+html.translated-rtl .card,
+html:not([lang="en"]) .card {
+  height: 100% !important;
+}
+
+html.translated-ltr .card h2,
+html.translated-ltr .card h3,
+html.translated-ltr .card h4,
+html:not([lang="en"]) .card h2,
+html:not([lang="en"]) .card h3,
+html:not([lang="en"]) .card h4 {
+  font-size: clamp(0.9rem, 1.15vw, 1.25rem) !important;
+  line-height: 1.25 !important;
+}
+
+html.translated-ltr .card p,
+html.translated-rtl .card p,
+html:not([lang="en"]) .card p {
+  font-size: clamp(0.75rem, 0.9vw, 0.85rem) !important;
+  line-height: 1.35 !important;
 }
 
 
