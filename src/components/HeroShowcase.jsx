@@ -411,9 +411,9 @@ export default function HeroShowcase({
       <h1
         className={`font-display ${
           isComp
-            ? 'text-2xl sm:text-4xl'
+            ? 'text-2xl leading-tight'
             : isTablet
-            ? 'text-3xl sm:text-5xl lg:text-6xl'
+            ? 'text-3xl sm:text-4xl'
             : 'text-3xl xs:text-4xl sm:text-6xl md:text-7xl lg:text-[4.25rem] xl:text-[4.85rem]'
         } font-black tracking-tight ${
           darkMode ? 'text-white' : 'text-slate-950'
@@ -601,19 +601,21 @@ export default function HeroShowcase({
               <SafeNav
                 previewMode={previewMode}
                 to="/programs/community-resource-center"
-                className={`hero-status-pill group inline-flex items-center gap-2.5 sm:gap-3.5 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full border-2 shadow-md transition-all cursor-pointer w-fit max-w-full whitespace-nowrap ${
+                className={`hero-status-pill group inline-flex items-center gap-2.5 sm:gap-3.5 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full border-2 shadow-md transition-all cursor-pointer w-fit max-w-full ${
+                  isMobile ? 'whitespace-normal max-w-[calc(100%-8px)]' : 'whitespace-nowrap'
+                } ${
                   isDark
                     ? 'bg-white/10 hover:bg-white/15 border-white/25 text-white'
                     : 'bg-white/95 hover:bg-white border-purple-200/90 hover:border-purple-400 shadow-purple-500/10'
                 }`}
                 title="View Community Resource Center hours and free clinical services"
               >
-                <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 max-w-full">
                   <span className="relative flex h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-80"></span>
                     <span className="relative inline-flex rounded-full h-3 w-3 sm:h-3.5 sm:w-3.5 bg-gradient-to-tr from-emerald-600 to-teal-400 shadow-[0_0_10px_rgba(16,185,129,0.7)]"></span>
                   </span>
-                  <span className="text-xs sm:text-sm font-bold leading-snug whitespace-nowrap truncate block min-w-0">
+                  <span className={`text-xs sm:text-sm font-bold leading-snug ${isMobile ? 'whitespace-normal truncate max-w-[240px]' : 'whitespace-nowrap truncate'} block min-w-0`}>
                     <strong className={isDark ? 'text-emerald-300 font-extrabold' : centerStatus?.isOpenNow ? 'text-emerald-700 font-extrabold' : 'text-[#5A1E65] font-extrabold'}>
                       {statusHeadline}
                     </strong>{' '}
@@ -658,7 +660,7 @@ export default function HeroShowcase({
                   <img
                     src={auroraPhoto}
                     alt="Diversity Collective Ventura County community volunteers"
-                    className={`w-full ${isMobile ? 'h-56 sm:h-72' : 'min-h-[280px] sm:min-h-[360px] lg:min-h-[440px]'} object-cover group-hover:scale-105 transition-transform duration-700 ease-out`}
+                    className={`w-full ${isMobile ? 'h-52' : 'min-h-[280px] sm:min-h-[360px] lg:min-h-[440px]'} object-cover group-hover:scale-105 transition-transform duration-700 ease-out`}
                     onError={(e) => {
                       e.target.src = '/images/community-gathering.jpg';
                     }}
