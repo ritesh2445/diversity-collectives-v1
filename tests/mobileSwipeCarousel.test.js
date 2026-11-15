@@ -78,7 +78,6 @@ test('Mobile Swipe Carousel Feature Suite', async (t) => {
 
   await t.test('6. Sitewide card sections wrap with MobileCarousel for mobile and tablet swipability', () => {
     const pages = [
-      'src/pages/About.jsx',
       'src/pages/Sponsors.jsx',
       'src/pages/Programs.jsx',
       'src/pages/BoardAndStaff.jsx',
@@ -97,5 +96,15 @@ test('Mobile Swipe Carousel Feature Suite', async (t) => {
         `${p} must integrate MobileCarousel for tablet and mobile swipable cards`
       );
     });
+
+    const aboutContent = fs.readFileSync(path.resolve('src/pages/About.jsx'), 'utf8');
+    assert.ok(
+      aboutContent.includes('max-w-5xl mx-auto w-full items-stretch'),
+      'About.jsx partner boxes must preserve center-aligned max-w-5xl mx-auto layout'
+    );
+    assert.ok(
+      aboutContent.includes('[overflow-wrap:anywhere]'),
+      'About.jsx partner boxes must preserve overflow-wrap:anywhere for multilingual text containment'
+    );
   });
 });
