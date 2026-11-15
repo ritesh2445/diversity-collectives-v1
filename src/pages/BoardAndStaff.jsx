@@ -4,6 +4,7 @@ import { Award, Users, Mail, ArrowRight, ShieldCheck, Heart } from 'lucide-react
 import { boardMembers, staffMembers, getBoardMemberSlug } from '../data/dcvcData';
 import { cmsStore } from '../services/cmsStore';
 import CardSpotlight from '../components/CardSpotlight';
+import MobileCarousel from '../components/MobileCarousel';
 import { usePageMeta } from '../utils/seo';
 
 export default function BoardAndStaff() {
@@ -68,11 +69,11 @@ export default function BoardAndStaff() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <MobileCarousel cols={4} autoScrollMs={0} cardClassName="h-full flex flex-col">
           {operationalStaff.map((staff, idx) => (
             <div 
               key={staff.id || idx}
-              className="p-6 rounded-3xl bg-white border-2 border-slate-200 shadow-md flex flex-col justify-between gap-4"
+              className="p-6 rounded-3xl bg-white border-2 border-slate-200 shadow-md flex flex-col justify-between gap-4 h-full"
             >
               <div className="space-y-3">
                 <div className="h-44 rounded-2xl overflow-hidden bg-purple-50 border border-slate-100">
@@ -108,7 +109,7 @@ export default function BoardAndStaff() {
               </div>
             </div>
           ))}
-        </div>
+        </MobileCarousel>
       </section>
 
       {/* Board of Directors Section */}
@@ -125,7 +126,7 @@ export default function BoardAndStaff() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <MobileCarousel cols={3} autoScrollMs={0} cardClassName="h-full flex flex-col">
           {boardTeam.map((member, idx) => {
             const slug = getBoardMemberSlug(member);
             return (
@@ -180,7 +181,7 @@ export default function BoardAndStaff() {
               </Link>
             );
           })}
-        </div>
+        </MobileCarousel>
       </section>
 
       {/* Volunteer or Join the Board CTA */}

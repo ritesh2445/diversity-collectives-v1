@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { businessDirectorySeed } from '../data/dcvcData';
 import CardSpotlight from '../components/CardSpotlight';
+import MobileCarousel from '../components/MobileCarousel';
 import { usePageMeta } from '../utils/seo';
 
 const LOCAL_STORAGE_KEY = 'dcvc_live_directory_businesses';
@@ -330,7 +331,7 @@ export default function Directory() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <MobileCarousel cols={3} autoScrollMs={0} cardClassName="h-full flex flex-col">
             {paginatedBusinesses.map((biz) => (
               <CardSpotlight
                 key={biz.id}
@@ -442,7 +443,7 @@ export default function Directory() {
                 </div>
               </CardSpotlight>
             ))}
-          </div>
+          </MobileCarousel>
         )}
 
         {/* Pagination Controls */}

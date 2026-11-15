@@ -24,6 +24,7 @@ import { useLiveCommunityGroups } from '../hooks/useCmsLive';
 import { getCommunityGroupData } from '../data/communityData';
 import { submitInquiry } from '../services/api';
 import CardSpotlight from '../components/CardSpotlight';
+import MobileCarousel from '../components/MobileCarousel';
 import { useScrollLock } from '../utils/scrollLock';
 
 export default function Community() {
@@ -176,7 +177,7 @@ export default function Community() {
 
       {/* Community Groups Grid in Stable Spotlight Cards */}
       <section className="container-clean py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <MobileCarousel cols={2} autoScrollMs={0} cardClassName="h-full flex flex-col">
           {filteredGroups.map((group) => {
             const enriched = getCommunityGroupData(group.name);
             const annCount = enriched?.announcements?.length || 0;
@@ -284,7 +285,7 @@ export default function Community() {
               </CardSpotlight>
             );
           })}
-        </div>
+        </MobileCarousel>
       </section>
 
       {/* Propose / Request a Small Group Section */}

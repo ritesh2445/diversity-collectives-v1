@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { cmsStore } from '../services/cmsStore';
 import CardSpotlight from '../components/CardSpotlight';
+import MobileCarousel from '../components/MobileCarousel';
 import { usePageMeta } from '../utils/seo';
 
 const AGE_GROUP_ORDER = {
@@ -166,7 +167,7 @@ export default function Programs() {
           /* ================================================================
              1. UNIFIED CARD GRID (Exact Same Height & Width on All Cards)
              ================================================================ */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 items-stretch">
+          <MobileCarousel cols={3} autoScrollMs={0} className="items-stretch gap-6 lg:gap-8" cardClassName="h-full flex flex-col">
             {sortedAndFilteredPrograms.map((prog, index) => {
               const isContain = prog.imageFit === 'contain' ||
                 prog.heroImage?.includes('crc-building') ||
@@ -293,7 +294,7 @@ export default function Programs() {
                 </CardSpotlight>
               );
             })}
-          </div>
+          </MobileCarousel>
         ) : (
           /* ================================================================
              2. EDITORIAL ROWS (Equal-Height Balanced Layout)

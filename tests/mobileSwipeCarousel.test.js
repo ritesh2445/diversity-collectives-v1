@@ -65,4 +65,37 @@ test('Mobile Swipe Carousel Feature Suite', async (t) => {
       'Events.jsx should wrap event cards with MobileCarousel cols={3} autoScrollMs={0}'
     );
   });
+
+  await t.test('5. Tablet carousel support: applies swipable scroll snap under lg breakpoint with tablet card widths and indicator dots', () => {
+    const compPath = path.resolve('src/components/MobileCarousel.jsx');
+    const compContent = fs.readFileSync(compPath, 'utf8');
+
+    assert.ok(compContent.includes('sm:w-[50vw]'), 'Should size cards for tablet viewports (~50vw)');
+    assert.ok(compContent.includes('lg:hidden'), 'Carousel dots should stay visible on tablet and hide on lg (>=1024px)');
+    assert.ok(compContent.includes('lg:grid'), 'Should switch from horizontal scroll to grid at lg (>=1024px)');
+    assert.ok(compContent.includes('window.innerWidth < 1024'), 'Touch and auto-scroll logic should target <1024px');
+  });
+
+  await t.test('6. Sitewide card sections wrap with MobileCarousel for mobile and tablet swipability', () => {
+    const pages = [
+      'src/pages/About.jsx',
+      'src/pages/Sponsors.jsx',
+      'src/pages/Programs.jsx',
+      'src/pages/BoardAndStaff.jsx',
+      'src/pages/News.jsx',
+      'src/pages/Directory.jsx',
+      'src/pages/Training.jsx',
+      'src/pages/Community.jsx',
+      'src/pages/Volunteer.jsx',
+      'src/pages/Resources.jsx'
+    ];
+
+    pages.forEach((p) => {
+      const content = fs.readFileSync(path.resolve(p), 'utf8');
+      assert.ok(
+        content.includes('MobileCarousel'),
+        `${p} must integrate MobileCarousel for tablet and mobile swipable cards`
+      );
+    });
+  });
 });

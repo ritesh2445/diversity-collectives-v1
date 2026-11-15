@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, ArrowRight, Heart, Award, ShieldCheck, Mail } from 'lucide-react';
+import MobileCarousel from '../components/MobileCarousel';
 import { sponsorsList, orgInfo } from '../data/dcvcData';
 import { cmsStore } from '../services/cmsStore';
 import { usePageMeta } from '../utils/seo';
@@ -73,7 +74,7 @@ export default function Sponsors() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 w-full items-stretch">
+            <MobileCarousel cols={3} autoScrollMs={0} className="w-full items-stretch" cardClassName="h-full flex flex-col">
               {tierGroup.sponsors.filter(Boolean).map((sponsor) => (
                 <a
                   key={sponsor.shortName}
@@ -113,7 +114,7 @@ export default function Sponsors() {
                   </div>
                 </a>
               ))}
-            </div>
+            </MobileCarousel>
           </div>
         ))}
       </section>

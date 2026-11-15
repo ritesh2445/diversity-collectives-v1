@@ -11,6 +11,7 @@ import {
 import { orgInfo, boardMembers, sponsorsList, getBoardMemberSlug } from '../data/dcvcData';
 import { cmsStore } from '../services/cmsStore';
 import CardSpotlight from '../components/CardSpotlight';
+import MobileCarousel from '../components/MobileCarousel';
 
 export default function About() {
   const [board, setBoard] = useState(() => cmsStore.getBoardMembers?.() || boardMembers);
@@ -153,7 +154,7 @@ export default function About() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 perspective-1000">
+        <MobileCarousel cols={3} autoScrollMs={0} className="perspective-1000 items-stretch" cardClassName="h-full flex flex-col">
           {board.map((member) => {
             const slug = getBoardMemberSlug(member);
             return (
@@ -208,7 +209,7 @@ export default function About() {
               </Link>
             );
           })}
-        </div>
+        </MobileCarousel>
       </section>
 
       {/* Verified Sponsors & Partners */}
@@ -226,7 +227,7 @@ export default function About() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto w-full items-stretch">
+          <MobileCarousel cols={3} autoScrollMs={0} className="max-w-5xl mx-auto w-full items-stretch" cardClassName="h-full flex flex-col">
             {sponsors.map((sponsor) => (
               <a
                 key={sponsor.shortName}
@@ -253,7 +254,7 @@ export default function About() {
                 </div>
               </a>
             ))}
-          </div>
+          </MobileCarousel>
 
           <div className="text-center mt-12">
             <Link

@@ -13,6 +13,7 @@ import {
 import confetti from 'canvas-confetti';
 import { submitVolunteer } from '../services/api';
 import TurnstileWidget from '../components/TurnstileWidget';
+import MobileCarousel from '../components/MobileCarousel';
 import { orgInfo } from '../data/dcvcData';
 import { usePageMeta } from '../utils/seo';
 
@@ -114,28 +115,28 @@ export default function Volunteer() {
 
       {/* Volunteer Pathways Showcase */}
       <section className="container-clean py-14">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="p-6 rounded-3xl bg-white border-2 border-slate-200 shadow-sm space-y-3">
+        <MobileCarousel cols={4} autoScrollMs={0} cardClassName="h-full flex flex-col">
+          <div className="p-6 rounded-3xl bg-white border-2 border-slate-200 shadow-sm space-y-3 h-full">
             <span className="text-2xl">🏠</span>
             <h3 className="font-display text-lg font-bold text-slate-950">Center Hospitality</h3>
             <p className="text-xs text-slate-600 leading-relaxed font-medium">Welcoming drop-in guests, assisting with computer lab access, and answering community telephone inquiries.</p>
           </div>
-          <div className="p-6 rounded-3xl bg-white border-2 border-slate-200 shadow-sm space-y-3">
+          <div className="p-6 rounded-3xl bg-white border-2 border-slate-200 shadow-sm space-y-3 h-full">
             <span className="text-2xl">🌈</span>
             <h3 className="font-display text-lg font-bold text-slate-950">Youth Mentorship</h3>
             <p className="text-xs text-slate-600 leading-relaxed font-medium">Supporting adult facilitation for Friday Rainbow Umbrella circles and craft workshops for Little Unicorns.</p>
           </div>
-          <div className="p-6 rounded-3xl bg-white border-2 border-slate-200 shadow-sm space-y-3">
+          <div className="p-6 rounded-3xl bg-white border-2 border-slate-200 shadow-sm space-y-3 h-full">
             <span className="text-2xl">🩺</span>
             <h3 className="font-display text-lg font-bold text-slate-950">Health & Outreach</h3>
             <p className="text-xs text-slate-600 leading-relaxed font-medium">Packing 'SHINE With Me' safer-sex kits and tabling at local college wellness fairs and community festivals.</p>
           </div>
-          <div className="p-6 rounded-3xl bg-white border-2 border-slate-200 shadow-sm space-y-3">
+          <div className="p-6 rounded-3xl bg-white border-2 border-slate-200 shadow-sm space-y-3 h-full">
             <span className="text-2xl">🎉</span>
             <h3 className="font-display text-lg font-bold text-slate-950">Pride & Galas</h3>
             <p className="text-xs text-slate-600 leading-relaxed font-medium">Ventura County Pride staging, ticketing, green-room coordination, and AIDS Walk operations.</p>
           </div>
-        </div>
+        </MobileCarousel>
       </section>
 
       {/* Main Application Form */}

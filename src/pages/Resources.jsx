@@ -15,6 +15,7 @@ import {
 import { resourcesDirectory, orgInfo } from '../data/dcvcData';
 import { cmsStore } from '../services/cmsStore';
 import CardSpotlight from '../components/CardSpotlight';
+import MobileCarousel from '../components/MobileCarousel';
 
 export default function Resources() {
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -162,7 +163,7 @@ export default function Resources() {
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 perspective-1000">
+                <MobileCarousel cols={2} autoScrollMs={0} className="perspective-1000" cardClassName="h-full flex flex-col">
                   {catGroup.items.map((item) => (
                     <CardSpotlight 
                       key={item.name}
@@ -207,7 +208,7 @@ export default function Resources() {
                       </div>
                     </CardSpotlight>
                   ))}
-                </div>
+                </MobileCarousel>
 
               </div>
             ))}

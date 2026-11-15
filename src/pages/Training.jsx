@@ -14,6 +14,7 @@ import {
 import { trainingCourses } from '../data/dcvcData';
 import { cmsStore } from '../services/cmsStore';
 import CardSpotlight from '../components/CardSpotlight';
+import MobileCarousel from '../components/MobileCarousel';
 import { usePageMeta } from '../utils/seo';
 
 export default function Training() {
@@ -89,11 +90,11 @@ export default function Training() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <MobileCarousel cols={3} autoScrollMs={0} cardClassName="h-full flex flex-col">
           {courses.map((course) => (
             <CardSpotlight
               key={course.slug}
-              className="p-8 rounded-3xl bg-white border-2 border-slate-200 hover:border-purple-300 shadow-md flex flex-col justify-between gap-6"
+              className="p-8 rounded-3xl bg-white border-2 border-slate-200 hover:border-purple-300 shadow-md flex flex-col justify-between gap-6 h-full"
               tilt={true}
               maxTilt={4}
               glare={true}
@@ -147,7 +148,7 @@ export default function Training() {
               </div>
             </CardSpotlight>
           ))}
-        </div>
+        </MobileCarousel>
       </section>
 
       {/* Target Audiences Grid */}
@@ -161,28 +162,28 @@ export default function Training() {
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="p-6 rounded-2xl bg-white border border-slate-200 space-y-2">
+        <MobileCarousel cols={4} autoScrollMs={0} cardClassName="h-full flex flex-col">
+          <div className="p-6 rounded-2xl bg-white border border-slate-200 space-y-2 h-full">
             <Building className="w-6 h-6 text-[#5A1E65]" />
             <h4 className="font-bold text-slate-900 text-sm">Schools & Universities</h4>
             <p className="text-xs text-slate-600">Equipping teachers, counselors, administrators, and campus security with safe-space strategies.</p>
           </div>
-          <div className="p-6 rounded-2xl bg-white border border-slate-200 space-y-2">
+          <div className="p-6 rounded-2xl bg-white border border-slate-200 space-y-2 h-full">
             <ShieldCheck className="w-6 h-6 text-emerald-600" />
             <h4 className="font-bold text-slate-900 text-sm">Healthcare & Clinics</h4>
             <p className="text-xs text-slate-600">Creating trauma-informed clinical intake practices, non-discriminatory care, and PrEP linkage.</p>
           </div>
-          <div className="p-6 rounded-2xl bg-white border border-slate-200 space-y-2">
+          <div className="p-6 rounded-2xl bg-white border border-slate-200 space-y-2 h-full">
             <Users className="w-6 h-6 text-amber-600" />
             <h4 className="font-bold text-slate-900 text-sm">Youth-Serving Nonprofits</h4>
             <p className="text-xs text-slate-600">Fostering peer groups, bullying prevention, crisis interventions, and affirming mentorship.</p>
           </div>
-          <div className="p-6 rounded-2xl bg-white border border-slate-200 space-y-2">
+          <div className="p-6 rounded-2xl bg-white border border-slate-200 space-y-2 h-full">
             <Sparkles className="w-6 h-6 text-purple-600" />
             <h4 className="font-bold text-slate-900 text-sm">Corporate & Civic Teams</h4>
             <p className="text-xs text-slate-600">Building authentic workplace inclusion, employee resource groups (ERGs), and CA compliance.</p>
           </div>
-        </div>
+        </MobileCarousel>
       </section>
 
     </div>

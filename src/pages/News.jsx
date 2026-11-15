@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { cmsStore } from '../services/cmsStore';
 import CardSpotlight from '../components/CardSpotlight';
+import MobileCarousel from '../components/MobileCarousel';
 import { usePageMeta } from '../utils/seo';
 
 export default function News() {
@@ -144,7 +145,7 @@ export default function News() {
 
       {/* Articles Grid */}
       <section className="container-clean py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <MobileCarousel cols={3} autoScrollMs={0} cardClassName="h-full flex flex-col">
           {filteredArticles.map((art) => (
             <CardSpotlight
               key={art.slug}
@@ -190,7 +191,7 @@ export default function News() {
               </div>
             </CardSpotlight>
           ))}
-        </div>
+        </MobileCarousel>
       </section>
 
     </div>
