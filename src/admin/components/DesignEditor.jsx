@@ -30,7 +30,9 @@ import {
   Phone,
   Activity,
   Award,
-  ShieldCheck
+  ShieldCheck,
+  Layers,
+  Palette
 } from 'lucide-react';
 import {
   DEFAULT_PAGE_BLOCKS,
@@ -66,6 +68,7 @@ export default function DesignEditor({ onPublishSuccess }) {
   const [selectedBlockId, setSelectedBlockId] = useState(
     () => getSavedPageLayout()[0]?.id || 'block-hero'
   );
+  const [sidebarTab, setSidebarTab] = useState('themes'); // 'themes' | 'content'
   const [viewport, setViewport] = useState('desktop'); // 'desktop' | 'tablet' | 'mobile'
   const [canvasMode, setCanvasMode] = useState('standard'); // 'standard' | 'wide'
   const [isFullScreenPreview, setIsFullScreenPreview] = useState(false);
@@ -105,6 +108,11 @@ export default function DesignEditor({ onPublishSuccess }) {
   const heroBlock = blocks.find((b) => b.type === 'hero_banner') || DEFAULT_PAGE_BLOCKS[0];
   const previewThemeObj = resolveHeroTheme(heroTheme);
   const liveThemeObj = resolveHeroTheme(publishedHeroTheme);
+
+  const handleSelectBlock = (id) => {
+    setSelectedBlockId(id);
+    setSidebarTab('content');
+  };
 
   const renderPreviewCanvas = ({ fullScreen = false } = {}) => (
     <div className="bg-white w-full flex flex-col font-sans select-none">
@@ -191,13 +199,18 @@ export default function DesignEditor({ onPublishSuccess }) {
             <div
               key={block.id}
               data-block-id={block.id}
-              onClick={() => setSelectedBlockId(block.id)}
+              onClick={() => handleSelectBlock(block.id)}
               className={`relative cursor-pointer transition-all ${
                 isSelected
                   ? 'ring-4 ring-[#5A1E65] ring-inset z-10'
                   : 'hover:ring-2 hover:ring-purple-400/80'
               }`}
             >
+              {isSelected && (
+                <div className="absolute top-2 right-2 z-30 bg-[#5A1E65] text-white text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow-md pointer-events-none flex items-center gap-1">
+                  <span>Selected</span>
+                </div>
+              )}
               {/* Live Hero Showcase */}
               {block.type === 'hero_banner' && (
                 <HeroShowcase
@@ -397,6 +410,41 @@ export default function DesignEditor({ onPublishSuccess }) {
                       <div className="p-3.5 rounded-2xl bg-white border border-amber-200 shadow-2xs text-center">
                         <span className="block text-lg font-black text-amber-700">$250</span>
                         <span className="text-[11px] font-bold text-slate-800">Resource Center</span>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              )}
+
+              {/* Signature Annual Events */}
+              {block.type === 'signature_events' && (
+                <section className="py-8 sm:py-12 bg-purple-50/40 border-b border-purple-200/60">
+                  <div className="container-clean space-y-5">
+                    <div className="flex flex-col gap-1.5">
+                      <span className="glass-pill self-start">SIGNATURE ANNUAL CELEBRATIONS</span>
+                      <h3 className="font-display text-lg sm:text-xl font-bold text-slate-900">
+                        {block.props.headline || 'Annual Gatherings Bringing All of Ventura County Together'}
+                      </h3>
+                      <p className="text-xs sm:text-sm text-slate-600">
+                        {block.props.description || 'From the region’s largest Pride festival to youth proms and clinical walks.'}
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                      <div className="p-4 rounded-2xl bg-white border border-purple-200 shadow-xs space-y-1.5">
+                        <span className="text-[10px] font-black uppercase text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full inline-block">August 2026</span>
+                        <h4 className="font-bold text-sm text-slate-900">Ventura County Pride Festival</h4>
+                        <p className="text-xs text-slate-600">Live music, community vendors, food trucks & family fun at Promenade Park.</p>
+                      </div>
+                      <div className="p-4 rounded-2xl bg-white border border-purple-200 shadow-xs space-y-1.5">
+                        <span className="text-[10px] font-black uppercase text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full inline-block">May 2026</span>
+                        <h4 className="font-bold text-sm text-slate-900">Pride Prom: Free Youth Formal</h4>
+                        <p className="text-xs text-slate-600">Safe, affirming formal dance for high school youth (13–20) across VC.</p>
+                      </div>
+                      <div className="p-4 rounded-2xl bg-white border border-purple-200 shadow-xs space-y-1.5">
+                        <span className="text-[10px] font-black uppercase text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full inline-block">October 2026</span>
+                        <h4 className="font-bold text-sm text-slate-900">AIDS Walk Ventura County</h4>
+                        <p className="text-xs text-slate-600">Honoring lives, eliminating stigma, and funding rapid HIV testing programs.</p>
                       </div>
                     </div>
                   </div>
@@ -712,10 +760,10 @@ export default function DesignEditor({ onPublishSuccess }) {
                 ? 'bg-[#5A1E65] text-white shadow-xs ring-2 ring-purple-300'
                 : 'bg-white hover:bg-slate-100 border border-slate-300 text-slate-700'
             }`}
-            title={canvasMode === 'wide' ? 'Dock sidebars back to 3-column studio' : 'Expand preview canvas to wide screen width'}
+            title={canvasMode === 'wide' ? 'Dock sidebar back to studio view' : 'Expand preview canvas to wide screen width'}
           >
             {canvasMode === 'wide' ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-            <span>{canvasMode === 'wide' ? '3-Column View' : 'Wide Canvas'}</span>
+            <span>{canvasMode === 'wide' ? 'Studio View' : 'Wide Canvas'}</span>
           </button>
 
           <button
@@ -780,12 +828,43 @@ export default function DesignEditor({ onPublishSuccess }) {
         </div>
       )}
 
-      {/* 3-Column Visual Workspace */}
+      {/* Unified 2-Column Visual Workspace */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start">
-        {/* LEFT COLUMN: Hero Design Selector + Section Order List */}
-        <div className={`${canvasMode === 'wide' ? 'hidden' : 'xl:col-span-3'} space-y-4`}>
-          {/* Hero Design Picker */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs space-y-3">
+        {/* LEFT COLUMN: Unified Studio Sidebar with Tab Switcher */}
+        <div className={`${canvasMode === 'wide' ? 'hidden' : 'xl:col-span-4'} space-y-4`}>
+          {/* Tab Navigation: [1. Hero Themes & Sections] | [2. Edit Content] */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-1.5 shadow-xs flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setSidebarTab('themes')}
+              className={`flex-1 py-2 px-3 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                sidebarTab === 'themes'
+                  ? 'bg-[#5A1E65] text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Theme & Sections</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSidebarTab('content')}
+              className={`flex-1 py-2 px-3 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                sidebarTab === 'content'
+                  ? 'bg-[#5A1E65] text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span className="truncate">Edit: {selectedBlock?.title?.split(' ')[0] || 'Content'}</span>
+            </button>
+          </div>
+
+          {/* TAB 1: HERO THEMES, SWATCHES & HOMEPAGE SECTIONS */}
+          {sidebarTab === 'themes' && (
+            <>
+              {/* Hero Design Picker */}
+              <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs font-extrabold text-slate-900 uppercase tracking-wider">
                 <Sparkles className="w-3.5 h-3.5 text-[#5A1E65]" />
@@ -906,7 +985,7 @@ export default function DesignEditor({ onPublishSuccess }) {
                     onDragOver={(e) => handleDragOver(e, index)}
                     onDrop={(e) => handleDrop(e, index)}
                     onDragEnd={handleDragEnd}
-                    onClick={() => setSelectedBlockId(block.id)}
+                    onClick={() => handleSelectBlock(block.id)}
                     className={`flex items-center justify-between gap-2 p-2.5 rounded-xl border transition-all cursor-pointer select-none ${
                       isSelected
                         ? 'bg-purple-50 border-[#5A1E65] ring-1 ring-[#5A1E65]'
@@ -962,69 +1041,29 @@ export default function DesignEditor({ onPublishSuccess }) {
               })}
             </div>
           </div>
-        </div>
+        </>
+      )}
 
-        {/* CENTER COLUMN: Exact Live Hero & Homepage Canvas */}
-        <div className={canvasMode === 'wide' ? 'xl:col-span-9' : 'xl:col-span-6'}>
-          <div className="bg-slate-200/70 rounded-3xl p-3 sm:p-4 border border-slate-300/80 shadow-inner flex flex-col items-center">
-            <div className="w-full flex flex-wrap items-center justify-between gap-2 pb-2.5 text-[11px] font-bold text-slate-700 px-1">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>
-                  Previewing: <strong className="text-[#5A1E65]">{previewThemeObj.name}</strong>
-                  <span className="ml-1.5 text-[10px] font-semibold text-slate-500">
-                    ({VIEWPORT_WIDTHS[viewport]}px {viewport})
-                  </span>
-                </span>
-              </span>
-              <div className="flex items-center gap-2">
-                <span className="hidden sm:inline text-[10px] text-slate-500">
-                  Click any section to edit →
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setIsFullScreenPreview(true)}
-                  className="px-2.5 py-1 rounded-lg bg-[#5A1E65] hover:bg-purple-900 text-white text-[10px] font-extrabold inline-flex items-center gap-1 shadow-xs cursor-pointer transition-colors"
-                >
-                  <Maximize2 className="w-3 h-3" />
-                  <span>Full Screen</span>
-                </button>
-              </div>
-            </div>
-
-            <div
-              className="w-full transition-all duration-300 flex justify-center"
-              style={{
-                maxWidth:
-                  viewport === 'mobile'
-                    ? '440px'
-                    : viewport === 'tablet'
-                    ? '840px'
-                    : '100%'
-              }}
-            >
-              <DevicePreviewFrame
-                viewport={viewport}
-                title="Admin Live Homepage Preview"
-                onSelectBlock={setSelectedBlockId}
-              >
-                {renderPreviewCanvas({ fullScreen: false })}
-              </DevicePreviewFrame>
-            </div>
-          </div>
-        </div>
-
-        {/* RIGHT COLUMN: Clean Context Properties Inspector */}
-        <div className="xl:col-span-3 space-y-4">
-          <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs space-y-3">
-            <div className="flex items-center justify-between pb-2.5 border-b border-slate-200">
+      {/* TAB 2: PROPERTIES INSPECTOR FOR SELECTED BLOCK */}
+      {sidebarTab === 'content' && (
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs space-y-3">
+          <div className="flex items-center justify-between pb-2.5 border-b border-slate-200">
+            <div className="flex items-center gap-2 min-w-0">
               <span className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
                 Edit Section
               </span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-purple-100 text-[#5A1E65] truncate max-w-[140px]">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-purple-100 text-[#5A1E65] truncate max-w-[130px]">
                 {selectedBlock?.title}
               </span>
             </div>
+            <button
+              type="button"
+              onClick={() => setSidebarTab('themes')}
+              className="text-[11px] font-bold text-[#5A1E65] hover:underline cursor-pointer shrink-0"
+            >
+              ← All Sections
+            </button>
+          </div>
 
             {selectedBlock?.type === 'hero_banner' && (
               <div className="space-y-3">
@@ -1350,13 +1389,64 @@ export default function DesignEditor({ onPublishSuccess }) {
                   </div>
                 )}
                 <p className="text-[11px] text-slate-500 pt-1">
-                  Use the eye toggle or drag handles on the left to show/hide or reorder sections, then click <strong>Publish Live to Website</strong>.
+                  Click any section on the live preview to inspect and edit its contents, or switch to Theme & Sections above.
                 </p>
               </div>
             )}
           </div>
+        )}
+      </div>
+
+      {/* RIGHT PREVIEW COLUMN: Expansive Responsive Live Canvas */}
+      <div className={canvasMode === 'wide' ? 'xl:col-span-12' : 'xl:col-span-8'}>
+        <div className="bg-slate-200/70 rounded-3xl p-3 sm:p-5 border border-slate-300/80 shadow-inner flex flex-col items-center">
+          <div className="w-full flex flex-wrap items-center justify-between gap-2 pb-3 text-[11px] font-bold text-slate-700 px-1">
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>
+                Previewing: <strong className="text-[#5A1E65]">{previewThemeObj.name}</strong>
+                <span className="ml-1.5 text-[10px] font-semibold text-slate-500">
+                  ({VIEWPORT_WIDTHS[viewport]}px {viewport})
+                </span>
+              </span>
+            </span>
+            <div className="flex items-center gap-2">
+              <span className="hidden sm:inline text-[10px] text-slate-500">
+                Click any section to edit →
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsFullScreenPreview(true)}
+                className="px-2.5 py-1 rounded-lg bg-[#5A1E65] hover:bg-purple-900 text-white text-[10px] font-extrabold inline-flex items-center gap-1 shadow-xs cursor-pointer transition-colors"
+              >
+                <Maximize2 className="w-3 h-3" />
+                <span>Full Screen</span>
+              </button>
+            </div>
+          </div>
+
+          <div
+            className="w-full transition-all duration-300 flex justify-center"
+            style={{
+              maxWidth:
+                viewport === 'mobile'
+                  ? '395px'
+                  : viewport === 'tablet'
+                  ? '800px'
+                  : '100%'
+            }}
+          >
+            <DevicePreviewFrame
+              viewport={viewport}
+              title="Admin Live Homepage Preview"
+              onSelectBlock={handleSelectBlock}
+            >
+              {renderPreviewCanvas({ fullScreen: false })}
+            </DevicePreviewFrame>
+          </div>
         </div>
       </div>
+    </div>
 
       {/* FULL-SCREEN LIVE PREVIEW OVERLAY */}
       {isFullScreenPreview && (
@@ -1467,16 +1557,16 @@ export default function DesignEditor({ onPublishSuccess }) {
               style={{
                 maxWidth:
                   viewport === 'mobile'
-                    ? '440px'
+                    ? '395px'
                     : viewport === 'tablet'
-                    ? '840px'
-                    : '1440px'
+                    ? '800px'
+                    : '100%'
               }}
             >
               <DevicePreviewFrame
                 viewport={viewport}
                 title="Full-Screen Device Preview"
-                onSelectBlock={setSelectedBlockId}
+                onSelectBlock={handleSelectBlock}
               >
                 {renderPreviewCanvas({ fullScreen: true })}
               </DevicePreviewFrame>

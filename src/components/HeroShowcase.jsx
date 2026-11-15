@@ -414,19 +414,21 @@ export default function HeroShowcase({
             ? 'text-2xl leading-tight'
             : isTablet
             ? 'text-3xl sm:text-4xl'
+            : previewMode
+            ? 'text-3xl sm:text-4xl lg:text-5xl xl:text-[3.5rem]'
             : 'text-3xl xs:text-4xl sm:text-6xl md:text-7xl lg:text-[4.25rem] xl:text-[4.85rem]'
         } font-black tracking-tight ${
           darkMode ? 'text-white' : 'text-slate-950'
-        } leading-[1.08] sm:leading-[1.04] max-w-full break-words [overflow-wrap:anywhere]`}
+        } leading-[1.08] sm:leading-[1.04] max-w-full break-normal [overflow-wrap:normal]`}
       >
-      <span className="block max-w-full break-words">{merged.titleLine1}</span>
+      <span className="block max-w-full break-normal">{merged.titleLine1}</span>
       <span className="block mt-1 sm:mt-1.5 max-w-full">
         <span
           className={`font-serif italic font-semibold tracking-[-0.015em] ${
             darkMode
               ? 'bg-gradient-to-r from-amber-300 via-pink-400 to-cyan-300'
               : 'animate-liquid-flow'
-          } bg-clip-text text-transparent relative inline max-w-full break-words mr-2.5 sm:mr-3.5 pb-1 sm:pb-1.5`}
+          } bg-clip-text text-transparent relative inline max-w-full break-normal mr-2.5 sm:mr-3.5 pb-1 sm:pb-1.5`}
         >
           {merged.titleAccentWord}
           <svg
@@ -451,7 +453,7 @@ export default function HeroShowcase({
             />
           </svg>
         </span>
-        <span className={`font-display font-black inline max-w-full break-words ${darkMode ? 'text-white' : 'text-slate-950'}`}>
+        <span className={`font-display font-black inline max-w-full break-normal ${darkMode ? 'text-white' : 'text-slate-950'}`}>
           {merged.titleLine2}
         </span>
       </span>
@@ -615,7 +617,7 @@ export default function HeroShowcase({
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-80"></span>
                     <span className="relative inline-flex rounded-full h-3 w-3 sm:h-3.5 sm:w-3.5 bg-gradient-to-tr from-emerald-600 to-teal-400 shadow-[0_0_10px_rgba(16,185,129,0.7)]"></span>
                   </span>
-                  <span className={`text-xs sm:text-sm font-bold leading-snug ${isMobile ? 'whitespace-normal truncate max-w-[240px]' : 'whitespace-nowrap truncate'} block min-w-0`}>
+                  <span className={`text-xs sm:text-sm font-bold leading-snug ${isMobile ? 'truncate max-w-[290px]' : 'whitespace-nowrap truncate'} block min-w-0`}>
                     <strong className={isDark ? 'text-emerald-300 font-extrabold' : centerStatus?.isOpenNow ? 'text-emerald-700 font-extrabold' : 'text-[#5A1E65] font-extrabold'}>
                       {statusHeadline}
                     </strong>{' '}

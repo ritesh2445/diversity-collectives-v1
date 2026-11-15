@@ -45,7 +45,7 @@ export default function DevicePreviewFrame({
           </div>
 
           {/* Native Mobile Screen Viewport (375px) */}
-          <div className="w-full bg-white rounded-b-[2.25rem] overflow-y-auto max-h-[700px] scrollbar-thin">
+          <div className="w-full bg-white rounded-b-[2.25rem] overflow-y-auto max-h-[700px] scrollbar-thin" data-viewport="mobile">
             {children}
           </div>
 
@@ -72,7 +72,7 @@ export default function DevicePreviewFrame({
           </div>
 
           {/* Native Tablet Viewport (768px max) */}
-          <div className="w-full bg-white rounded-2xl overflow-y-auto max-h-[740px] scrollbar-thin">
+          <div className="w-full bg-white rounded-2xl overflow-y-auto max-h-[740px] scrollbar-thin" data-viewport="tablet">
             {children}
           </div>
         </div>
@@ -110,7 +110,7 @@ export default function DevicePreviewFrame({
         </div>
 
         {/* Native Desktop Content Canvas */}
-        <div className="w-full bg-white overflow-y-auto max-h-[760px] scrollbar-thin">
+        <div className="w-full bg-white overflow-y-auto max-h-[760px] scrollbar-thin" data-viewport="desktop">
           {children}
         </div>
       </div>
