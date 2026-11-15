@@ -108,7 +108,8 @@ export default function DesignEditor({ onPublishSuccess }) {
           <img
             src="/images/logo-square.png"
             alt="DCVC"
-            className="w-8 h-8 rounded-lg border border-purple-200 object-contain"
+            className="w-8 h-8 rounded-lg border border-purple-200 object-contain shrink-0"
+            style={{ width: '32px', height: '32px', maxWidth: '32px', maxHeight: '32px', objectFit: 'contain' }}
           />
           <span className="text-sm font-extrabold text-[#5A1E65]">
             Diversity Collective VC

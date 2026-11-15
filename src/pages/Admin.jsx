@@ -1990,9 +1990,9 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
               <span>View Live Site</span>
               <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
             </a>
-            <div className="text-right hidden sm:block">
-              <span className="text-xs font-bold text-slate-800 block">{user.name}</span>
-              <span className="text-[10px] text-slate-500 block">{user.email}</span>
+            <div className="text-right hidden sm:block min-w-0 max-w-[200px]">
+              <span className="text-xs font-bold text-slate-800 block truncate leading-tight">{user.name}</span>
+              <span className="text-[10px] text-slate-500 block truncate leading-tight">{user.email}</span>
             </div>
             <button
               onClick={handleLogout}
