@@ -217,6 +217,7 @@ class CmsStoreEngine {
             summary: p.summary || fb.summary,
             description: p.description || fb.description,
             audience: p.audience || fb.audience,
+            audienceColor: p.audienceColor || fb.audienceColor || fb.accent || '#7E22CE',
             schedule: p.schedule || fb.schedule,
             location: p.location || fb.location,
             contactEmail: p.contactEmail || fb.contactEmail,

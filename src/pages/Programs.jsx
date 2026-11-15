@@ -223,7 +223,14 @@ export default function Programs() {
 
                     {/* Card Body */}
                     <div className="p-6 flex flex-col gap-2.5 flex-1">
-                      <span className="text-[10px] font-black tracking-wider text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-200 uppercase w-fit">
+                      <span 
+                        className="text-[10px] font-black tracking-wider px-2.5 py-0.5 rounded-full border uppercase w-fit transition-colors"
+                        style={{
+                          color: prog.audienceColor || '#7E22CE',
+                          backgroundColor: prog.audienceColor ? `${prog.audienceColor}14` : 'rgb(250 245 255)',
+                          borderColor: prog.audienceColor ? `${prog.audienceColor}33` : 'rgb(233 213 255)'
+                        }}
+                      >
                         {prog.audience}
                       </span>
                       <h2 className="font-display text-xl sm:text-2xl font-black text-slate-950 tracking-tight leading-snug line-clamp-1 min-h-[1.75rem]">
@@ -352,7 +359,14 @@ export default function Programs() {
 
                   <div className={`lg:col-span-6 flex flex-col justify-between gap-5 ${isEven ? 'order-2' : 'order-2 lg:order-1'}`}>
                     <div className="space-y-4">
-                      <span className="text-xs font-black tracking-wider text-purple-700 bg-purple-50 px-3 py-1 rounded-full border border-purple-200 uppercase inline-block">
+                      <span 
+                        className="text-xs font-black tracking-wider px-3 py-1 rounded-full border uppercase inline-block transition-colors"
+                        style={{
+                          color: prog.audienceColor || '#7E22CE',
+                          backgroundColor: prog.audienceColor ? `${prog.audienceColor}14` : 'rgb(250 245 255)',
+                          borderColor: prog.audienceColor ? `${prog.audienceColor}33` : 'rgb(233 213 255)'
+                        }}
+                      >
                         {prog.audience}
                       </span>
                       <h2

@@ -44,7 +44,18 @@ export default function ProgramDetail() {
           
           <div className="lg:col-span-7 space-y-5">
             <div className="flex flex-wrap items-center gap-2.5">
-              <span className="glass-pill text-xs font-black text-[#5A1E65] bg-purple-50 border-purple-200">
+              <span 
+                className="glass-pill text-xs font-black transition-colors"
+                style={program.audienceColor ? {
+                  color: program.audienceColor,
+                  backgroundColor: `${program.audienceColor}15`,
+                  borderColor: `${program.audienceColor}35`
+                } : {
+                  color: '#5A1E65',
+                  backgroundColor: 'rgb(250 245 255)',
+                  borderColor: 'rgb(233 213 255)'
+                }}
+              >
                 PROGRAM {program.chapter} · {program.audience}
               </span>
               <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">

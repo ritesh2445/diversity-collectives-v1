@@ -29,7 +29,8 @@ import {
   Heart,
   Layers,
   ArrowRight,
-  FolderOpen
+  FolderOpen,
+  Palette
 } from 'lucide-react';
 import ImagePicker from './ImagePicker.jsx';
 import PictureFolderManager from './PictureFolderManager.jsx';
@@ -142,6 +143,7 @@ export default function CmsStudio() {
         fontSize: 'base',
         fontColor: '#5A1E65',
         audience: 'All LGBTQ+ community members and affirming allies',
+        audienceColor: '#7E22CE',
         schedule: 'Monday – Friday, 1:00 PM – 5:00 PM',
         location: '2471 Portola Road, Suite 100, Ventura, CA 93003',
         summary: '',
@@ -1467,14 +1469,98 @@ export default function CmsStudio() {
                     label="Title & Header Typography"
                   />
 
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Audience</label>
+                  <div className="p-3.5 rounded-2xl bg-slate-50/90 border border-slate-200 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-bold text-slate-800">Audience</label>
+                      <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-semibold">
+                        <Palette className="w-3.5 h-3.5 text-purple-700" />
+                        <span>Badge & Text Color:</span>
+                        <span 
+                          className="font-mono text-[10px] px-1.5 py-0.5 rounded-md border font-bold"
+                          style={{ 
+                            color: formData.audienceColor || formData.accent || '#7E22CE',
+                            backgroundColor: `${formData.audienceColor || formData.accent || '#7E22CE'}15`,
+                            borderColor: `${formData.audienceColor || formData.accent || '#7E22CE'}35`
+                          }}
+                        >
+                          {formData.audienceColor || formData.accent || '#7E22CE'}
+                        </span>
+                      </div>
+                    </div>
+
                     <input
                       type="text"
                       value={formData.audience || ''}
                       onChange={(e) => setFormData({ ...formData, audience: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                      placeholder="e.g. All LGBTQIA+ individuals, families, youth, seniors, and allies"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs bg-white text-slate-900 focus:ring-2 focus:ring-[#5A1E65]"
                     />
+
+                    {/* Color Chooser Option */}
+                    <div className="pt-2 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-2.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-[11px] font-bold text-slate-600 mr-1">Choose Color:</span>
+                        {[
+                          { name: 'Royal Purple', hex: '#5A1E65' },
+                          { name: 'Amethyst Violet', hex: '#7E22CE' },
+                          { name: 'Sunset Rose', hex: '#D91B5C' },
+                          { name: 'Vibrant Coral', hex: '#E11D48' },
+                          { name: 'Golden Amber', hex: '#D97706' },
+                          { name: 'Vibrant Emerald', hex: '#059669' },
+                          { name: 'Forest Emerald', hex: '#1E5A44' },
+                          { name: 'Ocean Sky', hex: '#0284C7' },
+                          { name: 'Indigo Pride', hex: '#4338CA' },
+                          { name: 'Deep Slate', hex: '#0F172A' }
+                        ].map((c) => {
+                          const activeColor = (formData.audienceColor || formData.accent || '#7E22CE').toLowerCase();
+                          const isSelected = activeColor === c.hex.toLowerCase();
+                          return (
+                            <button
+                              key={c.hex}
+                              type="button"
+                              onClick={() => setFormData({ ...formData, audienceColor: c.hex })}
+                              title={c.name}
+                              className={`w-6 h-6 rounded-full border-2 transition-all cursor-pointer relative ${
+                                isSelected ? 'scale-125 border-slate-950 shadow-md ring-2 ring-purple-400' : 'border-white hover:scale-110 shadow-2xs'
+                              }`}
+                              style={{ backgroundColor: c.hex }}
+                            />
+                          );
+                        })}
+                      </div>
+
+                      <div className="flex items-center gap-1.5 ml-auto">
+                        <input
+                          type="color"
+                          value={formData.audienceColor?.startsWith('#') ? formData.audienceColor : (formData.accent?.startsWith('#') ? formData.accent : '#7E22CE')}
+                          onChange={(e) => setFormData({ ...formData, audienceColor: e.target.value })}
+                          className="w-7 h-7 rounded-lg border border-slate-300 cursor-pointer p-0.5 bg-white shadow-2xs"
+                          title="Pick custom color"
+                        />
+                        <input
+                          type="text"
+                          value={formData.audienceColor || ''}
+                          onChange={(e) => setFormData({ ...formData, audienceColor: e.target.value })}
+                          placeholder={formData.accent || '#7E22CE'}
+                          className="w-20 px-2 py-1 text-[11px] font-mono border border-slate-300 rounded-lg text-center uppercase bg-white text-slate-800"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Live Badge Preview */}
+                    <div className="pt-1.5 flex items-center gap-2">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Live Badge Preview:</span>
+                      <span
+                        className="text-[10px] font-black tracking-wider px-2.5 py-0.5 rounded-full border uppercase shadow-2xs transition-colors"
+                        style={{
+                          color: formData.audienceColor || formData.accent || '#7E22CE',
+                          backgroundColor: `${formData.audienceColor || formData.accent || '#7E22CE'}15`,
+                          borderColor: `${formData.audienceColor || formData.accent || '#7E22CE'}35`
+                        }}
+                      >
+                        {formData.audience || 'Audience Preview'}
+                      </span>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">

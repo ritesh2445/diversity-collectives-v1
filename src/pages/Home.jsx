@@ -665,7 +665,14 @@ export default function Home() {
 
                     <div className="p-6 md:p-8 flex flex-col gap-2.5 flex-1">
                       <div className="h-6 flex items-center">
-                        <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border w-fit block shadow-2xs ${audienceBadgeColor}`}>
+                        <span 
+                          className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border w-fit block shadow-2xs ${program.audienceColor ? '' : audienceBadgeColor}`}
+                          style={program.audienceColor ? {
+                            color: program.audienceColor,
+                            backgroundColor: `${program.audienceColor}15`,
+                            borderColor: `${program.audienceColor}35`
+                          } : undefined}
+                        >
                           {program.audience}
                         </span>
                       </div>
