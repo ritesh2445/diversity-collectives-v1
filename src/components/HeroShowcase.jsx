@@ -371,9 +371,12 @@ export default function HeroShowcase({
   sectionStyle = undefined,
   previewMode = false,
   compact = false,
+  viewport = 'desktop',
   onTriggerConfetti = undefined,
   afterWaveContent = null
 }) {
+  const isMobile = viewport === 'mobile' || compact;
+  const isTablet = viewport === 'tablet';
   const [heroService, setHeroService] = useState('testing');
   const activeThemeObj = resolveHeroTheme(themeId);
   const resolvedId = activeThemeObj.id;
@@ -402,16 +405,20 @@ export default function HeroShowcase({
   const emailAddr = merged.emailAddress || 'info@diversitycollective.org';
   const activeServiceObj = SERVICE_PATHS.find((s) => s.id === heroService) || SERVICE_PATHS[0];
 
-  const renderAuroraHeadline = ({ compactSize = false, darkMode = isDark } = {}) => (
-    <h1
-      className={`font-display ${
-        compactSize
-          ? 'text-2xl sm:text-4xl'
-          : 'text-3xl xs:text-4xl sm:text-6xl md:text-7xl lg:text-[4.25rem] xl:text-[4.85rem]'
-      } font-black tracking-tight ${
-        darkMode ? 'text-white' : 'text-slate-950'
-      } leading-[1.08] sm:leading-[1.04] max-w-full break-words [overflow-wrap:anywhere]`}
-    >
+  const renderAuroraHeadline = ({ compactSize = false, darkMode = isDark } = {}) => {
+    const isComp = compactSize || isMobile;
+    return (
+      <h1
+        className={`font-display ${
+          isComp
+            ? 'text-2xl sm:text-4xl'
+            : isTablet
+            ? 'text-3xl sm:text-5xl lg:text-6xl'
+            : 'text-3xl xs:text-4xl sm:text-6xl md:text-7xl lg:text-[4.25rem] xl:text-[4.85rem]'
+        } font-black tracking-tight ${
+          darkMode ? 'text-white' : 'text-slate-950'
+        } leading-[1.08] sm:leading-[1.04] max-w-full break-words [overflow-wrap:anywhere]`}
+      >
       <span className="block max-w-full break-words">{merged.titleLine1}</span>
       <span className="block mt-1 sm:mt-1.5 max-w-full">
         <span
@@ -450,6 +457,7 @@ export default function HeroShowcase({
       </span>
     </h1>
   );
+};
 
   const renderStandardCtas = ({ horizontal = false, darkMode = isDark } = {}) => {
     if (horizontal) {
@@ -629,8 +637,8 @@ export default function HeroShowcase({
             DESIGN 1: FLAGSHIP AURORA RIBBON (Live Production Default)
            ================================================================ */}
         {resolvedId === 'aurora' && (
-          <div className={`grid ${compact ? 'grid-cols-1 lg:grid-cols-12' : 'grid-cols-1 lg:grid-cols-12'} gap-6 lg:gap-8 xl:gap-10 items-center`}>
-            <div className="lg:col-span-7 xl:col-span-6 flex flex-col justify-center gap-5 sm:gap-6 z-10 pb-6 sm:pb-8 lg:pb-12">
+          <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-12'} gap-6 lg:gap-8 xl:gap-10 items-center`}>
+            <div className={`${isMobile ? 'w-full' : 'lg:col-span-7 xl:col-span-6'} flex flex-col justify-center gap-5 sm:gap-6 z-10 pb-6 sm:pb-8 lg:pb-12`}>
               <div className="flex flex-col gap-2.5 sm:gap-3.5 max-w-full">
                 <div className="inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] sm:text-xs font-black uppercase tracking-[0.1em] sm:tracking-[0.2em] text-slate-900 self-start max-w-full break-words">
                   <span className="max-w-full break-words">{merged.eyebrow}</span>
@@ -643,14 +651,14 @@ export default function HeroShowcase({
               {renderStandardCtas({ horizontal: false })}
             </div>
 
-            <div className="lg:col-span-5 xl:col-span-6 relative flex flex-col justify-center">
+            <div className={`${isMobile ? 'w-full' : 'lg:col-span-5 xl:col-span-6'} relative flex flex-col justify-center`}>
               <div className="relative z-10 w-full select-none">
                 <div className="absolute -inset-4 bg-gradient-to-r from-purple-400/25 via-pink-400/25 to-amber-300/30 blur-2xl pointer-events-none rounded-3xl" />
                 <div className="relative w-full rounded-3xl sm:rounded-[2.25rem] overflow-hidden bg-slate-100 shadow-xl border-2 border-white/80 group">
                   <img
                     src={auroraPhoto}
                     alt="Diversity Collective Ventura County community volunteers"
-                    className={`w-full ${compact ? 'h-56 sm:h-72' : 'min-h-[280px] sm:min-h-[360px] lg:min-h-[440px]'} object-cover group-hover:scale-105 transition-transform duration-700 ease-out`}
+                    className={`w-full ${isMobile ? 'h-56 sm:h-72' : 'min-h-[280px] sm:min-h-[360px] lg:min-h-[440px]'} object-cover group-hover:scale-105 transition-transform duration-700 ease-out`}
                     onError={(e) => {
                       e.target.src = '/images/community-gathering.jpg';
                     }}
@@ -665,8 +673,8 @@ export default function HeroShowcase({
             DESIGN 2: CIVIC CENTER & 3D SPOTLIGHT PATHFINDER
            ================================================================ */}
         {isSpotlight && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center pb-8 sm:pb-12 z-10">
-            <div className="lg:col-span-7 flex flex-col gap-6 z-10">
+          <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-12'} gap-8 lg:gap-12 items-center pb-8 sm:pb-12 z-10`}>
+            <div className={`${isMobile ? 'w-full' : 'lg:col-span-7'} flex flex-col gap-6 z-10`}>
               <div className="flex flex-col gap-3 sm:gap-3.5">
                 <span className="inline-flex items-center text-[11px] sm:text-xs font-bold text-[#5A1E65] py-1 px-3.5 bg-purple-50/95 border border-purple-200/90 rounded-full shadow-2xs self-start">
                   {merged.eyebrow}
@@ -725,7 +733,7 @@ export default function HeroShowcase({
               </div>
             </div>
 
-            <div className="lg:col-span-5 relative z-20">
+            <div className={`${isMobile ? 'w-full' : 'lg:col-span-5'} relative z-20`}>
               <div className="absolute -inset-2 bg-gradient-to-r from-purple-600 via-rose-500 via-amber-400 to-teal-500 rounded-3xl blur-2xl opacity-35 pointer-events-none" aria-hidden="true" />
               <CardSpotlight
                 className="glass-card rounded-3xl sm:rounded-[2rem] overflow-hidden shadow-2xl border-2 border-purple-200/90 relative"
@@ -787,8 +795,8 @@ export default function HeroShowcase({
            ================================================================ */}
         {resolvedId === 'portal' && (
           <div className="pb-10 space-y-8 z-10">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-              <div className="lg:col-span-7 space-y-4">
+            <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-12'} gap-8 items-center`}>
+              <div className={`${isMobile ? 'w-full' : 'lg:col-span-7'} space-y-4`}>
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-100 text-teal-900 border border-teal-300 text-xs font-extrabold">
                   <Stethoscope className="w-3.5 h-3.5" /> CENTER NAVIGATOR PORTAL
                 </span>
@@ -798,7 +806,7 @@ export default function HeroShowcase({
                 </p>
                 {renderStandardCtas({ horizontal: true })}
               </div>
-              <div className="lg:col-span-5 overflow-x-auto snap-x scrollbar-hide flex flex-row gap-3 snap-start pb-2 md:overflow-visible md:snap-none md:pb-0">
+              <div className={`${isMobile ? 'w-full' : 'lg:col-span-5'} overflow-x-auto snap-x scrollbar-hide flex flex-row gap-3 snap-start pb-2 md:overflow-visible md:snap-none md:pb-0`}>
                 {SERVICE_PATHS.map((svc) => (
                   <SafeNav
                     key={svc.id}
@@ -825,8 +833,8 @@ export default function HeroShowcase({
             DESIGN 4: BENTO EDITORIAL GRID
            ================================================================ */}
         {resolvedId === 'bento' && (
-          <div className="pb-10 grid grid-cols-1 lg:grid-cols-12 gap-4 z-10">
-            <div className="lg:col-span-7 p-6 sm:p-8 rounded-3xl bg-white border border-indigo-200 shadow-sm flex flex-col justify-between gap-5">
+          <div className={`pb-10 grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-12'} gap-4 z-10`}>
+            <div className={`${isMobile ? 'w-full' : 'lg:col-span-7'} p-6 sm:p-8 rounded-3xl bg-white border border-indigo-200 shadow-sm flex flex-col justify-between gap-5`}>
               <div className="space-y-3">
                 <span className="inline-block px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-900 text-[11px] font-black uppercase tracking-wider">
                   {merged.eyebrow}
@@ -839,7 +847,7 @@ export default function HeroShowcase({
               {renderStandardCtas({ horizontal: true })}
             </div>
 
-            <div className="lg:col-span-5 grid grid-rows-2 gap-4">
+            <div className={`${isMobile ? 'w-full' : 'lg:col-span-5'} grid grid-rows-2 gap-4`}>
               <div className="rounded-3xl overflow-hidden border border-indigo-200 relative min-h-[190px] bg-slate-900">
                 <img src={spotlightPhoto} alt="Community" className="w-full h-full object-cover" />
                 <div className="absolute bottom-3 left-3 right-3 px-3 py-1.5 rounded-xl bg-black/65 backdrop-blur-xs text-white text-xs font-bold flex items-center justify-between">
@@ -899,8 +907,8 @@ export default function HeroShowcase({
             DESIGN 6: MODERN ARCHITECTURAL SPLIT
            ================================================================ */}
         {resolvedId === 'architectural' && (
-          <div className="pb-10 grid grid-cols-1 lg:grid-cols-12 border-t-2 border-slate-900 pt-6 gap-6 items-stretch z-10">
-            <div className="lg:col-span-7 pr-0 lg:pr-8 lg:border-r-2 lg:border-slate-900 flex flex-col justify-between gap-5">
+          <div className={`pb-10 grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-12'} border-t-2 border-slate-900 pt-6 gap-6 items-stretch z-10`}>
+            <div className={`${isMobile ? 'w-full' : 'lg:col-span-7 pr-0 lg:pr-8 lg:border-r-2 lg:border-slate-900'} flex flex-col justify-between gap-5`}>
               <div className="space-y-4">
                 <span className="text-xs font-mono font-bold uppercase tracking-[0.22em] text-slate-600 block">
                   [ {merged.eyebrow} ]
@@ -912,7 +920,7 @@ export default function HeroShowcase({
               </div>
               {renderStandardCtas({ horizontal: true })}
             </div>
-            <div className="lg:col-span-5 flex flex-col gap-3">
+            <div className={`${isMobile ? 'w-full' : 'lg:col-span-5'} flex flex-col gap-3`}>
               <div className="flex-1 rounded-2xl overflow-hidden border-2 border-slate-900 min-h-[260px]">
                 <img src={auroraPhoto} alt="Architectural center view" className="w-full h-full object-cover" />
               </div>
@@ -928,8 +936,8 @@ export default function HeroShowcase({
             DESIGN 7: PRISMATIC SUNSET (High-Contrast Dark Gradient + Polaroid)
            ================================================================ */}
         {resolvedId === 'sunset' && (
-          <div className="pb-12 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center z-10">
-            <div className="lg:col-span-7 space-y-5">
+          <div className={`pb-12 grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-12'} gap-8 items-center z-10`}>
+            <div className={`${isMobile ? 'w-full' : 'lg:col-span-7'} space-y-5`}>
               <span className="inline-block px-3.5 py-1 rounded-full bg-white/15 border border-white/30 text-amber-200 text-xs font-extrabold uppercase tracking-wider">
                 {merged.eyebrow}
               </span>
@@ -939,7 +947,7 @@ export default function HeroShowcase({
               </p>
               {renderStandardCtas({ horizontal: true, darkMode: true })}
             </div>
-            <div className="lg:col-span-5 flex justify-center">
+            <div className={`${isMobile ? 'w-full' : 'lg:col-span-5'} flex justify-center`}>
               <div className="p-3 pb-5 bg-white rounded-3xl shadow-2xl rotate-2 max-w-md w-full border-4 border-amber-200">
                 <div className="rounded-2xl overflow-hidden aspect-[4/3]">
                   <img src={auroraPhoto} alt="Prismatic Sunset Community" className="w-full h-full object-cover" />
@@ -963,15 +971,15 @@ export default function HeroShowcase({
               <span className="italic text-[#5A1E65] font-semibold">{merged.eyebrow}</span>
               <span className="font-mono text-slate-600">{statusSchedule}</span>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-              <div className="lg:col-span-6 space-y-4">
+            <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-12'} gap-8 items-center`}>
+              <div className={`${isMobile ? 'w-full' : 'lg:col-span-6'} space-y-4`}>
                 {renderAuroraHeadline({ compactSize: compact })}
                 <p className="font-serif text-lg text-slate-800 leading-relaxed">
                   {renderHighlightedHeroSubtext(merged.subtitle || merged.description)}
                 </p>
                 {renderStandardCtas({ horizontal: true })}
               </div>
-              <div className="lg:col-span-6">
+              <div className={`${isMobile ? 'w-full' : 'lg:col-span-6'}`}>
                 <div className="rounded-2xl overflow-hidden border border-stone-400 shadow-xl aspect-[16/10]">
                   <img src={spotlightPhoto} alt="Editorial Feature" className="w-full h-full object-cover" />
                 </div>
@@ -984,8 +992,8 @@ export default function HeroShowcase({
             DESIGN 9: CONSTELLATION HUB (Orbiting Service Pills)
            ================================================================ */}
         {resolvedId === 'constellation' && (
-          <div className="pb-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center z-10">
-            <div className="lg:col-span-7 space-y-4">
+          <div className={`pb-10 grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-12'} gap-8 items-center z-10`}>
+            <div className={`${isMobile ? 'w-full' : 'lg:col-span-7'} space-y-4`}>
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 text-xs font-extrabold">
                 <Sparkles className="w-3.5 h-3.5" /> {merged.eyebrow}
               </span>
@@ -995,7 +1003,7 @@ export default function HeroShowcase({
               </p>
               {renderStandardCtas({ horizontal: true })}
             </div>
-            <div className="lg:col-span-5 overflow-x-auto snap-x scrollbar-hide flex flex-row gap-3 snap-start pb-2 md:overflow-visible md:snap-none md:pb-0">
+            <div className={`${isMobile ? 'w-full' : 'lg:col-span-5'} overflow-x-auto snap-x scrollbar-hide flex flex-row gap-3 snap-start pb-2 md:overflow-visible md:snap-none md:pb-0`}>
               {SERVICE_PATHS.map((svc, idx) => (
                 <SafeNav
                   key={svc.id}
@@ -1020,8 +1028,8 @@ export default function HeroShowcase({
             DESIGN 10: LUMINOUS NIGHT CENTER (Obsidian Dark Mode)
            ================================================================ */}
         {resolvedId === 'night' && (
-          <div className="pb-12 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center z-10 relative">
-            <div className="lg:col-span-7 space-y-5">
+          <div className={`pb-12 grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-12'} gap-8 items-center z-10 relative`}>
+            <div className={`${isMobile ? 'w-full' : 'lg:col-span-7'} space-y-5`}>
               <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-purple-950/90 border border-purple-500/50 text-purple-200 text-xs font-bold">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 {merged.eyebrow}
@@ -1032,7 +1040,7 @@ export default function HeroShowcase({
               </p>
               {renderStandardCtas({ horizontal: true, darkMode: true })}
             </div>
-            <div className="lg:col-span-5 relative">
+            <div className={`${isMobile ? 'w-full' : 'lg:col-span-5'} relative`}>
               <div className="absolute -inset-2 rounded-3xl bg-gradient-to-r from-purple-500 via-cyan-400 to-rose-500 opacity-55 blur-xl" />
               <div className="relative rounded-3xl overflow-hidden border border-purple-400/40 bg-slate-950 shadow-2xl aspect-[4/3]">
                 <img src={auroraPhoto} alt="Night Center" className="w-full h-full object-cover" />
@@ -1115,12 +1123,12 @@ export default function HeroShowcase({
               )}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center relative z-10">
-              <div className="lg:col-span-8 flex flex-col gap-3">
+            <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-12'} gap-6 items-center relative z-10`}>
+              <div className={`${isMobile ? 'w-full' : 'lg:col-span-8'} flex flex-col gap-3`}>
                 <span className={`text-xs font-extrabold tracking-[0.2em] uppercase block ${isDark ? 'text-amber-300' : 'text-[#5A1E65]'}`}>
                   SPECIAL EVENT SEASON · {merged.eyebrow}
                 </span>
-                <h1 className={`font-fraunces ${compact ? 'text-2xl sm:text-4xl' : 'text-3xl sm:text-5xl md:text-6xl'} font-bold tracking-tight leading-[1.1] ${isDark ? 'text-white' : 'text-slate-950'}`}>
+                <h1 className={`font-fraunces ${isMobile ? 'text-2xl sm:text-4xl' : 'text-3xl sm:text-5xl md:text-6xl'} font-bold tracking-tight leading-[1.1] ${isDark ? 'text-white' : 'text-slate-950'}`}>
                   {activeThemeObj.headline}
                 </h1>
                 <p className={`text-base sm:text-lg leading-relaxed font-semibold pt-1 antialiased ${isDark ? 'text-purple-100' : 'text-slate-900'}`}>
@@ -1154,7 +1162,7 @@ export default function HeroShowcase({
                 </div>
               </div>
 
-              <div className="lg:col-span-4">
+              <div className={`${isMobile ? 'w-full' : 'lg:col-span-4'}`}>
                 <div className="rounded-3xl overflow-hidden border-2 border-white/80 shadow-xl aspect-[4/3] bg-slate-900">
                   <img src={auroraPhoto} alt={activeThemeObj.name} className="w-full h-full object-cover" />
                 </div>

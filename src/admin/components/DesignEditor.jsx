@@ -25,6 +25,7 @@ import {
   Megaphone,
   Maximize2,
   Minimize2,
+  Menu,
   X
 } from 'lucide-react';
 import {
@@ -115,7 +116,7 @@ export default function DesignEditor({ onPublishSuccess }) {
             Diversity Collective VC
           </span>
         </div>
-        {viewport !== 'mobile' && (
+        {viewport !== 'mobile' ? (
           <div className="flex items-center gap-4 text-xs font-bold text-slate-700">
             <span>About</span>
             <span>Programs</span>
@@ -124,6 +125,15 @@ export default function DesignEditor({ onPublishSuccess }) {
             <span className="px-3 py-1 rounded-full bg-[#FDE047] text-slate-950 font-black text-[11px]">
               Donate
             </span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <span className="px-2.5 py-1 rounded-full bg-[#FDE047] text-slate-950 font-black text-[10px]">
+              Donate
+            </span>
+            <div className="p-1 rounded-md bg-slate-100 text-slate-700">
+              <Menu className="w-4 h-4" />
+            </div>
           </div>
         )}
       </div>
@@ -150,7 +160,8 @@ export default function DesignEditor({ onPublishSuccess }) {
                   themeId={heroTheme}
                   heroProps={heroBlock.props}
                   previewMode={true}
-                  compact={viewport === 'mobile' && !fullScreen}
+                  compact={viewport === 'mobile'}
+                  viewport={viewport}
                 />
               )}
 
@@ -747,16 +758,15 @@ export default function DesignEditor({ onPublishSuccess }) {
             <div
               className={`bg-white rounded-2xl border border-slate-300 shadow-xl overflow-hidden transition-all duration-300 w-full ${
                 viewport === 'mobile'
-                  ? 'max-w-[390px]'
+                  ? 'max-w-[420px]'
                   : viewport === 'tablet'
-                  ? 'max-w-[768px]'
+                  ? 'max-w-[800px]'
                   : 'max-w-full'
               }`}
             >
-              <div className="max-h-[760px] overflow-y-auto overflow-x-hidden">
+              <div className="max-h-[760px] overflow-y-auto overflow-x-hidden p-1 sm:p-2">
                 <DevicePreviewFrame
                   viewport={viewport}
-                  maxContainerWidth={viewport === 'desktop' ? null : VIEWPORT_WIDTHS[viewport]}
                   title="Admin Live Homepage Preview"
                 >
                   {renderPreviewCanvas({ fullScreen: false })}
@@ -1213,25 +1223,25 @@ export default function DesignEditor({ onPublishSuccess }) {
           </div>
 
           {/* Preview Stage */}
-          <div className="dcvc-preview-stage flex-1 overflow-y-auto p-0 sm:p-4 lg:p-6 flex justify-center items-start">
-            {viewport === 'desktop' ? (
-              <div className="w-full min-h-full bg-white sm:rounded-2xl shadow-2xl overflow-hidden">
-                {renderPreviewCanvas({ fullScreen: true })}
-              </div>
-            ) : (
-              <div
-                className="bg-white rounded-2xl border border-slate-700 shadow-2xl overflow-hidden w-full my-2"
-                style={{ maxWidth: `${VIEWPORT_WIDTHS[viewport]}px` }}
+          <div className="dcvc-preview-stage flex-1 overflow-y-auto p-2 sm:p-4 lg:p-6 flex justify-center items-start">
+            <div
+              className="bg-white rounded-2xl border border-slate-700 shadow-2xl overflow-hidden w-full my-2 flex justify-center"
+              style={{
+                maxWidth:
+                  viewport === 'mobile'
+                    ? '420px'
+                    : viewport === 'tablet'
+                    ? '800px'
+                    : '1320px'
+              }}
+            >
+              <DevicePreviewFrame
+                viewport={viewport}
+                title="Full-Screen Device Preview"
               >
-                <DevicePreviewFrame
-                  viewport={viewport}
-                  maxContainerWidth={VIEWPORT_WIDTHS[viewport]}
-                  title="Full-Screen Device Preview"
-                >
-                  {renderPreviewCanvas({ fullScreen: true })}
-                </DevicePreviewFrame>
-              </div>
-            )}
+                {renderPreviewCanvas({ fullScreen: true })}
+              </DevicePreviewFrame>
+            </div>
           </div>
         </div>
       )}
