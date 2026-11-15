@@ -2179,6 +2179,27 @@ html:not([lang="en"]) .card p {
   line-height: 1.15 !important;
 }
 
+.admin-preview-desktop {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.admin-preview-desktop .container,
+.admin-preview-desktop .container-clean {
+  width: 100% !important;
+  max-width: 100% !important;
+  padding-left: 1.5rem !important;
+  padding-right: 1.5rem !important;
+}
+
+.admin-preview-desktop h1 {
+  font-size: clamp(2rem, 3.2vw, 3.25rem) !important;
+  line-height: 1.08 !important;
+  letter-spacing: -0.02em !important;
+  word-break: normal !important;
+}
+
+
 
 
 
