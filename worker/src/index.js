@@ -47,6 +47,7 @@ import {
   constantTimeEqual,
   generateRandomSalt,
   validatePasswordStrength,
+  generateSecurePassword,
   parseCookies,
   buildSessionCookie,
   clearSessionCookie,
@@ -2654,8 +2655,11 @@ export default {
             success: true,
             tempToken,
             email: maskedEmail,
-            message: `A single-use 6-digit verification code has been dispatched to ${maskedEmail}.`,
-            emailDispatched
+            message: emailDispatched
+              ? `A single-use 6-digit verification code has been dispatched to ${maskedEmail}.`
+              : `Domain diversitycollective.org is not verified in Resend. Please sign in using your Password or Authenticator App, or ask an administrator to set your password.`,
+            emailDispatched,
+            domainUnverified: !emailDispatched
           }, 200, adminCors);
         }
 
@@ -3617,9 +3621,16 @@ export default {
           }
 
           const uRow = uRes.rows[0];
-          const computedCurrent = await hashPassword(currentPassword, uRow.salt);
-          if (!constantTimeEqual(computedCurrent, uRow.password_hash)) {
-            return errorResponse('Current password is incorrect.', 401, null, adminCors);
+          const hasExistingPassword = uRow.password_hash && !String(uRow.password_hash).startsWith('sso-only') && uRow.password_hash.length >= 20;
+
+          if (hasExistingPassword) {
+            if (!currentPassword) {
+              return errorResponse('Current password is required to change password.', 400, null, adminCors);
+            }
+            const computedCurrent = await hashPassword(currentPassword, uRow.salt);
+            if (!constantTimeEqual(computedCurrent, uRow.password_hash)) {
+              return errorResponse('Current password is incorrect.', 401, null, adminCors);
+            }
           }
 
           if (uRow.mfa_enabled && uRow.mfa_secret) {
@@ -3692,20 +3703,23 @@ export default {
           const body = await request.json().catch(() => ({}));
           const { secret, code } = body;
           const cleanCode = (code || '').replace(/\s+/g, '').trim();
+          const cleanSecret = (secret || '').replace(/[\s=-]/g, '').toUpperCase().trim();
 
-          if (!secret || !cleanCode) {
+          if (!cleanSecret || !cleanCode) {
             return errorResponse('Secret key and 6-digit confirmation code are required.', 400, null, adminCors);
           }
 
-          const totpCheck = await verifyTotpCode(secret, cleanCode, { returnStep: true });
+          // Use window: 3 (±90s) during setup confirmation to ensure effortless pairing even with client clock drift
+          const totpCheck = await verifyTotpCode(cleanSecret, cleanCode, { returnStep: true, window: 3 });
           if (!totpCheck.valid) {
+            console.warn(`[2FA Confirm] Code verification failed for ${authUser.email}. Clean code length: ${cleanCode.length}`);
             return errorResponse('Invalid 6-digit code. Please verify the code displayed in your authenticator app and try again.', 400, null, adminCors);
           }
 
           if (db) {
             await db.execute({
               sql: `UPDATE admin_users SET mfa_enabled = 1, mfa_secret = ?, last_totp_step = ? WHERE id = ?`,
-              args: [secret, totpCheck.matchedStep || 0, authUser.id || authUser.userId]
+              args: [cleanSecret, totpCheck.matchedStep || 0, authUser.id || authUser.userId]
             });
             await logAdminAction(db, {
               userId: authUser.id || authUser.userId,
@@ -3808,6 +3822,7 @@ export default {
             mfaEnabled: Boolean(row.mfa_enabled),
             isActive: Boolean(row.is_active),
             authMode: String(row.password_hash || '').startsWith('sso-only') ? 'sso' : 'password_or_sso',
+            hasPassword: !String(row.password_hash || '').startsWith('sso-only') && Boolean(row.password_hash) && String(row.password_hash).length >= 20,
             createdAt: row.created_at || null,
             lastLoginAt: row.last_login_at || null
           }));
@@ -4025,7 +4040,7 @@ export default {
             success: true,
             message: emailDispatched
               ? `Verification OTP passcode dispatched to ${targetUser.email}.`
-              : `Verification passcode generated for ${targetUser.email}.`,
+              : `Email dispatch unavailable (diversitycollective.org is unverified in Resend). Please use the "Set Password" button to provide ${targetUser.name} with credentials for direct login.`,
             emailDispatched,
             user: {
               id: targetUser.id,
@@ -4036,7 +4051,68 @@ export default {
           }, 200, adminCors);
         }
 
-        // Update existing authorized user's email, name, role, or active status (PATCH /api/admin/users/:id)
+        // Set / Reset password directly for any authorized team member (POST /api/admin/users/:id/reset-password)
+        if (pathname.startsWith('/api/admin/users/') && pathname.endsWith('/reset-password') && request.method === 'POST') {
+          if (authUser.role !== 'admin') {
+            return errorResponse('Forbidden: Superadmin access required to set staff passwords.', 403, null, adminCors);
+          }
+          if (!db) {
+            return errorResponse('Database unavailable.', 503, null, adminCors);
+          }
+
+          const targetId = decodeURIComponent(pathname.slice('/api/admin/users/'.length, -('/reset-password'.length))).trim();
+          const targetRes = await db.execute({
+            sql: `SELECT id, email, name, role, is_active FROM admin_users WHERE id = ? LIMIT 1`,
+            args: [targetId]
+          });
+          if (targetRes.rows.length === 0) {
+            return errorResponse('User account not found.', 404, null, adminCors);
+          }
+          const targetUser = targetRes.rows[0];
+
+          const body = await request.json().catch(() => ({}));
+          let finalPassword = typeof body.password === 'string' ? body.password.trim() : '';
+
+          if (!finalPassword || body.generate) {
+            finalPassword = generateSecurePassword(16);
+          } else {
+            const strength = validatePasswordStrength(finalPassword);
+            if (!strength.valid) {
+              return errorResponse(strength.error, 400, null, adminCors);
+            }
+          }
+
+          const salt = generateRandomSalt(16);
+          const hash = await hashPassword(finalPassword, salt);
+
+          await db.execute({
+            sql: `UPDATE admin_users SET password_hash = ?, salt = ?, must_change_password = 0, token_version = COALESCE(token_version, 1) + 1 WHERE id = ?`,
+            args: [hash, salt, targetId]
+          });
+
+          await logAdminAction(db, {
+            userId: authUser.id || authUser.userId,
+            userEmail: authUser.email,
+            action: 'admin_user_password_set',
+            targetType: 'admin_user',
+            targetId,
+            details: { targetEmail: targetUser.email, targetName: targetUser.name },
+            ip: clientIp
+          });
+
+          return jsonResponse({
+            success: true,
+            message: `Password successfully updated for ${targetUser.name} (${targetUser.email}).`,
+            password: finalPassword,
+            targetUser: {
+              id: targetUser.id,
+              email: targetUser.email,
+              name: targetUser.name
+            }
+          }, 200, adminCors);
+        }
+
+        // Update existing authorized user's email, name, role, active status, or password (PATCH /api/admin/users/:id)
         if (pathname.startsWith('/api/admin/users/') && request.method === 'PATCH') {
           if (authUser.role !== 'admin') {
             return errorResponse('Forbidden: Superadmin access required to modify team permissions.', 403, null, adminCors);
@@ -4087,7 +4163,22 @@ export default {
             }
           }
 
-          const shouldRevokeSessions = nextActive === 0 || nextRole !== existing.role || nextEmail !== existing.email;
+          let passwordUpdated = false;
+          if (typeof body.password === 'string' && body.password.trim().length > 0) {
+            const strength = validatePasswordStrength(body.password.trim());
+            if (!strength.valid) {
+              return errorResponse(strength.error, 400, null, adminCors);
+            }
+            const pSalt = generateRandomSalt(16);
+            const pHash = await hashPassword(body.password.trim(), pSalt);
+            await db.execute({
+              sql: `UPDATE admin_users SET password_hash = ?, salt = ?, must_change_password = 0, token_version = COALESCE(token_version, 1) + 1 WHERE id = ?`,
+              args: [pHash, pSalt, targetId]
+            });
+            passwordUpdated = true;
+          }
+
+          const shouldRevokeSessions = nextActive === 0 || nextRole !== existing.role || nextEmail !== existing.email || passwordUpdated;
           await db.execute({
             sql: shouldRevokeSessions
               ? `UPDATE admin_users SET email = ?, name = ?, role = ?, is_active = ?, token_version = COALESCE(token_version, 1) + 1 WHERE id = ?`

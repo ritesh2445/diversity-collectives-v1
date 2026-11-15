@@ -351,10 +351,12 @@ export async function generateTotpCode(secretBase32, timeSec = Math.floor(Date.n
 export async function verifyTotpCode(secretBase32, inputCode, options = {}) {
   const failResult = options.returnStep ? { valid: false, matchedStep: 0 } : false;
   if (!secretBase32 || !inputCode) return failResult;
+  const cleanSecret = String(secretBase32 || '').replace(/[\s=-]/g, '').toUpperCase();
   const clean = String(inputCode).replace(/\s+/g, '');
   if (!/^\d{6}$/.test(clean)) return failResult;
 
-  const window = options.window ?? 1;
+  // Drift window: defaults to 2 (±60 seconds) to accommodate device clock drift
+  const window = options.window ?? 2;
   const step = options.step || 30;
   const currentSec = Math.floor((options.timestamp || Date.now()) / 1000);
   const minAcceptedStep = Number(options.lastUsedStep || 0);
@@ -365,12 +367,44 @@ export async function verifyTotpCode(secretBase32, inputCode, options = {}) {
     if (minAcceptedStep > 0 && stepCounter <= minAcceptedStep) {
       continue; // Block TOTP code replay within already-consumed or earlier steps
     }
-    const expected = await generateTotpCode(secretBase32, testSec, step, 6);
+    const expected = await generateTotpCode(cleanSecret, testSec, step, 6);
     if (constantTimeEqual(clean, expected)) {
       return options.returnStep ? { valid: true, matchedStep: stepCounter } : true;
     }
   }
   return failResult;
+}
+
+// Generate strong random password fulfilling full security requirements
+export function generateSecurePassword(length = 16) {
+  const uppers = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const lowers = 'abcdefghijkmnopqrstuvwxyz';
+  const digits = '23456789';
+  const symbols = '!@#$%^&*()_+-=[]{}';
+  const all = uppers + lowers + digits + symbols;
+
+  const bytes = new Uint8Array(length);
+  crypto.getRandomValues(bytes);
+
+  const chars = [
+    uppers[bytes[0] % uppers.length],
+    lowers[bytes[1] % lowers.length],
+    digits[bytes[2] % digits.length],
+    symbols[bytes[3] % symbols.length]
+  ];
+
+  for (let i = 4; i < length; i++) {
+    chars.push(all[bytes[i] % all.length]);
+  }
+
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = bytes[i] % (i + 1);
+    const temp = chars[i];
+    chars[i] = chars[j];
+    chars[j] = temp;
+  }
+
+  return chars.join('');
 }
 
 // Build standard Authenticator App enrollment URI (`otpauth://totp/...`)

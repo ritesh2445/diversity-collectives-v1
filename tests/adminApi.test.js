@@ -18,6 +18,7 @@ import {
   constantTimeEqual,
   generateRandomSalt,
   validatePasswordStrength,
+  generateSecurePassword,
   parseCookies,
   buildSessionCookie,
   clearSessionCookie,
@@ -169,6 +170,12 @@ describe('Admin Authentication & RBAC Engine', () => {
     const expiredCode = await generateTotpCode(totpSecret, now - 300);
     const isExpiredValid = await verifyTotpCode(totpSecret, expiredCode, { timestamp: now * 1000, window: 1 });
     assert.strictEqual(isExpiredValid, false);
+
+    // Formatted key with spaces and lowercase matches seamlessly with window 2/3
+    const spacedSecret = totpSecret.match(/.{1,4}/g).join(' ').toLowerCase();
+    const currentCode = await generateTotpCode(totpSecret, now);
+    const isSpacedValid = await verifyTotpCode(spacedSecret, currentCode, { timestamp: now * 1000, window: 2 });
+    assert.strictEqual(isSpacedValid, true);
   });
 
   it('10. generates valid standard otpauth:// URI for authenticator QR codes', () => {
@@ -255,6 +262,14 @@ describe('Admin Authentication & RBAC Engine', () => {
     assert.strictEqual(validatePasswordStrength('alllowercase12!').valid, false);
     assert.strictEqual(validatePasswordStrength('DCVC-Admin-2026!').valid, false);
     assert.strictEqual(validatePasswordStrength('CommunityCenter#2026!Strong').valid, true);
+
+    // Test generated secure passwords meet all criteria
+    for (let i = 0; i < 20; i++) {
+      const generated = generateSecurePassword(16);
+      assert.strictEqual(generated.length, 16);
+      const check = validatePasswordStrength(generated);
+      assert.strictEqual(check.valid, true, `Generated password "${generated}" must be valid: ${check.error}`);
+    }
 
     const salt1 = generateRandomSalt(16);
     const salt2 = generateRandomSalt(16);
