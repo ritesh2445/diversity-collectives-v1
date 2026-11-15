@@ -993,23 +993,23 @@ export default function DesignEditor({ onPublishSuccess }) {
             </div>
 
             <div
-              className={`bg-white rounded-2xl border border-slate-300 shadow-xl overflow-hidden transition-all duration-300 w-full ${
-                viewport === 'mobile'
-                  ? 'max-w-[420px]'
-                  : viewport === 'tablet'
-                  ? 'max-w-[820px]'
-                  : 'max-w-full'
-              }`}
+              className="w-full transition-all duration-300 flex justify-center"
+              style={{
+                maxWidth:
+                  viewport === 'mobile'
+                    ? '440px'
+                    : viewport === 'tablet'
+                    ? '840px'
+                    : '100%'
+              }}
             >
-              <div className="max-h-[760px] overflow-y-auto overflow-x-hidden p-1 sm:p-2">
-                <DevicePreviewFrame
-                  viewport={viewport}
-                  title="Admin Live Homepage Preview"
-                  onSelectBlock={setSelectedBlockId}
-                >
-                  {renderPreviewCanvas({ fullScreen: false })}
-                </DevicePreviewFrame>
-              </div>
+              <DevicePreviewFrame
+                viewport={viewport}
+                title="Admin Live Homepage Preview"
+                onSelectBlock={setSelectedBlockId}
+              >
+                {renderPreviewCanvas({ fullScreen: false })}
+              </DevicePreviewFrame>
             </div>
           </div>
         </div>
@@ -1463,14 +1463,14 @@ export default function DesignEditor({ onPublishSuccess }) {
           {/* Preview Stage */}
           <div className="dcvc-preview-stage flex-1 overflow-y-auto p-2 sm:p-4 lg:p-6 flex justify-center items-start">
             <div
-              className="bg-white rounded-2xl border border-slate-700 shadow-2xl overflow-hidden w-full my-2 flex justify-center"
+              className="w-full my-2 flex justify-center"
               style={{
                 maxWidth:
                   viewport === 'mobile'
-                    ? '420px'
+                    ? '440px'
                     : viewport === 'tablet'
-                    ? '800px'
-                    : '1320px'
+                    ? '840px'
+                    : '1440px'
               }}
             >
               <DevicePreviewFrame
