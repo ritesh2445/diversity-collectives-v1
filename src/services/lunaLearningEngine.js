@@ -918,12 +918,13 @@ export class LunaLearningEngine {
         success: true,
         answer: `Luna (Ask DCVC) cannot provide medical diagnoses, treatment plans, or clinical evaluations. ` +
           `However, Diversity Collective provides **free, confidential rapid HIV and STI screenings** (results in 15–20 minutes) ` +
-          `and PrEP/PEP healthcare navigation through our **Diversity SHINES** clinic at our Community Resource Center ` +
-          `(2471 Portola Road, Suite 100, Ventura) Monday–Friday from 1:00 PM to 5:00 PM. No insurance or payment is required. ` +
+          `and PrEP/PEP healthcare navigation through our **Diversity SHINES** clinic on the **1st Monday of every month from 3:00 PM to 7:00 PM PT** ` +
+          `at our Community Resource Center (2471 Portola Road, Suite 100, Ventura). Walk-in testing is welcomed, or you can book an appointment at [Book Appointment](/appointments). ` +
+          `Free safer sex barrier supplies and harm reduction kits are also available for drop-in pickup Monday–Friday from 1:00 PM to 5:00 PM. No insurance or payment is required. ` +
           `For urgent medical symptoms, please visit an urgent care center or call 911.`,
         citations: [
-          { title: "Diversity SHINES Free Testing", url: "/programs/diversity-shINES" },
-          { title: "Contact Clinic", url: "/contact" }
+          { title: "Diversity SHINES Free Testing", url: "/programs/diversity-shines" },
+          { title: "Book Appointment", url: "/appointments" }
         ],
         mode: "client-unlimited"
       };
@@ -1078,9 +1079,20 @@ export class LunaLearningEngine {
             mode: "client-unlimited"
           };
         }
+        if (q.includes('when') || q.includes('time') || q.includes('schedule') || q.includes('hour') || q.includes('date') || q.includes('day')) {
+          return {
+            success: true,
+            answer: `Free confidential rapid HIV and STI screenings through [Diversity SHINES](/programs/diversity-shines) take place on the **1st Monday of every month from 3:00 PM to 7:00 PM PT** at the Community Resource Center (2471 Portola Road, Suite 100, Ventura).\n\n• **Screenings Offered:** Rapid HIV (results in 15–20 minutes), Hepatitis C, Syphilis, Chlamydia, Gonorrhea\n• **Walk-ins & Appointments:** Walk-ins are welcome; appointments can be reserved in advance at [Book Appointment](/appointments)\n• **Harm Reduction Supplies:** Free safer sex supplies and harm reduction kits are available for drop-in pickup Monday–Friday from 1:00 PM to 5:00 PM PT`,
+            citations: [
+              { title: "Diversity SHINES Free Testing", url: "/programs/diversity-shines" },
+              { title: "Book Appointment", url: "/appointments" }
+            ],
+            mode: "client-unlimited"
+          };
+        }
         return {
           success: true,
-          answer: `Yes! Diversity Collective provides **free, confidential rapid HIV and STI screenings** (Hepatitis C, Syphilis, Chlamydia, Gonorrhea) through our [Diversity SHINES](/programs/diversity-shines) clinic at the Community Resource Center (2471 Portola Road, Suite 100, Ventura). Results are available in 15–20 minutes with zero insurance or payment required. Learn more at [Diversity SHINES](/programs/diversity-shines).`,
+          answer: `Yes! Diversity Collective provides **free, confidential rapid HIV and STI screenings** (Hepatitis C, Syphilis, Chlamydia, Gonorrhea) through our [Diversity SHINES](/programs/diversity-shines) clinic on the **1st Monday of every month from 3:00 PM to 7:00 PM PT** at the Community Resource Center (2471 Portola Road, Suite 100, Ventura). Results are available in 15–20 minutes with zero insurance or payment required. Learn more at [Diversity SHINES](/programs/diversity-shines) or reserve a time at [Book Appointment](/appointments).`,
           citations: [
             { title: "Diversity SHINES Free Testing", url: "/programs/diversity-shines" },
             { title: "Book Appointment", url: "/appointments" }

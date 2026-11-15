@@ -327,9 +327,9 @@ export async function askDcvcChat(message, history = []) {
     url: r.url
   }));
 
-  // Evaluate local smart knowledge engine first for instant casual small talk & safety boundaries
+  // Evaluate Luna's dynamic continuous learning engine first for instant, verified live site answers
   const localResult = executeClientChat(cleanMessage, { history: compactHistory });
-  if (localResult.mode === 'client-conversational') {
+  if (localResult && localResult.success && !localResult.answer?.includes("couldn't find verified information")) {
     return localResult;
   }
 

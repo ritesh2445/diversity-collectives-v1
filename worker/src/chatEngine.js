@@ -160,8 +160,14 @@ export function synthesizeVerifiedAnswer(bestMatch, query) {
         citations
       };
     }
+    if (q.includes("when") || q.includes("time") || q.includes("schedule") || q.includes("hour") || q.includes("date") || q.includes("day")) {
+      return {
+        answer: `Free confidential rapid HIV and STI screenings through [Diversity SHINES](/programs/diversity-shines) are held on the **1st Monday of every month from 3:00 PM to 7:00 PM PT** at the Community Resource Center (2471 Portola Road, Suite 100, Ventura). Walk-in appointments are welcome, or you can reserve a slot in advance at [Book Appointment](/appointments). Free safer sex supplies and harm reduction kits are also available drop-in Monday–Friday from 1:00 PM to 5:00 PM PT.`,
+        citations
+      };
+    }
     return {
-      answer: `Yes! Diversity Collective provides **free, confidential rapid HIV and STI screenings** (Hepatitis C, Syphilis, Chlamydia, Gonorrhea) through our [Diversity SHINES](/programs/diversity-shines) clinic at the Community Resource Center (2471 Portola Road, Suite 100, Ventura). Results are available in 15–20 minutes with zero insurance or payment required. Learn more at [Diversity SHINES](/programs/diversity-shines).`,
+      answer: `Yes! Diversity Collective provides **free, confidential rapid HIV and STI screenings** (Hepatitis C, Syphilis, Chlamydia, Gonorrhea) through our [Diversity SHINES](/programs/diversity-shines) clinic on the **1st Monday of every month from 3:00 PM to 7:00 PM PT** at the Community Resource Center (2471 Portola Road, Suite 100, Ventura). Results are available in 15–20 minutes with zero insurance or payment required. Learn more at [Diversity SHINES](/programs/diversity-shines).`,
       citations
     };
   }

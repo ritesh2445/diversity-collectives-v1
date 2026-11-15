@@ -42,6 +42,15 @@ describe('Luna AI Dynamic Learning & Knowledge Intelligence Engine', () => {
     assert.match(res.answer, /55\+/);
   });
 
+  it('4b. accurately answers specific schedule for Diversity SHINES HIV testing', () => {
+    const res = executeClientChat('when is hiv test');
+    assert.equal(res.success, true);
+    assert.match(res.answer, /Diversity SHINES/i);
+    assert.match(res.answer, /1st Monday of every month/i);
+    assert.match(res.answer, /3:00 PM (?:–|-|to) 7:00 PM/i);
+    assert.ok(res.citations.some((c) => c.url.includes('diversity-shines')));
+  });
+
   // 2. Affirming Business Directory Lookups
   it('5. finds and returns exact details for Beacon Coffee Company', () => {
     const res = executeClientChat('Tell me about Beacon Coffee');

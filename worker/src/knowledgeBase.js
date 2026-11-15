@@ -70,10 +70,12 @@ export const VERIFIED_KNOWLEDGE_BASE = [
     officialUrl: "/programs/diversity-shines",
     costType: "100% Free",
     eligibility: "Ages 12 and older. Confidential under California Minor Consent laws.",
-    hours: "During Resource Center hours (Mon–Fri 1:00 PM – 5:00 PM PT) or by appointment",
+    hours: "Free Screenings: 1st Monday of every month, 3:00 PM – 7:00 PM PT (Appointments preferred at /appointments · Walk-ins welcome). Harm reduction supplies & center drop-in: Mon–Fri 1:00 PM – 5:00 PM PT",
     location: "2471 Portola Road, Suite 100, Ventura, CA 93003",
     summary: "Diversity SHINES is DCVC's clinical health initiative providing free, confidential rapid HIV and STI screenings, PrEP/PEP healthcare navigation, and safer sex supplies.",
     verifiedFacts: [
+      "Schedule: Free confidential rapid HIV and STI screenings take place on the 1st Monday of every month from 3:00 PM to 7:00 PM PT at the Community Resource Center (2471 Portola Road, Suite 100, Ventura).",
+      "Appointments & Walk-ins: Appointments can be reserved at /appointments; walk-in slots are also available. Safer sex kits and harm reduction supplies are available drop-in Monday–Friday from 1:00 PM to 5:00 PM PT.",
       "Cost: 100% Free. No health insurance, co-pay, or payment ever required.",
       "Screenings Provided: Rapid HIV (fingerstick blood test, results in 15–20 minutes), Hepatitis C, and partner-referred STI screenings (Syphilis, Chlamydia, Gonorrhea).",
       "Documentation: No government ID, insurance card, or parental consent required for youth 12+ (California Minor Consent Law).",
