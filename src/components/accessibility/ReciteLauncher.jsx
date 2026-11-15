@@ -13,8 +13,16 @@ export default function ReciteLauncher() {
     return false;
   });
   const [showHidePrompt, setShowHidePrompt] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
   const pressTimerRef = useRef(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsCollapsed(true);
+    }, 3200);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const unsubscribe = a11yStore.subscribe((settings) => {
@@ -108,11 +116,15 @@ export default function ReciteLauncher() {
         id="accessibility-launcher-button"
         type="button"
         onClick={() => a11yStore.toggleToolbar()}
+        onMouseEnter={() => setIsCollapsed(false)}
+        onMouseLeave={() => {
+          handlePressEnd();
+          setIsCollapsed(true);
+        }}
         onTouchStart={handlePressStart}
         onTouchEnd={handlePressEnd}
         onMouseDown={handlePressStart}
         onMouseUp={handlePressEnd}
-        onMouseLeave={handlePressEnd}
         onContextMenu={(e) => {
           e.preventDefault();
           setShowHidePrompt(true);
@@ -121,19 +133,25 @@ export default function ReciteLauncher() {
         aria-controls="native-accessibility-companion-ribbon"
         aria-label="Launch Accessibility & Audio Companion Toolbar (Alt + A). Long press to hide."
         title="Accessibility & Audio Tools (Alt + A) • Long-press to hide"
-        className="flex items-center gap-2 p-2.5 sm:px-4 sm:py-3 rounded-full bg-[#5A1E65] text-white shadow-xl hover:shadow-2xl border-2 border-amber-300 hover:bg-[#43144A] hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer select-none a11y-toolbar-isolated focus:outline-none focus:ring-4 focus:ring-amber-400 group"
+        className={`${
+          isCollapsed
+            ? 'is-collapsed w-12 h-12 p-0 justify-center rounded-full hover:scale-110'
+            : 'gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-full hover:scale-105'
+        } flex items-center bg-[#5A1E65] text-white shadow-xl hover:shadow-2xl border-2 border-amber-300 hover:bg-[#43144A] active:scale-95 transition-all duration-300 cursor-pointer select-none a11y-toolbar-isolated focus:outline-none focus:ring-4 focus:ring-amber-400 group`}
       >
-        <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center font-bold shadow-xs flex-shrink-0">
+        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center font-bold shadow-xs flex-shrink-0">
           <TraditionalAccessibilityIcon className="w-4 h-4 sm:w-5 sm:h-5 text-slate-950" />
         </div>
-        <div className="hidden sm:flex flex-col text-left">
-          <span className="font-extrabold text-xs tracking-wide text-white leading-tight">
-            Accessibility
-          </span>
-          <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider leading-none">
-            Audio & Tools
-          </span>
-        </div>
+        {!isCollapsed && (
+          <div className="hidden sm:flex flex-col text-left">
+            <span className="font-extrabold text-xs tracking-wide text-white leading-tight">
+              Accessibility
+            </span>
+            <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider leading-none">
+              Audio & Tools
+            </span>
+          </div>
+        )}
       </button>
     </div>
   );

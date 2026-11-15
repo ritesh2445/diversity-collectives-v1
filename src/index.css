@@ -2050,6 +2050,21 @@ html:not([lang="en"]) .hero-status-pill * {
   white-space: nowrap !important;
 }
 
+#accessibility-launcher-button.is-collapsed,
+#ask-luna-launcher-button.is-collapsed {
+  width: 3rem !important;
+  height: 3rem !important;
+  min-width: 3rem !important;
+  min-height: 3rem !important;
+  max-width: 3rem !important;
+  max-height: 3rem !important;
+  padding: 0 !important;
+  border-radius: 9999px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
 #accessibility-launcher-button *,
 #ask-luna-launcher-button * {
   white-space: nowrap !important;
