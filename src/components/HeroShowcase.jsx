@@ -418,7 +418,7 @@ export default function HeroShowcase({
           className={`font-serif italic font-semibold tracking-[-0.015em] ${
             darkMode
               ? 'bg-gradient-to-r from-amber-300 via-pink-400 to-cyan-300'
-              : 'bg-gradient-to-r from-[#4A0E4E] via-[#8B1A8F] via-[#D91B5C] via-[#E11D48] via-[#EA580C] via-[#F97316] to-[#F59E0B]'
+              : 'animate-liquid-flow'
           } bg-clip-text text-transparent relative inline max-w-full break-words mr-2.5 sm:mr-3.5 pb-1 sm:pb-1.5`}
         >
           {merged.titleAccentWord}

@@ -357,6 +357,7 @@ class TranslationEngine {
     this.currentLanguage = target.code;
     try {
       localStorage.setItem('dcvc_language', target.code);
+      sessionStorage.removeItem('dcvc_welcome_seen');
     } catch { /* ignore */ }
 
     if (typeof document !== 'undefined') {

@@ -376,8 +376,11 @@ img {
     #10B981 50%, 
     #06B6D4 66.6%, 
     #6366F1 83.3%, 
-    #A855F7 100%
+    #A855F7 100%,
+    #EF4444 116.6%
   );
+  background-size: 200% 100%;
+  animation: dcvcRainbowMove 8s linear infinite;
 }
 
 .pride-rainbow-text {
@@ -1248,7 +1251,9 @@ a:focus-visible, button:focus-visible {
    ========================================================================== */
 
 /* 1. Liquid Rainbow Flow for Headline ("Always") */
-.animate-liquid-flow {
+.animate-liquid-flow,
+.animate-liquid-flow *,
+.animate-liquid-flow font {
   background: linear-gradient(
     90deg,
     #EF4444 0%,
@@ -1259,12 +1264,12 @@ a:focus-visible, button:focus-visible {
     #8B5CF6 82%,
     #EC4899 95%,
     #EF4444 100%
-  );
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: liquidFlowRainbow 7s linear infinite;
+  ) !important;
+  background-size: 200% auto !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  animation: liquidFlowRainbow 7s linear infinite !important;
   display: inline-block;
   padding-right: 0.12em;
 }
