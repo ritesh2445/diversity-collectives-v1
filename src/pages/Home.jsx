@@ -118,6 +118,11 @@ export default function Home() {
     };
   }, []);
 
+  const [previewViewport, setPreviewViewport] = useState(() => {
+    if (typeof window === 'undefined') return undefined;
+    return new URLSearchParams(window.location.search).get('viewport') || undefined;
+  });
+
   // Real-time synchronization for Admin Studio Preview iframe
   useEffect(() => {
     const isPreviewFrame = typeof window !== 'undefined' && 
@@ -134,6 +139,9 @@ export default function Home() {
       }
       if (Array.isArray(data.blocks)) {
         setCustomLayoutBlocks(upgradeOrNormalizePageLayout(data.blocks));
+      }
+      if (data.viewport) {
+        setPreviewViewport(data.viewport);
       }
     };
 
@@ -436,6 +444,7 @@ export default function Home() {
           themeId={activeThemeId}
           heroProps={customHeroProps}
           centerStatus={centerStatus}
+          viewport={previewViewport}
           onTriggerConfetti={triggerMilestoneConfetti}
         />
       </div>

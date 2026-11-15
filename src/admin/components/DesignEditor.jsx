@@ -121,7 +121,8 @@ export default function DesignEditor({ onPublishSuccess }) {
     const payload = {
       type: 'DCVC_PREVIEW_SYNC',
       themeId: heroTheme,
-      blocks: blocks
+      blocks: blocks,
+      viewport: viewport
     };
     try {
       iframeRef.current?.contentWindow?.postMessage(payload, '*');
@@ -129,7 +130,7 @@ export default function DesignEditor({ onPublishSuccess }) {
     try {
       fullScreenIframeRef.current?.contentWindow?.postMessage(payload, '*');
     } catch {}
-  }, [heroTheme, blocks]);
+  }, [heroTheme, blocks, viewport]);
 
   useEffect(() => {
     postPreviewSync();
@@ -994,9 +995,9 @@ export default function DesignEditor({ onPublishSuccess }) {
             style={{
               maxWidth:
                 viewport === 'mobile'
-                  ? '395px'
+                  ? '430px'
                   : viewport === 'tablet'
-                  ? '800px'
+                  ? '840px'
                   : '100%'
             }}
           >
@@ -1121,9 +1122,9 @@ export default function DesignEditor({ onPublishSuccess }) {
               style={{
                 maxWidth:
                   viewport === 'mobile'
-                    ? '395px'
+                    ? '430px'
                     : viewport === 'tablet'
-                    ? '800px'
+                    ? '840px'
                     : '100%'
               }}
             >

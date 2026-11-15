@@ -371,12 +371,31 @@ export default function HeroShowcase({
   sectionStyle = undefined,
   previewMode = false,
   compact = false,
-  viewport = 'desktop',
+  viewport: propViewport = undefined,
   onTriggerConfetti = undefined,
   afterWaveContent = null
 }) {
-  const isMobile = viewport === 'mobile' || compact;
-  const isTablet = viewport === 'tablet';
+  const [windowWidth, setWindowWidth] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth : 1280
+  );
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const urlViewport = typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search).get('viewport')
+    : null;
+
+  const effectiveViewport = propViewport || urlViewport || (
+    windowWidth < 768 ? 'mobile' : windowWidth < 1024 ? 'tablet' : 'desktop'
+  );
+
+  const isMobile = effectiveViewport === 'mobile' || compact || windowWidth < 768;
+  const isTablet = effectiveViewport === 'tablet' || (windowWidth >= 768 && windowWidth < 1024 && effectiveViewport !== 'mobile');
   const [heroService, setHeroService] = useState('testing');
   const activeThemeObj = resolveHeroTheme(themeId);
   const resolvedId = activeThemeObj.id;
@@ -1132,7 +1151,7 @@ export default function HeroShowcase({
                 <span className={`text-xs font-extrabold tracking-[0.2em] uppercase block ${isDark ? 'text-amber-300' : 'text-[#5A1E65]'}`}>
                   SPECIAL EVENT SEASON · {merged.eyebrow}
                 </span>
-                <h1 className={`font-fraunces ${isMobile ? 'text-2xl sm:text-4xl' : 'text-3xl sm:text-5xl md:text-6xl'} font-bold tracking-tight leading-[1.1] ${isDark ? 'text-white' : 'text-slate-950'}`}>
+                <h1 className={`font-fraunces ${isMobile ? 'text-2xl sm:text-4xl' : isTablet ? 'text-3xl sm:text-4xl md:text-5xl' : 'text-3xl sm:text-5xl md:text-6xl'} font-bold tracking-tight leading-[1.1] ${isDark ? 'text-white' : 'text-slate-950'}`}>
                   {activeThemeObj.headline}
                 </h1>
                 <p className={`text-base sm:text-lg leading-relaxed font-semibold pt-1 antialiased ${isDark ? 'text-purple-100' : 'text-slate-900'}`}>

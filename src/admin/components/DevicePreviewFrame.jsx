@@ -59,13 +59,16 @@ export default function DevicePreviewFrame({
     } catch {}
   };
 
-  const availableW = containerWidth || 1280;
+  const sep = previewUrl.includes('?') ? '&' : '?';
+  const frameSrc = `${previewUrl}${sep}viewport=${viewport}`;
+  const availableW = containerWidth || (viewport === 'mobile' ? 411 : viewport === 'tablet' ? 808 : 1280);
 
   // =========================================================================
   // 1. MOBILE PHONE PREVIEW (Authentic 375px iPhone Chassis with Dynamic Notch)
   // =========================================================================
   if (viewport === 'mobile') {
-    const chassisW = 395;
+    // 375px screen + 2 * (10px padding + 8px border) = 411px chassis width
+    const chassisW = 411;
     const chassisH = 760;
     const mobileScale = availableW < chassisW ? Math.max(0.25, availableW / chassisW) : 1;
     const scaledHeight = Math.round(chassisH * mobileScale);
@@ -85,7 +88,7 @@ export default function DevicePreviewFrame({
             transform: mobileScale < 0.999 ? `scale(${mobileScale})` : 'none',
             transformOrigin: 'top center'
           }}
-          className="bg-slate-950 rounded-[3rem] p-2.5 border-[8px] border-slate-900 shadow-2xl ring-1 ring-slate-800/30 overflow-hidden flex flex-col transition-all duration-300"
+          className="bg-slate-950 rounded-[3rem] p-2.5 border-[8px] border-slate-900 shadow-2xl ring-1 ring-slate-800/30 overflow-hidden flex flex-col transition-all duration-300 mx-auto"
         >
           {/* Dynamic Island Notch & iOS Status Header */}
           <div className="w-full bg-slate-950 px-6 pt-1.5 pb-2 flex items-center justify-between text-[11px] text-white/90 select-none rounded-t-[2.25rem]">
@@ -103,12 +106,16 @@ export default function DevicePreviewFrame({
             </div>
           </div>
 
-          {/* Native Mobile Screen Viewport (Strictly 375px) */}
-          <div className="w-full h-[680px] bg-white rounded-b-[2.25rem] overflow-hidden relative" data-viewport="mobile">
-            {previewUrl ? (
+          {/* Native Mobile Screen Viewport: Exactly 375px wide, zero crop */}
+          <div
+            className="bg-white rounded-b-[2.25rem] overflow-hidden relative mx-auto"
+            style={{ width: '375px', height: '680px' }}
+            data-viewport="mobile"
+          >
+            {frameSrc ? (
               <iframe
                 ref={iframeRef}
-                src={previewUrl}
+                src={frameSrc}
                 onLoad={onIframeLoad}
                 title="Mobile Live Preview (375px)"
                 className="w-full h-full border-0 select-none bg-white"
@@ -132,8 +139,9 @@ export default function DevicePreviewFrame({
   // 2. TABLET PREVIEW (Authentic 768px iPad Chassis)
   // =========================================================================
   if (viewport === 'tablet') {
-    const chassisW = 800;
-    const chassisH = 780;
+    // 768px screen + 2 * (12px padding + 8px border) = 808px chassis width
+    const chassisW = 808;
+    const chassisH = 820;
     const tabletScale = availableW < chassisW ? Math.max(0.25, availableW / chassisW) : 1;
     const scaledHeight = Math.round(chassisH * tabletScale);
 
@@ -152,23 +160,27 @@ export default function DevicePreviewFrame({
             transform: tabletScale < 0.999 ? `scale(${tabletScale})` : 'none',
             transformOrigin: 'top center'
           }}
-          className="bg-slate-900 rounded-[2rem] p-3 border-[8px] border-slate-800 shadow-2xl ring-1 ring-slate-700/30 overflow-hidden flex flex-col transition-all duration-300"
+          className="bg-slate-900 rounded-[2rem] p-3 border-[8px] border-slate-800 shadow-2xl ring-1 ring-slate-700/30 overflow-hidden flex flex-col transition-all duration-300 mx-auto"
         >
           {/* Top iPad Camera Notch */}
           <div className="w-full bg-slate-900 py-1.5 flex items-center justify-center">
             <div className="w-2.5 h-2.5 rounded-full bg-slate-950 border border-white/10" />
           </div>
 
-          {/* Native Tablet Viewport (Strictly 768px) */}
-          <div className="w-full h-[740px] bg-white rounded-2xl overflow-hidden relative" data-viewport="tablet">
-            {previewUrl ? (
+          {/* Native Tablet Viewport: Exactly 768px wide, zero crop */}
+          <div
+            className="bg-white rounded-2xl overflow-hidden relative mx-auto"
+            style={{ width: '768px', height: '760px' }}
+            data-viewport="tablet"
+          >
+            {frameSrc ? (
               <iframe
                 ref={iframeRef}
-                src={previewUrl}
+                src={frameSrc}
                 onLoad={onIframeLoad}
                 title="Tablet Live Preview (768px)"
                 className="w-full h-full border-0 select-none bg-white"
-                style={{ width: '768px', height: '740px' }}
+                style={{ width: '768px', height: '760px' }}
               />
             ) : (
               children
@@ -226,7 +238,7 @@ export default function DevicePreviewFrame({
               <span>1280px Desktop {desktopScale < 0.999 ? `· ${Math.round(desktopScale * 100)}%` : ''}</span>
             </div>
             <a
-              href={previewUrl}
+              href={frameSrc}
               target="_blank"
               rel="noopener noreferrer"
               title="Open Live Preview in New Window"
@@ -246,7 +258,7 @@ export default function DevicePreviewFrame({
           }}
           data-viewport="desktop"
         >
-          {previewUrl ? (
+          {frameSrc ? (
             <div
               style={{
                 width: `${targetW}px`,
@@ -260,7 +272,7 @@ export default function DevicePreviewFrame({
             >
               <iframe
                 ref={iframeRef}
-                src={previewUrl}
+                src={frameSrc}
                 onLoad={onIframeLoad}
                 title="Desktop Live Preview (1280px)"
                 className="w-full h-full border-0 select-none bg-white"
