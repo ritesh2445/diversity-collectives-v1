@@ -1969,7 +1969,6 @@ html:not([lang="en"]) .nav-bar-btn {
 }
 
 /* 2. All Action Buttons, CTAs, and Navigation Pills (Preserve exact English component geometry) */
-button,
 a.btn-primary,
 a.btn-secondary,
 a.btn-vibrant-coral,
@@ -1978,29 +1977,33 @@ a.btn-dark,
 .btn-secondary,
 .btn-vibrant-coral,
 .btn-dark,
-[class*="btn-"],
 .nav-donate-btn,
-.nav-support-btn,
-[role="button"] {
+.nav-support-btn {
   box-sizing: border-box;
   max-width: 100%;
 }
 
-html.translated-ltr button,
-html.translated-rtl button,
-html:not([lang="en"]) button,
-html.translated-ltr a[class*="rounded-"],
-html.translated-rtl a[class*="rounded-"],
-html:not([lang="en"]) a[class*="rounded-"],
-html.translated-ltr [class*="btn-"],
-html.translated-rtl [class*="btn-"],
-html:not([lang="en"]) [class*="btn-"],
+html.translated-ltr .nav-bar-btn,
+html.translated-rtl .nav-bar-btn,
+html:not([lang="en"]) .nav-bar-btn,
 html.translated-ltr .nav-donate-btn,
 html.translated-rtl .nav-donate-btn,
 html:not([lang="en"]) .nav-donate-btn,
 html.translated-ltr .nav-support-btn,
 html.translated-rtl .nav-support-btn,
-html:not([lang="en"]) .nav-support-btn {
+html:not([lang="en"]) .nav-support-btn,
+html.translated-ltr .btn-primary,
+html.translated-rtl .btn-primary,
+html:not([lang="en"]) .btn-primary,
+html.translated-ltr .btn-secondary,
+html.translated-rtl .btn-secondary,
+html:not([lang="en"]) .btn-secondary,
+html.translated-ltr .btn-vibrant-coral,
+html.translated-rtl .btn-vibrant-coral,
+html:not([lang="en"]) .btn-vibrant-coral,
+html.translated-ltr .btn-dark,
+html.translated-rtl .btn-dark,
+html:not([lang="en"]) .btn-dark {
   white-space: nowrap !important;
   font-size: clamp(0.65rem, 0.85vw, 0.82rem) !important;
   line-height: normal !important;
@@ -2008,22 +2011,42 @@ html:not([lang="en"]) .nav-support-btn {
 }
 
 /* Child elements inside buttons and pills must inherit single-line layout and font scaling */
-html.translated-ltr button *,
-html.translated-rtl button *,
-html:not([lang="en"]) button *,
-html.translated-ltr [class*="btn-"] *,
-html.translated-rtl [class*="btn-"] *,
-html:not([lang="en"]) [class*="btn-"] *,
 html.translated-ltr .nav-bar-btn *,
 html.translated-rtl .nav-bar-btn *,
 html:not([lang="en"]) .nav-bar-btn *,
 html.translated-ltr .nav-donate-btn *,
 html.translated-rtl .nav-donate-btn *,
-html:not([lang="en"]) .nav-donate-btn * {
+html:not([lang="en"]) .nav-donate-btn *,
+html.translated-ltr .nav-support-btn *,
+html.translated-rtl .nav-support-btn *,
+html:not([lang="en"]) .nav-support-btn *,
+html.translated-ltr .btn-primary *,
+html.translated-rtl .btn-primary *,
+html:not([lang="en"]) .btn-primary *,
+html.translated-ltr .btn-secondary *,
+html.translated-rtl .btn-secondary *,
+html:not([lang="en"]) .btn-secondary * {
   white-space: nowrap !important;
   font-size: inherit !important;
   line-height: inherit !important;
   color: inherit !important;
+}
+
+/* Cards and Interactive Tiles: Always wrap text naturally across all languages and viewports */
+.card,
+.interactive-card-3d,
+a.interactive-card-3d,
+[class*="interactive-card"],
+[data-card] {
+  white-space: normal !important;
+}
+
+.card h1, .card h2, .card h3, .card h4, .card p, .card span,
+.interactive-card-3d h1, .interactive-card-3d h2, .interactive-card-3d h3, .interactive-card-3d h4, .interactive-card-3d p, .interactive-card-3d span,
+a.interactive-card-3d h1, a.interactive-card-3d h2, a.interactive-card-3d h3, a.interactive-card-3d h4, a.interactive-card-3d p, a.interactive-card-3d span {
+  white-space: normal !important;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 /* 3. Hero Status Banner Pill (Single-line auto-hug with auto-scaling font) */
@@ -2091,7 +2114,10 @@ html:not([lang="en"]) h1 {
 /* 6. Cards and Grid Component Boxes (Preserve identical card sizes & aspect ratios) */
 html.translated-ltr .card,
 html.translated-rtl .card,
-html:not([lang="en"]) .card {
+html:not([lang="en"]) .card,
+html.translated-ltr .interactive-card-3d,
+html.translated-rtl .interactive-card-3d,
+html:not([lang="en"]) .interactive-card-3d {
   height: 100% !important;
 }
 
@@ -2100,14 +2126,23 @@ html.translated-ltr .card h3,
 html.translated-ltr .card h4,
 html:not([lang="en"]) .card h2,
 html:not([lang="en"]) .card h3,
-html:not([lang="en"]) .card h4 {
+html:not([lang="en"]) .card h4,
+html.translated-ltr .interactive-card-3d h2,
+html.translated-ltr .interactive-card-3d h3,
+html.translated-ltr .interactive-card-3d h4,
+html:not([lang="en"]) .interactive-card-3d h2,
+html:not([lang="en"]) .interactive-card-3d h3,
+html:not([lang="en"]) .interactive-card-3d h4 {
   font-size: clamp(0.9rem, 1.15vw, 1.25rem) !important;
   line-height: 1.25 !important;
 }
 
 html.translated-ltr .card p,
 html.translated-rtl .card p,
-html:not([lang="en"]) .card p {
+html:not([lang="en"]) .card p,
+html.translated-ltr .interactive-card-3d p,
+html.translated-rtl .interactive-card-3d p,
+html:not([lang="en"]) .interactive-card-3d p {
   font-size: clamp(0.75rem, 0.9vw, 0.85rem) !important;
   line-height: 1.35 !important;
 }

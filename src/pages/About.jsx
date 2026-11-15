@@ -233,21 +233,21 @@ export default function About() {
                 href={sponsor.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full bg-white p-7 rounded-2xl border-2 border-slate-200/80 hover:border-[#5A1E65] transition-all text-center shadow-md hover:shadow-2xl interactive-card-3d group cursor-pointer flex flex-col justify-between"
+                className="w-full bg-white p-6 sm:p-7 rounded-2xl border-2 border-slate-200/80 hover:border-[#5A1E65] transition-all text-center shadow-md hover:shadow-2xl interactive-card-3d group cursor-pointer flex flex-col justify-between overflow-hidden min-w-0"
               >
-                <div className="h-20 flex items-center justify-center mb-5">
+                <div className="h-20 flex items-center justify-center mb-5 shrink-0">
                   <img 
                     src={sponsor.logo} 
                     alt={sponsor.name}
                     className="max-h-full max-w-[80%] object-contain group-hover:scale-108 transition-transform duration-300"
                   />
                 </div>
-                <div>
-                  <h3 className="font-display text-base font-black text-slate-900 group-hover:text-[#5A1E65] transition-colors flex items-center justify-center gap-1.5">
-                    <span>{sponsor.name}</span>
-                    <ArrowUpRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#5A1E65]" />
+                <div className="w-full min-w-0 flex flex-col items-center">
+                  <h3 className="font-display text-base font-black text-slate-900 group-hover:text-[#5A1E65] transition-colors flex items-center justify-center gap-1.5 flex-wrap leading-snug w-full text-center">
+                    <span className="break-words max-w-full text-center">{sponsor.name}</span>
+                    <ArrowUpRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#5A1E65] shrink-0 inline-block" />
                   </h3>
-                  <p className="text-xs text-slate-500 mt-1 font-medium">{sponsor.role}</p>
+                  <p className="text-xs text-slate-500 mt-1 font-medium break-words leading-relaxed text-center w-full">{sponsor.role}</p>
                 </div>
               </a>
             ))}
