@@ -278,7 +278,6 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
   const [otpMaskedEmail, setOtpMaskedEmail] = useState('');
   const [otpLoading, setOtpLoading] = useState(false);
   const [otpCooldown, setOtpCooldown] = useState(0);
-  const [otpDevCode, setOtpDevCode] = useState('');
   const [googleLoading, setGoogleLoading] = useState(false);
 
   useEffect(() => {
@@ -548,7 +547,6 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
         setTeamStatus({
           success: true,
           message: data.message || 'Admin access granted.',
-          otpCode: data.otpCode,
           userEmail: newUserEmail.trim()
         });
         setNewUserName('');
@@ -580,7 +578,6 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
         setTeamStatus({
           success: true,
           message: data.message || `Login OTP dispatched to ${member.email}.`,
-          otpCode: data.otpCode,
           userEmail: member.email
         });
       } else {
@@ -804,22 +801,12 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
         setOtpTempToken(data.tempToken);
         setOtpMaskedEmail(data.email || cleanEmail);
         setOtpSent(true);
-        setOtpDevCode(data.devCode || '');
         setOtpCooldown(60);
       } else {
         setAuthError(data.error || 'Unable to dispatch verification code. Please check your email.');
       }
     } catch {
-      // Local dev offline fallback
-      if (cleanEmail === 'admin@diversitycollective.org') {
-        setOtpTempToken('mock_otp_temp_token');
-        setOtpMaskedEmail('admin@diversitycollective.org');
-        setOtpSent(true);
-        setOtpDevCode('123456');
-        setOtpCooldown(60);
-      } else {
-        setAuthError('Network error connecting to verification service. Please retry.');
-      }
+      setAuthError('Network error connecting to verification service. Please retry.');
     } finally {
       setOtpLoading(false);
     }
@@ -850,45 +837,9 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
         setOtpSent(false);
         setOtpCode('');
       } else {
-        if ((cleanCode === '123456' || (otpDevCode && cleanCode === otpDevCode)) && (import.meta.env?.DEV || window?.location?.hostname === 'localhost' || window?.location?.hostname === '127.0.0.1')) {
-          const mockUser = {
-            id: 'adm-dev-1',
-            email: otpEmail || 'admin@diversitycollective.org',
-            name: 'Tess Allen (Executive Director)',
-            role: 'admin',
-            authProvider: 'email_otp'
-          };
-          const mockToken = 'mock_otp_admin_token_' + Date.now();
-          sessionStorage.setItem('dcvc_admin_token', mockToken);
-          localStorage.removeItem('dcvc_admin_token');
-          setToken(mockToken);
-          setUser(mockUser);
-          setOtpSent(false);
-          setOtpCode('');
-          setAuthError('');
-          return;
-        }
         setAuthError(data.error || 'Invalid or expired verification code.');
       }
     } catch {
-      if ((cleanCode === '123456' || (otpDevCode && cleanCode === otpDevCode)) && (import.meta.env?.DEV || window?.location?.hostname === 'localhost' || window?.location?.hostname === '127.0.0.1')) {
-        const mockUser = {
-          id: 'adm-dev-1',
-          email: otpEmail || 'admin@diversitycollective.org',
-          name: 'Tess Allen (Executive Director)',
-          role: 'admin',
-          authProvider: 'email_otp'
-        };
-        const mockToken = 'mock_otp_admin_token_' + Date.now();
-        sessionStorage.setItem('dcvc_admin_token', mockToken);
-        localStorage.removeItem('dcvc_admin_token');
-        setToken(mockToken);
-        setUser(mockUser);
-        setOtpSent(false);
-        setOtpCode('');
-        setAuthError('');
-        return;
-      }
       setAuthError('Verification network failure. Please retry.');
     } finally {
       setOtpLoading(false);
@@ -1048,47 +999,9 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
           setActiveTab('security');
         }
       } else {
-        if ((cleanCode === '123456' || (pending2fa?.devCode && cleanCode === pending2fa.devCode)) && (import.meta.env?.DEV || window?.location?.hostname === 'localhost' || window?.location?.hostname === '127.0.0.1')) {
-          const mockUser = {
-            id: 'adm-dev-1',
-            email: pending2fa.email || 'admin@diversitycollective.org',
-            name: 'Tess Allen (Executive Director)',
-            role: 'admin',
-            authProvider: '2fa_login'
-          };
-          const mockToken = 'mock_2fa_admin_token_' + Date.now();
-          sessionStorage.setItem('dcvc_admin_token', mockToken);
-          localStorage.removeItem('dcvc_admin_token');
-          setToken(mockToken);
-          setUser(mockUser);
-          setPending2fa(null);
-          setTwoFactorCode('');
-          setTwoFactorSuccessMsg('');
-          setAuthError('');
-          return;
-        }
         setAuthError(data.error || 'Invalid security code. Please verify and try again.');
       }
     } catch {
-      if ((cleanCode === '123456' || (pending2fa?.devCode && cleanCode === pending2fa.devCode)) && (import.meta.env?.DEV || window?.location?.hostname === 'localhost' || window?.location?.hostname === '127.0.0.1')) {
-        const mockUser = {
-          id: 'adm-dev-1',
-          email: pending2fa.email || 'admin@diversitycollective.org',
-          name: 'Tess Allen (Executive Director)',
-          role: 'admin',
-          authProvider: '2fa_login'
-        };
-        const mockToken = 'mock_2fa_admin_token_' + Date.now();
-        sessionStorage.setItem('dcvc_admin_token', mockToken);
-        localStorage.removeItem('dcvc_admin_token');
-        setToken(mockToken);
-        setUser(mockUser);
-        setPending2fa(null);
-        setTwoFactorCode('');
-        setTwoFactorSuccessMsg('');
-        setAuthError('');
-        return;
-      }
       setAuthError('Network communication failure during 2FA verification.');
     } finally {
       setTwoFactorLoading(false);
@@ -1554,13 +1467,6 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                     ? 'Enter the 6-digit verification code from your authenticator app.'
                     : `We sent a 6-digit verification code to ${pending2fa.email}.`}
                 </p>
-                {pending2fa?.devCode && (import.meta.env?.DEV || window?.location?.hostname === 'localhost' || window?.location?.hostname === '127.0.0.1') && (
-                  <div className="pt-1.5 flex items-center justify-center">
-                    <span className="text-[11px] font-mono text-purple-700 bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-200">
-                      Dev Security Code: <strong>{pending2fa.devCode}</strong>
-                    </span>
-                  </div>
-                )}
               </div>
 
               <button
@@ -1751,18 +1657,6 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                     <p className="text-[11px] text-purple-800">
                       Enter the 6-digit code sent to <strong>{otpMaskedEmail}</strong>.
                     </p>
-                    {otpDevCode && (import.meta.env?.DEV || window?.location?.hostname === 'localhost' || window?.location?.hostname === '127.0.0.1' || window?.location?.hostname?.endsWith('.pages.dev')) && (
-                      <div className="pt-2 mt-1 border-t border-purple-200/60 flex items-center justify-between">
-                        <span className="text-[11px] font-mono text-purple-700 bg-white/80 px-2 py-0.5 rounded border border-purple-200">Dev Code: <strong>{otpDevCode}</strong></span>
-                        <button
-                          type="button"
-                          onClick={() => setOtpCode(otpDevCode)}
-                          className="text-[11px] font-bold text-[#5A1E65] hover:underline cursor-pointer"
-                        >
-                          Auto-fill
-                        </button>
-                      </div>
-                    )}
                   </div>
 
                   <div className="space-y-1">
@@ -3315,28 +3209,6 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                       )}
                       <span className="font-semibold">{teamStatus.message}</span>
                     </div>
-                    {teamStatus.otpCode && (
-                      <div className="pt-2 border-t border-emerald-200/80 flex flex-wrap items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[11px] font-bold text-emerald-900 uppercase tracking-wider">One-Time Activation Passcode:</span>
-                          <span className="px-2.5 py-1 rounded-lg bg-white border border-emerald-300 font-mono text-sm font-extrabold text-[#5A1E65] tracking-widest shadow-xs">
-                            {teamStatus.otpCode}
-                          </span>
-                          <span className="text-[10px] text-emerald-700 font-medium">(Valid for 24 hours)</span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            navigator.clipboard.writeText(teamStatus.otpCode);
-                            alert(`One-Time Passcode ${teamStatus.otpCode} copied to clipboard!`);
-                          }}
-                          className="px-3 py-1 rounded-lg bg-[#5A1E65] text-white text-[11px] font-bold hover:bg-purple-900 cursor-pointer shadow-xs transition-all flex items-center gap-1.5"
-                        >
-                          <Copy className="w-3 h-3" />
-                          <span>Copy Passcode</span>
-                        </button>
-                      </div>
-                    )}
                   </div>
                 )}
 

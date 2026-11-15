@@ -488,36 +488,7 @@ async function sendEmail({ apiKey, from, to, replyTo, subject, html, text }) {
       });
       if (!res.ok) {
         const fallbackErr = await res.text();
-        if (res.status === 403 && fallbackErr.includes('You can only send testing emails to your own email address')) {
-          // Extract the allowed testing email from Resend's error message (e.g. admin@diversitycollective.org)
-          const matchOwner = fallbackErr.match(/\(([^)]+@[^)]+)\)/);
-          const ownerEmail = matchOwner ? matchOwner[1].trim() : 'admin@diversitycollective.org';
-          console.warn(`Resend sandbox restriction: routing test notification for <${Array.isArray(to) ? to.join(', ') : to}> to verified owner <${ownerEmail}>.`);
-          
-          const devNoticeHtml = `<div style="background:#fef3c7;border:1px solid #fde68a;padding:12px;border-radius:8px;margin-bottom:16px;font-size:13px;color:#92400e;"><strong>Resend Sandbox Notice:</strong> Intended recipient was <code>${Array.isArray(to) ? to.join(', ') : to}</code>. Delivered to verified owner address during domain configuration.</div>` + (html || '');
-
-          res = await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${apiKey}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              from: 'Diversity Collective <onboarding@resend.dev>',
-              to: [ownerEmail],
-              subject: `[Dev Sandbox - For ${Array.isArray(to) ? to[0] : to}] ${subject}`,
-              html: devNoticeHtml,
-              text: `[Delivered to ${ownerEmail} in Resend testing mode for intended recipient: ${Array.isArray(to) ? to.join(', ') : to}]\n\n` + (text || '')
-            })
-          });
-
-          if (!res.ok) {
-            const ownerErr = await res.text();
-            throw new Error(`Resend email failed: ${ownerErr}`);
-          }
-        } else {
-          throw new Error(`Resend email failed: ${fallbackErr}`);
-        }
+        throw new Error(`Resend email failed: ${fallbackErr}`);
       }
     } else {
       throw new Error(`Resend email failed: ${errText}`);
@@ -2684,8 +2655,7 @@ export default {
             tempToken,
             email: maskedEmail,
             message: `A single-use 6-digit verification code has been dispatched to ${maskedEmail}.`,
-            emailDispatched,
-            ...(isDevMode ? { devCode: otpCode } : {})
+            emailDispatched
           }, 200, adminCors);
         }
 
@@ -3249,8 +3219,7 @@ export default {
             mfaType: 'email',
             tempToken,
             email: maskedEmail,
-            message: `A single-use 6-digit verification code has been dispatched to ${maskedEmail}.`,
-            ...(isDevMode ? { devCode: emailOtp } : {})
+            message: `A single-use 6-digit verification code has been dispatched to ${maskedEmail}.`
           }, 200, adminCors);
         }
 
@@ -3956,8 +3925,7 @@ export default {
             success: true,
             message: emailDispatched
               ? `Access granted to ${cleanEmail} (${requestedRole}). An onboarding OTP verification code has been dispatched to their email.`
-              : `Access granted to ${cleanEmail} (${requestedRole}). Onboarding OTP code generated: ${otpCode}.`,
-            otpCode,
+              : `Access granted to ${cleanEmail} (${requestedRole}).`,
             emailDispatched,
             user: {
               id: newId,
@@ -4056,9 +4024,8 @@ export default {
           return jsonResponse({
             success: true,
             message: emailDispatched
-              ? `Verification OTP (${otpCode}) dispatched to ${targetUser.email}.`
-              : `Verification code generated: ${otpCode} (Email dispatch failed: ${emailError || 'Resend unavailable'}).`,
-            otpCode,
+              ? `Verification OTP passcode dispatched to ${targetUser.email}.`
+              : `Verification passcode generated for ${targetUser.email}.`,
             emailDispatched,
             user: {
               id: targetUser.id,
