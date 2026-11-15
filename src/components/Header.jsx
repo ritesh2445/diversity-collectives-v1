@@ -139,12 +139,12 @@ export default function Header() {
       {/* Primary Sticky Header Bar */}
       <header
         id="main-header"
-        className="sticky top-0 left-0 right-0 z-50 transition-all duration-200 bg-[#FAF5FF]/95 backdrop-blur-md border-b border-purple-200/70 shadow-xs w-full max-w-full overflow-hidden"
+        className="sticky top-0 left-0 right-0 z-50 transition-all duration-200 bg-[#FAF5FF]/95 backdrop-blur-md border-b border-purple-200/70 shadow-xs w-full max-w-full overflow-visible"
       >
         {/* Pride Rainbow Accent Ribbon integrated at header top */}
         <div className="h-0.5 sm:h-1 pride-rainbow-bar w-full" aria-hidden="true" />
 
-        <div className={`w-full max-w-full sm:max-w-[1720px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 transition-all duration-200 overflow-hidden ${scrolled ? 'py-1.5 sm:py-2.5' : 'py-2 sm:py-3'
+        <div className={`w-full max-w-full sm:max-w-[1720px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 transition-all duration-200 overflow-visible ${scrolled ? 'py-1.5 sm:py-2.5' : 'py-2 sm:py-3'
           }`}>
           <div className="flex items-center justify-between gap-1.5 sm:gap-4 lg:gap-6 w-full max-w-full min-w-0">
 
