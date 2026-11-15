@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   LayoutGrid,
   Monitor,
@@ -109,481 +109,45 @@ export default function DesignEditor({ onPublishSuccess }) {
   const previewThemeObj = resolveHeroTheme(heroTheme);
   const liveThemeObj = resolveHeroTheme(publishedHeroTheme);
 
+  const iframeRef = useRef(null);
+  const fullScreenIframeRef = useRef(null);
+
   const handleSelectBlock = (id) => {
     setSelectedBlockId(id);
     setSidebarTab('content');
   };
 
-  const renderPreviewCanvas = ({ fullScreen = false } = {}) => (
-    <div className="bg-white w-full flex flex-col font-sans select-none">
-      {/* 1. AUTHENTIC LIVE HEADER PREVIEW */}
-      <header className="sticky top-0 left-0 right-0 z-40 bg-[#FAF5FF]/95 backdrop-blur-md border-b border-purple-200/80 shadow-xs w-full">
-        {/* Pride Rainbow Accent Ribbon */}
-        <div className="h-1 pride-rainbow-bar w-full" aria-hidden="true" />
+  const postPreviewSync = useCallback(() => {
+    const payload = {
+      type: 'DCVC_PREVIEW_SYNC',
+      themeId: heroTheme,
+      blocks: blocks
+    };
+    try {
+      iframeRef.current?.contentWindow?.postMessage(payload, '*');
+    } catch {}
+    try {
+      fullScreenIframeRef.current?.contentWindow?.postMessage(payload, '*');
+    } catch {}
+  }, [heroTheme, blocks]);
 
-        {/* Top Utility Helpline Bar (Hidden on Mobile) */}
-        {viewport !== 'mobile' && (
-          <div className="bg-[#5A1E65] text-white/95 text-[11px] font-bold px-4 sm:px-6 py-1 flex items-center justify-between border-b border-purple-900/40">
-            <div className="flex items-center gap-3">
-              <span className="flex items-center gap-1.5 text-amber-300 font-extrabold">
-                <Phone className="w-3 h-3 text-amber-300" />
-                <span>Crisis: (805) 644-5428 · Dial 988</span>
-              </span>
-              <span className="text-white/30">|</span>
-              <span className="text-white/80">Ventura County 501(c)(3) Nonprofit</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded-full bg-white/15 text-white text-[10px] font-bold">
-                🌐 English (US)
-              </span>
-              <span className="px-2.5 py-0.5 rounded-full bg-rose-600/90 hover:bg-rose-600 text-white text-[10px] font-black tracking-wide shadow-2xs">
-                🛡 Quick Exit
-              </span>
-            </div>
-          </div>
-        )}
+  useEffect(() => {
+    postPreviewSync();
+    const t = setTimeout(postPreviewSync, 200);
+    return () => clearTimeout(t);
+  }, [postPreviewSync]);
 
-        {/* Main Navbar */}
-        <div className="px-4 sm:px-6 py-2.5 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl overflow-hidden shadow-xs border border-purple-200 bg-white flex-shrink-0 flex items-center justify-center p-0.5">
-              <img
-                src="/images/logo-square.png"
-                alt="DCVC Official Logo"
-                className="w-full h-full object-contain filter drop-shadow-xs"
-              />
-            </div>
-            <div className="flex flex-col justify-center min-w-0">
-              <span className="font-display font-extrabold text-sm sm:text-base tracking-tight leading-tight text-slate-950 truncate">
-                Diversity Collective
-              </span>
-              <span className="text-[10px] font-bold tracking-[0.14em] text-[#5A1E65] uppercase truncate">
-                Ventura County
-              </span>
-            </div>
-          </div>
-
-          {viewport !== 'mobile' ? (
-            <div className="flex items-center gap-1 sm:gap-2 lg:gap-3 text-xs font-bold text-slate-800">
-              <span className="px-2.5 py-1 rounded-lg hover:text-[#5A1E65] hover:bg-purple-50/60 cursor-pointer">About</span>
-              <span className="px-2.5 py-1 rounded-lg hover:text-[#5A1E65] hover:bg-purple-50/60 cursor-pointer">Programs</span>
-              <span className="px-2.5 py-1 rounded-lg hover:text-[#5A1E65] hover:bg-purple-50/60 cursor-pointer">Community</span>
-              <span className="px-2.5 py-1 rounded-lg hover:text-[#5A1E65] hover:bg-purple-50/60 cursor-pointer">Events</span>
-              <span className="px-2.5 py-1 rounded-lg hover:text-[#5A1E65] hover:bg-purple-50/60 cursor-pointer">Resources</span>
-              <span className="px-2.5 py-1 rounded-lg hover:text-[#5A1E65] hover:bg-purple-50/60 cursor-pointer">Directory</span>
-              <div className="px-4 py-1.5 rounded-full bg-[#FDE047] text-slate-950 font-black text-xs shadow-xs hover:bg-amber-300 ml-1 cursor-pointer">
-                Donate
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <div className="px-3 py-1 rounded-full bg-[#FDE047] text-slate-950 font-black text-[11px] shadow-xs">
-                Donate
-              </div>
-              <div className="p-1.5 rounded-lg bg-slate-100 text-slate-800">
-                <Menu className="w-4 h-4" />
-              </div>
-            </div>
-          )}
-        </div>
-      </header>
-
-      {/* 2. HOMEPAGE SECTIONS WITH LIVE FIDELITY */}
-      <div className="flex flex-col">
-        {blocks.map((rawBlock) => {
-          if (!rawBlock || rawBlock.enabled === false) return null;
-          const block = { ...rawBlock, props: rawBlock.props || {} };
-          const isSelected = !fullScreen && block.id === selectedBlock?.id;
-
-          return (
-            <div
-              key={block.id}
-              data-block-id={block.id}
-              onClick={() => handleSelectBlock(block.id)}
-              className={`relative cursor-pointer transition-all ${
-                isSelected
-                  ? 'ring-4 ring-[#5A1E65] ring-inset z-10'
-                  : 'hover:ring-2 hover:ring-purple-400/80'
-              }`}
-            >
-              {isSelected && (
-                <div className="absolute top-2 right-2 z-30 bg-[#5A1E65] text-white text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow-md pointer-events-none flex items-center gap-1">
-                  <span>Selected</span>
-                </div>
-              )}
-              {/* Live Hero Showcase */}
-              {block.type === 'hero_banner' && (
-                <HeroShowcase
-                  themeId={heroTheme}
-                  heroProps={heroBlock.props}
-                  previewMode={true}
-                  compact={viewport === 'mobile'}
-                  viewport={viewport}
-                />
-              )}
-
-              {/* Impact Numbers */}
-              {block.type === 'impact_stats' && (
-                <section className="py-10 sm:py-14 bg-gradient-to-b from-purple-100/40 via-teal-100/30 to-amber-100/30 border-b border-purple-200/60 relative overflow-hidden">
-                  <div className="container-clean">
-                    <div className="max-w-2xl mb-8 flex flex-col gap-2.5">
-                      <span className="glass-pill self-start">
-                        {block.props.eyebrow || '10-YEAR TRACK RECORD'}
-                      </span>
-                      <h2 className="font-display text-xl sm:text-2xl md:text-3xl font-bold text-slate-900">
-                        {block.props.headline || 'Trusted community support across Ventura County.'}
-                      </h2>
-                      <p className="text-xs sm:text-sm text-slate-700 font-medium leading-relaxed">
-                        {block.props.description || 'Since 2014, we have provided barrier-free, non-judgmental services to LGBTQ+ individuals, youth, and families.'}
-                      </p>
-                    </div>
-
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                      <div className="p-4 sm:p-5 rounded-2xl bg-white/95 border-2 border-purple-300 shadow-sm flex flex-col justify-between">
-                        <div className="w-8 h-8 rounded-lg bg-purple-100 text-[#5A1E65] flex items-center justify-center mb-2">
-                          <Award className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <span className="block text-xl sm:text-2xl font-black text-[#5A1E65]">{block.props.stat1Number || '10+'}</span>
-                          <span className="text-xs font-bold text-slate-900 block mt-0.5">{block.props.stat1Label || 'Years of Impact'}</span>
-                          <span className="text-[10px] text-slate-500 mt-1 block">Dedicated community presence</span>
-                        </div>
-                      </div>
-
-                      <div className="p-4 sm:p-5 rounded-2xl bg-white/95 border-2 border-teal-300 shadow-sm flex flex-col justify-between">
-                        <div className="w-8 h-8 rounded-lg bg-teal-100 text-teal-800 flex items-center justify-center mb-2">
-                          <Activity className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <span className="block text-xl sm:text-2xl font-black text-teal-700">{block.props.stat2Number || '5,000+'}</span>
-                          <span className="text-xs font-bold text-slate-900 block mt-0.5">{block.props.stat2Label || 'Health Screenings'}</span>
-                          <span className="text-[10px] text-slate-500 mt-1 block">Free confidential HIV/STI tests</span>
-                        </div>
-                      </div>
-
-                      <div className="p-4 sm:p-5 rounded-2xl bg-white/95 border-2 border-amber-300 shadow-sm flex flex-col justify-between">
-                        <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center mb-2">
-                          <Users className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <span className="block text-xl sm:text-2xl font-black text-amber-700">{block.props.stat3Number || '1,200+'}</span>
-                          <span className="text-xs font-bold text-slate-900 block mt-0.5">{block.props.stat3Label || 'Youth Empowered'}</span>
-                          <span className="text-[10px] text-slate-500 mt-1 block">Rainbow Umbrella safe circles</span>
-                        </div>
-                      </div>
-
-                      <div className="p-4 sm:p-5 rounded-2xl bg-white/95 border-2 border-indigo-300 shadow-sm flex flex-col justify-between">
-                        <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-800 flex items-center justify-center mb-2">
-                          <ShieldCheck className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <span className="block text-xl sm:text-2xl font-black text-indigo-700">{block.props.stat4Number || '100%'}</span>
-                          <span className="text-xs font-bold text-slate-900 block mt-0.5">{block.props.stat4Label || 'Free & Confidential'}</span>
-                          <span className="text-[10px] text-slate-500 mt-1 block">Zero fees, complete privacy</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-              )}
-
-              {/* Directory CTA */}
-              {block.type === 'directory_cta' && (
-                <section className="py-8 sm:py-12 bg-white border-b border-purple-200/60">
-                  <div className="container-clean">
-                    <div className="p-5 sm:p-8 rounded-3xl bg-gradient-to-r from-purple-50 via-pink-50/50 to-amber-50/60 border-2 border-purple-200/80 shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
-                      <div className="flex items-start gap-4 min-w-0">
-                        <div className="w-12 h-12 rounded-2xl bg-[#5A1E65] text-amber-300 flex items-center justify-center shrink-0 shadow-sm">
-                          <Building2 className="w-6 h-6" />
-                        </div>
-                        <div className="min-w-0">
-                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-purple-100 text-[#5A1E65] uppercase tracking-wider mb-1.5 inline-block">
-                            Affirming Network
-                          </span>
-                          <h3 className="font-display text-lg sm:text-xl font-bold text-slate-900">
-                            {block.props.headline || 'Find Verified LGBTQ+ Affirming Businesses in Ventura County'}
-                          </h3>
-                          <p className="text-xs sm:text-sm text-slate-700 font-medium mt-1 leading-relaxed">
-                            {block.props.description || 'Discover vetted healthcare providers, affirming therapists, safe spaces, and allied professionals across Ventura, Oxnard, Camarillo, and beyond.'}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="px-5 py-2.5 rounded-full bg-[#5A1E65] text-white font-extrabold text-xs shadow-md shrink-0 flex items-center gap-1.5 self-start md:self-center">
-                        <span>{block.props.ctaText || 'Explore Directory →'}</span>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-              )}
-
-              {/* Programs Showcase */}
-              {block.type === 'programs_section' && (
-                <section className="py-10 sm:py-14 bg-[#FAF7F2] border-b border-purple-200/60">
-                  <div className="container-clean space-y-6">
-                    <div className="flex flex-col gap-2">
-                      <span className="glass-pill self-start">LIFESAVING PROGRAMS</span>
-                      <h3 className="font-display text-xl sm:text-2xl font-bold text-slate-900">
-                        {block.props.headline || 'Comprehensive Support Across All Generations'}
-                      </h3>
-                      <p className="text-xs sm:text-sm text-slate-700 font-medium">
-                        {block.props.description || 'Weekly peer groups, clinical wellness testing, youth empowerment, and advocacy circles.'}
-                      </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      <div className="p-4 rounded-2xl bg-white border border-purple-200/80 shadow-xs space-y-2">
-                        <span className="text-[10px] font-black uppercase text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md">Youth (13–23)</span>
-                        <h4 className="font-bold text-sm text-slate-900">Rainbow Umbrella</h4>
-                        <p className="text-xs text-slate-600">Weekly affirming youth drop-in circle with snacks, creative workshops, and mentorship.</p>
-                      </div>
-                      <div className="p-4 rounded-2xl bg-white border border-teal-200/80 shadow-xs space-y-2">
-                        <span className="text-[10px] font-black uppercase text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md">Clinical Care</span>
-                        <h4 className="font-bold text-sm text-slate-900">Diversity SHINES Clinic</h4>
-                        <p className="text-xs text-slate-600">Free, rapid, 100% confidential HIV/STI health screenings and harm-reduction navigation.</p>
-                      </div>
-                      <div className="p-4 rounded-2xl bg-white border border-indigo-200/80 shadow-xs space-y-2">
-                        <span className="text-[10px] font-black uppercase text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md">Allies & Trans</span>
-                        <h4 className="font-bold text-sm text-slate-900">Trans & Non-Binary Circles</h4>
-                        <p className="text-xs text-slate-600">Peer-led support groups providing a safe sanctuary for gender-expansive individuals.</p>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-              )}
-
-              {/* Cultural Training CTA */}
-              {block.type === 'training_cta' && (
-                <section className="py-8 sm:py-12 bg-gradient-to-r from-teal-50 via-sky-50 to-purple-50 border-b border-teal-200/60">
-                  <div className="container-clean">
-                    <div className="p-5 sm:p-7 rounded-3xl bg-white/95 border-2 border-teal-200 shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
-                      <div className="flex items-start gap-4 min-w-0">
-                        <div className="w-12 h-12 rounded-2xl bg-teal-700 text-amber-300 flex items-center justify-center shrink-0 shadow-sm">
-                          <Compass className="w-6 h-6" />
-                        </div>
-                        <div className="min-w-0">
-                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-teal-100 text-teal-800 uppercase tracking-wider mb-1.5 inline-block">
-                            {block.props.eyebrow || 'Workplace & Healthcare Accreditation'}
-                          </span>
-                          <h3 className="font-display text-lg sm:text-xl font-bold text-slate-900">
-                            {block.props.headline || 'P.R.I.D.E. Cultural Competency Training'}
-                          </h3>
-                          <p className="text-xs sm:text-sm text-slate-700 font-medium mt-1 leading-relaxed">
-                            Interactive diversity education for healthcare systems, school districts, law enforcement, and corporate employers.
-                          </p>
-                        </div>
-                      </div>
-                      <div className="px-5 py-2.5 rounded-full bg-teal-700 text-white font-extrabold text-xs shadow-md shrink-0 self-start md:self-center">
-                        {block.props.ctaText || 'Book Training Session →'}
-                      </div>
-                    </div>
-                  </div>
-                </section>
-              )}
-
-              {/* Zeffy Fee-Free Giving */}
-              {block.type === 'zeffy_giving' && (
-                <section className="py-10 sm:py-14 bg-gradient-to-b from-amber-50/70 via-purple-50/40 to-white border-b border-amber-200/70">
-                  <div className="container-clean space-y-6">
-                    <div className="max-w-2xl flex flex-col gap-2">
-                      <span className="glass-pill self-start bg-amber-100 text-amber-900 border-amber-300">100% COMMUNITY FUNDED</span>
-                      <h3 className="font-display text-xl sm:text-2xl font-bold text-slate-900">
-                        {block.props.headline || 'Every Dollar Goes Directly to Lifesaving Local Programs'}
-                      </h3>
-                      <p className="text-xs sm:text-sm text-slate-700 font-medium leading-relaxed">
-                        {block.props.description || 'Through Zeffy, 100% of your donation reaches our community center with 0% deducted for transaction fees.'}
-                      </p>
-                    </div>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                      <div className="p-3.5 rounded-2xl bg-white border border-amber-200 shadow-2xs text-center">
-                        <span className="block text-lg font-black text-amber-700">$25</span>
-                        <span className="text-[11px] font-bold text-slate-800">Safer Sex & Wellness</span>
-                      </div>
-                      <div className="p-3.5 rounded-2xl bg-white border border-amber-200 shadow-2xs text-center">
-                        <span className="block text-lg font-black text-amber-700">$50</span>
-                        <span className="text-[11px] font-bold text-slate-800">2 Health Screenings</span>
-                      </div>
-                      <div className="p-3.5 rounded-2xl bg-white border border-amber-200 shadow-2xs text-center">
-                        <span className="block text-lg font-black text-amber-700">$100</span>
-                        <span className="text-[11px] font-bold text-slate-800">Youth Circle Month</span>
-                      </div>
-                      <div className="p-3.5 rounded-2xl bg-white border border-amber-200 shadow-2xs text-center">
-                        <span className="block text-lg font-black text-amber-700">$250</span>
-                        <span className="text-[11px] font-bold text-slate-800">Resource Center</span>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-              )}
-
-              {/* Signature Annual Events */}
-              {block.type === 'signature_events' && (
-                <section className="py-8 sm:py-12 bg-purple-50/40 border-b border-purple-200/60">
-                  <div className="container-clean space-y-5">
-                    <div className="flex flex-col gap-1.5">
-                      <span className="glass-pill self-start">SIGNATURE ANNUAL CELEBRATIONS</span>
-                      <h3 className="font-display text-lg sm:text-xl font-bold text-slate-900">
-                        {block.props.headline || 'Annual Gatherings Bringing All of Ventura County Together'}
-                      </h3>
-                      <p className="text-xs sm:text-sm text-slate-600">
-                        {block.props.description || 'From the region’s largest Pride festival to youth proms and clinical walks.'}
-                      </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                      <div className="p-4 rounded-2xl bg-white border border-purple-200 shadow-xs space-y-1.5">
-                        <span className="text-[10px] font-black uppercase text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full inline-block">August 2026</span>
-                        <h4 className="font-bold text-sm text-slate-900">Ventura County Pride Festival</h4>
-                        <p className="text-xs text-slate-600">Live music, community vendors, food trucks & family fun at Promenade Park.</p>
-                      </div>
-                      <div className="p-4 rounded-2xl bg-white border border-purple-200 shadow-xs space-y-1.5">
-                        <span className="text-[10px] font-black uppercase text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full inline-block">May 2026</span>
-                        <h4 className="font-bold text-sm text-slate-900">Pride Prom: Free Youth Formal</h4>
-                        <p className="text-xs text-slate-600">Safe, affirming formal dance for high school youth (13–20) across VC.</p>
-                      </div>
-                      <div className="p-4 rounded-2xl bg-white border border-purple-200 shadow-xs space-y-1.5">
-                        <span className="text-[10px] font-black uppercase text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full inline-block">October 2026</span>
-                        <h4 className="font-bold text-sm text-slate-900">AIDS Walk Ventura County</h4>
-                        <p className="text-xs text-slate-600">Honoring lives, eliminating stigma, and funding rapid HIV testing programs.</p>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-              )}
-
-              {/* Events & Gatherings */}
-              {block.type === 'events_section' && (
-                <div className="px-4 sm:px-6 py-6 bg-white border-b border-slate-200 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-                      <Calendar className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-extrabold text-slate-900 truncate">{block.props.headline || 'Upcoming Community Gatherings'}</p>
-                      <p className="text-xs text-slate-500">Pride Prom, Galas, Workshops & Youth Nights</p>
-                    </div>
-                  </div>
-                  <span className="px-3.5 py-1.5 rounded-full bg-slate-900 text-white text-xs font-bold shrink-0">{block.props.ctaText || 'View Events Calendar'}</span>
-                </div>
-              )}
-
-              {/* Partnerships */}
-              {block.type === 'partnerships_section' && (
-                <div className="px-4 sm:px-6 py-6 bg-purple-50/60 border-b border-slate-200 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-purple-100 text-[#5A1E65] flex items-center justify-center shrink-0">
-                      <Sparkles className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-extrabold text-slate-900 truncate">{block.props.headline || 'Community Coalition & Alliances'}</p>
-                      <p className="text-[11px] text-slate-600 truncate">{block.props.eyebrow || 'Standing together with Ventura County organizations'}</p>
-                    </div>
-                  </div>
-                  <span className="text-xs font-bold text-[#5A1E65] shrink-0">{block.props.ctaText || 'Partner With Us'}</span>
-                </div>
-              )}
-
-              {/* Community Voices */}
-              {block.type === 'community_voices' && (
-                <div className="px-4 sm:px-6 py-6 bg-purple-50/40 border-b border-slate-200 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-purple-100 text-[#5A1E65] flex items-center justify-center shrink-0">
-                      <Users className="w-5 h-5" />
-                    </div>
-                    <p className="text-sm font-extrabold text-slate-900 truncate">{block.props.headline || 'Voices from Our Community'}</p>
-                  </div>
-                  <span className="text-xs font-semibold text-slate-600 shrink-0">Community Testimonials</span>
-                </div>
-              )}
-
-              {/* Newsletter */}
-              {block.type === 'newsletter_section' && (
-                <div className="px-4 sm:px-6 py-6 bg-white border-b border-slate-200 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-purple-100 text-[#5A1E65] flex items-center justify-center shrink-0">
-                      <Mail className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-extrabold text-slate-900 truncate">{block.props.headline || 'Stay Connected with DCVC'}</p>
-                      <p className="text-xs text-slate-500">Bi-weekly community updates, wellness clinic dates & announcements</p>
-                    </div>
-                  </div>
-                  <span className="px-3.5 py-1.5 rounded-full bg-[#5A1E65] text-white text-xs font-bold shrink-0">Subscribe</span>
-                </div>
-              )}
-
-              {/* Final CTA */}
-              {block.type === 'final_cta' && (
-                <div className="px-4 sm:px-8 py-8 bg-slate-950 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-amber-400/20 text-amber-300 flex items-center justify-center shrink-0">
-                      <Megaphone className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className="text-base font-extrabold truncate">
-                        {block.props.headlineLine1 || 'You Are Always'} <span className="text-amber-300">{block.props.headlineAccent || 'Welcome Here.'}</span>
-                      </p>
-                      <p className="text-xs text-slate-400">Join Ventura County's premier LGBTQ+ community center.</p>
-                    </div>
-                  </div>
-                  <span className="px-5 py-2.5 rounded-full bg-amber-300 text-slate-950 text-xs font-black shadow-md shrink-0">
-                    {block.props.primaryCtaText || 'Get In Touch With Us'}
-                  </span>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* 3. AUTHENTIC LIVE FOOTER PREVIEW */}
-      <footer className="bg-slate-950 text-white/90 border-t border-purple-900/50 pt-10 pb-8 px-4 sm:px-8 select-none">
-        <div className="max-w-6xl mx-auto space-y-6">
-          <div className={`grid ${viewport === 'mobile' ? 'grid-cols-1 gap-6' : 'grid-cols-1 md:grid-cols-4 gap-8'} text-left`}>
-            <div className="space-y-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg overflow-hidden bg-white p-0.5">
-                  <img src="/images/logo-square.png" alt="DCVC" className="w-full h-full object-contain" />
-                </div>
-                <span className="font-display font-extrabold text-sm text-white">
-                  Diversity Collective VC
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Ventura County's designated 501(c)(3) nonprofit cultural home & wellness center. Safe, affirming, and barrier-free since 2014.
-              </p>
-            </div>
-
-            <div className="space-y-2 text-xs">
-              <p className="font-bold text-amber-300 uppercase tracking-wider text-[11px]">Direct Care</p>
-              <p className="text-slate-300">Free Rapid HIV/STI Screening</p>
-              <p className="text-slate-300">Rainbow Umbrella Youth (13–23)</p>
-              <p className="text-slate-300">Trans & Non-Binary Peer Circles</p>
-            </div>
-
-            <div className="space-y-2 text-xs">
-              <p className="font-bold text-purple-300 uppercase tracking-wider text-[11px]">Visit Our Center</p>
-              <p className="text-slate-300">2471 Portola Road, Suite 100</p>
-              <p className="text-slate-300">Ventura, CA 93003</p>
-              <p className="text-slate-400">Mon–Fri 1:00 PM – 5:00 PM</p>
-            </div>
-
-            <div className="space-y-2 text-xs">
-              <p className="font-bold text-rose-300 uppercase tracking-wider text-[11px]">Immediate Crisis</p>
-              <p className="text-white font-bold">Helpline: (805) 644-5428</p>
-              <p className="text-amber-300 font-extrabold">24/7 Lifeline: Dial 988</p>
-              <p className="text-slate-400">Trevor Project: 1-866-488-7386</p>
-            </div>
-          </div>
-
-          <div className="pt-6 border-t border-slate-800 text-[11px] text-slate-500 flex flex-wrap items-center justify-between gap-2">
-            <span>© {new Date().getFullYear()} Diversity Collective Ventura County · 501(c)(3) Non-Profit</span>
-            <span>You Are Always Welcome Here 💜</span>
-          </div>
-        </div>
-      </footer>
-    </div>
-  );
+  useEffect(() => {
+    const handleFrameMsg = (e) => {
+      if (e.data?.type === 'DCVC_PREVIEW_READY') {
+        postPreviewSync();
+      } else if (e.data?.type === 'DCVC_SELECT_BLOCK' && e.data.blockId) {
+        handleSelectBlock(e.data.blockId);
+      }
+    };
+    window.addEventListener('message', handleFrameMsg);
+    return () => window.removeEventListener('message', handleFrameMsg);
+  }, [postPreviewSync]);
 
   const handleDragStart = (e, index) => {
     setDraggedIdx(index);
@@ -1439,10 +1003,10 @@ export default function DesignEditor({ onPublishSuccess }) {
             <DevicePreviewFrame
               viewport={viewport}
               title="Admin Live Homepage Preview"
-              onSelectBlock={handleSelectBlock}
-            >
-              {renderPreviewCanvas({ fullScreen: false })}
-            </DevicePreviewFrame>
+              previewUrl="/?admin_preview=1"
+              iframeRef={iframeRef}
+              onIframeLoad={postPreviewSync}
+            />
           </div>
         </div>
       </div>
@@ -1566,10 +1130,10 @@ export default function DesignEditor({ onPublishSuccess }) {
               <DevicePreviewFrame
                 viewport={viewport}
                 title="Full-Screen Device Preview"
-                onSelectBlock={handleSelectBlock}
-              >
-                {renderPreviewCanvas({ fullScreen: true })}
-              </DevicePreviewFrame>
+                previewUrl="/?admin_preview=1"
+                iframeRef={fullScreenIframeRef}
+                onIframeLoad={postPreviewSync}
+              />
             </div>
           </div>
         </div>

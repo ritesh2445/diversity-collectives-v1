@@ -118,6 +118,61 @@ export default function Home() {
     };
   }, []);
 
+  // Real-time synchronization for Admin Studio Preview iframe
+  useEffect(() => {
+    const isPreviewFrame = typeof window !== 'undefined' && 
+      (window.location.search.includes('admin_preview=1') || window !== window.parent);
+    
+    if (!isPreviewFrame) return undefined;
+
+    const handlePreviewMsg = (e) => {
+      const data = e.data;
+      if (!data || data.type !== 'DCVC_PREVIEW_SYNC') return;
+
+      if (data.themeId) {
+        setActiveThemeId(data.themeId);
+      }
+      if (Array.isArray(data.blocks)) {
+        setCustomLayoutBlocks(upgradeOrNormalizePageLayout(data.blocks));
+      }
+    };
+
+    window.addEventListener('message', handlePreviewMsg);
+
+    // Notify parent admin studio that the preview iframe is ready
+    try {
+      window.parent?.postMessage({ type: 'DCVC_PREVIEW_READY' }, '*');
+    } catch {}
+
+    // In preview mode, intercept link navigation and forward block selection to parent
+    const handlePreviewClick = (e) => {
+      const link = e.target.closest('a');
+      if (link) {
+        e.preventDefault();
+      }
+
+      const sectionEl = e.target.closest('[data-block-id], header, footer, section');
+      if (!sectionEl) return;
+
+      const blockId = sectionEl.getAttribute('data-block-id') ||
+        (sectionEl.tagName.toLowerCase() === 'header' ? 'block-hero' : null) ||
+        (sectionEl.tagName.toLowerCase() === 'footer' ? 'block-final-cta' : null);
+
+      if (blockId) {
+        try {
+          window.parent?.postMessage({ type: 'DCVC_SELECT_BLOCK', blockId }, '*');
+        } catch {}
+      }
+    };
+
+    document.addEventListener('click', handlePreviewClick, { capture: true });
+
+    return () => {
+      window.removeEventListener('message', handlePreviewMsg);
+      document.removeEventListener('click', handlePreviewClick, { capture: true });
+    };
+  }, []);
+
   const getBlockProps = (blockType) => {
     const match = (customLayoutBlocks || []).find((b) => b.type === blockType);
     const fallback = DEFAULT_PAGE_BLOCKS.find((b) => b.type === blockType);
@@ -376,18 +431,19 @@ export default function Home() {
       {/* ====================================================================
           2. HERO SECTION: DYNAMIC MULTI-THEME DISPATCHER (Synced with Admin Studio)
           ==================================================================== */}
-      <HeroShowcase
-        themeId={activeThemeId}
-        heroProps={customHeroProps}
-        centerStatus={centerStatus}
-        sectionStyle={getSectionStyle('hero_banner', 2)}
-        onTriggerConfetti={triggerMilestoneConfetti}
-      />
+      <div data-block-id="block-hero" style={getSectionStyle('hero_banner', 1)} className="w-full">
+        <HeroShowcase
+          themeId={activeThemeId}
+          heroProps={customHeroProps}
+          centerStatus={centerStatus}
+          onTriggerConfetti={triggerMilestoneConfetti}
+        />
+      </div>
 
       {/* ====================================================================
           IMPACT NUMBERS: ANIMATED COUNT-UP WITH GLASS SPOTLIGHT
           ==================================================================== */}
-      <section style={getSectionStyle('impact_stats', 2)} className="py-14 md:py-20 bg-gradient-to-b from-purple-100/40 via-teal-100/30 to-amber-100/30 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
+      <section data-block-id="block-stats" style={getSectionStyle('impact_stats', 2)} className="py-14 md:py-20 bg-gradient-to-b from-purple-100/40 via-teal-100/30 to-amber-100/30 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
         <div className="container-clean">
           
           <div className="max-w-2xl mb-10 flex flex-col gap-3">
@@ -441,7 +497,7 @@ export default function Home() {
       {/* ====================================================================
           LGBTQ+ AFFIRMING BUSINESS DIRECTORY SPOTLIGHT
           ==================================================================== */}
-      <section style={getSectionStyle('directory_cta', 6)} className="py-14 md:py-20 bg-white border-b border-slate-100 scroll-reveal">
+      <section data-block-id="block-directory" style={getSectionStyle('directory_cta', 6)} className="py-14 md:py-20 bg-white border-b border-slate-100 scroll-reveal">
         <div className="container-clean">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
             <div className="flex flex-col gap-3 max-w-2xl">
@@ -498,7 +554,7 @@ export default function Home() {
       {/* ====================================================================
           PROGRAMS DIRECTORY: COLLISION-PROOF EXPANDABLE CARDS
           ==================================================================== */}
-      <section style={getSectionStyle('programs_section', 3)} className="py-14 md:py-20 bg-gradient-to-b from-amber-100/30 via-rose-100/30 to-purple-100/40 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
+      <section data-block-id="block-programs" style={getSectionStyle('programs_section', 3)} className="py-14 md:py-20 bg-gradient-to-b from-amber-100/30 via-rose-100/30 to-purple-100/40 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
         <div className="container-clean">
           
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
@@ -674,7 +730,7 @@ export default function Home() {
       {/* ====================================================================
           5. SIGNATURE ANNUAL EVENTS (AIDS WALK, PRIDE PROM, VENTURA COUNTY PRIDE)
           ==================================================================== */}
-      <section style={getSectionStyle('signature_events', 5)} className="py-14 md:py-20 bg-gradient-to-b from-white via-purple-50/40 to-amber-50/30 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
+      <section data-block-id="block-signature-events" style={getSectionStyle('signature_events', 5)} className="py-14 md:py-20 bg-gradient-to-b from-white via-purple-50/40 to-amber-50/30 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
         <div className="container-clean">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
             <div className="flex flex-col gap-3 max-w-xl">
@@ -746,7 +802,7 @@ export default function Home() {
       {/* ====================================================================
           8. SPECIAL ENGAGEMENTS (HOSTED GROUPS LIKE AMPLIFY ARTS)
           ==================================================================== */}
-      <section style={getSectionStyle('special_engagements', 8)} className="py-14 md:py-20 bg-gradient-to-b from-indigo-50/40 via-purple-50/40 to-white border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
+      <section data-block-id="block-special-engagements" style={getSectionStyle('special_engagements', 8)} className="py-14 md:py-20 bg-gradient-to-b from-indigo-50/40 via-purple-50/40 to-white border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
         <div className="container-clean">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
             <div className="flex flex-col gap-3 max-w-xl">
@@ -812,7 +868,7 @@ export default function Home() {
       {/* ====================================================================
           HIGHLY EYE-CATCHING & BEAUTIFUL GIVING STUDIO (Streamlined & Re-optimized)
           ==================================================================== */}
-      <section id="giving" style={getSectionStyle('zeffy_giving', 8)} className="py-10 sm:py-14 md:py-16 bg-gradient-to-b from-amber-100/30 via-purple-100/50 to-purple-950/25 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
+      <section id="giving" data-block-id="block-giving" style={getSectionStyle('zeffy_giving', 8)} className="py-10 sm:py-14 md:py-16 bg-gradient-to-b from-amber-100/30 via-purple-100/50 to-purple-950/25 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
         
         {/* Ambient Specular Backdrops */}
         <div 
@@ -1194,7 +1250,7 @@ export default function Home() {
       {/* ====================================================================
           UPCOMING EVENTS: BALANCED ROWS WITH GLASS CARDS
           ==================================================================== */}
-      <section style={getSectionStyle('events_section', 4)} className="py-14 md:py-20 bg-gradient-to-b from-purple-100/40 via-rose-100/30 to-amber-100/30 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
+      <section data-block-id="block-events" style={getSectionStyle('events_section', 4)} className="py-14 md:py-20 bg-gradient-to-b from-purple-100/40 via-rose-100/30 to-amber-100/30 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
         <div className="container-clean">
           
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
@@ -1313,7 +1369,7 @@ export default function Home() {
       {/* ====================================================================
           PARTNERSHIPS & OFFICIAL SPONSORS SHOWCASE
           ==================================================================== */}
-      <section style={getSectionStyle('partnerships_section', 5)} className="py-14 md:py-20 bg-gradient-to-b from-purple-50/60 via-white to-purple-50/40 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
+      <section data-block-id="block-partnerships" style={getSectionStyle('partnerships_section', 5)} className="py-14 md:py-20 bg-gradient-to-b from-purple-50/60 via-white to-purple-50/40 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
         <div className="container-clean">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
             <div className="flex flex-col gap-3 max-w-2xl">
@@ -1416,7 +1472,7 @@ export default function Home() {
       {/* ====================================================================
           TESTIMONIALS & COMMUNITY VOICES: 3D EDITORIAL GRID
           ==================================================================== */}
-      <section style={getSectionStyle('community_voices', 9)} className="py-14 md:py-20 bg-gradient-to-b from-amber-100/30 via-purple-100/40 to-indigo-100/35 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
+      <section data-block-id="block-voices" style={getSectionStyle('community_voices', 9)} className="py-14 md:py-20 bg-gradient-to-b from-amber-100/30 via-purple-100/40 to-indigo-100/35 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
         <div className="container-clean">
           
           <div className="max-w-2xl mx-auto text-center mb-10 flex flex-col items-center gap-3">
@@ -1514,7 +1570,7 @@ export default function Home() {
       {/* ====================================================================
           NEWSLETTER SIGNUP DISPATCH
           ==================================================================== */}
-      <section style={getSectionStyle('newsletter_section', 10)} className="py-12 bg-white">
+      <section data-block-id="block-newsletter" style={getSectionStyle('newsletter_section', 10)} className="py-12 bg-white">
         <div className="container-clean">
           <NewsletterSignup />
         </div>
@@ -1523,7 +1579,7 @@ export default function Home() {
       {/* ====================================================================
           FINAL CALL TO ACTION: LUXURY 3D AURORA ARCHITECTURE
           ==================================================================== */}
-      <section style={getSectionStyle('final_cta', 11)} className="py-20 md:py-28 aurora-bg text-white relative overflow-hidden scroll-reveal">
+      <section data-block-id="block-final-cta" style={getSectionStyle('final_cta', 11)} className="py-20 md:py-28 aurora-bg text-white relative overflow-hidden scroll-reveal">
         
         {/* Specular Ambient Glow Orbs */}
         <div 
