@@ -2,23 +2,20 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Sparkles, Heart, X } from 'lucide-react';
 
 export default function WelcomeCurtain() {
-  // Show welcome curtain once per session; replaying can still be triggered via event
-  const [animating, setAnimating] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    try {
-      return !sessionStorage.getItem('dcvc_welcome_seen');
-    } catch {
-      return false;
-    }
-  });
+  // Always show welcome rainbow curtain on every page load or refresh; replaying can also be triggered via event
+  const [animating, setAnimating] = useState(true);
   const [fadingOut, setFadingOut] = useState(false);
   const [key, setKey] = useState(0);
 
+  // Clear any legacy session suppressions on mount
+  useEffect(() => {
+    try {
+      sessionStorage.removeItem('dcvc_welcome_seen');
+    } catch {}
+  }, []);
+
   const handleDismiss = useCallback(() => {
     setFadingOut(true);
-    try {
-      sessionStorage.setItem('dcvc_welcome_seen', 'true');
-    } catch { }
     setTimeout(() => {
       setAnimating(false);
       setFadingOut(false);
