@@ -995,9 +995,9 @@ export default function DesignEditor({ onPublishSuccess }) {
             style={{
               maxWidth:
                 viewport === 'mobile'
-                  ? '430px'
+                  ? '375px'
                   : viewport === 'tablet'
-                  ? '840px'
+                  ? '768px'
                   : '100%'
             }}
           >
@@ -1122,9 +1122,9 @@ export default function DesignEditor({ onPublishSuccess }) {
               style={{
                 maxWidth:
                   viewport === 'mobile'
-                    ? '430px'
+                    ? '375px'
                     : viewport === 'tablet'
-                    ? '840px'
+                    ? '768px'
                     : '100%'
               }}
             >
