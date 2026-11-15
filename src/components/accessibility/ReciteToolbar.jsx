@@ -896,20 +896,23 @@ export default function ReciteToolbar() {
         <div
           ref={toolbarRef}
           id="native-accessibility-companion-ribbon"
-      role="region"
-      aria-label="Native Accessibility Companion Toolbar"
-      className="fixed top-0 left-0 right-0 z-[100000] bg-[#0B1528] text-white shadow-2xl border-b-2 border-slate-700 a11y-toolbar-isolated select-none"
-    >
-      <div className="max-w-[1920px] mx-auto px-2 sm:px-3 py-1 flex items-center justify-between gap-1 overflow-x-auto">
+          role="region"
+          aria-label="Native Accessibility Companion Toolbar"
+          translate="no"
+          data-no-autofit="true"
+          className="notranslate fixed top-0 left-0 right-0 z-[100000] bg-[#0B1528] text-white shadow-2xl border-b-2 border-slate-700 a11y-toolbar-isolated select-none"
+        >
+      <div className="max-w-[1920px] mx-auto px-2 sm:px-3 py-1 flex items-center justify-between gap-1 overflow-x-auto notranslate" translate="no">
 
         {/* ================================================================
             CLUSTER 1: SPEECH HEAD + AUDIO PLAYBACK CONTROLS
             ================================================================ */}
-        <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
+        <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0 notranslate" translate="no">
           
           {/* Active Speech / Cursor Audio Toggle Button */}
           <button 
             type="button"
+            translate="no"
             onClick={() => {
               const next = !settings.autoReadHover;
               a11yStore.update('autoReadHover', next);
@@ -919,7 +922,7 @@ export default function ReciteToolbar() {
                 clearHighlight();
               }
             }}
-            className={`w-9 h-9 rounded-md flex items-center justify-center relative cursor-pointer shadow-xs transition-all ${
+            className={`w-9 h-9 min-w-[2.25rem] max-w-[2.25rem] rounded-md flex items-center justify-center relative cursor-pointer shadow-xs transition-all notranslate overflow-hidden whitespace-nowrap select-none flex-shrink-0 ${
               settings.autoReadHover ? 'bg-[#059669] text-white ring-2 ring-emerald-300' : 'bg-slate-800 text-slate-400 hover:text-white'
             }`}
             title={settings.autoReadHover ? `Cursor Audio is ACTIVE (Playing sound where cursor moves). Click to pause.` : `Cursor Audio is OFF. Click to enable hover-to-read.`}
@@ -934,8 +937,10 @@ export default function ReciteToolbar() {
 
           {/* Skip Back |◀ */}
           <button
+            type="button"
+            translate="no"
             onClick={handleSkipBack}
-            className="w-8 h-9 rounded-md bg-transparent hover:bg-slate-800 text-slate-200 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+            className="w-8 h-9 min-w-[2rem] max-w-[2rem] rounded-md bg-transparent hover:bg-slate-800 text-slate-200 hover:text-white flex items-center justify-center transition-colors cursor-pointer notranslate overflow-hidden whitespace-nowrap select-none flex-shrink-0"
             title="Previous section (|◀)"
             aria-label="Previous section"
           >
@@ -944,8 +949,10 @@ export default function ReciteToolbar() {
 
           {/* Rewind ↶ */}
           <button
+            type="button"
+            translate="no"
             onClick={handleRewindSmall}
-            className="w-8 h-9 rounded-md bg-transparent hover:bg-slate-800 text-slate-200 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+            className="w-8 h-9 min-w-[2rem] max-w-[2rem] rounded-md bg-transparent hover:bg-slate-800 text-slate-200 hover:text-white flex items-center justify-center transition-colors cursor-pointer notranslate overflow-hidden whitespace-nowrap select-none flex-shrink-0"
             title="Rewind (↶)"
             aria-label="Rewind"
           >
@@ -954,8 +961,10 @@ export default function ReciteToolbar() {
 
           {/* Play / Pause ▶ */}
           <button
+            type="button"
+            translate="no"
             onClick={handlePlayPause}
-            className="w-9 h-9 rounded-md bg-slate-800 hover:bg-slate-700 text-amber-400 flex items-center justify-center transition-colors cursor-pointer shadow-xs"
+            className="w-9 h-9 min-w-[2.25rem] max-w-[2.25rem] rounded-md bg-slate-800 hover:bg-slate-700 text-amber-400 flex items-center justify-center transition-colors cursor-pointer shadow-xs notranslate overflow-hidden whitespace-nowrap select-none flex-shrink-0"
             title={isSpeaking ? 'Pause reading' : 'Play reading aloud'}
             aria-label={isSpeaking ? 'Pause reading' : 'Play reading aloud'}
           >
@@ -964,8 +973,10 @@ export default function ReciteToolbar() {
 
           {/* Forward ↷ */}
           <button
+            type="button"
+            translate="no"
             onClick={handleForwardSmall}
-            className="w-8 h-9 rounded-md bg-transparent hover:bg-slate-800 text-slate-200 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+            className="w-8 h-9 min-w-[2rem] max-w-[2rem] rounded-md bg-transparent hover:bg-slate-800 text-slate-200 hover:text-white flex items-center justify-center transition-colors cursor-pointer notranslate overflow-hidden whitespace-nowrap select-none flex-shrink-0"
             title="Forward (↷)"
             aria-label="Forward"
           >
@@ -974,8 +985,10 @@ export default function ReciteToolbar() {
 
           {/* Skip Forward ▶| */}
           <button
+            type="button"
+            translate="no"
             onClick={handleSkipForward}
-            className="w-8 h-9 rounded-md bg-transparent hover:bg-slate-800 text-slate-200 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+            className="w-8 h-9 min-w-[2rem] max-w-[2rem] rounded-md bg-transparent hover:bg-slate-800 text-slate-200 hover:text-white flex items-center justify-center transition-colors cursor-pointer notranslate overflow-hidden whitespace-nowrap select-none flex-shrink-0"
             title="Next section (▶|)"
             aria-label="Next section"
           >
@@ -986,14 +999,15 @@ export default function ReciteToolbar() {
         {/* ================================================================
             CLUSTER 2: FOCUS MUSIC (ROYALTY-FREE) + MICROPHONE VOICE
             ================================================================ */}
-        <div className="flex items-center gap-1 px-1 border-l border-slate-800 flex-shrink-0">
+        <div className="flex items-center gap-1 px-1 border-l border-slate-800 flex-shrink-0 notranslate" translate="no">
           
           {/* Focus Audio Button & Dropdown Flyout Trigger */}
-          <div className="relative">
+          <div className="relative flex-shrink-0">
             <button
               type="button"
+              translate="no"
               onClick={(e) => openFlyout('music', e, 320)}
-              className={`w-9 h-9 rounded-md flex items-center justify-center relative transition-all cursor-pointer ${
+              className={`w-9 h-9 min-w-[2.25rem] max-w-[2.25rem] rounded-md flex items-center justify-center relative transition-all cursor-pointer notranslate overflow-hidden whitespace-nowrap select-none flex-shrink-0 ${
                 musicPlaying ? 'bg-[#059669] text-white ring-2 ring-emerald-300' : 'bg-[#059669] text-white hover:bg-[#047857]'
               }`}
               title="Focus Audio (Royalty-free ambient tones for reading)"
@@ -1007,8 +1021,10 @@ export default function ReciteToolbar() {
 
           {/* Microphone / Voice Recognition Navigation */}
           <button
+            type="button"
+            translate="no"
             onClick={handleToggleMic}
-            className={`w-9 h-9 rounded-md flex items-center justify-center transition-all cursor-pointer ${
+            className={`w-9 h-9 min-w-[2.25rem] max-w-[2.25rem] rounded-md flex items-center justify-center transition-all cursor-pointer notranslate overflow-hidden whitespace-nowrap select-none flex-shrink-0 ${
               isListening && !isOfflineMode
                 ? 'bg-rose-600 text-white animate-pulse'
                 : isOfflineMode
@@ -1031,12 +1047,14 @@ export default function ReciteToolbar() {
         {/* ================================================================
             CLUSTER 3: TEXT STYLING (- | Aa | FT | +)
             ================================================================ */}
-        <div className="flex items-center gap-1 px-1 border-l border-slate-800 flex-shrink-0">
+        <div className="flex items-center gap-1 px-1 border-l border-slate-800 flex-shrink-0 notranslate" translate="no">
           
           {/* Minus: Font Size Decrease */}
           <button
+            type="button"
+            translate="no"
             onClick={handleDecreaseFont}
-            className="w-9 h-9 rounded-md bg-[#0284C7] hover:bg-[#0369A1] text-white font-extrabold text-sm flex items-center justify-center transition-colors cursor-pointer"
+            className="w-9 h-9 min-w-[2.25rem] max-w-[2.25rem] rounded-md bg-[#0284C7] hover:bg-[#0369A1] text-white font-extrabold text-sm flex items-center justify-center transition-colors cursor-pointer notranslate overflow-hidden whitespace-nowrap select-none flex-shrink-0"
             title="Decrease Font Size (-)"
             aria-label="Decrease Font Size"
           >
@@ -1044,41 +1062,45 @@ export default function ReciteToolbar() {
           </button>
 
           {/* Aa: Font Style Dropdown */}
-          <div className="relative">
+          <div className="relative flex-shrink-0">
             <button
               type="button"
+              translate="no"
               onClick={(e) => openFlyout('font', e, 288)}
-              className={`w-9 h-9 rounded-md bg-[#0284C7] hover:bg-[#0369A1] text-white font-black text-xs flex items-center justify-center transition-colors cursor-pointer ${
+              className={`w-9 h-9 min-w-[2.25rem] max-w-[2.25rem] rounded-md bg-[#0284C7] hover:bg-[#0369A1] text-white font-black text-xs flex items-center justify-center transition-colors cursor-pointer notranslate overflow-hidden whitespace-nowrap select-none flex-shrink-0 ${
                 activeFlyout === 'font' ? 'ring-2 ring-sky-300' : ''
               }`}
               title="Font Family (OpenDyslexic, Atkinson, etc.)"
               aria-haspopup="true"
               aria-expanded={activeFlyout === 'font'}
             >
-              Aa
+              <span className="notranslate inline-block leading-none" translate="no">Aa</span>
             </button>
           </div>
 
           {/* FT: Focus Text / Spacing */}
-          <div className="relative">
+          <div className="relative flex-shrink-0">
             <button
               type="button"
+              translate="no"
               onClick={(e) => openFlyout('focusText', e, 288)}
-              className={`w-9 h-9 rounded-md bg-[#0284C7] hover:bg-[#0369A1] text-white font-black text-xs flex items-center justify-center transition-colors cursor-pointer ${
+              className={`w-9 h-9 min-w-[2.25rem] max-w-[2.25rem] rounded-md bg-[#0284C7] hover:bg-[#0369A1] text-white font-black text-xs flex items-center justify-center transition-colors cursor-pointer notranslate overflow-hidden whitespace-nowrap select-none flex-shrink-0 ${
                 activeFlyout === 'focusText' ? 'ring-2 ring-sky-300' : ''
               }`}
               title="Focus Text (Line height, letter & word spacing)"
               aria-haspopup="true"
               aria-expanded={activeFlyout === 'focusText'}
             >
-              FT
+              <span className="notranslate inline-block leading-none" translate="no">FT</span>
             </button>
           </div>
 
           {/* Plus: Font Size Increase */}
           <button
+            type="button"
+            translate="no"
             onClick={handleIncreaseFont}
-            className="w-9 h-9 rounded-md bg-[#0284C7] hover:bg-[#0369A1] text-white font-extrabold text-sm flex items-center justify-center transition-colors cursor-pointer"
+            className="w-9 h-9 min-w-[2.25rem] max-w-[2.25rem] rounded-md bg-[#0284C7] hover:bg-[#0369A1] text-white font-extrabold text-sm flex items-center justify-center transition-colors cursor-pointer notranslate overflow-hidden whitespace-nowrap select-none flex-shrink-0"
             title="Increase Font Size (+)"
             aria-label="Increase Font Size"
           >
@@ -1086,11 +1108,12 @@ export default function ReciteToolbar() {
           </button>
 
           {/* DEDICATED DYSLEXIA SUPPORT SUITE BUTTON + FLYOUT */}
-          <div className="relative">
+          <div className="relative flex-shrink-0">
             <button
               type="button"
+              translate="no"
               onClick={(e) => openFlyout('dyslexia', e, 320)}
-              className={`h-9 px-2.5 rounded-md font-black text-xs flex items-center gap-1.5 transition-all cursor-pointer ${
+              className={`h-9 px-2.5 rounded-md font-black text-xs flex items-center gap-1.5 transition-all cursor-pointer notranslate whitespace-nowrap select-none flex-shrink-0 ${
                 settings.dyslexiaMode || settings.bionicReading || settings.dyslexiaTint !== 'none' || settings.fontFamily === 'opendyslexic' || settings.fontFamily === 'lexend'
                   ? 'bg-amber-400 text-slate-950 ring-2 ring-amber-300 shadow-sm'
                   : 'bg-[#0284C7] hover:bg-[#0369A1] text-white'
@@ -1099,8 +1122,8 @@ export default function ReciteToolbar() {
               aria-haspopup="true"
               aria-expanded={activeFlyout === 'dyslexia'}
             >
-              <BookOpen className="w-3.5 h-3.5" />
-              <span>Dyslexia</span>
+              <BookOpen className="w-3.5 h-3.5 flex-shrink-0" />
+              <span className="notranslate inline-block leading-none" translate="no">Dyslexia</span>
             </button>
           </div>
         </div>
@@ -1108,14 +1131,15 @@ export default function ReciteToolbar() {
         {/* ================================================================
             CLUSTER 4: TRANSLATION & COLOR WHEEL
             ================================================================ */}
-        <div className="flex items-center gap-1 px-1 border-l border-slate-800 flex-shrink-0">
+        <div className="flex items-center gap-1 px-1 border-l border-slate-800 flex-shrink-0 notranslate" translate="no">
           
           {/* Translation Button: 文 A */}
-          <div className="relative">
+          <div className="relative flex-shrink-0">
             <button
               type="button"
+              translate="no"
               onClick={(e) => openFlyout('lang', e, 256)}
-              className={`w-9 h-9 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white flex items-center justify-center transition-colors cursor-pointer font-bold text-xs ${
+              className={`w-9 h-9 min-w-[2.25rem] max-w-[2.25rem] rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white flex items-center justify-center transition-colors cursor-pointer font-bold text-xs notranslate overflow-hidden whitespace-nowrap select-none flex-shrink-0 ${
                 activeFlyout === 'lang' ? 'ring-2 ring-purple-400' : ''
               }`}
               title="Translate Page Language"
@@ -1127,11 +1151,12 @@ export default function ReciteToolbar() {
           </div>
 
           {/* Color Wheel: Rainbow Palette */}
-          <div className="relative">
+          <div className="relative flex-shrink-0">
             <button
               type="button"
+              translate="no"
               onClick={(e) => openFlyout('color', e, 288)}
-              className={`w-9 h-9 rounded-md bg-slate-800 hover:bg-slate-700 text-amber-300 flex items-center justify-center transition-colors cursor-pointer ${
+              className={`w-9 h-9 min-w-[2.25rem] max-w-[2.25rem] rounded-md bg-slate-800 hover:bg-slate-700 text-amber-300 flex items-center justify-center transition-colors cursor-pointer notranslate overflow-hidden whitespace-nowrap select-none flex-shrink-0 ${
                 activeFlyout === 'color' ? 'ring-2 ring-amber-300' : ''
               }`}
               title="Color Palette & Contrast Themes"
@@ -1146,16 +1171,18 @@ export default function ReciteToolbar() {
         {/* ================================================================
             CLUSTER 5: READING AIDS (Ruler | Large Cursor | Screen Mask | Plain Text | Magnifier)
             ================================================================ */}
-        <div className="flex items-center gap-1 px-1 border-l border-slate-800 flex-shrink-0">
+        <div className="flex items-center gap-1 px-1 border-l border-slate-800 flex-shrink-0 notranslate" translate="no">
           
           {/* Reading Ruler: Orange square */}
           <button
+            type="button"
+            translate="no"
             onClick={() => {
               const next = !settings.ruler;
               a11yStore.update('ruler', next);
               a11yStore.announce(next ? 'Reading ruler on' : 'Reading ruler off');
             }}
-            className={`w-9 h-9 rounded-md flex items-center justify-center transition-colors cursor-pointer ${
+            className={`w-9 h-9 min-w-[2.25rem] max-w-[2.25rem] rounded-md flex items-center justify-center transition-colors cursor-pointer notranslate overflow-hidden whitespace-nowrap select-none flex-shrink-0 ${
               settings.ruler ? 'bg-amber-500 text-slate-950 ring-2 ring-amber-300' : 'bg-[#D97706] text-white hover:bg-[#B45309]'
             }`}
             title="Reading Ruler (Horizontal tracking line)"
@@ -1166,12 +1193,14 @@ export default function ReciteToolbar() {
 
           {/* Large Cursor Pointer: Blue square */}
           <button
+            type="button"
+            translate="no"
             onClick={() => {
               const next = settings.cursorSize === 'large-black' ? 'normal' : 'large-black';
               a11yStore.update('cursorSize', next);
               a11yStore.announce(next === 'large-black' ? 'Large black cursor on' : 'Default cursor');
             }}
-            className={`w-9 h-9 rounded-md flex items-center justify-center transition-colors cursor-pointer ${
+            className={`w-9 h-9 min-w-[2.25rem] max-w-[2.25rem] rounded-md flex items-center justify-center transition-colors cursor-pointer notranslate overflow-hidden whitespace-nowrap select-none flex-shrink-0 ${
               settings.cursorSize === 'large-black' ? 'bg-blue-600 text-white ring-2 ring-blue-300' : 'bg-[#1D4ED8] text-white hover:bg-[#1E40AF]'
             }`}
             title="Large Pointer / Cursor"
@@ -1182,12 +1211,14 @@ export default function ReciteToolbar() {
 
           {/* Screen Mask (Letterbox): Dark Slate square */}
           <button
+            type="button"
+            translate="no"
             onClick={() => {
               const next = !settings.screenMask;
               a11yStore.update('screenMask', next);
               a11yStore.announce(next ? 'Screen mask on' : 'Screen mask off');
             }}
-            className={`w-9 h-9 rounded-md flex items-center justify-center transition-colors cursor-pointer ${
+            className={`w-9 h-9 min-w-[2.25rem] max-w-[2.25rem] rounded-md flex items-center justify-center transition-colors cursor-pointer notranslate overflow-hidden whitespace-nowrap select-none flex-shrink-0 ${
               settings.screenMask ? 'bg-slate-300 text-slate-950 ring-2 ring-white' : 'bg-slate-800 text-slate-200 hover:bg-slate-700'
             }`}
             title="Screen Mask (Dims page except reading focus aperture)"
@@ -1198,12 +1229,14 @@ export default function ReciteToolbar() {
 
           {/* Plain Text Mode: Teal square */}
           <button
+            type="button"
+            translate="no"
             onClick={() => {
               const next = !settings.plainTextMode;
               a11yStore.update('plainTextMode', next);
               a11yStore.announce(next ? 'Plain text mode on' : 'Standard layout restored');
             }}
-            className={`w-9 h-9 rounded-md flex items-center justify-center transition-colors cursor-pointer ${
+            className={`w-9 h-9 min-w-[2.25rem] max-w-[2.25rem] rounded-md flex items-center justify-center transition-colors cursor-pointer notranslate overflow-hidden whitespace-nowrap select-none flex-shrink-0 ${
               settings.plainTextMode ? 'bg-teal-400 text-slate-950 ring-2 ring-teal-200' : 'bg-[#0D9488] text-white hover:bg-[#0F766E]'
             }`}
             title="Plain Text Mode (Strips images and heavy layout)"
@@ -1214,12 +1247,14 @@ export default function ReciteToolbar() {
 
           {/* Magnifier: Emerald square */}
           <button
+            type="button"
+            translate="no"
             onClick={() => {
               const next = !settings.magnifier;
               a11yStore.update('magnifier', next);
               a11yStore.announce(next ? 'Text magnifier on' : 'Text magnifier off');
             }}
-            className={`w-9 h-9 rounded-md flex items-center justify-center transition-colors cursor-pointer ${
+            className={`w-9 h-9 min-w-[2.25rem] max-w-[2.25rem] rounded-md flex items-center justify-center transition-colors cursor-pointer notranslate overflow-hidden whitespace-nowrap select-none flex-shrink-0 ${
               settings.magnifier ? 'bg-emerald-400 text-slate-950 ring-2 ring-emerald-200' : 'bg-[#059669] text-white hover:bg-[#047857]'
             }`}
             title="Magnifier Glass (Zooms selected text)"
@@ -1232,14 +1267,15 @@ export default function ReciteToolbar() {
         {/* ================================================================
             CLUSTER 6: DICTIONARY | DOWNLOAD | GUIDE | RESET | CONTRAST
             ================================================================ */}
-        <div className="flex items-center gap-1 px-1 border-l border-slate-800 flex-shrink-0">
+        <div className="flex items-center gap-1 px-1 border-l border-slate-800 flex-shrink-0 notranslate" translate="no">
           
           {/* Dictionary A-Z: Purple square */}
-          <div className="relative">
+          <div className="relative flex-shrink-0">
             <button
               type="button"
+              translate="no"
               onClick={(e) => openFlyout('dict', e, 320)}
-              className={`w-9 h-9 rounded-md bg-[#7C3AED] hover:bg-[#6D28D9] text-white flex items-center justify-center transition-colors cursor-pointer ${
+              className={`w-9 h-9 min-w-[2.25rem] max-w-[2.25rem] rounded-md bg-[#7C3AED] hover:bg-[#6D28D9] text-white flex items-center justify-center transition-colors cursor-pointer notranslate overflow-hidden whitespace-nowrap select-none flex-shrink-0 ${
                 activeFlyout === 'dict' ? 'ring-2 ring-purple-300' : ''
               }`}
               title="Dictionary Lookup (A-Z)"
@@ -1252,8 +1288,10 @@ export default function ReciteToolbar() {
 
           {/* Download Audio Transcript: Olive/Bronze square */}
           <button
+            type="button"
+            translate="no"
             onClick={handleDownloadTranscript}
-            className="w-9 h-9 rounded-md bg-[#CA8A04] hover:bg-[#A16207] text-white flex items-center justify-center transition-colors cursor-pointer"
+            className="w-9 h-9 min-w-[2.25rem] max-w-[2.25rem] rounded-md bg-[#CA8A04] hover:bg-[#A16207] text-white flex items-center justify-center transition-colors cursor-pointer notranslate overflow-hidden whitespace-nowrap select-none flex-shrink-0"
             title="Download Accessible Text Transcript"
             aria-label="Download Transcript"
           >
@@ -1261,11 +1299,12 @@ export default function ReciteToolbar() {
           </button>
 
           {/* User Guide: Crimson square */}
-          <div className="relative">
+          <div className="relative flex-shrink-0">
             <button
               type="button"
+              translate="no"
               onClick={(e) => openFlyout('guide', e, 320)}
-              className={`w-9 h-9 rounded-md bg-[#E11D48] hover:bg-[#BE123C] text-white flex items-center justify-center transition-colors cursor-pointer ${
+              className={`w-9 h-9 min-w-[2.25rem] max-w-[2.25rem] rounded-md bg-[#E11D48] hover:bg-[#BE123C] text-white flex items-center justify-center transition-colors cursor-pointer notranslate overflow-hidden whitespace-nowrap select-none flex-shrink-0 ${
                 activeFlyout === 'guide' ? 'ring-2 ring-rose-300' : ''
               }`}
               title="Accessibility Guide"
@@ -1278,8 +1317,10 @@ export default function ReciteToolbar() {
 
           {/* Reset Settings: Dark Gray square */}
           <button
+            type="button"
+            translate="no"
             onClick={handleResetAll}
-            className="w-9 h-9 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+            className="w-9 h-9 min-w-[2.25rem] max-w-[2.25rem] rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer notranslate overflow-hidden whitespace-nowrap select-none flex-shrink-0"
             title="Reset All Accessibility Settings to Defaults"
             aria-label="Reset All Settings"
           >
@@ -1288,8 +1329,10 @@ export default function ReciteToolbar() {
 
           {/* Theme Quick Dial */}
           <button
+            type="button"
+            translate="no"
             onClick={handleCycleTheme}
-            className="w-9 h-9 rounded-md bg-slate-800 hover:bg-slate-700 text-amber-300 flex items-center justify-center transition-colors cursor-pointer"
+            className="w-9 h-9 min-w-[2.25rem] max-w-[2.25rem] rounded-md bg-slate-800 hover:bg-slate-700 text-amber-300 flex items-center justify-center transition-colors cursor-pointer notranslate overflow-hidden whitespace-nowrap select-none flex-shrink-0"
             title="Cycle High Contrast Themes"
             aria-label="Cycle Contrast Themes"
           >
@@ -1300,20 +1343,22 @@ export default function ReciteToolbar() {
         {/* ================================================================
             RIGHT CORNER: CLEAN NATIVE BRANDING & CLOSE (ZERO RECITE ME LOGO)
             ================================================================ */}
-        <div className="flex items-center gap-2 pl-2 border-l border-slate-800 flex-shrink-0">
-          <div className="flex flex-col text-right hidden sm:flex">
-            <span className="font-black text-xs text-white tracking-wide">
-              DCVC <span className="text-amber-400">Center</span>
+        <div className="flex items-center gap-2 pl-2 border-l border-slate-800 flex-shrink-0 notranslate" translate="no">
+          <div className="flex flex-col text-right hidden sm:flex notranslate" translate="no">
+            <span className="font-black text-xs text-white tracking-wide notranslate" translate="no">
+              DCVC <span className="text-amber-400 notranslate" translate="no">Center</span>
             </span>
-            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">
+            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none notranslate" translate="no">
               Native A11y Suite
             </span>
           </div>
 
           {/* Close Ribbon */}
           <button
+            type="button"
+            translate="no"
             onClick={() => a11yStore.update('toolbarOpen', false)}
-            className="w-8 h-8 rounded-md bg-transparent hover:bg-rose-950 text-slate-400 hover:text-rose-400 flex items-center justify-center transition-colors cursor-pointer"
+            className="w-8 h-8 min-w-[2rem] max-w-[2rem] rounded-md bg-transparent hover:bg-rose-950 text-slate-400 hover:text-rose-400 flex items-center justify-center transition-colors cursor-pointer notranslate overflow-hidden whitespace-nowrap select-none flex-shrink-0"
             title="Close Accessibility Ribbon (Alt + A)"
             aria-label="Close Accessibility Toolbar"
           >
@@ -1326,8 +1371,10 @@ export default function ReciteToolbar() {
       {/* UNCLIPPED ANCHORED FLYOUT PANELS (Rendered outside overflow-x-auto row) */}
       {activeFlyout && (
         <div
+          translate="no"
+          data-no-autofit="true"
           style={{ left: `${flyoutLeft}px` }}
-          className="fixed top-[52px] z-[100002] max-w-[calc(100vw-24px)]"
+          className="notranslate fixed top-[52px] z-[100002] max-w-[calc(100vw-24px)] a11y-toolbar-isolated select-none"
         >
           {activeFlyout === 'music' && (
             <div className="w-80 max-w-full p-5 bg-[#0B1528] text-white rounded-2xl shadow-2xl border-2 border-slate-700 space-y-4">

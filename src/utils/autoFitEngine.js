@@ -36,8 +36,15 @@ function scanAndFitButtons() {
   `);
 
   targets.forEach((el) => {
-    // Strictly skip any element opted out of auto-fit or contained in an opted-out wrapper
-    if (el.hasAttribute('data-no-autofit') || el.closest('[data-no-autofit]')) return;
+    // Strictly skip any element opted out of auto-fit, toolbar isolated, or notranslate container
+    if (
+      el.hasAttribute('data-no-autofit') ||
+      el.closest('[data-no-autofit]') ||
+      el.closest('.a11y-toolbar-isolated') ||
+      el.closest('#native-accessibility-companion-ribbon') ||
+      el.classList.contains('notranslate') ||
+      el.closest('.notranslate')
+    ) return;
 
     // Skip tiny icon-only buttons (< 40px width and height with no visible text)
     const text = el.textContent ? el.textContent.trim() : '';

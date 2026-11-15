@@ -498,7 +498,8 @@ html[data-a11y-pause-animations="true"] *::after {
    8. Complete Isolation for the Accessibility Companion Ribbon
    -------------------------------------------------------------------------- */
 .recite-toolbar-isolated,
-.a11y-toolbar-isolated {
+.a11y-toolbar-isolated,
+#native-accessibility-companion-ribbon {
   filter: none !important;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
   font-size: 13px !important;
@@ -507,6 +508,27 @@ html[data-a11y-pause-animations="true"] *::after {
   word-spacing: normal !important;
   text-align: left !important;
   text-decoration: none !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
+}
+
+#native-accessibility-companion-ribbon button,
+.a11y-toolbar-isolated button {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: clip !important;
+  flex-shrink: 0 !important;
+}
+
+#native-accessibility-companion-ribbon button.w-9,
+.a11y-toolbar-isolated button.w-9 {
+  min-width: 2.25rem !important;
+  max-width: 2.25rem !important;
+  width: 2.25rem !important;
+  min-height: 2.25rem !important;
+  max-height: 2.25rem !important;
+  height: 2.25rem !important;
+  box-sizing: border-box !important;
 }
 
 /* --------------------------------------------------------------------------
