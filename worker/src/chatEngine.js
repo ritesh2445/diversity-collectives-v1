@@ -472,16 +472,22 @@ export async function processChatRequest(userMessage, env = {}, clientIp = '', o
   }
 
   // 7. Deterministic Verified Synthesis (prefer live siteContext when it matches specific page/entity words)
-  const queryTokens = cleanMessage.toLowerCase().split(/\s+/).filter((w) => w.length >= 4 && !['tell', 'about', 'what', 'when', 'where', 'with', 'this', 'that', 'from'].includes(w));
-  const topLiveHit = validSiteContext[0];
-  const liveTitleLower = String(topLiveHit?.title || '').toLowerCase();
-  const kbTitleLower = String(searchResult.bestMatch?.title || '').toLowerCase();
-  const liveSpecificMatch = topLiveHit && queryTokens.some((tok) => liveTitleLower.includes(tok) && !kbTitleLower.includes(tok));
+  const queryTokens = cleanMessage.toLowerCase().split(/\s+/).filter((w) => w.length >= 3 && !['tell', 'about', 'what', 'when', 'where', 'with', 'this', 'that', 'from', 'dcvc', 'have', 'your'].includes(w));
+  
+  const matchingLiveHit = validSiteContext.find((hit) => {
+    const titleNorm = String(hit?.title || '').toLowerCase();
+    const snippetNorm = String(hit?.snippet || '').toLowerCase();
+    return queryTokens.some((tok) => titleNorm.includes(tok) || snippetNorm.includes(tok));
+  }) || validSiteContext[0];
 
-  if (topLiveHit && (!searchResult.bestMatch || liveSpecificMatch)) {
+  const liveTitleLower = String(matchingLiveHit?.title || '').toLowerCase();
+  const kbTitleLower = String(searchResult.bestMatch?.title || '').toLowerCase();
+  const liveSpecificMatch = matchingLiveHit && queryTokens.some((tok) => liveTitleLower.includes(tok) && !kbTitleLower.includes(tok));
+
+  if (matchingLiveHit && (!searchResult.bestMatch || liveSpecificMatch)) {
     return {
       success: true,
-      answer: `Here is what our latest website records show for **[${topLiveHit.title}](${topLiveHit.url})**${topLiveHit.subtitle ? ` (${topLiveHit.subtitle})` : ''}:\n\n${topLiveHit.snippet}`,
+      answer: `Here is what our latest website records show for **[${matchingLiveHit.title}](${matchingLiveHit.url})**${matchingLiveHit.subtitle ? ` (${matchingLiveHit.subtitle})` : ''}:\n\n${matchingLiveHit.snippet}`,
       citations: validSiteContext.slice(0, 3).map((c) => ({ title: c.title, url: c.url })),
       rateLimitRemaining: rateLimit.remaining,
       mode: "live-site-grounding"

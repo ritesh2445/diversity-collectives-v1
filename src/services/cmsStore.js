@@ -17,6 +17,7 @@ import {
   newsArticles,
   galleryPhotos,
   memoryLaneMilestones,
+  businessDirectorySeed,
   getBoardMemberSlug
 } from '../data/dcvcData.js';
 import {
@@ -118,6 +119,8 @@ export const INITIAL_CMS_DATA = {
     ...(staffMembers || []).map(s => ({ ...s, category: 'staff' })),
     ...(boardMembers || []).map(b => ({ ...b, category: 'board' }))
   ],
+  businesses: businessDirectorySeed || [],
+  customKnowledge: [],
   gallery: galleryPhotos || [],
   memoryLane: memoryLaneMilestones || []
 };
@@ -856,6 +859,107 @@ class CmsStoreEngine {
   deleteResource(resourceId) {
     const existing = this.data.resources.filter(r => r.id !== resourceId);
     this.saveData({ ...this.data, resources: existing });
+    return existing;
+  }
+
+  // --------------------------------------------------------------------------
+  // Affirming Business Directory CRUD (Auto-Learned by Luna)
+  // --------------------------------------------------------------------------
+  getBusinesses() {
+    return this.data.businesses || [];
+  }
+
+  saveBusiness(business) {
+    const existing = [...(this.data.businesses || [])];
+    const index = existing.findIndex(b => b.id === business.id || (b.slug && b.slug === business.slug));
+    if (index >= 0) {
+      existing[index] = { ...existing[index], ...business };
+    } else {
+      const newBiz = {
+        ...business,
+        id: business.id || `biz-${Date.now()}`,
+        slug: business.slug || (business.name || 'new-business').toLowerCase().replace(/[^a-z0-9]+/g, '-')
+      };
+      existing.unshift(newBiz);
+    }
+    this.saveData({ ...this.data, businesses: existing });
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('dcvc_live_directory_businesses', JSON.stringify(existing));
+      } catch {
+        // fallback
+      }
+    }
+    return existing;
+  }
+
+  saveBusinesses(businesses) {
+    if (!Array.isArray(businesses)) return this.data.businesses || [];
+    this.saveData({ ...this.data, businesses });
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('dcvc_live_directory_businesses', JSON.stringify(businesses));
+      } catch {
+        // fallback
+      }
+    }
+    return businesses;
+  }
+
+  deleteBusiness(businessId) {
+    const existing = (this.data.businesses || []).filter(b => b.id !== businessId && b.slug !== businessId);
+    this.saveData({ ...this.data, businesses: existing });
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('dcvc_live_directory_businesses', JSON.stringify(existing));
+      } catch {
+        // fallback
+      }
+    }
+    return existing;
+  }
+
+  // --------------------------------------------------------------------------
+  // Custom Knowledge / FAQs CRUD (Auto-Learned by Luna)
+  // --------------------------------------------------------------------------
+  getCustomKnowledge() {
+    return this.data.customKnowledge || [];
+  }
+
+  saveCustomKnowledge(item) {
+    const existing = [...(this.data.customKnowledge || [])];
+    const index = existing.findIndex(k => k.id === item.id);
+    if (index >= 0) {
+      existing[index] = { ...existing[index], ...item, updatedAt: new Date().toISOString() };
+    } else {
+      const newK = {
+        ...item,
+        id: item.id || `custom-${Date.now()}`,
+        updatedAt: new Date().toISOString()
+      };
+      existing.unshift(newK);
+    }
+    this.saveData({ ...this.data, customKnowledge: existing });
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('dcvc_luna_custom_knowledge', JSON.stringify(existing));
+      } catch {
+        // fallback
+      }
+    }
+    return existing;
+  }
+
+  deleteCustomKnowledge(itemId) {
+    const existing = (this.data.customKnowledge || []).filter(k => k.id !== itemId);
+    this.saveData({ ...this.data, customKnowledge: existing });
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('dcvc_luna_custom_knowledge', JSON.stringify(existing));
+      } catch {
+        // fallback
+      }
+    }
     return existing;
   }
 

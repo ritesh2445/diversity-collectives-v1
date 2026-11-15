@@ -20,6 +20,8 @@ import {
   trainingCourses,
   newsArticles,
   communityGroups,
+  specialEngagements,
+  businessDirectorySeed,
   getBoardMemberSlug
 } from '../data/dcvcData.js';
 import { communityDetailsData } from '../data/communityData.js';
@@ -436,6 +438,70 @@ export function buildLiveSiteIndex(customSnapshot = null) {
       snippet: `${sp.name} partners with Diversity Collective Ventura County (${sp.role || sp.tier || 'Community Partner'}).`,
       url: '/sponsors',
       keywords: [sp.name, sp.shortName, sp.tier, sp.role, 'sponsor', 'partner'].filter(Boolean)
+    });
+  }
+
+  // 11. Affirming Business Directory
+  let liveBusinesses = data.businesses;
+  if (!liveBusinesses && typeof window !== 'undefined') {
+    try {
+      const stored = localStorage.getItem('dcvc_live_directory_businesses');
+      if (stored) liveBusinesses = JSON.parse(stored);
+    } catch {
+      // fallback
+    }
+  }
+  if (!liveBusinesses || !Array.isArray(liveBusinesses)) {
+    liveBusinesses = businessDirectorySeed || [];
+  }
+
+  for (const b of liveBusinesses) {
+    const slug = b.slug || normalizeText(b.name).replace(/\s+/g, '-');
+    items.push({
+      id: `biz-${slug}`,
+      type: 'Directory',
+      title: b.name,
+      subtitle: `${b.category || 'Service'} · ${b.city || 'Ventura County'}${b.isLGBTQOwned ? ' · LGBTQ+ Owned' : ''}`,
+      snippet: `${b.description || ''} Address: ${b.address || ''}. Phone: ${b.phone || ''}. ${b.isLGBTQOwned ? 'LGBTQ+ Owned. ' : ''}${b.tags?.join(', ') || ''}`.trim(),
+      url: '/directory',
+      keywords: [b.name, b.category, b.city, b.address, b.phone, ...(b.tags || []), 'directory', 'business', 'affirming', 'shop', 'doctor', 'dentist', 'lawyer'].filter(Boolean),
+      meta: { category: b.category, city: b.city, phone: b.phone, address: b.address, isLGBTQOwned: b.isLGBTQOwned }
+    });
+  }
+
+  // 12. Facilities & Amenities
+  items.push(
+    {
+      id: 'facility-flex-space',
+      type: 'Facility',
+      title: 'Community Flex Space & Meeting Room',
+      subtitle: '2471 Portola Road, Suite 100, Ventura',
+      snippet: 'Bookable community meeting and workspace at DCVC with online time-slot reservation, high-speed Wi-Fi, and presentation equipment.',
+      url: '/#flex-space',
+      keywords: ['flex space', 'meeting room', 'workspace', 'book room', 'reservation', 'slot', 'availability', 'space']
+    },
+    {
+      id: 'facility-pantry',
+      type: 'Facility',
+      title: 'Mutual Aid Food Pantry & LGBTQ+ Lending Library',
+      subtitle: 'Community Resource Center · Mon–Fri 1–5 PM',
+      snippet: 'Free drop-in mutual aid pantry offering non-perishable food, hygiene supplies, harm reduction kits, and an extensive LGBTQ+ affirming book lending library.',
+      url: '/programs/community-resource-center',
+      keywords: ['pantry', 'food', 'mutual aid', 'library', 'books', 'hygiene', 'clothes', 'clothing closet', 'free']
+    }
+  );
+
+  // 13. Special Engagements
+  for (const se of specialEngagements || []) {
+    const slug = se.id || normalizeText(se.title).replace(/\s+/g, '-');
+    items.push({
+      id: `special-${slug}`,
+      type: 'Special Engagement',
+      title: se.title,
+      subtitle: `${se.schedule || ''} · ${se.location || ''}`,
+      snippet: `${se.description || ''} Highlights: ${se.features?.join(', ') || ''}`.trim(),
+      url: '/events',
+      keywords: [se.title, se.subtitle, se.schedule, se.location, ...(se.features || []), 'special engagement', 'arts', 'youth', 'after hours', 'amplify'].filter(Boolean)
     });
   }
 

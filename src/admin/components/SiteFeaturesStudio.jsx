@@ -4,12 +4,14 @@ import {
   CalendarClock,
   Megaphone,
   ShieldCheck,
+  Brain,
   Plus,
   Trash2,
   ArrowUp,
   ArrowDown,
   CheckCircle2
 } from 'lucide-react';
+import LunaLearningStudio from './LunaLearningStudio.jsx';
 import {
   getSiteFeatures,
   saveSiteFeatures,
@@ -122,7 +124,8 @@ export default function SiteFeaturesStudio({ initialSubTab = 'forms' }) {
             { id: 'forms', label: 'Form Builder (All Forms)', icon: FileText },
             { id: 'flex', label: 'Flex Space & Timings', icon: CalendarClock },
             { id: 'hiv', label: 'HIV Screening Slots', icon: ShieldCheck },
-            { id: 'broadcast', label: 'Auto Broadcast Popups', icon: Megaphone }
+            { id: 'broadcast', label: 'Auto Broadcast Popups', icon: Megaphone },
+            { id: 'luna', label: 'Luna AI Learning Center', icon: Brain }
           ].map((item) => {
             const Icon = item.icon;
             return (
@@ -677,6 +680,9 @@ export default function SiteFeaturesStudio({ initialSubTab = 'forms' }) {
           </div>
         </div>
       )}
+
+      {/* 5. LUNA AI KNOWLEDGE & LEARNING STUDIO */}
+      {subTab === 'luna' && <LunaLearningStudio />}
     </div>
   );
 }
