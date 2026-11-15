@@ -5,7 +5,7 @@ export const DCVC_BRAND_COLORS = [
   { name: 'Royal Purple (Primary)', hex: '#5A1E65' },
   { name: 'Sunset Rose (Accent)', hex: '#D91B5C' },
   { name: 'Golden Amber (Warmth)', hex: '#D97706' },
-  { name: 'Emerald Sanctuary (Health)', hex: '#1E5A44' },
+  { name: 'Emerald Center (Health)', hex: '#1E5A44' },
   { name: 'Deep Slate (Readability)', hex: '#0F172A' },
   { name: 'Ocean Sky (Bright)', hex: '#0284C7' }
 ];

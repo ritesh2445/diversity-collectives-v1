@@ -317,9 +317,21 @@ async function processSingleZeffyPayment(payment, env, db, ctx, sendEmailFn = nu
 
   // Automatically deliver Personalized Appreciation Card (+ heartfelt message for recurring sustainers)
   if (donorEmail && donorEmail.includes('@')) {
-    const frontendBase = env.FRONTEND_BASE_URL || 'https://diversitycollective.org';
+    const frontendBase = env.FRONTEND_BASE_URL || 'https://diversitycollectivevc.org';
     const cardUrl = `${frontendBase}/appreciation-card/${cardToken}`;
     const formattedAmount = `$${amountDollars.toFixed(amountDollars % 1 === 0 ? 0 : 2)}`;
+
+    let customTemplate = null;
+    try {
+      const tRes = await db.execute({
+        sql: `SELECT state FROM site_state WHERE id = 'donation_email_template' LIMIT 1`,
+        args: []
+      });
+      if (tRes.rows?.length > 0 && tRes.rows[0].state) {
+        customTemplate = JSON.parse(tRes.rows[0].state);
+      }
+    } catch {}
+
     const tpl = templateDonorAppreciationEmail({
       donorDisplayName: displayName,
       formattedAmount,
@@ -328,7 +340,10 @@ async function processSingleZeffyPayment(payment, env, db, ctx, sendEmailFn = nu
       tagline: tierInfo.tagline,
       impact: tierInfo.impact,
       cardUrl,
-      frequency
+      frequency,
+      date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+      reference: paymentId,
+      customTemplate
     });
 
     await dispatchZeffySyncEmail(env, sendEmailFn, {

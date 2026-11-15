@@ -31,7 +31,7 @@ export default function BoardAndStaff() {
     : boardMembers;
 
   return (
-    <div className="pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
+    <div className="w-full max-w-full overflow-x-clip pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
       
       {/* Header */}
       <section className="container-clean pb-14 border-b border-slate-100 relative overflow-hidden">

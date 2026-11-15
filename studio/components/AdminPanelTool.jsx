@@ -24,7 +24,7 @@ const QUICK_LINKS = [
 
 const SCHEMA_GUIDE = [
   { label: 'Site Settings & Global Info', count: 'Singleton', note: 'Org name, EIN, hours, top announcement banner' },
-  { label: 'Programs & Services', count: '6 chapters', note: 'Youth, Seniors, Trans, HIV Care, Pantry, Sanctuary' },
+  { label: 'Programs & Services', count: '6 chapters', note: 'Youth, Seniors, Trans, HIV Care, Pantry, Center' },
   { label: 'Calendar Events', count: 'Calendar', note: 'Events, recurring schedules, cancellation flags' },
   { label: 'Board of Directors & Staff', count: 'Governance', note: 'Circular portraits, bios, display order' },
   { label: 'Community Resources & News', count: 'Directory', note: 'Crisis, medical, legal, stories, and gallery items' }

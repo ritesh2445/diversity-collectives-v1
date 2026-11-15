@@ -8,7 +8,6 @@ import {
   Clock, 
   Phone, 
   Heart, 
-  Shield,
   ShieldCheck, 
   Calendar,
   CheckCircle2,
@@ -21,188 +20,34 @@ import {
   Lock,
   Gift,
   Star,
-  Activity,
-  Mail
+  Activity
 } from 'lucide-react';
 import { 
   orgInfo, 
   programsList, 
+  communityGroups,
   liveEvents,
+  annualSignatureEvents,
+  specialEngagements,
+  sponsorsList,
   businessDirectorySeed 
 } from '../data/dcvcData';
 import { cmsStore } from '../services/cmsStore';
 import AnimatedCounter from '../components/AnimatedCounter';
 import CardSpotlight from '../components/CardSpotlight';
 import NewsletterSignup from '../components/NewsletterSignup';
+import ImpactAutoPopups from '../components/ImpactAutoPopups';
+import HomeCalendarSection from '../components/HomeCalendarSection';
+import FlexSpaceBookingSection from '../components/FlexSpaceBookingSection';
 import { usePageMeta } from '../utils/seo';
-import { 
-  getActiveHeroTheme, 
-  subscribeToHeroTheme, 
-  HERO_THEMES 
+import {
+  getActiveHeroTheme,
+  subscribeToHeroTheme
 } from '../services/heroThemeStore';
-
-const DEFAULT_HERO_SUBTITLE =
-  "Diversity Collective is Ventura County's premier cultural sanctuary and clinical wellness home — delivering free rapid health testing, youth peer programs, mutual aid, and intersectional advocacy across all 10 county cities.";
-
-const HERO_SUBTEXT_HIGHLIGHTS = [
-  { phrase: 'free rapid health testing', className: 'font-extrabold text-[#5A1E65]' },
-  { phrase: 'youth peer programs', className: 'font-extrabold text-rose-600' },
-  { phrase: 'safe youth spaces', className: 'font-extrabold text-rose-600' },
-  { phrase: 'mutual aid', className: 'font-extrabold text-amber-600' },
-  { phrase: 'intersectional advocacy', className: 'font-extrabold text-indigo-700' },
-  { phrase: 'LGBTQ+ advocacy', className: 'font-extrabold text-[#5A1E65]' },
-  { phrase: 'cultural sanctuary', className: 'font-extrabold text-purple-800' },
-  { phrase: 'clinical wellness home', className: 'font-extrabold text-teal-700' },
-  { phrase: 'trauma-informed community wellness', className: 'font-extrabold text-teal-700' },
-  { phrase: 'all 10 county cities', className: 'font-extrabold text-teal-700' },
-  { phrase: 'every city in Ventura County', className: 'font-extrabold text-indigo-700' }
-];
-
-const HERO_HIGHLIGHT_REGEX = new RegExp(
-  `(${HERO_SUBTEXT_HIGHLIGHTS.map((h) => h.phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`,
-  'gi'
-);
-
-function renderHighlightedHeroSubtext(text) {
-  const safeText = typeof text === 'string' && text.trim() ? text : DEFAULT_HERO_SUBTITLE;
-  return safeText.split(HERO_HIGHLIGHT_REGEX).map((part, idx) => {
-    const match = HERO_SUBTEXT_HIGHLIGHTS.find(
-      (h) => h.phrase.toLowerCase() === part.toLowerCase()
-    );
-    if (match) {
-      return (
-        <span key={idx} className={match.className}>
-          {part}
-        </span>
-      );
-    }
-    return <React.Fragment key={idx}>{part}</React.Fragment>;
-  });
-}
-
-function LotusIcon({ className = "w-6 h-6" }) {
-  return (
-    <svg 
-      className={className} 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="1.5" 
-      strokeLinecap="round" 
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M12 4c-1.8 3-2.5 6.5-2.5 9.5a2.5 2.5 0 0 0 5 0c0-3-.7-6.5-2.5-9.5z" />
-      <path d="M9.5 13.5C7.5 11 5 10 2.5 11c1 3.2 3.2 5.8 7 6.5" />
-      <path d="M14.5 13.5C16.5 11 19 10 21.5 11c-1 3.2-3.2 5.8-7 6.5" />
-      <path d="M7 17.5c-2.5.8-4.5 0-5.5-1 1.2 2.2 3.8 3 6.5 2" />
-      <path d="M17 17.5c2.5.8 4.5 0 5.5-1-1.2 2.2-3.8 3-6.5 2" />
-      <path d="M8.5 20c2.3 1 4.7 1 7 0" />
-    </svg>
-  );
-}
-
-// ============================================================================
-// ANIMATED FESTIVAL ATMOSPHERE PARTICLES & GLOWS
-// ============================================================================
-function AnimatedFestivalAtmosphere({ themeId }) {
-  if (themeId === 'fest-pride') {
-    const confettiColors = ['#EF4444', '#F97316', '#FBBF24', '#10B981', '#06B6D4', '#8B5CF6', '#F472B6', '#38BDF8'];
-    return (
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0" aria-hidden="true">
-        {Array.from({ length: 14 }).map((_, idx) => (
-          <span
-            key={idx}
-            className="absolute -top-6 w-3 h-3 rounded-xs opacity-75 animate-confetti-drift shadow-xs"
-            style={{
-              backgroundColor: confettiColors[idx % confettiColors.length],
-              left: `${(idx * 7.5 + 4)}%`,
-              animationDuration: `${6 + (idx % 5) * 1.2}s`,
-              animationDelay: `${(idx % 4) * 1.1}s`,
-              transform: `rotate(${idx * 35}deg)`
-            }}
-          />
-        ))}
-      </div>
-    );
-  }
-
-  if (themeId === 'fest-prom') {
-    return (
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0" aria-hidden="true">
-        {[
-          { top: '15%', left: '10%', size: 'text-2xl', delay: '0s' },
-          { top: '25%', left: '88%', size: 'text-3xl', delay: '1.2s' },
-          { top: '55%', left: '6%', size: 'text-xl', delay: '2.1s' },
-          { top: '65%', left: '92%', size: 'text-2xl', delay: '0.8s' },
-          { top: '78%', left: '32%', size: 'text-lg', delay: '1.7s' },
-          { top: '22%', left: '52%', size: 'text-3xl', delay: '2.6s' },
-          { top: '42%', left: '78%', size: 'text-xl', delay: '1.9s' }
-        ].map((s, idx) => (
-          <span
-            key={idx}
-            className={`absolute ${s.size} select-none animate-star-twinkle text-amber-300 drop-shadow-md`}
-            style={{ top: s.top, left: s.left, animationDelay: s.delay }}
-          >
-            ✨
-          </span>
-        ))}
-      </div>
-    );
-  }
-
-  if (themeId === 'fest-spirit') {
-    return (
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0" aria-hidden="true">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[36rem] h-[36rem] rounded-full bg-gradient-to-tr from-purple-600/30 via-fuchsia-500/20 to-purple-900/35 blur-3xl animate-glow-pulse" />
-      </div>
-    );
-  }
-
-  if (themeId === 'fest-tvd') {
-    return (
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0" aria-hidden="true">
-        <div className="absolute -top-12 -left-12 w-[32rem] h-[32rem] rounded-full bg-sky-200/50 blur-3xl animate-aurora-drift-1" />
-        <div className="absolute -bottom-12 -right-12 w-[32rem] h-[32rem] rounded-full bg-pink-200/50 blur-3xl animate-aurora-drift-2" />
-      </div>
-    );
-  }
-
-  if (themeId === 'fest-world-aids') {
-    return (
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0" aria-hidden="true">
-        <div className="absolute top-1/2 right-10 -translate-y-1/2 w-[30rem] h-[30rem] rounded-full bg-red-400/25 blur-3xl animate-glow-pulse" />
-      </div>
-    );
-  }
-
-  if (themeId === 'fest-coming-out') {
-    return (
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0" aria-hidden="true">
-        <div className="absolute -top-10 left-1/3 w-[34rem] h-[34rem] rounded-full bg-gradient-to-r from-amber-300/30 via-rose-300/25 to-orange-300/30 blur-3xl animate-aurora-drift-1" />
-      </div>
-    );
-  }
-
-  if (themeId === 'fest-lesbian') {
-    return (
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0" aria-hidden="true">
-        <div className="absolute bottom-0 right-1/4 w-[32rem] h-[32rem] rounded-full bg-gradient-to-tr from-orange-400/25 via-pink-400/20 to-amber-200/30 blur-3xl animate-glow-pulse" />
-      </div>
-    );
-  }
-
-  if (themeId === 'fest-bi') {
-    return (
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0" aria-hidden="true">
-        <div className="absolute top-10 left-10 w-[30rem] h-[30rem] rounded-full bg-fuchsia-400/25 blur-3xl animate-aurora-drift-1" />
-        <div className="absolute bottom-10 right-10 w-[30rem] h-[30rem] rounded-full bg-blue-500/25 blur-3xl animate-aurora-drift-2" />
-      </div>
-    );
-  }
-
-  return null;
-}
+import HeroShowcase from '../components/HeroShowcase';
+import MobileCarousel from '../components/MobileCarousel.jsx';
+import { DEFAULT_PAGE_BLOCKS, upgradeOrNormalizePageLayout } from '../data/siteDefaults';
+import { parseEventDate } from '../utils/eventDates';
 
 export default function Home() {
   usePageMeta({
@@ -215,11 +60,10 @@ export default function Home() {
   const [selectedDonationTier, setSelectedDonationTier] = useState(50);
   const [donationFreq, setDonationFreq] = useState('once');
   const [customDonation, setCustomDonation] = useState('');
-  const [heroService, setHeroService] = useState('testing');
   const [selectedEventCategory, setSelectedEventCategory] = useState('all');
-  const [expandedProgram, setExpandedProgram] = useState(null);
   const [cmsPrograms, setCmsPrograms] = useState(() => cmsStore.getPrograms() || programsList);
   const [cmsEvents, setCmsEvents] = useState(() => cmsStore.getEvents() || liveEvents);
+  const [cmsSponsors, setCmsSponsors] = useState(() => cmsStore.getSponsors() || sponsorsList);
   const [cmsSettings, setCmsSettings] = useState(() => cmsStore.getSettings() || orgInfo);
   const [activeThemeId, setActiveThemeId] = useState(getActiveHeroTheme);
 
@@ -227,46 +71,43 @@ export default function Home() {
     const unsubscribe = cmsStore.subscribe((data) => {
       if (data?.programs) setCmsPrograms(data.programs);
       if (data?.events) setCmsEvents(data.events);
+      if (data?.sponsors) setCmsSponsors(data.sponsors);
       if (data?.settings) setCmsSettings(data.settings);
     });
     return unsubscribe;
   }, []);
-  const [customLayoutBlocks, setCustomLayoutBlocks] = useState(() => {
-    if (typeof window === 'undefined') return null;
+  const readStoredLayoutBlocks = () => {
+    if (typeof window === 'undefined') return DEFAULT_PAGE_BLOCKS;
     try {
       const stored = localStorage.getItem('dcvc_admin_custom_layout');
-      return stored ? JSON.parse(stored) : null;
-    } catch {
-      return null;
-    }
-  });
-  const [customHeroProps, setCustomHeroProps] = useState(() => {
-    if (typeof window === 'undefined') return null;
-    try {
-      const stored = localStorage.getItem('dcvc_admin_custom_layout');
-      if (stored) {
-        const blocks = JSON.parse(stored);
-        const heroBlock = blocks.find(b => b.type === 'hero_banner' && b.enabled !== false);
-        return heroBlock?.props || null;
+      if (!stored) return DEFAULT_PAGE_BLOCKS;
+      const upgraded = upgradeOrNormalizePageLayout(JSON.parse(stored));
+      if (stored.includes('anctuary')) {
+        try {
+          localStorage.setItem('dcvc_admin_custom_layout', JSON.stringify(upgraded));
+        } catch {}
       }
+      return upgraded;
     } catch {
-      // Safe fallback
+      return DEFAULT_PAGE_BLOCKS;
     }
-    return null;
-  });
+  };
+
+  const [customLayoutBlocks, setCustomLayoutBlocks] = useState(readStoredLayoutBlocks);
+
+  const customHeroProps = (() => {
+    const heroBlock = (customLayoutBlocks || []).find(
+      (b) => b.type === 'hero_banner' && b.enabled !== false
+    );
+    return heroBlock?.props || null;
+  })();
 
   useEffect(() => {
-    const handleLayoutUpdate = () => {
-      try {
-        const stored = localStorage.getItem('dcvc_admin_custom_layout');
-        if (stored) {
-          const blocks = JSON.parse(stored);
-          setCustomLayoutBlocks(blocks);
-          const heroBlock = blocks.find(b => b.type === 'hero_banner' && b.enabled !== false);
-          setCustomHeroProps(heroBlock?.props || null);
-        }
-      } catch {
-        // Safe fallback
+    const handleLayoutUpdate = (e) => {
+      if (e?.detail?.blocks) {
+        setCustomLayoutBlocks(upgradeOrNormalizePageLayout(e.detail.blocks));
+      } else {
+        setCustomLayoutBlocks(readStoredLayoutBlocks());
       }
     };
     window.addEventListener('storage', handleLayoutUpdate);
@@ -277,16 +118,28 @@ export default function Home() {
     };
   }, []);
 
+  const getBlockProps = (blockType) => {
+    const match = (customLayoutBlocks || []).find((b) => b.type === blockType);
+    const fallback = DEFAULT_PAGE_BLOCKS.find((b) => b.type === blockType);
+    return { ...(fallback?.props || {}), ...(match?.props || {}) };
+  };
+
   const getSectionStyle = (blockType, fallbackOrder) => {
     if (!Array.isArray(customLayoutBlocks) || customLayoutBlocks.length === 0) {
-      return { order: fallbackOrder };
+      return { order: fallbackOrder * 10 };
     }
-    const idx = customLayoutBlocks.findIndex(b => b.type === blockType);
-    if (idx === -1) return { order: fallbackOrder };
+    const idx = customLayoutBlocks.findIndex((b) => b.type === blockType);
+    if (idx === -1) {
+      if (blockType === 'partnerships_section') {
+        const eventsIdx = customLayoutBlocks.findIndex((b) => b.type === 'events_section');
+        return { order: eventsIdx >= 0 ? (eventsIdx + 1) * 10 + 5 : fallbackOrder * 10 };
+      }
+      return { order: fallbackOrder * 10 };
+    }
     if (customLayoutBlocks[idx].enabled === false) {
       return { display: 'none' };
     }
-    return { order: idx + 1 };
+    return { order: (idx + 1) * 10 };
   };
 
   useEffect(() => {
@@ -296,11 +149,8 @@ export default function Home() {
     return unsubscribe;
   }, []);
 
-  const activeThemeObj = HERO_THEMES.find(t => t.id === activeThemeId) || HERO_THEMES[0];
-  const isDesign2 = activeThemeId === 'spotlight' || activeThemeId === 'default';
-
-  // Dynamic sanctuary schedule & live status
-  const getSanctuaryStatus = () => {
+  // Dynamic center schedule & live status
+  const getCenterStatus = () => {
     try {
       const now = new Date();
       const ptString = now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
@@ -313,26 +163,40 @@ export default function Home() {
         isOpenNow,
         isWeekday,
         statusText: isOpenNow 
-          ? "Sanctuary Open Now · Mon–Fri 1:00 PM – 5:00 PM · Free HIV/STI Screenings"
+          ? "Center Open Now · Mon–Fri 1:00 PM – 5:00 PM · HIV/STI Screenings 1st Mon 3–7 PM"
           : isWeekday && hour < 13
-          ? "Sanctuary Opens Today 1:00 PM · Mon–Fri 1:00 PM – 5:00 PM · Free HIV/STI Screenings"
-          : "Sanctuary Open Today · Mon–Fri 1:00 PM – 5:00 PM · Free HIV/STI Screenings"
+          ? "Center Opens Today 1:00 PM · Mon–Fri 1:00 PM – 5:00 PM · HIV/STI Screenings 1st Mon 3–7 PM"
+          : "Center Open Today · Mon–Fri 1:00 PM – 5:00 PM · HIV/STI Screenings 1st Mon 3–7 PM"
       };
     } catch {
       return {
         isOpenNow: true,
         isWeekday: true,
-        statusText: "Sanctuary Open Today · Mon–Fri 1:00 PM – 5:00 PM · Free HIV/STI Screenings"
+        statusText: "Center Open Today · Mon–Fri 1:00 PM – 5:00 PM · HIV/STI Screenings 1st Mon 3–7 PM"
       };
     }
   };
-  const sanctuaryStatus = getSanctuaryStatus();
+  const centerStatus = getCenterStatus();
+
+  const impactPopupsProps = getBlockProps('impact_popups');
+  const statsProps = getBlockProps('impact_stats');
+  const directoryProps = getBlockProps('directory_cta');
+  const programsProps = getBlockProps('programs_section');
+  const signatureEventsProps = getBlockProps('signature_events');
+  const calendarProps = getBlockProps('calendar_section');
+  const specialEngagementsProps = getBlockProps('special_engagements');
+  const flexSpaceProps = getBlockProps('flex_space');
+  const givingProps = getBlockProps('zeffy_giving');
+  const eventsProps = getBlockProps('events_section');
+  const partnershipsProps = getBlockProps('partnerships_section');
+  const voicesProps = getBlockProps('community_voices');
+  const finalCtaProps = getBlockProps('final_cta');
 
   const impactStats = [
     {
-      value: "10+",
-      label: "Years of Community Service",
-      sub: "Defending rights and providing safe harbor in Ventura County since 2014.",
+      value: statsProps.stat1Number || "10+",
+      label: statsProps.stat1Label || "Years of Community Service",
+      sub: statsProps.stat1Sub || "Defending rights and providing safe harbor in Ventura County since 2014.",
       icon: Award,
       colorClass: "gradient-text-amethyst",
       cardTheme: "card-vibrant-purple",
@@ -341,9 +205,9 @@ export default function Home() {
       iconBg: "bg-purple-100 text-[#5A1E65]"
     },
     {
-      value: "5,000+",
-      label: "Health Screenings",
-      sub: "Free, confidential HIV/STI testing and care navigation through Diversity SHINES.",
+      value: statsProps.stat2Number || "5,000+",
+      label: statsProps.stat2Label || "Health Screenings",
+      sub: statsProps.stat2Sub || "Free, confidential HIV/STI testing and care navigation through Diversity SHINES.",
       icon: Activity,
       colorClass: "gradient-text-coastal",
       cardTheme: "card-vibrant-teal",
@@ -352,9 +216,9 @@ export default function Home() {
       iconBg: "bg-teal-100 text-teal-800"
     },
     {
-      value: "1,200+",
-      label: "Youth Empowered",
-      sub: "Safe peer circles, Pride Prom, and mentorship through Rainbow Umbrella.",
+      value: statsProps.stat3Number || "1,200+",
+      label: statsProps.stat3Label || "Youth Empowered",
+      sub: statsProps.stat3Sub || "Safe peer circles, Pride Prom, and mentorship through Rainbow Umbrella.",
       icon: Users,
       colorClass: "gradient-text-sunset",
       cardTheme: "card-vibrant-amber",
@@ -363,9 +227,9 @@ export default function Home() {
       iconBg: "bg-amber-100 text-amber-800"
     },
     {
-      value: "100%",
-      label: "Free & Confidential",
-      sub: "No insurance or fees required. Complete privacy and affirming care for all.",
+      value: statsProps.stat4Number || "100%",
+      label: statsProps.stat4Label || "Free & Confidential",
+      sub: statsProps.stat4Sub || "No insurance or fees required. Complete privacy and affirming care for all.",
       icon: ShieldCheck,
       colorClass: "gradient-text-indigo",
       cardTheme: "card-vibrant-indigo",
@@ -393,7 +257,7 @@ export default function Home() {
     },
     {
       amount: 250,
-      title: "Resource Center Sanctuary",
+      title: "Community Resource Center",
       impact: "Supports public computer workstations, lending library operations, and free drop-in community hours."
     },
     {
@@ -404,20 +268,57 @@ export default function Home() {
   ];
 
   const programCategories = [
-    { id: 'all', label: 'All Programs' },
-    { id: 'youth', label: 'Youth & Teens (13–23)' },
-    { id: 'kids', label: 'Kids & Families (9–13)' },
-    { id: 'health', label: 'Health & Screenings' },
-    { id: 'center', label: 'Drop-In Center' }
+    { id: 'all', label: 'All 9 Featured Programs' },
+    { id: 'youth', label: 'Youth & Families' },
+    { id: 'adults', label: 'Adults & 55+' },
+    { id: 'recovery', label: 'Recovery & Growth' }
   ];
 
-  const filteredPrograms = (cmsPrograms || programsList).filter(program => {
+  const allSourcePrograms = cmsPrograms || programsList;
+  const findProg = (slugPart) => allSourcePrograms.find((p) => p.slug?.includes(slugPart));
+  const mapGroupToCard = (item, fallbackImg, bucket) => ({
+    slug: item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+    title: item.name,
+    audience: item.ages,
+    tagline: item.category,
+    summary: item.description,
+    schedule: item.frequency,
+    location: item.location,
+    heroImage: fallbackImg,
+    programGroup: bucket,
+    ctaLink: item.externalLink || item.link || '/community',
+    isExternal: Boolean(item.externalLink)
+  });
+  const findGroup = (needle, fallbackImg, bucket) => {
+    const match = communityGroups.find((g) => g.name.toLowerCase().includes(needle.toLowerCase()));
+    return match ? mapGroupToCard(match, fallbackImg, bucket) : null;
+  };
+
+  // Exact requested Home Programs order (1-9):
+  // 1. Queer Adulting 2. Little Unicorns 3. Rainbow Umbrella 4. PFLAG
+  // 5. Narcotics Anonymous 6. Trans Peer Group by Transverse
+  // 7. Toastmasters 8. Men's Collective 9. Silver Collective
+  const orderedAllPrograms = [
+    findGroup('Queer Adulting', '/images/community-gathering.jpg', 'adults'),
+    (() => {
+      const lu = findProg('little-unicorns');
+      return lu ? { ...lu, programGroup: 'youth', ctaLink: `/programs/${lu.slug}` } : findGroup('Little Unicorns', '/images/little-unicorns.png', 'youth');
+    })(),
+    (() => {
+      const ru = findProg('rainbow-umbrella');
+      return ru ? { ...ru, programGroup: 'youth', ctaLink: `/programs/${ru.slug}` } : findGroup('Rainbow Umbrella', '/images/youth-umbrella.jpg', 'youth');
+    })(),
+    findGroup('PFLAG', '/images/volunteers.jpg', 'youth'),
+    findGroup('Narcotics Anonymous', '/images/crc-building.jpg', 'recovery'),
+    findGroup('Transverse', '/images/hero-community.jpg', 'adults'),
+    findGroup('Toastmasters', '/images/community-gathering.jpg', 'recovery'),
+    findGroup("Men's Collective", '/images/volunteers.jpg', 'adults'),
+    findGroup('Silver Collective', '/images/community-gathering.jpg', 'adults')
+  ].filter(Boolean);
+
+  const filteredPrograms = orderedAllPrograms.filter((program) => {
     if (selectedCategory === 'all') return true;
-    if (selectedCategory === 'youth') return program.slug === 'rainbow-umbrella';
-    if (selectedCategory === 'kids') return program.slug === 'little-unicorns';
-    if (selectedCategory === 'health') return program.slug === 'diversity-shines';
-    if (selectedCategory === 'center') return program.slug === 'community-resource-center';
-    return true;
+    return program.programGroup === selectedCategory;
   });
 
   const eventCategories = [
@@ -461,869 +362,27 @@ export default function Home() {
     triggerMilestoneConfetti(e);
   };
 
-  const toggleProgramPeek = (slug) => {
-    setExpandedProgram(prev => prev === slug ? null : slug);
-  };
-
   return (
-    <div className="bg-transparent text-slate-800 flex flex-col">
+    <div className="bg-transparent text-slate-800 flex flex-col w-full max-w-full overflow-x-clip">
 
       {/* ====================================================================
-          HERO SECTION: DYNAMIC MULTI-THEME DISPATCHER
-          Vibrant Multi-Color Aurora Canvas with Rich Gradients & Eye-Catchy Aesthetics
+          1. IMPACT QUICK AUTO-SLIDING POP-UPS (NUMBERS ONLY)
           ==================================================================== */}
-      <section
-        style={getSectionStyle('hero_banner', 1)}
-        className="relative overflow-hidden pt-3 sm:pt-6 bg-[#FAF7F2] border-b border-purple-200/60"
-      >
-        
-        {/* Full-Bleed Ambient Radiant Aurora Atmosphere & Back Ribbon Stream (z-0) */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
-          {/* Ambient Glowing Aurora Orbs */}
-          <div className="absolute -top-24 -left-20 w-[36rem] h-[36rem] rounded-full bg-gradient-to-br from-purple-500/20 via-fuchsia-500/15 to-transparent blur-3xl animate-pulse" style={{ animationDuration: '7s' }} />
-          <div className="absolute -top-20 -right-20 w-[42rem] h-[42rem] rounded-full bg-gradient-to-bl from-amber-400/30 via-rose-400/25 to-purple-400/20 blur-3xl animate-aurora-drift-1" />
-          <div className="absolute bottom-10 left-1/4 w-[36rem] h-[36rem] rounded-full bg-gradient-to-tr from-teal-400/20 via-sky-400/18 to-transparent blur-3xl animate-aurora-drift-2" />
+      <ImpactAutoPopups
+        props={impactPopupsProps}
+        style={getSectionStyle('impact_popups', 1)}
+      />
 
-          {/* Sweeping Back Aurora Wave Stream looping from upper-right down behind the photo frame */}
-          <svg className="w-full h-full min-h-[700px] opacity-80" viewBox="0 0 1440 900" fill="none" preserveAspectRatio="none">
-            <defs>
-              <linearGradient id="aurora-stream-back" x1="100%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.55" />
-                <stop offset="25%" stopColor="#FB7185" stopOpacity="0.5" />
-                <stop offset="55%" stopColor="#D946EF" stopOpacity="0.45" />
-                <stop offset="80%" stopColor="#8B5CF6" stopOpacity="0.35" />
-                <stop offset="100%" stopColor="#06B6D4" stopOpacity="0.2" />
-              </linearGradient>
-            </defs>
-            <path
-              d="M 1440,0 C 1200,80 1000,240 920,440 C 840,640 680,780 400,850 C 200,890 0,900 0,900 L 1440,900 Z"
-              fill="url(#aurora-stream-back)"
-            />
-          </svg>
-        </div>
-
-        {/* Content Container (z-20) */}
-        <div className="container-clean relative z-20 flex flex-col gap-5 sm:gap-6 md:gap-7">
-          
-          {/* Top Command Bar: Dual Ribbon for Design 2, Single Alert for Design 1 */}
-          {isDesign2 ? (
-            <div className="flex flex-wrap items-center justify-between gap-3 text-xs w-full">
-              <Link 
-                to="/programs/community-resource-center" 
-                className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white/95 hover:bg-white border border-purple-200/90 font-bold text-[#5A1E65] shadow-xs hover:border-purple-400 transition-colors"
-                title="View Community Resource Center hours and free clinical services"
-              >
-                <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-                </span>
-                <span>{sanctuaryStatus.statusText}</span>
-              </Link>
-
-              <div className="hidden sm:inline-flex items-center gap-2 text-slate-700 bg-white/90 px-4 py-1.5 rounded-full border border-purple-200/70 text-xs font-semibold shadow-2xs">
-                <Phone className="w-3.5 h-3.5 text-purple-700" />
-                <span>{customHeroProps?.helplineText || 'Helpline: (805) 644-5428 · 24/7 Crisis: Dial 988'}</span>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-start">
-              <Link 
-                to="/programs/community-resource-center" 
-                className="group w-full max-w-2xl flex items-center justify-between gap-3 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full bg-white/95 hover:bg-white border-2 border-purple-200/90 hover:border-purple-400 shadow-md shadow-purple-500/10 hover:shadow-lg transition-all"
-                title="View Community Resource Center hours and free clinical services"
-              >
-                <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                  <span className="relative flex h-3.5 w-3.5 flex-shrink-0">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-80"></span>
-                    <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-gradient-to-tr from-emerald-600 to-teal-400 shadow-[0_0_10px_rgba(16,185,129,0.7)]"></span>
-                  </span>
-                  <span className="text-xs sm:text-sm font-bold text-slate-900 leading-snug truncate">
-                    {sanctuaryStatus.isOpenNow ? (
-                      <>
-                        <strong className="text-emerald-700 font-extrabold">Sanctuary Open Now</strong>{' '}
-                        <span className="text-rose-400 font-black">•</span>{' '}
-                        <span className="text-slate-900 font-bold">Mon–Fri 1:00 PM – 5:00 PM</span>{' '}
-                        <span className="text-amber-500 font-black">•</span>{' '}
-                        <strong className="bg-gradient-to-r from-[#5A1E65] via-rose-600 to-indigo-700 bg-clip-text text-transparent font-extrabold">Free HIV/STI Screenings</strong>
-                      </>
-                    ) : (
-                      <>
-                        <strong className="text-[#5A1E65] font-extrabold">Sanctuary Open Today</strong>{' '}
-                        <span className="text-rose-400 font-black">•</span>{' '}
-                        <span className="text-slate-900 font-bold">Mon–Fri 1:00 PM – 5:00 PM</span>{' '}
-                        <span className="text-amber-500 font-black">•</span>{' '}
-                        <strong className="bg-gradient-to-r from-[#5A1E65] via-rose-600 to-indigo-700 bg-clip-text text-transparent font-extrabold">Free HIV/STI Screenings</strong>
-                      </>
-                    )}
-                  </span>
-                </div>
-                <div className="w-6 h-6 rounded-full bg-purple-100/80 group-hover:bg-[#5A1E65] flex items-center justify-center transition-all flex-shrink-0">
-                  <ArrowRight className="w-3.5 h-3.5 text-purple-800 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
-                </div>
-              </Link>
-            </div>
-          )}
-
-          {/* ==================================================================
-              LAYOUT THEME B / DESIGN 2: CIVIC SANCTUARY & 3D SPOTLIGHT PATHFINDER
-              - Exact reference design from media_1793970741843_38a9c6a3.jpg:
-              - Eyebrow pill: "ESTABLISHED 2014 · VENTURA COUNTY 501(C)(3) NONPROFIT"
-              - Bold sans "You Are", Lora serif italic warm sunset "Always Welcome" with wave underline, and "Here."
-              - Authentic mission copy
-              - 3 horizontal action pills: Explore Free Programs →, Visit Sanctuary, (805) 644-LGBT (5428)
-              - 4-tab Instant Sanctuary Navigator with 100% Confidential badge and dynamic schedule triage
-              - Right Column: 3D Spotlight Card with community photo, Portola Rd tag, Open Today, and CRC emblem footer
-              ================================================================== */}
-          {isDesign2 && activeThemeObj.category !== 'festival' && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center pb-8 sm:pb-12 z-10">
-              
-              {/* Left Column: Eyebrow + Headline + Copy + 3 CTAs + Instant Sanctuary Navigator */}
-              <div className="lg:col-span-7 flex flex-col gap-6 z-10">
-                <div className="flex flex-col gap-3 sm:gap-3.5">
-                  <span className="inline-flex items-center text-[11px] sm:text-xs font-bold text-[#5A1E65] py-1 px-3.5 bg-purple-50/95 border border-purple-200/90 rounded-full shadow-2xs self-start">
-                    {customHeroProps?.eyebrow || 'ESTABLISHED 2014 · VENTURA COUNTY 501(C)(3) NONPROFIT'}
-                  </span>
-
-                  <h1 className="font-display text-4xl sm:text-6xl md:text-7xl xl:text-[5.15rem] font-black tracking-tight text-slate-950 leading-[1.08] sm:leading-[1.04]">
-                    <span className="block">{customHeroProps?.titleLine1 || 'You Are'}</span>
-                    <span className="block mt-1 sm:mt-1.5">
-                      <span className="font-serif italic font-semibold tracking-[-0.015em] bg-gradient-to-r from-[#4A0E4E] via-[#8B1A8F] via-[#D91B5C] via-[#E11D48] via-[#EA580C] via-[#F97316] to-[#F59E0B] bg-clip-text text-transparent relative inline-block mr-2.5 sm:mr-3.5 pb-1 sm:pb-1.5">
-                        {customHeroProps?.titleAccentWord || 'Always Welcome'}
-                        <svg 
-                          className="absolute -bottom-1 sm:-bottom-1.5 left-0 w-full h-2 sm:h-3 overflow-visible pointer-events-none" 
-                          viewBox="0 0 100 8" 
-                          preserveAspectRatio="none"
-                          aria-hidden="true"
-                        >
-                          <defs>
-                            <linearGradient id="headline-bend-gradient-2" x1="0%" y1="0%" x2="100%" y2="0%">
-                              <stop offset="0%" stopColor="#C026D3" stopOpacity="0.9" />
-                              <stop offset="28%" stopColor="#E11D48" stopOpacity="0.95" />
-                              <stop offset="70%" stopColor="#F97316" stopOpacity="0.9" />
-                              <stop offset="100%" stopColor="#F59E0B" stopOpacity="0.85" />
-                            </linearGradient>
-                          </defs>
-                          <path 
-                            d="M 1 2 Q 50 7, 99 2" 
-                            stroke="url(#headline-bend-gradient-2)" 
-                            strokeWidth="2.5" 
-                            strokeLinecap="round" 
-                            fill="none" 
-                          />
-                        </svg>
-                      </span>
-                      <span className="font-display font-black text-slate-950 inline-block">{customHeroProps?.titleLine2 || 'Here.'}</span>
-                    </span>
-                  </h1>
-
-                  <p className="text-[15.5px] sm:text-[17px] md:text-[1.15rem] text-slate-900 leading-[1.68] font-semibold tracking-[-0.01em] max-w-xl pt-1 antialiased">
-                    {renderHighlightedHeroSubtext(customHeroProps?.subtitle || customHeroProps?.description)}
-                  </p>
-                </div>
-
-                {/* 3 Action Buttons (Horizontal layout matching reference mockup) */}
-                <div className="flex flex-wrap items-center gap-3 pt-1">
-                  <Link 
-                    to={customHeroProps?.primaryCtaLink || customHeroProps?.primaryCtaUrl || "/programs"} 
-                    className="inline-flex items-center justify-center gap-2 text-sm font-extrabold !text-white text-white bg-gradient-to-r from-[#5A1E65] via-purple-700 to-indigo-600 hover:from-purple-900 hover:to-indigo-700 py-3 sm:py-3.5 px-6 sm:px-7 rounded-full shadow-md hover:shadow-lg transition-all"
-                  >
-                    <span className="!text-white text-white font-extrabold">{customHeroProps?.primaryCtaText || "Explore Free Programs"}</span>
-                    <ArrowRight className="w-4 h-4 !text-white text-white" />
-                  </Link>
-
-                  <Link 
-                    to={customHeroProps?.secondaryCtaLink || customHeroProps?.secondaryCtaUrl || "/contact"} 
-                    className="inline-flex items-center justify-center gap-2 text-sm font-extrabold text-slate-800 bg-white hover:bg-purple-50/50 py-3 sm:py-3.5 px-5 sm:px-6 rounded-full border-2 border-purple-200/90 shadow-2xs hover:shadow-sm hover:border-purple-400 transition-all"
-                  >
-                    <MapPin className="w-4 h-4 text-[#5A1E65]" />
-                    <span>{customHeroProps?.secondaryCtaText || "Visit Sanctuary"}</span>
-                  </Link>
-
-                  <a
-                    href={`mailto:${customHeroProps?.emailAddress || 'info@diversitycollective.org'}`}
-                    aria-label={`Send email to ${customHeroProps?.emailAddress || 'info@diversitycollective.org'}`}
-                    title={`Send email to ${customHeroProps?.emailAddress || 'info@diversitycollective.org'}`}
-                    className="w-12 h-12 rounded-full border-2 border-purple-200/90 bg-white hover:bg-purple-50 text-[#5A1E65] hover:text-purple-900 shadow-2xs hover:shadow-sm hover:border-purple-400 flex items-center justify-center transition-all cursor-pointer flex-shrink-0"
-                  >
-                    <Mail className="w-5 h-5 text-[#5A1E65]" />
-                  </a>
-                </div>
-
-                {/* Interactive "What Brings You In Today?" Quick Pathfinder */}
-                <div className="p-4 sm:p-5 rounded-2xl bg-white/95 backdrop-blur-md border-2 border-purple-100 shadow-md flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] sm:text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                      <Sparkles className="w-4 h-4 text-amber-500 animate-pulse" />
-                      <span>Instant Sanctuary Navigator — What Brings You In Today?</span>
-                    </span>
-                    <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                      100% Confidential
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setHeroService('testing')}
-                      className={`p-2.5 sm:p-3 rounded-xl text-left transition-all border-2 text-xs font-semibold cursor-pointer ${
-                        heroService === 'testing'
-                          ? 'bg-gradient-to-br from-teal-50 to-emerald-50 border-teal-500 text-teal-950 shadow-sm ring-2 ring-teal-400/30'
-                          : 'bg-white border-slate-200 text-slate-700 hover:border-teal-300 hover:bg-teal-50/30'
-                      }`}
-                    >
-                      <div className="font-extrabold flex items-center gap-1.5 text-teal-700">
-                        <span>🩺</span> Rapid Testing
-                      </div>
-                      <span className="text-[10px] text-slate-500 block font-medium mt-0.5">Diversity SHINES</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setHeroService('youth')}
-                      className={`p-2.5 sm:p-3 rounded-xl text-left transition-all border-2 text-xs font-semibold cursor-pointer ${
-                        heroService === 'youth'
-                          ? 'bg-gradient-to-br from-amber-50 to-orange-50 border-amber-500 text-amber-950 shadow-sm ring-2 ring-amber-400/30'
-                          : 'bg-white border-slate-200 text-slate-700 hover:border-amber-300 hover:bg-amber-50/30'
-                      }`}
-                    >
-                      <div className="font-extrabold flex items-center gap-1.5 text-amber-700">
-                        <span>🌈</span> Youth (13–23)
-                      </div>
-                      <span className="text-[10px] text-slate-500 block font-medium mt-0.5">Rainbow Umbrella</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setHeroService('hub')}
-                      className={`p-2.5 sm:p-3 rounded-xl text-left transition-all border-2 text-xs font-semibold cursor-pointer ${
-                        heroService === 'hub'
-                          ? 'bg-gradient-to-br from-purple-50 to-fuchsia-50 border-purple-500 text-purple-950 shadow-sm ring-2 ring-purple-400/30'
-                          : 'bg-white border-slate-200 text-slate-700 hover:border-purple-300 hover:bg-purple-50/30'
-                      }`}
-                    >
-                      <div className="font-extrabold flex items-center gap-1.5 text-purple-700">
-                        <span>📚</span> Drop-In Hub
-                      </div>
-                      <span className="text-[10px] text-slate-500 block font-medium mt-0.5">Library & Lounge</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setHeroService('give')}
-                      className={`p-2.5 sm:p-3 rounded-xl text-left transition-all border-2 text-xs font-semibold cursor-pointer ${
-                        heroService === 'give'
-                          ? 'bg-gradient-to-br from-rose-50 to-pink-50 border-rose-500 text-rose-950 shadow-sm ring-2 ring-rose-400/30'
-                          : 'bg-white border-slate-200 text-slate-700 hover:border-rose-300 hover:bg-rose-50/30'
-                      }`}
-                    >
-                      <div className="font-extrabold flex items-center gap-1.5 text-rose-700">
-                        <span>❤️</span> Give or Join
-                      </div>
-                      <span className="text-[10px] text-slate-500 block font-medium mt-0.5">501(c)(3) Support</span>
-                    </button>
-                  </div>
-
-                  {/* Dynamic Triage Message Row */}
-                  <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-                    {heroService === 'testing' && (
-                      <>
-                        <span className="text-slate-700">
-                          <strong className="text-teal-900">Diversity SHINES:</strong> Free, confidential rapid HIV & Hepatitis C testing with immediate results. Walk-ins Mon–Fri 1–5 PM.
-                        </span>
-                        <Link to="/programs/diversity-shines" className="font-extrabold text-teal-700 hover:text-teal-900 inline-flex items-center gap-1 whitespace-nowrap">
-                          <span>View Testing Hours</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </Link>
-                      </>
-                    )}
-                    {heroService === 'youth' && (
-                      <>
-                        <span className="text-slate-700">
-                          <strong className="text-amber-900">Rainbow Umbrella:</strong> Safe, affirming weekly peer circles, youth mentorship, and creative arts for ages 13–23 every Friday 5:30–7:30 PM.
-                        </span>
-                        <Link to="/programs/rainbow-umbrella" className="font-extrabold text-amber-700 hover:text-amber-900 inline-flex items-center gap-1 whitespace-nowrap">
-                          <span>Join Youth Circle</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </Link>
-                      </>
-                    )}
-                    {heroService === 'hub' && (
-                      <>
-                        <span className="text-slate-700">
-                          <strong className="text-purple-900">Community Resource Center:</strong> Safe harbor, lending library, free computer workstations, gender-affirming closet, and peer care.
-                        </span>
-                        <Link to="/programs/community-resource-center" className="font-extrabold text-purple-700 hover:text-purple-900 inline-flex items-center gap-1 whitespace-nowrap">
-                          <span>Explore Center</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </Link>
-                      </>
-                    )}
-                    {heroService === 'give' && (
-                      <>
-                        <span className="text-slate-700">
-                          <strong className="text-rose-900">Community Support:</strong> 100% of tax-deductible gifts directly fund free local screenings, youth programs, and community safety.
-                        </span>
-                        <Link to="/donate" className="font-extrabold text-rose-700 hover:text-rose-900 inline-flex items-center gap-1 whitespace-nowrap">
-                          <span>Support Our Mission</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </Link>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Column: Multi-Layer Card Visual (Clean & Stable - No Hover Glare or Wave Overlap) */}
-              <div className="lg:col-span-5 relative z-20">
-                <div 
-                  className="absolute -inset-2 bg-gradient-to-r from-purple-600 via-rose-500 via-amber-400 to-teal-500 rounded-3xl blur-2xl opacity-35 pointer-events-none" 
-                  aria-hidden="true" 
-                />
-
-                <CardSpotlight 
-                  className="glass-card rounded-3xl sm:rounded-[2rem] overflow-hidden shadow-2xl border-2 border-purple-200/90 relative"
-                  tilt={false}
-                  maxTilt={0}
-                  scale={1}
-                  glare={false}
-                  spotlightColor="transparent"
-                >
-                  <div className="relative overflow-hidden aspect-[4/3]">
-                    <img 
-                      src={customHeroProps?.spotlightImage || customHeroProps?.photoUrl || "/images/community-gathering.jpg"} 
-                      alt="Diversity Collective Ventura County community members gathering"
-                      className="w-full h-full object-cover"
-                      fetchPriority="high"
-                      decoding="async"
-                      onError={(e) => {
-                        e.target.src = "/images/hero-community.jpg";
-                      }}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent pointer-events-none" />
-                    
-                    {/* Floating In-Frame Physical Location Tag */}
-                    <div className="absolute bottom-4 left-4 right-4 flex flex-wrap items-center justify-between gap-2 text-white text-xs pointer-events-none">
-                      <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-xs px-2.5 py-1 rounded-full border border-white/20">
-                        <MapPin className="w-3.5 h-3.5 text-amber-300 flex-shrink-0" />
-                        <span className="font-semibold text-white drop-shadow-md text-[11px] sm:text-xs">
-                          {customHeroProps?.locationBadge || "2471 Portola Road, Suite 100, Ventura"}
-                        </span>
-                      </div>
-                      <span className="text-emerald-300 drop-shadow-md font-bold text-[11px] bg-emerald-950/85 px-2.5 py-1 rounded-full border border-emerald-400/50 shadow-sm flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
-                        Open Today
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Bottom Bar with Prominent DCVC Emblem */}
-                  <div className="p-4 bg-white/95 backdrop-blur-md border-t border-slate-100 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-xl bg-white p-1 border-2 border-purple-100 shadow-sm flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
-                        <img 
-                          src="/images/logo-square.png" 
-                          alt="Diversity Collective Emblem" 
-                          className="w-full h-full object-contain" 
-                        />
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-xs sm:text-sm text-slate-900 leading-tight">
-                          {customHeroProps?.cardTitle || 'Community Resource Center'}
-                        </h4>
-                        <p className="text-[11px] text-slate-500 font-medium">
-                          {customHeroProps?.cardSubtitle || 'Physical safe harbor & clinical navigation'}
-                        </p>
-                      </div>
-                    </div>
-                    <Link 
-                      to="/programs/community-resource-center" 
-                      className="inline-flex items-center gap-1 text-xs font-bold text-[#5A1E65] hover:text-purple-700 p-2 hover:bg-purple-50 rounded-lg transition-colors group/link"
-                    >
-                      <span>About Us</span>
-                      <ArrowUpRight className="w-3.5 h-3.5 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-transform" />
-                    </Link>
-                  </div>
-                </CardSpotlight>
-              </div>
-            </div>
-          )}
-
-          {/* ==================================================================
-              LAYOUT THEME A / DESIGN 1: FLAGSHIP AURORA SANCTUARY (Vibrant & Eye-Catchy)
-              - Serif Fraunces headline + Living rainbow gradient "Always"
-              - Strictly ZERO orange cursive text per user instruction
-              - Authentic site photography (/images/volunteers.jpg)
-              - 3 full-width / rounded-full stacked action pills with vibrant gradients
-              - Single unified flowing full-bleed aurora ribbon wave crossing from back to break line
-              ================================================================== */}
-          {!isDesign2 && activeThemeObj.category !== 'festival' && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 xl:gap-10 items-center">
-              
-              {/* Left Column: Eyebrow + Headline + Copy + 3 Stacked Action Pills */}
-              <div className="lg:col-span-7 xl:col-span-6 flex flex-col justify-center gap-5 sm:gap-6 z-10 pb-6 sm:pb-8 lg:pb-12">
-                <div className="flex flex-col gap-2.5 sm:gap-3.5">
-                  
-                  {/* Crisp Bold Eyebrow Typography with Colored Accents */}
-                  <div className="inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] sm:text-xs font-black uppercase tracking-[0.2em] text-slate-900 self-start">
-                    {customHeroProps?.eyebrow ? (
-                      <span>{customHeroProps.eyebrow}</span>
-                    ) : (
-                      <>
-                        <span className="text-[#5A1E65]">Established 2014</span>
-                        <span className="text-rose-500" aria-hidden="true">•</span>
-                        <span className="text-slate-900">Ventura County</span>
-                        <span className="text-teal-700" aria-hidden="true">•</span>
-                        <span className="text-indigo-700">501(c)(3) Nonprofit</span>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Editorial Headline: Bold Sans "You Are", Enhanced Italic Serif Gradient "Always Welcome" with Gentle Curved Bend Underline, and Bold Sans "Here." */}
-                  <h1 className="font-display text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-[4.25rem] xl:text-[4.85rem] font-black tracking-tight text-slate-950 leading-[1.08] sm:leading-[1.04]">
-                    <span className="block">{customHeroProps?.titleLine1 || 'You Are'}</span>
-                    <span className="block mt-1 sm:mt-1.5">
-                      <span className="font-serif italic font-semibold tracking-[-0.015em] bg-gradient-to-r from-[#4A0E4E] via-[#8B1A8F] via-[#D91B5C] via-[#E11D48] via-[#EA580C] via-[#F97316] to-[#F59E0B] bg-clip-text text-transparent relative inline-block mr-2.5 sm:mr-3.5 pb-1 sm:pb-1.5">
-                        {customHeroProps?.titleAccentWord || 'Always Welcome'}
-                        <svg 
-                          className="absolute -bottom-1 sm:-bottom-1.5 left-0 w-full h-2 sm:h-3 overflow-visible pointer-events-none" 
-                          viewBox="0 0 100 8" 
-                          preserveAspectRatio="none"
-                          aria-hidden="true"
-                        >
-                          <defs>
-                            <linearGradient id="headline-bend-gradient-1" x1="0%" y1="0%" x2="100%" y2="0%">
-                              <stop offset="0%" stopColor="#C026D3" stopOpacity="0.9" />
-                              <stop offset="28%" stopColor="#E11D48" stopOpacity="0.95" />
-                              <stop offset="70%" stopColor="#F97316" stopOpacity="0.9" />
-                              <stop offset="100%" stopColor="#F59E0B" stopOpacity="0.85" />
-                            </linearGradient>
-                          </defs>
-                          <path 
-                            d="M 1 2 Q 50 7, 99 2" 
-                            stroke="url(#headline-bend-gradient-1)" 
-                            strokeWidth="2.5" 
-                            strokeLinecap="round" 
-                            fill="none" 
-                          />
-                        </svg>
-                      </span>
-                      <span className="font-display font-black text-slate-950 inline-block">{customHeroProps?.titleLine2 || 'Here.'}</span>
-                    </span>
-                  </h1>
-
-                  {/* Bolder, Cleaner DCVC Mission Copy with Crisp Colored Font Highlights */}
-                  <p className="text-[15.5px] sm:text-[17px] md:text-[1.16rem] text-slate-900 leading-[1.68] font-semibold tracking-[-0.01em] max-w-xl pt-1 antialiased">
-                    {renderHighlightedHeroSubtext(customHeroProps?.subtitle || customHeroProps?.description)}
-                  </p>
-                </div>
-
-                {/* 3 Action Pill Buttons (Stacked with Rich Gradients & High Contrast, Safe Z-Index) */}
-                <div className="flex flex-col gap-3 w-full sm:max-w-md pt-1 relative z-30">
-                  {/* 1. Primary CTA - Explore Free Programs */}
-                  <Link 
-                    to={customHeroProps?.primaryCtaLink || customHeroProps?.primaryCtaUrl || "/programs"} 
-                    className="w-full inline-flex items-center justify-center gap-2.5 text-sm sm:text-base font-extrabold !text-white text-white bg-gradient-to-r from-[#5A1E65] via-[#8B1A8F] via-[#C026D3] to-[#7C3AED] hover:from-[#4A0E4F] hover:to-[#6D28D9] active:scale-[0.99] py-3.5 sm:py-4 px-7 rounded-full shadow-lg shadow-purple-900/30 hover:shadow-xl hover:shadow-purple-700/40 hover:scale-[1.01] transition-all text-center group btn-shimmer"
-                  >
-                    <span className="!text-white text-white font-extrabold">{customHeroProps?.primaryCtaText || "Explore Free Programs"}</span>
-                    <ArrowRight className="w-4 h-4 !text-white text-white group-hover:translate-x-1.5 transition-transform" />
-                  </Link>
-
-                  {/* 2. Secondary CTA - Visit Sanctuary */}
-                  <Link 
-                    to={customHeroProps?.secondaryCtaLink || customHeroProps?.secondaryCtaUrl || "/contact"} 
-                    className="w-full inline-flex items-center justify-center gap-2.5 text-sm sm:text-base font-extrabold text-slate-800 bg-white/95 hover:bg-white active:scale-[0.99] py-3.5 px-6 rounded-full border-2 border-purple-200/90 hover:border-purple-400 shadow-xs hover:shadow-md hover:scale-[1.01] transition-all text-center group"
-                  >
-                    <div className="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
-                      <MapPin className="w-3.5 h-3.5 text-[#5A1E65]" />
-                    </div>
-                    <span>{customHeroProps?.secondaryCtaText || "Visit Sanctuary"}</span>
-                  </Link>
-
-                  {/* 3. Tertiary CTA - Email Us */}
-                  <a
-                    href={`mailto:${customHeroProps?.emailAddress || 'info@diversitycollective.org'}`}
-                    className="w-full inline-flex items-center justify-center gap-2.5 text-sm sm:text-base font-extrabold text-slate-800 bg-white/95 hover:bg-white active:scale-[0.99] py-3.5 px-6 rounded-full border-2 border-purple-200/90 hover:border-purple-400 shadow-xs hover:shadow-md hover:scale-[1.01] transition-all text-center group"
-                  >
-                    <div className="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
-                      <Mail className="w-3.5 h-3.5 text-[#5A1E65]" />
-                    </div>
-                    <span>{customHeroProps?.emailAddress || 'info@diversitycollective.org'}</span>
-                  </a>
-                </div>
-
-              </div>
-
-              {/* Right Column: Authentic Site Community Showcase */}
-              <div className="lg:col-span-5 xl:col-span-6 relative flex flex-col justify-center">
-                
-                {/* Image Container with Organic Rounded Frame & Radiant Glow */}
-                <div className="relative z-10 w-full select-none">
-                  
-                  {/* Radiant Glow Atmosphere around Image Frame */}
-                  <div className="absolute -inset-4 bg-gradient-to-r from-purple-400/25 via-pink-400/25 to-amber-300/30 blur-2xl pointer-events-none rounded-3xl" />
-
-                  <div className="relative w-full rounded-3xl sm:rounded-[2.25rem] overflow-hidden bg-slate-100 shadow-xl border-2 border-white/80 group">
-                    
-                    {/* Authentic Site Photography from diversitycollectivevc.org */}
-                    <img 
-                      src="/images/volunteers.jpg"
-                      alt="Diversity Collective Ventura County community volunteers"
-                      className="w-full h-full min-h-[280px] sm:min-h-[360px] lg:min-h-[440px] object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-                      onError={(e) => {
-                        e.target.src = "/images/community-gathering.jpg";
-                      }}
-                    />
-
-                  </div>
-                </div>
-
-              </div>
-
-            </div>
-          )}
-
-          {/* ==================================================================
-              LAYOUT THEME B: US LGBTQ+ FESTIVAL HERO (When activeTheme is a Festival)
-              Specialized event themes: Pride Month, Transgender Visibility,
-              Spirit Day, National Coming Out Day, World AIDS Day, etc.
-              ================================================================== */}
-          {activeThemeObj.category === 'festival' && (
-            <div className="relative flex flex-col gap-6">
-              <AnimatedFestivalAtmosphere themeId={activeThemeId} />
-              {/* Festival Calendar Event Badge */}
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-900 text-white text-xs font-bold shadow-md">
-                  <Calendar className="w-3.5 h-3.5 text-amber-300" />
-                  <span>{activeThemeObj.badge}</span>
-                  <span className="text-purple-300">•</span>
-                  <span className="text-purple-200 font-medium">{activeThemeObj.eventDates}</span>
-                </div>
-                <button
-                  onClick={(e) => triggerMilestoneConfetti(e)}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-extrabold text-[#5A1E65] bg-purple-100 hover:bg-purple-200 border border-purple-300 rounded-full transition-all cursor-pointer shadow-2xs"
-                  title="Celebrate this community milestone with confetti!"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                  <span>Celebrate Event 🎉</span>
-                </button>
-              </div>
-
-              {/* Festival Headline & Callout */}
-              <div className="max-w-3xl flex flex-col gap-3">
-                <span className="text-xs font-extrabold tracking-[0.2em] text-[#5A1E65] uppercase block">
-                  SPECIAL EVENT SEASON · VENTURA COUNTY 501(C)(3) NONPROFIT
-                </span>
-                <h1 className="font-fraunces text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight text-slate-950 leading-[1.1]">
-                  {activeThemeObj.headline}
-                </h1>
-                <p className="text-base sm:text-lg text-slate-900 leading-relaxed font-semibold pt-1 antialiased">
-                  {renderHighlightedHeroSubtext(activeThemeObj.description)}
-                </p>
-              </div>
-
-              {/* Festival CTAs */}
-              <div className="flex flex-wrap items-center gap-3 pt-1">
-                <Link
-                  to="/events"
-                  className="btn-primary py-3 px-7 text-sm font-bold shadow-md flex items-center gap-2 group"
-                >
-                  <span>View Event Calendar & Schedules</span>
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </Link>
-                <Link
-                  to="/volunteer"
-                  className="btn-secondary py-3 px-6 text-sm font-bold bg-white flex items-center gap-2"
-                >
-                  <span>Volunteer at Event</span>
-                </Link>
-                <Link
-                  to="/donate"
-                  className="inline-flex items-center gap-2 px-5 py-3 text-sm font-bold text-slate-950 bg-[#FDE047] hover:bg-[#FACC15] rounded-full border border-amber-300 shadow-sm transition-all"
-                >
-                  <Heart className="w-4 h-4 fill-current text-slate-950" />
-                  <span>Support Event Fund</span>
-                </Link>
-              </div>
-            </div>
-          )}
-
-        </div>
-
-        {/* ====================================================================
-            FULL-BLEED FOREGROUND WAVE CROSSOVER EXTENDING FLUSH TO BREAK LINE
-            - Sweeps across the bottom of the hero section from left to right.
-            - Saturated, high-contrast, rich Pride gradients with white luminous crest.
-            - Connects seamlessly with ZERO gaps directly to the first break line.
-            ==================================================================== */}
-        {activeThemeObj.category !== 'festival' && (
-          <div className="relative w-full -mt-6 sm:-mt-8 md:-mt-12 lg:-mt-16 pointer-events-none z-10 overflow-hidden leading-none select-none">
-            <svg 
-              className="w-full h-28 sm:h-36 md:h-48 lg:h-56 xl:h-64 block filter drop-shadow-[0_-10px_25px_rgba(217,70,239,0.35)]" 
-              viewBox="0 0 1440 220" 
-              fill="none" 
-              preserveAspectRatio="none"
-            >
-              <defs>
-                {/* Wave Ribbon 1: Amber Gold to Sunset Rose */}
-                <linearGradient id="vibrant-wave-amber" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.88" />
-                  <stop offset="35%" stopColor="#FB7185" stopOpacity="0.85" />
-                  <stop offset="70%" stopColor="#C084FC" stopOpacity="0.80" />
-                  <stop offset="100%" stopColor="#38BDF8" stopOpacity="0.75" />
-                </linearGradient>
-
-                {/* Wave Ribbon 2: Saturated Magenta to Ultraviolet (Main Crest) */}
-                <linearGradient id="vibrant-wave-magenta" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#E11D48" stopOpacity="0.95" />
-                  <stop offset="30%" stopColor="#EC4899" stopOpacity="0.92" />
-                  <stop offset="65%" stopColor="#A855F7" stopOpacity="0.92" />
-                  <stop offset="100%" stopColor="#06B6D4" stopOpacity="0.88" />
-                </linearGradient>
-
-                {/* Wave Ribbon 3: Oceanic Emerald to Coastal Cyan */}
-                <linearGradient id="vibrant-wave-cyan" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#10B981" stopOpacity="0.90" />
-                  <stop offset="35%" stopColor="#06B6D4" stopOpacity="0.88" />
-                  <stop offset="70%" stopColor="#8B5CF6" stopOpacity="0.88" />
-                  <stop offset="100%" stopColor="#F43F5E" stopOpacity="0.82" />
-                </linearGradient>
-              </defs>
-
-              {/* Ribbon 1: Golden Amber base flowing seamlessly past both edges */}
-              <g className="animate-ribbon-base">
-                <path
-                  d="M -100,170 C 180,180 460,140 740,105 C 1020,70 1260,65 1540,95 L 1540,225 L -100,225 Z"
-                  fill="url(#vibrant-wave-amber)"
-                />
-              </g>
-
-              {/* Ribbon 2: Saturated Magenta crest sweeping seamlessly past both edges with luminous crest line */}
-              <g className="animate-ribbon-undulate">
-                <path
-                  d="M -100,145 C 160,155 430,110 710,75 C 970,42 1220,40 1540,70 L 1540,225 L -100,225 Z"
-                  fill="url(#vibrant-wave-magenta)"
-                />
-                <path
-                  d="M -100,145 C 160,155 430,110 710,75 C 970,42 1220,40 1540,70"
-                  stroke="rgba(255, 255, 255, 0.95)"
-                  strokeWidth="3.5"
-                  strokeLinecap="round"
-                  fill="none"
-                />
-              </g>
-
-              {/* Ribbon 3: Oceanic Cyan & Emerald with flowing highlight */}
-              <g className="animate-ribbon-wave-slow">
-                <path
-                  d="M -100,180 C 200,190 480,150 760,115 C 1040,82 1280,78 1540,105 L 1540,225 L -100,225 Z"
-                  fill="url(#vibrant-wave-cyan)"
-                />
-                <path
-                  d="M -100,180 C 200,190 480,150 760,115 C 1040,82 1280,78 1540,105"
-                  stroke="rgba(255, 255, 255, 0.85)"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  fill="none"
-                />
-              </g>
-            </svg>
-          </div>
-        )}
-
-        {/* ====================================================================
-            4-PILLAR ACCENT STRIP: PEOPLE • SAFETY • WELLNESS • OPPORTUNITY
-            Grounded cleanly right at the first break line.
-            Matches reference design: clean outline icons + uppercase tracking labels.
-            ==================================================================== */}
-        <div className="w-full border-t border-purple-200/90 bg-white/70 backdrop-blur-xs relative z-30">
-          <div className="container-clean py-3.5 sm:py-4">
-            <div className="grid grid-cols-4 divide-x divide-purple-200/80 text-center">
-              
-              {/* Pillar 1: PEOPLE */}
-              <Link 
-                to="/community" 
-                className="pillar-card group flex flex-col items-center justify-center gap-1.5 py-1.5 px-1 sm:px-4 hover:bg-purple-50/80 rounded-xl transition-all cursor-pointer"
-                title="People — Affirming community circles & peer gatherings"
-              >
-                <Users className="w-5 h-5 sm:w-6 sm:h-6 text-[#5A1E65] stroke-[1.8] group-hover:scale-110 transition-transform" />
-                <span className="text-[10px] sm:text-xs md:text-sm font-black uppercase tracking-[0.18em] sm:tracking-[0.22em] text-[#5A1E65] group-hover:text-purple-900 transition-colors">
-                  PEOPLE
-                </span>
-              </Link>
-
-              {/* Pillar 2: SAFETY */}
-              <Link 
-                to="/programs/community-resource-center" 
-                className="pillar-card group flex flex-col items-center justify-center gap-1.5 py-1.5 px-1 sm:px-4 hover:bg-sky-50/80 rounded-xl transition-all cursor-pointer"
-                title="Safety — Cultural sanctuary, crisis navigation & drop-in safe harbor"
-              >
-                <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-sky-700 stroke-[1.8] group-hover:scale-110 transition-transform" />
-                <span className="text-[10px] sm:text-xs md:text-sm font-black uppercase tracking-[0.18em] sm:tracking-[0.22em] text-sky-900 group-hover:text-sky-700 transition-colors">
-                  SAFETY
-                </span>
-              </Link>
-
-              {/* Pillar 3: WELLNESS */}
-              <Link 
-                to="/programs/diversity-shines" 
-                className="pillar-card group flex flex-col items-center justify-center gap-1.5 py-1.5 px-1 sm:px-4 hover:bg-emerald-50/80 rounded-xl transition-all cursor-pointer"
-                title="Wellness — Diversity SHINES free rapid health testing & mental health"
-              >
-                <LotusIcon className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-700 stroke-[1.8] group-hover:scale-110 transition-transform" />
-                <span className="text-[10px] sm:text-xs md:text-sm font-black uppercase tracking-[0.18em] sm:tracking-[0.22em] text-emerald-900 group-hover:text-emerald-700 transition-colors">
-                  WELLNESS
-                </span>
-              </Link>
-
-              {/* Pillar 4: OPPORTUNITY */}
-              <Link 
-                to="/donate" 
-                className="pillar-card group flex flex-col items-center justify-center gap-1.5 py-1.5 px-1 sm:px-4 hover:bg-rose-50/80 rounded-xl transition-all cursor-pointer"
-                title="Opportunity — Mutual aid, youth leadership & community giving"
-              >
-                <Heart className="w-5 h-5 sm:w-6 sm:h-6 text-rose-700 stroke-[1.8] group-hover:scale-110 transition-transform" />
-                <span className="text-[10px] sm:text-xs md:text-sm font-black uppercase tracking-[0.18em] sm:tracking-[0.22em] text-rose-900 group-hover:text-rose-700 transition-colors">
-                  OPPORTUNITY
-                </span>
-              </Link>
-
-            </div>
-          </div>
-        </div>
-
-        {/* Civic Alliances & Public Health Logos Container */}
-        <div className="container-clean relative z-10 pb-6 sm:pb-8">
-
-          {/* ====================================================================
-              HIGH-VISIBILITY CIVIC & PUBLIC HEALTH LOGOS SHOWCASE
-              Addressing: "logos here needs to be bigger and more visible"
-              ==================================================================== */}
-          <div className="pt-8 border-t border-slate-200 flex flex-col gap-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500 flex items-center gap-2">
-                <Award className="w-4 h-4 text-[#5A1E65]" />
-                <span>Verified Civic Alliances & Public Health Leadership</span>
-              </span>
-              <span className="text-xs text-slate-400">
-                Official Ventura County Agency & Public Health Partners
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 pt-2">
-              {/* Partner 1: VCBH */}
-              <a 
-                href="https://vchca.org/behavioral-health/" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="group flex flex-col items-center justify-center p-5 rounded-2xl bg-white shadow-sm hover:shadow-2xl border-2 border-slate-200/90 hover:border-[#5A1E65] transition-all interactive-card-3d cursor-pointer relative overflow-hidden"
-                title="Ventura County Behavioral Health"
-              >
-                <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/0 via-purple-500/0 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-                <div className="h-16 md:h-20 w-full flex items-center justify-center">
-                  <img 
-                    src="/images/vcbh-logo.jpg" 
-                    alt="Ventura County Behavioral Health Logo" 
-                    className="max-h-14 md:max-h-16 max-w-[85%] object-contain group-hover:scale-108 transition-transform duration-300" 
-                  />
-                </div>
-                <span className="text-xs font-bold text-slate-800 mt-2 text-center block group-hover:text-[#5A1E65] leading-tight">
-                  Behavioral Health
-                </span>
-                <span className="text-[11px] text-slate-400 text-center font-medium">County of Ventura</span>
-              </a>
-
-              {/* Partner 2: VCPH */}
-              <a 
-                href="https://vchca.org/public-health/" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="group flex flex-col items-center justify-center p-5 rounded-2xl bg-white shadow-sm hover:shadow-2xl border-2 border-slate-200/90 hover:border-[#5A1E65] transition-all interactive-card-3d cursor-pointer relative overflow-hidden"
-                title="Ventura County Public Health"
-              >
-                <div className="absolute inset-0 bg-gradient-to-tr from-teal-500/0 via-teal-500/0 to-teal-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-                <div className="h-16 md:h-20 w-full flex items-center justify-center">
-                  <img 
-                    src="/images/vcph-logo.png" 
-                    alt="Ventura County Public Health Logo" 
-                    className="max-h-14 md:max-h-16 max-w-[85%] object-contain group-hover:scale-108 transition-transform duration-300" 
-                  />
-                </div>
-                <span className="text-xs font-bold text-slate-800 mt-2 text-center block group-hover:text-[#5A1E65] leading-tight">
-                  Public Health
-                </span>
-                <span className="text-[11px] text-slate-400 text-center font-medium">STI Screening Partner</span>
-              </a>
-
-              {/* Partner 3: Diversity SHINES */}
-              <Link 
-                to="/programs" 
-                className="group flex flex-col items-center justify-center p-5 rounded-2xl bg-white shadow-sm hover:shadow-2xl border-2 border-slate-200/90 hover:border-[#5A1E65] transition-all interactive-card-3d cursor-pointer relative overflow-hidden"
-                title="Diversity SHINES HIV/STI Testing Clinic"
-              >
-                <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/0 via-purple-500/0 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-                <div className="h-16 md:h-20 w-full flex items-center justify-center">
-                  <img 
-                    src="/images/shines-logo.jpg" 
-                    alt="Diversity SHINES Logo" 
-                    className="max-h-14 md:max-h-16 max-w-[85%] object-contain group-hover:scale-108 transition-transform duration-300" 
-                  />
-                </div>
-                <span className="text-xs font-bold text-slate-800 mt-2 text-center block group-hover:text-[#5A1E65] leading-tight">
-                  Diversity SHINES
-                </span>
-                <span className="text-[11px] text-slate-400 text-center font-medium">Clinical Rapid Testing</span>
-              </Link>
-
-              {/* Partner 4: Little Unicorns */}
-              <Link 
-                to="/programs" 
-                className="group flex flex-col items-center justify-center p-5 rounded-2xl bg-white shadow-sm hover:shadow-2xl border-2 border-slate-200/90 hover:border-[#5A1E65] transition-all interactive-card-3d cursor-pointer relative overflow-hidden"
-                title="Little Unicorns Kids & Family Initiative"
-              >
-                <div className="absolute inset-0 bg-gradient-to-tr from-rose-500/0 via-rose-500/0 to-rose-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-                <div className="h-16 md:h-20 w-full flex items-center justify-center">
-                  <img 
-                    src="/images/little-unicorns.png" 
-                    alt="Little Unicorns Initiative Logo" 
-                    className="max-h-14 md:max-h-16 max-w-[85%] object-contain group-hover:scale-108 transition-transform duration-300" 
-                  />
-                </div>
-                <span className="text-xs font-bold text-slate-800 mt-2 text-center block group-hover:text-[#5A1E65] leading-tight">
-                  Little Unicorns
-                </span>
-                <span className="text-[11px] text-slate-400 text-center font-medium">Youth Ages 9–13</span>
-              </Link>
-            </div>
-          </div>
-
-          {/* County Regional Cities Ribbon */}
-          <div className="pt-4 border-t border-slate-200/70 flex flex-wrap items-center justify-between gap-4 text-xs font-semibold text-slate-400">
-            <span className="text-slate-500 uppercase tracking-widest text-[11px] font-bold">
-              Serving Ventura County Communities:
-            </span>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-slate-600 text-xs font-medium">
-              <span className="hover:text-[#5A1E65] transition-colors">Ventura</span>
-              <span className="text-slate-300">·</span>
-              <span className="hover:text-[#5A1E65] transition-colors">Oxnard</span>
-              <span className="text-slate-300">·</span>
-              <span className="hover:text-[#5A1E65] transition-colors">Camarillo</span>
-              <span className="text-slate-300">·</span>
-              <span className="hover:text-[#5A1E65] transition-colors">Thousand Oaks</span>
-              <span className="text-slate-300">·</span>
-              <span className="hover:text-[#5A1E65] transition-colors">Simi Valley</span>
-              <span className="text-slate-300">·</span>
-              <span className="hover:text-[#5A1E65] transition-colors">Ojai Valley</span>
-              <span className="text-slate-300">·</span>
-              <span className="hover:text-[#5A1E65] transition-colors">Moorpark</span>
-              <span className="text-slate-300">·</span>
-              <span className="hover:text-[#5A1E65] transition-colors">Santa Paula</span>
-              <span className="text-slate-300">·</span>
-              <span className="hover:text-[#5A1E65] transition-colors">Port Hueneme</span>
-            </div>
-          </div>
-
-        </div>
-      </section>
+      {/* ====================================================================
+          2. HERO SECTION: DYNAMIC MULTI-THEME DISPATCHER (Synced with Admin Studio)
+          ==================================================================== */}
+      <HeroShowcase
+        themeId={activeThemeId}
+        heroProps={customHeroProps}
+        centerStatus={centerStatus}
+        sectionStyle={getSectionStyle('hero_banner', 2)}
+        onTriggerConfetti={triggerMilestoneConfetti}
+      />
 
       {/* ====================================================================
           IMPACT NUMBERS: ANIMATED COUNT-UP WITH GLASS SPOTLIGHT
@@ -1333,23 +392,23 @@ export default function Home() {
           
           <div className="max-w-2xl mb-10 flex flex-col gap-3">
             <span className="glass-pill">
-              10-YEAR TRACK RECORD
+              {statsProps.eyebrow || '10-YEAR TRACK RECORD'}
             </span>
             <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900">
-              Trusted community support across Ventura County.
+              {statsProps.headline || 'Trusted community support across Ventura County.'}
             </h2>
-            <p className="text-sm md:text-base text-slate-600 leading-relaxed">
-              Since 2014, we have provided barrier-free, non-judgmental services to LGBTQ+ individuals, youth, and families.
+            <p className="text-sm sm:text-base text-slate-800 font-medium leading-relaxed">
+              {statsProps.description || 'Since 2014, we have provided barrier-free, non-judgmental services to LGBTQ+ individuals, youth, and families.'}
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 perspective-1000">
+          <MobileCarousel cols={4} autoScrollMs={5000} className="perspective-1000">
             {impactStats.map((stat) => {
               const StatIcon = stat.icon;
               return (
                 <CardSpotlight 
                   key={stat.label}
-                  className={`${stat.cardTheme} p-6 md:p-8 ${stat.glowClass} interactive-card-3d relative overflow-hidden`}
+                  className={`${stat.cardTheme} p-6 md:p-8 ${stat.glowClass} interactive-card-3d relative overflow-hidden h-full`}
                   tilt={true}
                   maxTilt={8}
                   glare={true}
@@ -1359,22 +418,22 @@ export default function Home() {
                       <div className={`w-11 h-11 rounded-xl ${stat.iconBg} flex items-center justify-center font-bold shadow-xs border border-white/60`}>
                         <StatIcon className="w-5 h-5" />
                       </div>
-                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">100% Verified</span>
+                      <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 bg-slate-100 px-2.5 py-0.5 rounded-full">100% Verified</span>
                     </div>
                     <div className={`font-display text-4xl sm:text-5xl font-black tracking-tight ${stat.colorClass}`}>
                       <AnimatedCounter value={stat.value} />
                     </div>
-                    <h3 className="text-sm font-bold text-slate-900 pt-0.5">
+                    <h3 className="text-base font-bold text-slate-950 pt-0.5">
                       {stat.label}
                     </h3>
-                    <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                    <p className="text-sm text-slate-800 leading-relaxed font-medium">
                       {stat.sub}
                     </p>
                   </div>
                 </CardSpotlight>
               );
             })}
-          </div>
+          </MobileCarousel>
 
         </div>
       </section>
@@ -1382,43 +441,43 @@ export default function Home() {
       {/* ====================================================================
           LGBTQ+ AFFIRMING BUSINESS DIRECTORY SPOTLIGHT
           ==================================================================== */}
-      <section style={getSectionStyle('directory_cta', 3)} className="py-14 md:py-20 bg-white border-b border-slate-100 scroll-reveal">
+      <section style={getSectionStyle('directory_cta', 6)} className="py-14 md:py-20 bg-white border-b border-slate-100 scroll-reveal">
         <div className="container-clean">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
             <div className="flex flex-col gap-3 max-w-2xl">
               <span className="glass-pill text-xs font-bold text-[#5A1E65] bg-purple-50 border-purple-200">
-                VENTURA COUNTY AFFIRMING NETWORK
+                {directoryProps.eyebrow || 'VENTURA COUNTY AFFIRMING NETWORK'}
               </span>
               <h2 className="font-display text-2xl sm:text-4xl font-extrabold text-slate-950 tracking-tight">
-                Shop, Dine & Connect Safely.
+                {directoryProps.headline || 'Shop, Dine & Connect Safely.'}
               </h2>
-              <p className="text-sm sm:text-base text-slate-600 leading-relaxed font-medium">
-                Discover verified LGBTQ+ owned and affirming businesses across Ventura, Oxnard, Ojai, Camarillo, and the Conejo Valley.
+              <p className="text-sm sm:text-base text-slate-800 leading-relaxed font-medium">
+                {directoryProps.description || 'Discover verified LGBTQ+ owned and affirming businesses across Ventura, Oxnard, Ojai, Camarillo, and the Conejo Valley.'}
               </p>
             </div>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
               <Link to="/directory" className="btn-primary py-2.5 px-5 text-xs font-bold inline-flex items-center justify-center gap-1.5 shadow-sm text-center">
-                <span>Browse Full Directory</span>
+                <span>{directoryProps.ctaText || 'Browse Full Directory'}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
               <Link to="/directory/submit" className="btn-secondary py-2.5 px-4 text-xs font-bold inline-flex items-center justify-center gap-1.5 bg-white text-center">
-                <span>Submit Your Business</span>
+                <span>{directoryProps.secondaryCtaText || 'Submit Your Business'}</span>
               </Link>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <MobileCarousel cols={3} autoScrollMs={4500}>
             {businessDirectorySeed.slice(0, 3).map((biz) => (
-              <div key={biz.id} className="p-6 rounded-3xl bg-slate-50 border border-slate-200/90 hover:border-purple-300 transition-all shadow-xs hover:shadow-lg flex flex-col justify-between gap-4">
+              <div key={biz.id} className="p-6 rounded-3xl bg-slate-50 border border-slate-200/90 hover:border-purple-300 transition-all shadow-xs hover:shadow-lg flex flex-col justify-between gap-4 h-full">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-[10px] font-black uppercase tracking-wider text-[#5A1E65] bg-purple-50 px-2.5 py-1 rounded-full border border-purple-200">
                       {biz.category}
                     </span>
-                    <span className="text-xs font-bold text-slate-500">{biz.city}</span>
+                    <span className="text-xs sm:text-sm font-bold text-slate-700">{biz.city}</span>
                   </div>
-                  <h3 className="font-display text-xl font-black text-slate-900">{biz.name}</h3>
-                  <p className="text-xs text-slate-600 leading-relaxed font-medium line-clamp-3">{biz.description}</p>
+                  <h3 className="font-display text-xl font-black text-slate-950">{biz.name}</h3>
+                  <p className="text-sm text-slate-800 leading-relaxed font-medium line-clamp-3">{biz.description}</p>
                 </div>
                 <div className="pt-3 border-t border-slate-200/80 flex items-center justify-between text-xs">
                   <span className="text-emerald-700 font-bold flex items-center gap-1">
@@ -1432,28 +491,32 @@ export default function Home() {
                 </div>
               </div>
             ))}
-          </div>
+          </MobileCarousel>
         </div>
       </section>
 
       {/* ====================================================================
           PROGRAMS DIRECTORY: COLLISION-PROOF EXPANDABLE CARDS
           ==================================================================== */}
-      <section style={getSectionStyle('programs_section', 4)} className="py-14 md:py-20 bg-gradient-to-b from-amber-100/30 via-rose-100/30 to-purple-100/40 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
+      <section style={getSectionStyle('programs_section', 3)} className="py-14 md:py-20 bg-gradient-to-b from-amber-100/30 via-rose-100/30 to-purple-100/40 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
         <div className="container-clean">
           
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
             <div className="flex flex-col gap-3 max-w-xl">
               <span className="glass-pill">
-                CORE INITIATIVES
+                {programsProps.eyebrow || 'CORE INITIATIVES'}
               </span>
               <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900">
-                Programs for every chapter of life.
+                {programsProps.headline || 'Programs for every chapter of life.'}
               </h2>
+              <p className="text-slate-600 max-w-xl text-sm leading-relaxed">
+                {programsProps.description || 'Explore peer support groups, clinical health screenings, and cultural fellowship programs below.'}
+              </p>
             </div>
-            <p className="text-slate-600 max-w-md text-sm leading-relaxed">
-              Explore peer support groups, clinical health screenings, and cultural fellowship programs below.
-            </p>
+            <Link to="/programs" className="btn-secondary shrink-0">
+              <span>{programsProps.ctaText || 'View All Programs'}</span>
+              <ArrowRight className="w-4 h-4 text-[#5A1E65]" />
+            </Link>
           </div>
 
           {/* Clean Category Tabs with Vibrant Active Gradients */}
@@ -1473,11 +536,9 @@ export default function Home() {
             ))}
           </div>
 
-          {/* Cards Grid with Quick Peek Accordion & 3D Tilt */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-2 perspective-1000">
+          {/* Cards Grid with Unified Equal-Height Cards & 3D Tilt */}
+          <MobileCarousel cols={3} autoScrollMs={4500} className="pt-2 perspective-1000 items-stretch sm:auto-rows-fr" cardClassName="h-full flex flex-col">
             {filteredPrograms.map((program) => {
-              const isPeekOpen = expandedProgram === program.slug;
-              
               // Dynamic jewel-toned card themes & badge colors
               let cardTheme = "card-vibrant-purple";
               let audienceBadgeColor = "text-purple-900 bg-purple-100 border-purple-300";
@@ -1501,20 +562,21 @@ export default function Home() {
               return (
                 <CardSpotlight 
                   key={program.slug}
-                  className={`${cardTheme} overflow-hidden flex flex-col justify-between interactive-card-3d shadow-md hover:shadow-2xl`}
+                  className={`${cardTheme} h-full w-full overflow-hidden flex flex-col justify-between interactive-card-3d shadow-md hover:shadow-xl`}
+                  contentClassName="h-full w-full flex flex-col justify-between"
                   tilt={true}
-                  maxTilt={6}
-                  scale={1.02}
+                  maxTilt={2.2}
+                  scale={1.006}
                   glare={true}
                 >
-                  <div>
+                  <div className="flex flex-col flex-1">
                     {(() => {
                       const isContain = program.imageFit === 'contain' || 
                         program.heroImage?.includes('crc-building') || 
                         program.heroImage?.includes('unicorns') || 
                         program.heroImage?.includes('logo');
                       return (
-                        <div className="aspect-[16/10] overflow-hidden bg-slate-50 relative group flex items-center justify-center">
+                        <div className="w-full aspect-[16/10] overflow-hidden bg-slate-50 relative group flex items-center justify-center shrink-0">
                           {isContain && (
                             <img 
                               src={program.heroImage} 
@@ -1526,7 +588,7 @@ export default function Home() {
                           <img 
                             src={program.heroImage} 
                             alt={program.title}
-                            className={`w-full h-full ${isContain ? 'object-contain p-6 relative z-10' : 'object-cover'} group-hover:scale-106 transition-transform duration-500 ease-out`}
+                            className={`w-full h-full ${isContain ? 'object-contain p-6 relative z-10' : 'object-cover'} group-hover:scale-[1.02] transition-transform duration-500 ease-out`}
                             onError={(e) => {
                               e.target.src = "/images/crc-building.jpg";
                             }}
@@ -1536,311 +598,269 @@ export default function Home() {
                       );
                     })()}
 
-                    <div className="p-6 md:p-8 flex flex-col gap-2.5">
-                      <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border w-fit block shadow-2xs ${audienceBadgeColor}`}>
-                        {program.audience}
-                      </span>
-                      <h3 className="font-display text-xl sm:text-2xl font-black text-slate-950 group-hover:text-[#5A1E65] transition-colors">
+                    <div className="p-6 md:p-8 flex flex-col gap-2.5 flex-1">
+                      <div className="h-6 flex items-center">
+                        <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border w-fit block shadow-2xs ${audienceBadgeColor}`}>
+                          {program.audience}
+                        </span>
+                      </div>
+                      <h3 className="font-display text-xl sm:text-2xl font-black text-slate-950 group-hover:text-[#5A1E65] transition-colors line-clamp-1 min-h-[2rem] flex items-center">
                         {program.title}
                       </h3>
-                      <p className="text-xs italic font-serif text-[#5A1E65] font-medium">
+                      <p className="text-sm sm:text-[15px] italic font-serif text-[#5A1E65] font-semibold leading-snug line-clamp-2 min-h-[2.5rem]">
                         "{program.tagline}"
                       </p>
-                      <p className="text-xs text-slate-600 leading-relaxed pt-1">
+                      <p className="text-sm text-slate-800 font-medium leading-relaxed pt-1 line-clamp-3 min-h-[4rem]">
                         {program.summary}
                       </p>
 
-                      {/* Interactive Quick Peek Toggle Button */}
-                      <button
-                        onClick={() => toggleProgramPeek(program.slug)}
-                        className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-[#5A1E65] cursor-pointer py-1"
-                      >
-                        <span>{isPeekOpen ? 'Hide meeting details' : 'What happens at a gathering?'}</span>
-                        {isPeekOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                      </button>
-
-                      {/* Smooth Expandable Drawer */}
-                      {isPeekOpen && (
-                        <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 text-xs text-slate-700 space-y-1.5 mt-1 transition-all duration-200">
-                          <p className="font-semibold text-slate-900">Program Highlights:</p>
-                          <ul className="space-y-1 text-slate-600">
-                            <li>• Safe, facilitated check-in circle with trained mentors</li>
-                            <li>• Refreshments, art supplies, and book lending access</li>
-                            <li>• Zero fee, drop-in welcome with complete confidentiality</li>
-                          </ul>
+                      {/* Compact Standardized Logistics Box */}
+                      <div className="p-3.5 bg-slate-50/90 rounded-2xl border border-slate-200/90 space-y-1.5 text-xs mt-2 min-h-[5.25rem]">
+                        <div className="flex items-start gap-2">
+                          <Clock className="w-3.5 h-3.5 text-[#5A1E65] shrink-0 mt-0.5" />
+                          <div className="min-w-0">
+                            <span className="font-bold text-slate-950">When: </span>
+                            <span className="text-slate-800 line-clamp-1">{program.schedule}</span>
+                          </div>
                         </div>
-                      )}
+                        <div className="flex items-start gap-2">
+                          <MapPin className="w-3.5 h-3.5 text-[#5A1E65] shrink-0 mt-0.5" />
+                          <div className="min-w-0">
+                            <span className="font-bold text-slate-950">Where: </span>
+                            <span className="text-slate-800 line-clamp-1">{program.location}</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="p-6 md:p-8 pt-0 flex flex-col gap-4">
-                      <div className="flex items-start gap-2">
-                        <Clock className="w-3.5 h-3.5 text-slate-400 flex-shrink-0 mt-0.5" />
-                        <div>
-                          <span className="font-semibold text-slate-900">When: </span>
-                          <span>{program.schedule}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <MapPin className="w-3.5 h-3.5 text-slate-400 flex-shrink-0 mt-0.5" />
-                        <div>
-                          <span className="font-semibold text-slate-900">Where: </span>
-                          <span>{program.location}</span>
-                        </div>
-                      </div>
-
-                    <Link 
-                      to={`/programs/${program.slug}`}
-                      className="inline-flex items-center justify-between text-xs font-bold text-slate-900 hover:text-[#5A1E65] pt-2 border-t border-slate-100 group"
-                    >
-                      <span>Read Program Details</span>
-                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                    </Link>
+                  <div className="p-6 md:p-8 pt-0 flex flex-col gap-3 mt-auto">
+                    {program.isExternal ? (
+                      <a
+                        href={program.ctaLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn-primary py-2.5 px-4 text-xs font-bold shadow-md hover:shadow-lg inline-flex items-center justify-center gap-1.5 text-center group"
+                      >
+                        <span>Visit Program Resource</span>
+                        <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                      </a>
+                    ) : (
+                      <Link 
+                        to={program.ctaLink || `/programs/${program.slug}`}
+                        className="btn-primary py-2.5 px-4 text-xs font-bold shadow-md hover:shadow-lg inline-flex items-center justify-center gap-1.5 text-center group"
+                      >
+                        <span>{program.programGroup === 'signature' ? 'Read Program Details' : 'Explore Program & Times'}</span>
+                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      </Link>
+                    )}
                   </div>
                 </CardSpotlight>
               );
             })}
-          </div>
+          </MobileCarousel>
 
         </div>
       </section>
 
       {/* ====================================================================
-          RESOURCE CENTER SANCTUARY: CALM 2-COLUMN ARCHITECTURE
+          11. FLEX SPACE: LIVE AVAILABILITY, TIMINGS & SLOT BOOKING SYSTEM
           ==================================================================== */}
-      <section style={getSectionStyle('training_cta', 5)} className="py-14 md:py-20 bg-gradient-to-b from-purple-100/40 via-indigo-100/30 to-teal-100/30 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
+      <FlexSpaceBookingSection
+        props={flexSpaceProps}
+        style={getSectionStyle('flex_space', 11)}
+      />
+
+      {/* ====================================================================
+          5. SIGNATURE ANNUAL EVENTS (AIDS WALK, PRIDE PROM, VENTURA COUNTY PRIDE)
+          ==================================================================== */}
+      <section style={getSectionStyle('signature_events', 5)} className="py-14 md:py-20 bg-gradient-to-b from-white via-purple-50/40 to-amber-50/30 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
         <div className="container-clean">
-          
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-            
-            <div className="lg:col-span-7 flex flex-col gap-5">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+            <div className="flex flex-col gap-3 max-w-xl">
               <span className="glass-pill">
-                PHYSICAL COMMUNITY HUB
+                {signatureEventsProps.eyebrow || 'SIGNATURE ANNUAL EVENTS'}
               </span>
-              
               <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900">
-                Community Resource Center
+                {signatureEventsProps.headline || 'Events That Unite Ventura County.'}
               </h2>
-
-              <p className="text-sm md:text-base text-slate-600 leading-relaxed">
-                Our physical center in Ventura is an affirming, discrimination-free space for LGBTQ+ individuals and allies. We offer free drop-in community hours, peer group meeting spaces, a curated lending library, and confidential health screenings.
+              <p className="text-slate-700 max-w-xl text-sm font-medium leading-relaxed">
+                {signatureEventsProps.description || 'Celebrate, remember, and advocate together at our flagship annual community gatherings.'}
               </p>
-
-              {/* Key Amenities */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
-                <div className="flex items-center gap-2.5 text-xs sm:text-sm text-slate-700">
-                  <CheckCircle2 className="w-4 h-4 text-slate-700 flex-shrink-0" />
-                  <span>Free Computer & Printing Lab</span>
-                </div>
-                <div className="flex items-center gap-2.5 text-xs sm:text-sm text-slate-700">
-                  <CheckCircle2 className="w-4 h-4 text-slate-700 flex-shrink-0" />
-                  <span>Curated LGBTQ+ Lending Library</span>
-                </div>
-                <div className="flex items-center gap-2.5 text-xs sm:text-sm text-slate-700">
-                  <CheckCircle2 className="w-4 h-4 text-slate-700 flex-shrink-0" />
-                  <span>Free Safer-Sex & Harm Reduction</span>
-                </div>
-                <div className="flex items-center gap-2.5 text-xs sm:text-sm text-slate-700">
-                  <CheckCircle2 className="w-4 h-4 text-slate-700 flex-shrink-0" />
-                  <span>Private Consultation & Intake</span>
-                </div>
-              </div>
-
-              {/* Hours Box */}
-              <div className="p-5 bg-slate-50/80 backdrop-blur-sm rounded-2xl border border-slate-200 mt-2">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <span className="text-[11px] font-semibold text-slate-400 block mb-0.5">Physical Address:</span>
-                    <p className="text-xs sm:text-sm font-semibold text-slate-900">2471 Portola Road, Suite 100</p>
-                    <p className="text-[11px] text-slate-500">Ventura, CA 93003</p>
-                  </div>
-                  <div>
-                    <span className="text-[11px] font-semibold text-slate-400 block mb-0.5">Drop-In Center Hours:</span>
-                    <p className="text-xs sm:text-sm font-semibold text-slate-900">Monday – Friday: 1:00 PM – 5:00 PM</p>
-                    <p className="text-[11px] text-slate-500">Drop-ins and appointments welcome</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex flex-wrap items-center gap-3 pt-1">
-                <a
-                  href={`https://maps.google.com/?q=${encodeURIComponent('2471 Portola Road, Suite 100, Ventura, CA 93003')}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-secondary group"
-                >
-                  <span>Directions on Google Maps</span>
-                  <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                </a>
-                <a
-                  href={`tel:${orgInfo.phone.replace(/[^0-9]/g, '')}`}
-                  className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-700 hover:text-slate-900 px-3 py-2"
-                >
-                  <Phone className="w-4 h-4 text-slate-500" />
-                  <span>Call {orgInfo.phone}</span>
-                </a>
-              </div>
-
             </div>
+            <Link to="/events" className="btn-secondary shrink-0">
+              <span>{signatureEventsProps.ctaText || 'Explore All Events'}</span>
+              <ArrowRight className="w-4 h-4 text-[#5A1E65]" />
+            </Link>
+          </div>
 
-            {/* Photo / Facility Representation */}
-            <div className="lg:col-span-5 perspective-1000">
-              <CardSpotlight 
-                className="glass-card rounded-3xl overflow-hidden shadow-2xl border-2 border-purple-200/80 relative group interactive-card-3d glow-amethyst"
+          <MobileCarousel cols={3} autoScrollMs={5000}>
+            {annualSignatureEvents.slice(0, 3).map((sigEvt, idx) => (
+              <CardSpotlight
+                key={sigEvt.id || sigEvt.title}
+                className={`${['card-vibrant-rose', 'card-vibrant-purple', 'card-vibrant-amber'][idx % 3]} overflow-hidden flex flex-col justify-between shadow-md hover:shadow-xl`}
                 tilt={true}
-                maxTilt={8}
-                scale={1.02}
+                maxTilt={5}
+                scale={1.015}
                 glare={true}
               >
-                <div className="relative aspect-[4/3] overflow-hidden">
-                  <img 
-                    src="/images/crc-building.jpg" 
-                    alt="Community Resource Center in Ventura" 
-                    className="w-full h-full object-cover group-hover:scale-106 transition-transform duration-700 ease-out"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent" />
-                  
-                  {/* Floating Pill Badge in 3D Depth */}
-                  <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-md px-3.5 py-1.5 rounded-full text-xs font-bold text-[#5A1E65] shadow-lg border border-purple-200/80 flex items-center gap-1.5 translate-z-20">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                    <span>Physical Safe Space Sanctuary</span>
+                <div>
+                  <div className="aspect-[16/10] overflow-hidden bg-slate-100 relative">
+                    <img
+                      src={sigEvt.image || '/images/community-gathering.jpg'}
+                      alt={sigEvt.title}
+                      className="w-full h-full object-cover"
+                      onError={(e) => { e.target.src = '/images/community-gathering.jpg'; }}
+                    />
                   </div>
-
-                  {/* Bottom Address In-Frame */}
-                  <div className="absolute bottom-4 left-4 right-4 text-white text-xs flex items-center justify-between translate-z-10">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-amber-300 animate-bounce" />
-                      <span className="font-semibold drop-shadow-md">2471 Portola Road, Suite 100</span>
-                    </div>
-                    <span className="text-white/90 font-bold text-[11px] drop-shadow-md bg-slate-900/60 px-2 py-0.5 rounded-full border border-white/20">Ventura, CA</span>
+                  <div className="p-6 space-y-2">
+                    <span className="inline-block text-[11px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-purple-100 text-[#5A1E65] border border-purple-200">
+                      0{idx + 1} · {sigEvt.schedule || 'Signature Event'}
+                    </span>
+                    <h3 className="font-display text-xl font-black text-slate-950">{sigEvt.title}</h3>
+                    <p className="text-sm italic font-serif text-[#5A1E65] font-bold">"{sigEvt.tagline}"</p>
+                    <p className="text-sm text-slate-900 font-semibold leading-relaxed">{sigEvt.description}</p>
                   </div>
                 </div>
-
-                <div className="p-4 bg-slate-950 text-white flex items-center justify-between text-xs translate-z-10">
-                  <span className="font-medium text-slate-300">Drop-In Hours: Monday–Friday 1–5 PM</span>
-                  <a 
-                    href={`https://maps.google.com/?q=${encodeURIComponent('2471 Portola Road, Suite 100, Ventura, CA 93003')}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-bold text-amber-300 hover:text-amber-200 flex items-center gap-1.5 group/nav"
-                  >
-                    <span>Get Directions</span>
-                    <ArrowUpRight className="w-3.5 h-3.5 group-hover/nav:translate-x-0.5 group-hover/nav:-translate-y-0.5 transition-transform" />
-                  </a>
+                <div className="p-6 pt-0">
+                  <Link to={sigEvt.link || '/events'} className="btn-secondary w-full justify-center text-xs font-bold">
+                    <span>Event Details & Info</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
                 </div>
               </CardSpotlight>
-            </div>
-
-          </div>
-
+            ))}
+          </MobileCarousel>
         </div>
       </section>
 
       {/* ====================================================================
-          FLAGSHIP COMMUNITY RESOURCE CENTER & SANCTUARY
+          7. DEDICATED INTERACTIVE COMMUNITY CALENDAR
           ==================================================================== */}
-      <section style={getSectionStyle('training_cta', 5)} className="py-14 md:py-20 bg-gradient-to-b from-teal-100/30 via-purple-100/40 to-amber-100/30 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
+      <HomeCalendarSection
+        events={cmsEvents || liveEvents}
+        props={calendarProps}
+        style={getSectionStyle('calendar_section', 7)}
+      />
+
+      {/* ====================================================================
+          8. SPECIAL ENGAGEMENTS (HOSTED GROUPS LIKE AMPLIFY ARTS)
+          ==================================================================== */}
+      <section style={getSectionStyle('special_engagements', 8)} className="py-14 md:py-20 bg-gradient-to-b from-indigo-50/40 via-purple-50/40 to-white border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
         <div className="container-clean">
-          <div className="p-8 sm:p-12 rounded-3xl bg-white/95 border-2 border-purple-200/80 shadow-xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            <div className="lg:col-span-7 space-y-4">
-              <span className="glass-pill text-xs font-bold text-[#5A1E65] bg-purple-50 border-purple-200">
-                PHYSICAL SANCTUARY · DROP-IN HUB
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+            <div className="flex flex-col gap-3 max-w-xl">
+              <span className="glass-pill">
+                {specialEngagementsProps.eyebrow || 'HOSTED AT DCVC'}
               </span>
-              <h2 className="font-display text-2xl sm:text-4xl font-black text-slate-950 tracking-tight">
-                Our Community Resource Center in Ventura
+              <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900">
+                {specialEngagementsProps.headline || 'Special Engagements & Hosted Collectives'}
               </h2>
-              <p className="text-sm sm:text-base text-slate-600 leading-relaxed font-medium">
-                Located at 2471 Portola Road, Suite 100 in Ventura, our Center is the cultural and wellness hub of LGBTQ+ Ventura County. Stop in during weekday hours for computer and printing access, lending library browsing, safer-sex supplies, or confidential peer support.
+              <p className="text-slate-700 max-w-xl text-sm font-medium leading-relaxed">
+                {specialEngagementsProps.description || 'Partner organizations and creative youth collectives we are currently hosting inside our Community Resource Center.'}
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-2">
-                <div className="p-3 bg-purple-50/70 rounded-xl border border-purple-100 flex items-center gap-2.5">
-                  <Clock className="w-4 h-4 text-[#5A1E65]" />
-                  <span>Mon–Fri 1:00 PM – 5:00 PM</span>
-                </div>
-                <div className="p-3 bg-purple-50/70 rounded-xl border border-purple-100 flex items-center gap-2.5">
-                  <Phone className="w-4 h-4 text-[#5A1E65]" />
-                  <span>Helpline: (805) 644-5428</span>
-                </div>
-              </div>
-              <div className="pt-2 flex flex-wrap items-center gap-3">
-                <Link to="/contact" className="btn-primary py-2.5 px-6 text-xs font-bold inline-flex items-center gap-1.5 shadow-sm">
-                  <span>Plan Your Visit & Directions</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-                <a
-                  href={orgInfo.address.googleMapsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-secondary py-2.5 px-5 text-xs font-bold inline-flex items-center gap-1.5 bg-white"
-                >
-                  <MapPin className="w-3.5 h-3.5 text-purple-600" />
-                  <span>Google Maps</span>
-                  <ArrowUpRight className="w-3 h-3" />
-                </a>
-              </div>
             </div>
-            <div className="lg:col-span-5 rounded-2xl overflow-hidden shadow-lg border border-slate-200 aspect-[4/3]">
-              <img
-                src="/images/crc-building.jpg"
-                alt="Diversity Collective Community Resource Center Building"
-                className="w-full h-full object-cover"
-              />
-            </div>
+            <Link to="/contact" className="btn-secondary shrink-0">
+              <span>{specialEngagementsProps.ctaText || 'Inquire About Hosting'}</span>
+              <ArrowRight className="w-4 h-4 text-[#5A1E65]" />
+            </Link>
           </div>
+
+          <MobileCarousel cols={2} autoScrollMs={5000} className="items-stretch" cardClassName="h-full flex flex-col">
+            {specialEngagements.map((eng) => (
+              <CardSpotlight
+                key={eng.id}
+                className="card-vibrant-indigo overflow-hidden h-full w-full flex flex-col shadow-md hover:shadow-xl"
+                contentClassName="flex flex-col justify-between h-full"
+                tilt={true}
+                maxTilt={2.2}
+                scale={1.006}
+                glare={true}
+              >
+                <div className="flex flex-col flex-1">
+                  <div className="w-full h-56 sm:h-64 shrink-0 overflow-hidden bg-slate-100 relative">
+                    <img
+                      src={eng.image || '/images/youth-umbrella.jpg'}
+                      alt={eng.title}
+                      className="w-full h-full object-cover object-center block"
+                      onError={(e) => { e.target.src = '/images/crc-building.jpg'; }}
+                    />
+                  </div>
+                  <div className="p-6 sm:p-7 flex-1 flex flex-col gap-2.5">
+                    <div>
+                      <span className="inline-block text-[11px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-950 border border-indigo-300">
+                        {eng.host}
+                      </span>
+                    </div>
+                    <h3 className="font-display text-xl sm:text-2xl font-black text-slate-950 leading-snug line-clamp-1 min-h-[1.75rem]">{eng.title}</h3>
+                    <p className="text-xs sm:text-sm font-bold text-[#5A1E65] line-clamp-1">{eng.schedule} · {eng.audience}</p>
+                    <p className="text-sm text-slate-900 font-medium leading-relaxed line-clamp-3 min-h-[4.5rem]">{eng.description}</p>
+                  </div>
+                </div>
+                <div className="px-6 sm:px-7 pb-6 sm:pb-7 pt-2 mt-auto">
+                  <Link to={eng.link || '/programs'} className="btn-secondary w-full justify-center text-xs font-bold">
+                    <span>Learn More</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              </CardSpotlight>
+            ))}
+          </MobileCarousel>
         </div>
       </section>
 
       {/* ====================================================================
-          HIGHLY EYE-CATCHING & BEAUTIFUL GIVING STUDIO (Addressing User Feedback)
+          HIGHLY EYE-CATCHING & BEAUTIFUL GIVING STUDIO (Streamlined & Re-optimized)
           ==================================================================== */}
-      <section id="giving" style={getSectionStyle('zeffy_giving', 6)} className="py-16 md:py-24 bg-gradient-to-b from-amber-100/30 via-purple-100/50 to-purple-950/25 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
+      <section id="giving" style={getSectionStyle('zeffy_giving', 8)} className="py-10 sm:py-14 md:py-16 bg-gradient-to-b from-amber-100/30 via-purple-100/50 to-purple-950/25 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
         
         {/* Ambient Specular Backdrops */}
         <div 
-          className="absolute top-10 left-1/4 w-[36rem] h-[36rem] bg-purple-200/20 rounded-full blur-3xl pointer-events-none" 
+          className="absolute top-10 left-1/4 w-96 h-96 bg-purple-200/20 rounded-full blur-3xl pointer-events-none" 
           aria-hidden="true" 
         />
         <div 
-          className="absolute bottom-10 right-10 w-[30rem] h-[30rem] bg-amber-100/25 rounded-full blur-3xl pointer-events-none" 
+          className="absolute bottom-10 right-10 w-80 h-80 bg-amber-100/25 rounded-full blur-3xl pointer-events-none" 
           aria-hidden="true" 
         />
 
         <div className="container-clean relative z-10">
           
-          <div className="max-w-3xl mx-auto text-center mb-12 flex flex-col items-center gap-3.5">
-            <span className="glass-pill text-xs font-bold text-[#5A1E65] py-1 px-4 bg-purple-50/90 border-purple-200/80 shadow-xs">
-              ❤️ 501(C)(3) COMMUNITY PHILANTHROPY
+          <div className="max-w-2xl mx-auto text-center mb-6 sm:mb-8 flex flex-col items-center gap-2.5">
+            <span className="glass-pill text-[11px] sm:text-xs font-bold text-[#5A1E65] py-0.5 sm:py-1 px-3.5 bg-purple-50/90 border-purple-200/80 shadow-xs">
+              {givingProps.eyebrow || '❤️ 501(C)(3) COMMUNITY PHILANTHROPY'}
             </span>
-            <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold text-slate-950 tracking-tight leading-tight">
-              Every Gift Directly Sustains Our Safe Harbor.
+            <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-950 tracking-tight leading-tight">
+              {givingProps.headline || 'Every Gift Directly Sustains Our Safe Harbor.'}
             </h2>
-            <p className="text-base text-slate-600 leading-relaxed max-w-2xl">
-              We never charge fees or require insurance for testing, drop-in care, or youth circles. Community contributions keep our doors open for anyone seeking care and belonging.
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-xl">
+              {givingProps.description || 'We never charge fees for rapid HIV testing, drop-in care, or youth circles. Community contributions keep our doors open.'}
             </p>
 
-            {/* Frequency Switcher */}
-            <div className="inline-flex items-center p-1.5 rounded-full bg-slate-200/80 border border-slate-300/80 shadow-inner mt-2">
+            {/* Compact Frequency Switcher */}
+            <div className="inline-flex items-center p-1 rounded-full bg-slate-200/80 border border-slate-300/80 shadow-inner mt-1">
               <button
+                type="button"
                 onClick={() => setDonationFreq('once')}
-                className={`py-2 px-6 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                className={`py-1.5 px-4 rounded-full text-xs font-bold transition-all cursor-pointer ${
                   donationFreq === 'once'
-                    ? 'bg-white text-slate-900 shadow-md scale-102'
+                    ? 'bg-white text-slate-900 shadow-xs scale-102'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 One-Time Gift
               </button>
               <button
+                type="button"
                 onClick={() => setDonationFreq('monthly')}
-                className={`py-2 px-6 rounded-full text-xs sm:text-sm font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                className={`py-1.5 px-4 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                   donationFreq === 'monthly'
-                    ? 'bg-[#5A1E65] text-white shadow-md scale-102'
+                    ? 'bg-[#5A1E65] text-white shadow-xs scale-102'
                     : 'text-slate-600 hover:text-[#5A1E65]'
                 }`}
               >
                 <span>Monthly Sustainer</span>
-                <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${
+                <span className={`text-[9px] uppercase font-bold px-1.5 py-0.2 rounded-full ${
                   donationFreq === 'monthly' ? 'bg-amber-400 text-slate-950' : 'bg-purple-100 text-[#5A1E65]'
                 }`}>
                   ★ Most Needed
@@ -1849,8 +869,8 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Master Giving Studio Card with 3D Depth & Specular Glow */}
-          <div className="max-w-6xl mx-auto rounded-3xl bg-white shadow-2xl border-2 border-purple-200/90 overflow-hidden preserve-3d glow-amethyst">
+          {/* Desktop Master Giving Studio Card with 3D Depth & Specular Glow (Restored for Desktop View) */}
+          <div className="hidden lg:block max-w-6xl mx-auto rounded-3xl bg-white shadow-2xl border-2 border-purple-200/90 overflow-hidden preserve-3d glow-amethyst">
             <div className="grid grid-cols-1 lg:grid-cols-12">
               
               {/* Left Column: Interactive Tiers & Custom Amount */}
@@ -1874,6 +894,7 @@ export default function Home() {
                       return (
                         <button
                           key={tier.amount}
+                          type="button"
                           onClick={(e) => {
                             setCustomDonation('');
                             handleSelectDonationTier(tier.amount, e);
@@ -2016,7 +1037,7 @@ export default function Home() {
                     className="w-full py-3.5 sm:py-4 px-4 sm:px-8 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-400 text-slate-950 font-black text-xs sm:text-base tracking-wide flex items-center justify-center gap-2 shadow-[0_10px_30px_-5px_rgba(245,158,11,0.45)] hover:shadow-[0_16px_40px_-5px_rgba(245,158,11,0.6)] hover:scale-102 transition-all cursor-pointer text-center"
                   >
                     <Heart className="w-4 h-4 fill-current text-rose-700 animate-bounce flex-shrink-0" />
-                    <span>Complete ${customDonation ? customDonation : selectedDonationTier} Gift Online</span>
+                    <span>Complete ${customDonation ? customDonation : selectedDonationTier} Gift Online {donationFreq === 'monthly' ? '/ Month' : ''}</span>
                     <ArrowUpRight className="w-4 h-4 flex-shrink-0" />
                   </a>
                   <p className="text-[10px] xs:text-[11px] text-center text-slate-300 flex items-center justify-center gap-1.5 font-medium flex-wrap">
@@ -2030,29 +1051,166 @@ export default function Home() {
             </div>
           </div>
 
+          {/* Mobile/Tablet Streamlined Giving Studio Card */}
+          <div className="block lg:hidden max-w-3xl mx-auto rounded-3xl bg-white shadow-xl border border-purple-200/90 p-5 sm:p-7 overflow-hidden">
+            <div className="flex flex-col gap-4">
+
+              {/* Tier Selection Pills */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] font-black text-slate-950 uppercase tracking-wider flex items-center gap-1.5">
+                    <Gift className="w-3.5 h-3.5 text-[#5A1E65]" />
+                    <span>Select Amount {donationFreq === 'monthly' ? '(Monthly)' : ''}</span>
+                  </span>
+                  <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60">
+                    100% Tax-Deductible
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
+                  {donationTiers.map((tier) => {
+                    const isSelected = selectedDonationTier === tier.amount && !customDonation;
+                    return (
+                      <button
+                        key={tier.amount}
+                        type="button"
+                        onClick={(e) => {
+                          setCustomDonation('');
+                          handleSelectDonationTier(tier.amount, e);
+                        }}
+                        className={`py-2.5 px-2 rounded-xl font-bold transition-all border text-center cursor-pointer flex flex-col items-center justify-center relative ${
+                          isSelected
+                            ? 'bg-[#5A1E65] text-white border-[#5A1E65] shadow-md scale-102 ring-2 ring-purple-300'
+                            : 'bg-slate-50 hover:bg-purple-50 text-slate-800 border-slate-200 hover:border-purple-300'
+                        }`}
+                      >
+                        <span className="text-base sm:text-lg font-black leading-none">${tier.amount}</span>
+                        {tier.amount === 50 && (
+                          <span className={`text-[8px] font-extrabold uppercase mt-0.5 tracking-tight ${isSelected ? 'text-amber-300' : 'text-purple-700'}`}>
+                            Popular
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!customDonation) setCustomDonation('75');
+                    }}
+                    className={`py-2.5 px-2 rounded-xl font-bold transition-all border text-center cursor-pointer flex flex-col items-center justify-center col-span-4 sm:col-span-1 ${
+                      customDonation
+                        ? 'bg-[#5A1E65] text-white border-[#5A1E65] shadow-md ring-2 ring-purple-300'
+                        : 'bg-slate-50 hover:bg-purple-50 text-slate-800 border-slate-200 hover:border-purple-300'
+                    }`}
+                  >
+                    <span className="text-xs sm:text-sm font-black">Custom</span>
+                    <span className={`text-[8px] font-semibold ${customDonation ? 'text-purple-200' : 'text-slate-400'}`}>Any $</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Custom Input Field (shown if Custom selected or filled) */}
+              {customDonation && (
+                <div className="p-3 bg-purple-50/60 rounded-2xl border border-purple-200 animate-fadeIn">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-700 whitespace-nowrap">Custom Amount:</span>
+                    <div className="relative flex-1">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 font-black text-slate-400 text-sm">$</span>
+                      <input
+                        type="number"
+                        min="5"
+                        placeholder="Enter gift amount"
+                        value={customDonation}
+                        onChange={(e) => {
+                          setCustomDonation(e.target.value);
+                          if (e.target.value && Number(e.target.value) > 0) {
+                            setSelectedDonationTier(Number(e.target.value));
+                          }
+                        }}
+                        className="w-full pl-7 pr-3 py-1.5 rounded-xl border border-purple-300 bg-white text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-purple-400"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Dynamic Impact Callout Banner */}
+              <div className="p-3 sm:p-3.5 rounded-2xl bg-gradient-to-r from-purple-50 via-fuchsia-50/40 to-amber-50/50 border border-purple-200/90 flex items-start gap-2.5 shadow-2xs">
+                <span className="w-6 h-6 rounded-lg bg-[#5A1E65] text-amber-300 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                  <Star className="w-3.5 h-3.5 fill-amber-300" />
+                </span>
+                <div className="min-w-0">
+                  <span className="text-xs font-black text-slate-900 block leading-tight">
+                    {customDonation ? `Custom Gift of $${customDonation}` : activeTierObj.title}
+                    {donationFreq === 'monthly' ? ' (Monthly Sustainer)' : ''}
+                  </span>
+                  <p className="text-[11px] sm:text-xs text-slate-600 leading-snug mt-0.5">
+                    {customDonation
+                      ? `Your $${customDonation} gift provides flexible barrier-free support, hot meals for youth, and free health testing navigation across Ventura County.`
+                      : activeTierObj.impact}
+                  </p>
+                </div>
+              </div>
+
+              {/* Prominent Action Button with Confetti */}
+              <div className="flex flex-col gap-2 pt-1">
+                <a
+                  href={orgInfo.donationUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={triggerMilestoneConfetti}
+                  className="w-full py-3 sm:py-3.5 px-4 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-400 text-slate-950 font-black text-xs sm:text-sm tracking-wide flex items-center justify-center gap-2 shadow-[0_8px_25px_-5px_rgba(245,158,11,0.45)] hover:shadow-[0_12px_30px_-5px_rgba(245,158,11,0.6)] hover:scale-101 transition-all cursor-pointer text-center"
+                >
+                  <Heart className="w-4 h-4 fill-current text-rose-700 animate-bounce shrink-0" />
+                  <span className="truncate max-w-[80%] text-center">
+                    Complete ${customDonation ? customDonation : selectedDonationTier} Gift Online {donationFreq === 'monthly' ? '/ Month' : ''}
+                  </span>
+                  <ArrowUpRight className="w-4 h-4 shrink-0" />
+                </a>
+
+                {/* Trust and Non-profit Footnote in 1 line */}
+                <div className="flex items-center justify-center gap-2 text-[10px] sm:text-[11px] text-slate-500 flex-wrap text-center pt-1">
+                  <span className="flex items-center gap-1 font-semibold text-slate-700">
+                    <ShieldCheck className="w-3.5 h-3.5 text-[#5A1E65]" />
+                    <span>Official 501(c)(3)</span>
+                  </span>
+                  <span>·</span>
+                  <span>Tax ID (EIN): <strong className="text-slate-800">{orgInfo.ein}</strong></span>
+                  <span>·</span>
+                  <span className="flex items-center gap-1">
+                    <Lock className="w-3 h-3 text-slate-400" />
+                    <span>Bank-grade 256-bit encrypted donor portal</span>
+                  </span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
         </div>
       </section>
 
       {/* ====================================================================
           UPCOMING EVENTS: BALANCED ROWS WITH GLASS CARDS
           ==================================================================== */}
-      <section style={getSectionStyle('events_section', 5)} className="py-14 md:py-20 bg-gradient-to-b from-purple-100/40 via-rose-100/30 to-amber-100/30 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
+      <section style={getSectionStyle('events_section', 4)} className="py-14 md:py-20 bg-gradient-to-b from-purple-100/40 via-rose-100/30 to-amber-100/30 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
         <div className="container-clean">
           
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
             <div className="flex flex-col gap-3 max-w-xl">
               <span className="glass-pill">
-                GATHERINGS & CALENDAR
+                {eventsProps.eyebrow || 'GATHERINGS & CALENDAR'}
               </span>
               <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900">
-                Upcoming Community Gatherings
+                {eventsProps.headline || 'Upcoming Community Gatherings'}
               </h2>
             </div>
             <Link 
               to="/events" 
               className="btn-secondary"
             >
-              <span>View Full Calendar</span>
+              <span>{eventsProps.ctaText || 'View Full Calendar'}</span>
               <Calendar className="w-4 h-4 text-slate-500" />
             </Link>
           </div>
@@ -2075,7 +1233,7 @@ export default function Home() {
           </div>
 
           {/* Events List in 3D Perspective */}
-          <div className="flex flex-col gap-4 perspective-1000">
+          <MobileCarousel cols={3} autoScrollMs={5000} className="perspective-1000">
             {filteredEvents.slice(0, 4).map((evt, idx) => {
               const dateGradients = [
                 'from-purple-800 via-[#5A1E65] to-indigo-900 text-white shadow-purple-500/25',
@@ -2092,42 +1250,51 @@ export default function Home() {
               return (
                 <CardSpotlight
                   key={evt.id}
-                  className="card-vibrant-purple p-5 sm:p-6 md:p-7 shadow-sm hover:shadow-xl transition-all duration-200"
+                  className="card-vibrant-purple p-5 sm:p-6 shadow-sm hover:shadow-xl transition-all duration-200 h-full flex flex-col justify-between"
+                  contentClassName="flex flex-col justify-between h-full"
                   tilt={true}
                   maxTilt={2.2}
                   scale={1.008}
                   glare={true}
                 >
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+                  <div className="flex flex-col justify-between h-full gap-4">
                     
-                    <div className="md:col-span-2 flex md:justify-center">
-                      <div className={`flex flex-col items-center justify-center min-w-[76px] p-3.5 rounded-2xl bg-gradient-to-b ${dateGradients[idx % dateGradients.length]} shadow-md`}>
-                        <span className="text-[10px] font-black uppercase tracking-wider text-amber-200">{evt.month}</span>
-                        <span className="font-display text-2xl font-black">{evt.day}</span>
-                      </div>
-                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      {(() => {
+                        const parsed = parseEventDate(evt);
+                        const badgeMonth = evt.month || parsed?.monthAbbr || 'EVT';
+                        const badgeDay = evt.day || parsed?.dayStr || '—';
+                        return (
+                          <div className={`flex flex-col items-center justify-center min-w-[70px] p-2.5 rounded-2xl bg-gradient-to-b ${dateGradients[idx % dateGradients.length]} shadow-md`}>
+                            <span className="text-[10px] font-black uppercase tracking-wider text-amber-200">{badgeMonth}</span>
+                            <span className="font-display text-2xl font-black leading-none pt-0.5">{badgeDay}</span>
+                          </div>
+                        );
+                      })()}
 
-                    <div className="md:col-span-7 flex flex-col gap-1.5">
-                      <div className="flex items-center gap-2.5">
-                        <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${catBadge}`}>
+                      <div className="flex flex-col items-end gap-1">
+                        <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border ${catBadge}`}>
                           {evt.category}
                         </span>
-                        <span className="text-xs text-slate-500 flex items-center gap-1 font-medium">
+                        <span className="text-xs sm:text-sm text-slate-900 flex items-center gap-1.5 font-bold">
                           <Clock className="w-3.5 h-3.5 text-[#5A1E65]" /> {evt.time}
                         </span>
                       </div>
-                      <h3 className="font-display text-lg sm:text-xl font-bold text-slate-900 pt-0.5">
+                    </div>
+
+                    <div className="flex flex-col gap-1.5 flex-1">
+                      <h3 className="font-display text-lg font-black text-slate-950 pt-0.5 line-clamp-2">
                         {evt.title}
                       </h3>
-                      <p className="text-xs text-slate-600 leading-relaxed">
+                      <p className="text-sm text-slate-800 font-medium leading-relaxed line-clamp-3">
                         {evt.description}
                       </p>
                     </div>
 
-                    <div className="md:col-span-3 flex md:justify-end relative z-20">
+                    <div className="pt-3 border-t border-purple-100 mt-auto flex items-center justify-end relative z-20">
                       <Link 
                         to={`/events/${evt.slug}`}
-                        className="btn-secondary text-xs py-2.5 px-5 w-full md:w-auto text-center font-bold"
+                        className="btn-secondary text-xs py-2 px-4 w-full text-center font-bold justify-center"
                       >
                         <span>Details & RSVP</span>
                         <ArrowRight className="w-3.5 h-3.5" />
@@ -2138,102 +1305,208 @@ export default function Home() {
                 </CardSpotlight>
               );
             })}
+          </MobileCarousel>
+
+        </div>
+      </section>
+
+      {/* ====================================================================
+          PARTNERSHIPS & OFFICIAL SPONSORS SHOWCASE
+          ==================================================================== */}
+      <section style={getSectionStyle('partnerships_section', 5)} className="py-14 md:py-20 bg-gradient-to-b from-purple-50/60 via-white to-purple-50/40 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
+        <div className="container-clean">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+            <div className="flex flex-col gap-3 max-w-2xl">
+              <span className="glass-pill text-xs font-bold text-[#5A1E65] bg-purple-50 border-purple-200">
+                {partnershipsProps.eyebrow || 'CIVIC & COMMUNITY ALLIANCES'}
+              </span>
+              <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900">
+                {partnershipsProps.headline || 'Partnerships & Official Sponsors.'}
+              </h2>
+              <p className="text-sm md:text-base text-slate-600 leading-relaxed">
+                {partnershipsProps.description || 'Collaboration with public health agencies, philanthropic foundations, and regional allies powers free programs across all 10 Ventura County cities.'}
+              </p>
+            </div>
+            <Link to="/sponsors" className="btn-secondary shrink-0">
+              <span>{partnershipsProps.ctaText || 'View All Sponsors & Partners'}</span>
+              <ArrowRight className="w-4 h-4 text-[#5A1E65]" />
+            </Link>
           </div>
 
+          {/* Horizontal Auto-Moving Partnerships Strip */}
+          <div className="partners-marquee-wrap py-2">
+            <div
+              className="pointer-events-none absolute inset-y-0 left-0 w-10 sm:w-16 bg-gradient-to-r from-[#faf5ff] to-transparent z-10"
+              aria-hidden="true"
+            />
+            <div
+              className="pointer-events-none absolute inset-y-0 right-0 w-10 sm:w-16 bg-gradient-to-l from-[#faf5ff] to-transparent z-10"
+              aria-hidden="true"
+            />
+
+            <div className="partners-marquee-track">
+              {[0, 1].map((dupIndex) => {
+                const isDuplicate = dupIndex === 1;
+                return (
+                  <div
+                    key={dupIndex}
+                    aria-hidden={isDuplicate ? 'true' : undefined}
+                    className="flex items-stretch gap-5 shrink-0"
+                  >
+                    {(cmsSponsors || sponsorsList).map((partner, idx) => (
+                      <div
+                        key={`${dupIndex}-${partner.shortName || partner.name || idx}`}
+                        className="w-[290px] sm:w-[320px] shrink-0 rounded-2xl bg-white/95 border border-purple-200/80 hover:border-[#5A1E65] p-5 flex flex-col justify-between gap-3 shadow-xs hover:shadow-md transition-all"
+                      >
+                        <div className="flex items-center gap-3.5">
+                          <div className="w-13 h-13 rounded-xl bg-white border border-purple-100 shadow-2xs overflow-hidden flex items-center justify-center shrink-0 p-1">
+                            <img
+                              src={partner.logo || '/images/crc-building.jpg'}
+                              alt={isDuplicate ? '' : partner.name}
+                              className="w-full h-full object-contain rounded-lg"
+                              onError={(e) => {
+                                e.target.src = '/images/crc-building.jpg';
+                              }}
+                            />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            {partner.shortName && (
+                              <span className="inline-block text-[10px] font-black uppercase tracking-wider text-[#5A1E65] bg-purple-100/80 border border-purple-200 px-2 py-0.5 rounded-full mb-1">
+                                {partner.shortName}
+                              </span>
+                            )}
+                            <h3 className="font-display text-sm sm:text-base font-extrabold text-slate-950 leading-snug line-clamp-2">
+                              {partner.name}
+                            </h3>
+                          </div>
+                        </div>
+
+                        <p className="text-sm text-slate-800 font-medium leading-relaxed line-clamp-2">
+                          {partner.role}
+                        </p>
+
+                        {partner.url && (
+                          <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                            <span className="text-purple-800 font-bold inline-flex items-center gap-1">
+                              <Award className="w-3.5 h-3.5 text-[#5A1E65]" />
+                              <span>Official Partner</span>
+                            </span>
+                            <a
+                              href={partner.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              tabIndex={isDuplicate ? -1 : undefined}
+                              className="inline-flex items-center gap-1 font-bold text-[#5A1E65] hover:underline"
+                            >
+                              <span>Learn More</span>
+                              <ArrowUpRight className="w-3 h-3" />
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </section>
 
       {/* ====================================================================
           TESTIMONIALS & COMMUNITY VOICES: 3D EDITORIAL GRID
           ==================================================================== */}
-      <section style={getSectionStyle('community_voices', 8)} className="py-14 md:py-20 bg-gradient-to-b from-amber-100/30 via-purple-100/40 to-indigo-100/35 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
+      <section style={getSectionStyle('community_voices', 9)} className="py-14 md:py-20 bg-gradient-to-b from-amber-100/30 via-purple-100/40 to-indigo-100/35 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
         <div className="container-clean">
           
           <div className="max-w-2xl mx-auto text-center mb-10 flex flex-col items-center gap-3">
             <span className="glass-pill text-xs font-bold text-[#5A1E65] bg-purple-50 border-purple-200">
-              COMMUNITY VOICES
+              {voicesProps.eyebrow || 'COMMUNITY VOICES'}
             </span>
             <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-black text-slate-950 tracking-tight">
-              In our community's words.
+              {voicesProps.headline || "In our community's words."}
             </h2>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm sm:text-base text-slate-800 font-medium">
               Real stories of care, belonging, and connection from every city in Ventura County.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 perspective-1000">
+          <MobileCarousel cols={3} autoScrollMs={5000} className="perspective-1000 items-stretch">
             <CardSpotlight 
-              className="card-vibrant-purple p-6 md:p-8 flex flex-col justify-between gap-5 interactive-card-3d glow-amethyst"
+              className="card-vibrant-purple p-6 md:p-8 h-full interactive-card-3d glow-amethyst"
+              contentClassName="flex flex-col justify-between gap-5 h-full"
               tilt={true}
               maxTilt={6}
               glare={true}
             >
               <div className="flex items-center justify-between">
                 <span className="text-4xl font-serif text-[#5A1E65] leading-none">“</span>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-purple-900 bg-purple-100 px-2.5 py-0.5 rounded-full border border-purple-300">Youth Voice</span>
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-purple-950 bg-purple-100 px-2.5 py-0.5 rounded-full border border-purple-300">Youth Voice</span>
               </div>
-              <p className="font-serif italic text-sm md:text-base text-slate-800 leading-relaxed">
+              <p className="font-serif italic text-sm md:text-base text-slate-950 font-medium leading-relaxed">
                 "Rainbow Umbrella gave our teenager the first space where they felt completely accepted and understood. It changed our family's life."
               </p>
-              <div className="pt-3 border-t border-purple-100 flex items-center gap-3">
+              <div className="pt-3 border-t border-purple-200/80 flex items-center gap-3 mt-auto">
                 <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-600 to-indigo-700 text-white font-black text-xs flex items-center justify-center shadow-xs">
                   YP
                 </div>
                 <div className="flex flex-col">
-                  <span className="font-bold text-xs sm:text-sm text-slate-950">Youth Program Participant</span>
-                  <span className="text-[11px] text-slate-500 font-medium">Ventura, CA</span>
+                  <span className="font-extrabold text-xs sm:text-sm text-slate-950">Youth Program Participant</span>
+                  <span className="text-xs text-slate-800 font-semibold">Ventura, CA</span>
                 </div>
               </div>
             </CardSpotlight>
 
             <CardSpotlight 
-              className="card-vibrant-amber p-6 md:p-8 flex flex-col justify-between gap-5 interactive-card-3d glow-amber"
+              className="card-vibrant-amber p-6 md:p-8 h-full interactive-card-3d glow-amber"
+              contentClassName="flex flex-col justify-between gap-5 h-full"
               tilt={true}
               maxTilt={6}
               glare={true}
             >
               <div className="flex items-center justify-between">
-                <span className="text-4xl font-serif text-amber-600 leading-none">“</span>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-900 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-300">Parent Voice</span>
+                <span className="text-4xl font-serif text-amber-700 leading-none">“</span>
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-950 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-300">Parent Voice</span>
               </div>
-              <p className="font-serif italic text-sm md:text-base text-slate-800 leading-relaxed">
+              <p className="font-serif italic text-sm md:text-base text-slate-950 font-medium leading-relaxed">
                 "Having a physical Community Resource Center right here in Portola Road gives our families a trusted place to find healthcare navigation, peer support, and affirming community."
               </p>
-              <div className="pt-3 border-t border-amber-100 flex items-center gap-3">
+              <div className="pt-3 border-t border-amber-200/80 flex items-center gap-3 mt-auto">
                 <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500 to-rose-600 text-white font-black text-xs flex items-center justify-center shadow-xs">
                   PO
                 </div>
                 <div className="flex flex-col">
-                  <span className="font-bold text-xs sm:text-sm text-slate-950">Parent of Youth Attendee</span>
-                  <span className="text-[11px] text-slate-500 font-medium">Oxnard, CA</span>
+                  <span className="font-extrabold text-xs sm:text-sm text-slate-950">Parent of Youth Attendee</span>
+                  <span className="text-xs text-slate-800 font-semibold">Oxnard, CA</span>
                 </div>
               </div>
             </CardSpotlight>
 
             <CardSpotlight 
-              className="card-vibrant-teal p-6 md:p-8 flex flex-col justify-between gap-5 interactive-card-3d glow-teal"
+              className="card-vibrant-teal p-6 md:p-8 h-full interactive-card-3d glow-teal"
+              contentClassName="flex flex-col justify-between gap-5 h-full"
               tilt={true}
               maxTilt={6}
               glare={true}
             >
               <div className="flex items-center justify-between">
-                <span className="text-4xl font-serif text-teal-700 leading-none">“</span>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-teal-900 bg-teal-100 px-2.5 py-0.5 rounded-full border border-teal-300">Volunteer Voice</span>
+                <span className="text-4xl font-serif text-teal-800 leading-none">“</span>
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-teal-950 bg-teal-100 px-2.5 py-0.5 rounded-full border border-teal-300">Volunteer Voice</span>
               </div>
-              <p className="font-serif italic text-sm md:text-base text-slate-800 leading-relaxed">
+              <p className="font-serif italic text-sm md:text-base text-slate-950 font-medium leading-relaxed">
                 "Diversity Collective is the cultural backbone of LGBTQ+ Ventura County. From Pride to harm reduction, they show up for our community 365 days a year."
               </p>
-              <div className="pt-3 border-t border-slate-100 flex items-center gap-3">
+              <div className="pt-3 border-t border-teal-200/80 flex items-center gap-3 mt-auto">
                 <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-600 to-teal-700 text-white font-black text-xs flex items-center justify-center shadow-xs">
                   CV
                 </div>
                 <div className="flex flex-col">
-                  <span className="font-bold text-xs sm:text-sm text-slate-950">Community Volunteer</span>
-                  <span className="text-[11px] text-slate-500 font-medium">Camarillo, CA</span>
+                  <span className="font-extrabold text-xs sm:text-sm text-slate-950">Community Volunteer</span>
+                  <span className="text-xs text-slate-800 font-semibold">Camarillo, CA</span>
                 </div>
               </div>
             </CardSpotlight>
-          </div>
+          </MobileCarousel>
 
         </div>
       </section>
@@ -2241,7 +1514,7 @@ export default function Home() {
       {/* ====================================================================
           NEWSLETTER SIGNUP DISPATCH
           ==================================================================== */}
-      <section style={getSectionStyle('newsletter_section', 9)} className="py-12 bg-white">
+      <section style={getSectionStyle('newsletter_section', 10)} className="py-12 bg-white">
         <div className="container-clean">
           <NewsletterSignup />
         </div>
@@ -2250,7 +1523,7 @@ export default function Home() {
       {/* ====================================================================
           FINAL CALL TO ACTION: LUXURY 3D AURORA ARCHITECTURE
           ==================================================================== */}
-      <section style={{ order: 10 }} className="py-20 md:py-28 aurora-bg text-white relative overflow-hidden scroll-reveal">
+      <section style={getSectionStyle('final_cta', 11)} className="py-20 md:py-28 aurora-bg text-white relative overflow-hidden scroll-reveal">
         
         {/* Specular Ambient Glow Orbs */}
         <div 
@@ -2266,32 +1539,32 @@ export default function Home() {
           
           <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 text-xs font-bold text-amber-300 border border-amber-400/30 backdrop-blur-md shadow-xs">
             <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-            <span>SUPPORT OUR 501(C)(3) MISSION</span>
+            <span>{finalCtaProps.eyebrow || 'SUPPORT OUR 501(C)(3) MISSION'}</span>
           </span>
 
           <h2 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white leading-tight tracking-tight">
-            "We do what we do, <br className="hidden sm:inline" />
-            <span className="font-serif italic font-normal text-amber-300">because of you.</span>"
+            {finalCtaProps.headlineLine1 || '"We do what we do,'} <br className="hidden sm:inline" />
+            <span className="font-serif italic font-normal text-amber-300">{finalCtaProps.headlineAccent || 'because of you."'}</span>
           </h2>
 
           <p className="text-sm md:text-base text-purple-100 leading-relaxed font-serif italic max-w-xl mx-auto">
-            Diversity Collective of Ventura County is solely dedicated to advocating for and caring for our local LGBTQ+ community. Your generosity ensures our doors remain open, safe, and free for all.
+            {finalCtaProps.description || 'Diversity Collective of Ventura County is solely dedicated to advocating for and caring for our local LGBTQ+ community. Your generosity ensures our doors remain open, safe, and free for all.'}
           </p>
 
           <div className="pt-3 flex flex-wrap items-center justify-center gap-3 sm:gap-4 w-full">
             <Link
               to="/donate"
-              className="w-full sm:w-auto py-3.5 sm:py-4 px-5 sm:px-8 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-400 text-slate-950 font-black text-xs sm:text-base tracking-wide flex items-center justify-center gap-2 shadow-[0_10px_30px_-5px_rgba(245,158,11,0.5)] hover:shadow-[0_15px_40px_-5px_rgba(245,158,11,0.7)] hover:scale-103 transition-all cursor-pointer text-center"
+              className="w-full sm:w-auto py-3.5 sm:py-4 px-5 sm:px-8 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-400 text-slate-950 font-black text-xs sm:text-base tracking-wide flex items-center justify-center gap-2 shadow-[0_10px_30px_-5px_rgba(245,158,11,0.5)] hover:shadow-[0_15px_40px_-5px_rgba(245,158,11,0.7)] hover:scale-103 transition-all cursor-pointer text-center max-w-full"
             >
               <Heart className="w-4 h-4 fill-current text-rose-700 animate-bounce flex-shrink-0" />
-              <span>Make a Community Gift Online</span>
+              <span className="truncate max-w-[280px] sm:max-w-none text-center">{finalCtaProps.primaryCtaText || 'Make a Community Gift Online'}</span>
               <ArrowRight className="w-4 h-4 flex-shrink-0" />
             </Link>
             <Link
               to="/volunteer"
-              className="w-full sm:w-auto py-3.5 sm:py-4 px-5 sm:px-8 rounded-2xl border-2 border-white/20 hover:border-white/50 bg-white/10 hover:bg-white/15 text-white text-xs sm:text-sm font-bold transition-all backdrop-blur-md interactive-card-3d flex items-center justify-center text-center"
+              className="w-full sm:w-auto py-3.5 sm:py-4 px-5 sm:px-8 rounded-2xl border-2 border-white/20 hover:border-white/50 bg-white/10 hover:bg-white/15 text-white text-xs sm:text-sm font-bold transition-all backdrop-blur-md interactive-card-3d flex items-center justify-center text-center max-w-full"
             >
-              <span>Explore Volunteer Roles</span>
+              <span className="truncate max-w-[280px] sm:max-w-none text-center">{finalCtaProps.secondaryCtaText || 'Explore Volunteer Roles'}</span>
             </Link>
           </div>
 

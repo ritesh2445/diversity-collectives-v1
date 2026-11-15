@@ -34,7 +34,7 @@ export default function Sponsors() {
   ];
 
   return (
-    <div className="pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
+    <div className="w-full max-w-full overflow-x-clip pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
       
       {/* Header */}
       <section className="container-clean pb-14 border-b border-slate-100 relative overflow-hidden">
@@ -73,14 +73,14 @@ export default function Sponsors() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 w-full">
               {tierGroup.sponsors.filter(Boolean).map((sponsor) => (
                 <a
                   key={sponsor.shortName}
                   href={sponsor.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-8 rounded-3xl bg-white border-2 border-slate-200 hover:border-[#5A1E65] shadow-sm hover:shadow-xl transition-all flex flex-col justify-between gap-6 group cursor-pointer"
+                  className="p-6 sm:p-8 rounded-3xl bg-white border-2 border-slate-200 hover:border-[#5A1E65] shadow-sm hover:shadow-xl transition-all flex flex-col justify-between gap-6 group cursor-pointer"
                 >
                   <div className="h-28 flex items-center justify-center p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
                     <img 

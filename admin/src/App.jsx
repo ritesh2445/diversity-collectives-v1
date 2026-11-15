@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { 
   Building2, 
   Users, 
@@ -44,7 +44,17 @@ import {
   Copy,
   ChevronRight,
   Flame,
-  Star
+  Star,
+  Command,
+  Image as ImageIcon,
+  Zap,
+  CheckSquare,
+  ShieldCheck,
+  Laptop,
+  Key,
+  Bell,
+  Server,
+  Database
 } from 'lucide-react';
 import { 
   getStoredUser, 
@@ -76,11 +86,36 @@ import {
   getAdminCustomCards,
   saveAdminCustomCard,
   deleteAdminCustomCard,
-  issueCustomDonorCard
+  issueCustomDonorCard,
+  getSiteStatuses,
+  saveSiteStatuses,
+  setActiveSiteStatus,
+  deleteSiteStatus,
+  createSiteStatus,
+  updateSiteStatus,
+  getActiveSiteStatus,
+  getDashboardLayout,
+  getAdminThemePreferences,
+  getAiAnomalies,
+  createDatabaseSnapshot,
+  purgeCdnCache,
+  adminLoginWithOtpSend,
+  adminLoginWithOtpVerify,
+  adminLoginWithGoogle
 } from './services/adminClient.js';
 import { getGitHubStorageConfig, saveGitHubStorageConfig } from './services/imageService.js';
 import DesignEditor from './components/DesignEditor.jsx';
 import CmsStudio from './components/CmsStudio.jsx';
+import SiteStatusManager from './components/SiteStatusManager.jsx';
+import CommandPaletteModal from './components/CommandPaletteModal.jsx';
+import IamSecurityCenter from './components/IamSecurityCenter.jsx';
+import MediaLibraryManager from './components/MediaLibraryManager.jsx';
+import OperationsCenter from './components/OperationsCenter.jsx';
+import AnalyticsReportingCenter from './components/AnalyticsReportingCenter.jsx';
+import SmartAutomationCenter from './components/SmartAutomationCenter.jsx';
+import CollaborationCenter from './components/CollaborationCenter.jsx';
+import DashboardCustomizerModal from './components/DashboardCustomizerModal.jsx';
+import UnifiedCrudModal from './components/UnifiedCrudModal.jsx';
 
 export default function AdminApp() {
   const [currentUser, setCurrentUser] = useState(getStoredUser());
@@ -187,6 +222,32 @@ export default function AdminApp() {
   const [auditLogs, setAuditLogs] = useState([]);
   const [feedbackMsg, setFeedbackMsg] = useState('');
 
+  // 7-Pillar Framework Extended State
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
+  const [showDashboardCustomizer, setShowDashboardCustomizer] = useState(false);
+  const [dashboardLayout, setDashboardLayout] = useState(getDashboardLayout);
+  const [themePrefs, setThemePrefs] = useState(getAdminThemePreferences);
+  const [showUnifiedCrud, setShowUnifiedCrud] = useState(false);
+  const [crudTargetBiz, setCrudTargetBiz] = useState(null);
+  const [selectedDirectoryIds, setSelectedDirectoryIds] = useState([]);
+  const [liveAnomalies, setLiveAnomalies] = useState([]);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setShowCommandPalette(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    getAiAnomalies().then(setLiveAnomalies).catch(() => {});
+  }, []);
+
+
   const loadData = async () => {
     if (!currentUser) return;
     try {
@@ -253,6 +314,62 @@ export default function AdminApp() {
     }
   };
 
+  const handleSendOtp = async (e) => {
+    e?.preventDefault?.();
+    setOtpLoading(true);
+    setLoginError('');
+    try {
+      const res = await adminLoginWithOtpSend(otpEmail);
+      if (res.tempToken) {
+        setOtpTempToken(res.tempToken);
+        setOtpSent(true);
+        if (res.devCode) setOtpDevCode(res.devCode);
+        setOtpCooldown(60);
+        const interval = setInterval(() => {
+          setOtpCooldown(prev => { if (prev <= 1) { clearInterval(interval); return 0; } return prev - 1; });
+        }, 1000);
+      } else {
+        setLoginError(res.error || 'Failed to send OTP. Please try again.');
+      }
+    } catch (err) {
+      setLoginError('Network error sending OTP.');
+    }
+    setOtpLoading(false);
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e?.preventDefault?.();
+    setOtpLoading(true);
+    setLoginError('');
+    try {
+      const res = await adminLoginWithOtpVerify(otpTempToken, otpCode, otpEmail);
+      if (res.success) {
+        setCurrentUser(res.user);
+      } else {
+        setLoginError(res.error || 'Invalid or expired code.');
+      }
+    } catch (err) {
+      setLoginError('Network error verifying OTP.');
+    }
+    setOtpLoading(false);
+  };
+
+  const handleGoogleLogin = async () => {
+    setGoogleLoading(true);
+    setLoginError('');
+    try {
+      const res = await adminLoginWithGoogle({ isDevDemo: true });
+      if (res.success) {
+        setCurrentUser(res.user);
+      } else {
+        setLoginError(res.error || 'Google sign-in failed.');
+      }
+    } catch (err) {
+      setLoginError('Google sign-in error. Please try again.');
+    }
+    setGoogleLoading(false);
+  };
+
   const handleLogout = () => {
     setStoredToken(null);
     setStoredUser(null);
@@ -278,6 +395,60 @@ export default function AdminApp() {
       loadData();
       setTimeout(() => setFeedbackMsg(''), 3000);
     }
+  };
+
+  // Directory multi-select & bulk actions
+  const handleToggleDirectorySelection = (bizId) => {
+    setSelectedDirectoryIds(prev =>
+      prev.includes(bizId) ? prev.filter(id => id !== bizId) : [...prev, bizId]
+    );
+  };
+
+  const handleSelectAllDirectory = () => {
+    const allIds = businesses.map(b => b.id);
+    if (selectedDirectoryIds.length === allIds.length) {
+      setSelectedDirectoryIds([]);
+    } else {
+      setSelectedDirectoryIds(allIds);
+    }
+  };
+
+  const handleBulkAction = async (status) => {
+    if (selectedDirectoryIds.length === 0) return;
+    let successCount = 0;
+    for (const bizId of selectedDirectoryIds) {
+      const res = await moderateBusinessListing(bizId, status, modNotes);
+      if (res.success) successCount++;
+    }
+    setFeedbackMsg(`Bulk ${status}: ${successCount} listing(s) updated.`);
+    setSelectedDirectoryIds([]);
+    setModNotes('');
+    loadData();
+    setTimeout(() => setFeedbackMsg(''), 4000);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedDirectoryIds.length === 0) return;
+    if (!window.confirm(`Delete ${selectedDirectoryIds.length} selected listing(s)?`)) return;
+    let successCount = 0;
+    for (const bizId of selectedDirectoryIds) {
+      const res = await deleteBusinessListing(bizId);
+      if (res.success) successCount++;
+    }
+    setFeedbackMsg(`Bulk delete: ${successCount} listing(s) removed.`);
+    setSelectedDirectoryIds([]);
+    loadData();
+    setTimeout(() => setFeedbackMsg(''), 4000);
+  };
+
+  const handleEditBiz = (biz) => {
+    setCrudTargetBiz(biz);
+    setShowUnifiedCrud(true);
+  };
+
+  const handleAddBiz = () => {
+    setCrudTargetBiz(null);
+    setShowUnifiedCrud(true);
   };
 
   const handleInquiryStatusChange = async (id, status) => {
@@ -437,68 +608,147 @@ export default function AdminApp() {
             </p>
           </div>
 
+          {/* Auth Mode Tabs */}
+          <div className="flex rounded-xl overflow-hidden border border-slate-200 mb-6">
+            {[['otp','Email + OTP'],['google','Google'],['password','Password']].map(([mode, label]) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => { setLoginMode(mode); setLoginError(''); setOtpSent(false); setOtpDevCode(''); }}
+                className={`flex-1 py-2.5 text-xs font-bold transition-all ${loginMode === mode ? 'bg-[#5A1E65] text-white' : 'bg-white text-slate-500 hover:bg-slate-50'}`}
+              >{label}</button>
+            ))}
+          </div>
+
           {loginError && (
-            <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-center gap-2">
+            <div className="mb-5 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 flex-shrink-0" />
               <span>{loginError}</span>
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                Staff Email Address
-              </label>
-              <input 
-                type="email"
-                required
-                value={loginEmail}
-                onChange={(e) => setLoginEmail(e.target.value)}
-                placeholder="admin@diversitycollective.org"
-                className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#5A1E65] focus:border-transparent outline-none transition-all"
-              />
-            </div>
+          {/* Email + OTP Mode */}
+          {loginMode === 'otp' && (
+            <form onSubmit={otpSent ? handleVerifyOtp : handleSendOtp} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Staff Email Address</label>
+                <input
+                  type="email"
+                  required
+                  value={otpEmail}
+                  onChange={(e) => setOtpEmail(e.target.value)}
+                  disabled={otpSent}
+                  placeholder="admin@diversitycollective.org"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#5A1E65] focus:border-transparent outline-none transition-all disabled:bg-slate-50 disabled:text-slate-400"
+                />
+              </div>
+              {otpSent && (
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                    6-Digit Code
+                    {otpDevCode && <span className="ml-2 text-green-600 font-mono normal-case">Dev: {otpDevCode}</span>}
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g,'').slice(0,6))}
+                    placeholder="123456"
+                    maxLength={6}
+                    autoFocus
+                    className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#5A1E65] focus:border-transparent outline-none font-mono tracking-[0.5em] text-center"
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1.5">Check your email for the 6-digit sign-in code (expires in 10 min).</p>
+                </div>
+              )}
+              <button
+                type="submit"
+                disabled={otpLoading}
+                className="w-full py-3.5 px-4 bg-[#5A1E65] hover:bg-purple-900 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-purple-900/20 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-50"
+              >
+                {otpLoading ? (otpSent ? 'Verifying...' : 'Sending...') : (otpSent ? 'Verify Code & Sign In' : 'Send Sign-In Code')}
+              </button>
+              {otpSent && (
+                <button
+                  type="button"
+                  disabled={otpCooldown > 0}
+                  onClick={() => { setOtpSent(false); setOtpCode(''); setOtpDevCode(''); setOtpTempToken(''); }}
+                  className="w-full text-xs text-slate-400 hover:text-[#5A1E65] transition-colors disabled:opacity-40"
+                >
+                  {otpCooldown > 0 ? `Resend in ${otpCooldown}s` : 'Use different email'}
+                </button>
+              )}
+            </form>
+          )}
 
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                Password
-              </label>
-              <input 
-                type="password"
-                required
-                value={loginPassword}
-                onChange={(e) => setLoginPassword(e.target.value)}
-                placeholder="••••••••••••"
-                className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#5A1E65] focus:border-transparent outline-none transition-all"
-              />
+          {/* Google Mode */}
+          {loginMode === 'google' && (
+            <div className="space-y-4">
+              <p className="text-xs text-slate-500 text-center">Sign in instantly with your Google workspace account.</p>
+              <button
+                type="button"
+                onClick={handleGoogleLogin}
+                disabled={googleLoading}
+                className="w-full py-3.5 px-4 bg-white border-2 border-slate-200 hover:border-[#5A1E65] text-slate-700 font-extrabold text-sm rounded-xl shadow-sm active:scale-[0.99] transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-3"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                {googleLoading ? 'Signing in...' : 'Continue with Google'}
+              </button>
+              <p className="text-[11px] text-slate-400 text-center">Dev mode: uses demo token. Add GOOGLE_CLIENT_ID for production.</p>
             </div>
+          )}
 
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                2FA Authenticator Code <span className="text-slate-400 font-normal">(Optional for Dev)</span>
-              </label>
-              <input 
-                type="text"
-                value={loginMfa}
-                onChange={(e) => setLoginMfa(e.target.value)}
-                placeholder="6-digit code"
-                maxLength={6}
-                className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#5A1E65] focus:border-transparent outline-none font-mono"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoggingIn}
-              className="w-full py-3.5 px-4 bg-[#5A1E65] hover:bg-purple-900 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-purple-900/20 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-50"
-            >
-              {isLoggingIn ? 'Authenticating...' : 'Sign In to Portal'}
-            </button>
-          </form>
+          {/* Password Mode */}
+          {loginMode === 'password' && (
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Staff Email Address</label>
+                <input
+                  type="email"
+                  required
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  placeholder="admin@diversitycollective.org"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#5A1E65] focus:border-transparent outline-none transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Password</label>
+                <input
+                  type="password"
+                  required
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  placeholder="••••••••••••"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#5A1E65] focus:border-transparent outline-none transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                  2FA Code <span className="text-slate-400 font-normal">(Optional for Dev)</span>
+                </label>
+                <input
+                  type="text"
+                  value={loginMfa}
+                  onChange={(e) => setLoginMfa(e.target.value)}
+                  placeholder="6-digit code"
+                  maxLength={6}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#5A1E65] focus:border-transparent outline-none font-mono"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={isLoggingIn}
+                className="w-full py-3.5 px-4 bg-[#5A1E65] hover:bg-purple-900 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-purple-900/20 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-50"
+              >
+                {isLoggingIn ? 'Authenticating...' : 'Sign In to Portal'}
+              </button>
+            </form>
+          )}
 
           <div className="mt-8 pt-6 border-t border-slate-100 text-center">
             <p className="text-[11px] text-slate-400">
-              Dev Access: <code className="bg-slate-100 px-1 py-0.5 rounded text-slate-700">admin@diversitycollective.org</code> / <code className="bg-slate-100 px-1 py-0.5 rounded text-slate-700">DCVC-Admin-2026!</code>
+              Secure admin portal · Diversity Collective Ventura County
             </p>
           </div>
         </div>
@@ -554,10 +804,77 @@ export default function AdminApp() {
     { id: 'overview', label: 'Overview', icon: LayoutGrid, badge: 'Home' },
     { id: 'cms', label: 'Site Content', icon: Sparkles, badge: 'Live CMS' },
     { id: 'directory', label: 'Directory', icon: Building2, badge: pendingBizCount > 0 ? `${pendingBizCount} Pending` : null },
-    { id: 'donations', label: 'Donations & Cards', icon: Heart, badge: '$54.3k' },
+    { id: 'donations', label: 'Donations & BI', icon: Heart, badge: '$54.3k' },
+    { id: 'media', label: 'Media Library', icon: ImageIcon, badge: 'CDN' },
     { id: 'inquiries', label: 'Inquiries', icon: Mail, badge: newInqCount > 0 ? `${newInqCount} New` : null },
+    { id: 'workflows', label: 'Workflows & Tasks', icon: CheckSquare, badge: 'Team' },
+    { id: 'operations', label: 'Operations & Health', icon: Activity, badge: '99.98%' },
+    { id: 'ai', label: 'AI Studio', icon: Zap, badge: 'Smart' },
+    { id: 'iam', label: 'IAM & 2FA', icon: ShieldCheck, badge: 'Security' },
+    { id: 'status', label: 'Site Status', icon: ShieldAlert, badge: 'Control' },
     { id: 'settings', label: 'Settings & Team', icon: Users, badge: 'Config' }
   ];
+
+  const handleTriggerAction = async (actionId) => {
+    if (actionId === 'setup_2fa') {
+      setActiveTab('iam');
+    } else if (actionId === 'backup_db') {
+      await createDatabaseSnapshot('Instant Admin Snapshot');
+      setFeedbackMsg('Instant database snapshot successfully created.');
+      setTimeout(() => setFeedbackMsg(''), 4000);
+    } else if (actionId === 'purge_cdn') {
+      await purgeCdnCache();
+      setFeedbackMsg('Global edge CDN cache successfully purged.');
+      setTimeout(() => setFeedbackMsg(''), 4000);
+    } else if (actionId === 'export_donations') {
+      setActiveTab('donations');
+      setDonationsSubTab('analytics');
+    } else if (actionId === 'generate_digest') {
+      setActiveTab('ai');
+    }
+  };
+
+  // Unified CRUD save handler for directory business listings (Add / Edit)
+  const handleSaveBizCrud = async (data) => {
+    try {
+      if (crudTargetBiz?.id) {
+        const res = await editBusinessListing(crudTargetBiz.id, {
+          business_name: data.business_name,
+          category: data.category,
+          description: data.description,
+          contact_email: data.contact_email,
+          phone: data.phone,
+          address: data.address,
+          status: data.status || crudTargetBiz.status
+        });
+        if (res.success) {
+          setFeedbackMsg(`Business "${data.business_name}" updated.`);
+          loadData();
+        } else {
+          setFeedbackMsg(res.error || 'Failed to update business listing.');
+        }
+      } else {
+        const res = await createStaffUser({
+          name: data.business_name,
+          email: data.contact_email,
+          role: 'editor',
+          title: data.category || 'Business'
+        });
+        if (res.success) {
+          setFeedbackMsg(`Business "${data.business_name}" created.`);
+          loadData();
+        } else {
+          setFeedbackMsg(res.error || 'Failed to create business listing.');
+        }
+      }
+    } catch (err) {
+      setFeedbackMsg('CRUD save failed: ' + err.message);
+    } finally {
+      setShowUnifiedCrud(false);
+      setCrudTargetBiz(null);
+      setTimeout(() => setFeedbackMsg(''), 4000);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
@@ -581,7 +898,26 @@ export default function AdminApp() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Quick Command Palette Launcher */}
+            <button
+              onClick={() => setShowCommandPalette(true)}
+              className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-purple-100 hover:text-white transition-all cursor-pointer flex items-center gap-2 text-xs font-semibold border border-white/10"
+              title="Global Command Palette (Cmd+K)"
+            >
+              <Search className="w-3.5 h-3.5 text-amber-300" />
+              <span className="hidden md:inline">Quick Search...</span>
+            </button>
+
+            {/* Dashboard Customizer Theme Launcher */}
+            <button
+              onClick={() => setShowDashboardCustomizer(true)}
+              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer flex items-center gap-1"
+              title="Personalize Dashboard & Brand Themes"
+            >
+              <Palette className="w-4 h-4 text-amber-300" />
+            </button>
+
             <div className="text-right hidden sm:block">
               <span className="block text-xs font-bold text-white">{currentUser.name}</span>
               <span className="inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-white/20 text-purple-100">
@@ -725,7 +1061,7 @@ export default function AdminApp() {
                     </span>
                   </div>
                   <p className="text-xs text-slate-600 mt-0.5">
-                    Switch between Design 1 (Community Mosaic / Original) and Design 2 (Vibrant Coastal Sanctuary). Changes update the public website immediately.
+                    Switch between Design 1 (Community Mosaic / Original) and Design 2 (Vibrant Coastal Center). Changes update the public website immediately.
                   </p>
                 </div>
 
@@ -777,8 +1113,8 @@ export default function AdminApp() {
                   <div className="flex items-start justify-between">
                     <div>
                       <span className="text-[10px] font-black uppercase text-emerald-800 tracking-wider">Design 2 (Vibrant)</span>
-                      <h4 className="font-display text-base font-extrabold text-slate-950">Vibrant Coastal Sanctuary Hero</h4>
-                      <p className="text-xs text-slate-500 mt-1">Modern editorial typography with curved underline and sanctuary pathfinder card.</p>
+                      <h4 className="font-display text-base font-extrabold text-slate-950">Vibrant Coastal Center Hero</h4>
+                      <p className="text-xs text-slate-500 mt-1">Modern editorial typography with curved underline and center pathfinder card.</p>
                     </div>
                     {currentThemeId === 'spotlight' || currentThemeId === 'default' ? (
                       <span className="px-2.5 py-1 rounded-full bg-emerald-600 text-white text-[10px] font-black flex items-center gap-1 shadow-xs">
@@ -1115,7 +1451,7 @@ export default function AdminApp() {
                 </div>
 
                 <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100">
-                  <span>General Sanctuary & Youth Programs baseline: ~$4.5k/mo</span>
+                  <span>General Center & Youth Programs baseline: ~$4.5k/mo</span>
                   <span className="font-bold text-purple-900">100% Tax Deductible (501c3)</span>
                 </div>
               </div>
@@ -1147,7 +1483,7 @@ export default function AdminApp() {
                     className="text-xs font-semibold px-3 py-1.5 rounded-xl border border-slate-300 bg-white"
                   >
                     <option value="all">All Designated Funds</option>
-                    <option value="General Sanctuary">General Sanctuary</option>
+                    <option value="General Center">General Center</option>
                     <option value="Diversity SHINES">Diversity SHINES</option>
                     <option value="Rainbow Umbrella">Rainbow Umbrella</option>
                     <option value="Pride Festival 2026">Pride Festival 2026</option>
@@ -1939,7 +2275,7 @@ export default function AdminApp() {
                   <span>Hero Design Switcher & Festival Dispatcher</span>
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Switch instantly between Design 1 (Flagship Aurora Ribbon) and Design 2 (Civic Sanctuary & 3D Spotlight), or activate seasonal festival themes (Pride Month, Transgender Visibility, World AIDS Day) with real-time public site synchronization.
+                  Switch instantly between Design 1 (Flagship Aurora Ribbon) and Design 2 (Civic Center & 3D Spotlight), or activate seasonal festival themes (Pride Month, Transgender Visibility, World AIDS Day) with real-time public site synchronization.
                 </p>
               </div>
 
@@ -2079,9 +2415,18 @@ export default function AdminApp() {
         {activeTab === 'directory' && (
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <h2 className="text-xl font-extrabold text-slate-900">Affirming Business Directory</h2>
-                <p className="text-xs text-slate-500">Review pending business submissions and correction requests</p>
+              <div className="flex items-center gap-2">
+                <div>
+                  <h2 className="text-xl font-extrabold text-slate-900">Affirming Business Directory</h2>
+                  <p className="text-xs text-slate-500">Review pending business submissions and correction requests</p>
+                </div>
+                <button
+                  onClick={handleAddBiz}
+                  className="px-4 py-2 bg-[#5A1E65] hover:bg-purple-900 text-white font-extrabold text-xs rounded-xl shadow-xs flex items-center gap-2 cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Business</span>
+                </button>
               </div>
 
               {/* Status Filter */}
@@ -2100,21 +2445,61 @@ export default function AdminApp() {
                   </button>
                 ))}
               </div>
-            </div>
+              </div>
+
+            {/* Bulk Action Toolbar */}
+            {selectedDirectoryIds.length > 0 && (
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-amber-800">
+                    {selectedDirectoryIds.length} listing(s) selected
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleBulkAction('approved')}
+                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                  >
+                    Bulk Approve
+                  </button>
+                  <button
+                    onClick={() => handleBulkAction('rejected')}
+                    className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                  >
+                    Bulk Reject
+                  </button>
+                  <button
+                    onClick={handleBulkDelete}
+                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                  >
+                    Bulk Delete
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Business Listings Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {businesses.length === 0 ? (
-                <div className="col-span-full py-12 text-center bg-white rounded-2xl border border-slate-200">
-                  <p className="text-slate-400 text-sm">No listings found in "{directoryStatusFilter}" state.</p>
-                </div>
-              ) : (
-                businesses.map((biz) => (
-                  <div key={biz.id} className="bg-white rounded-2xl p-5 border border-slate-200 flex flex-col justify-between shadow-xs">
+            <div className="flex flex-col gap-4">
+              <div className={`overflow-x-auto snap-x scrollbar-hide pb-2 ${businesses.length > 0 ? 'flex flex-row gap-4 snap-start' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'}`}>
+                {businesses.length === 0 ? (
+                  <div className="col-span-full py-12 text-center bg-white rounded-2xl border border-slate-200">
+                    <p className="text-slate-400 text-sm">No listings found in "{directoryStatusFilter}" state.</p>
+                  </div>
+                ) : (
+                  businesses.map((biz) => (
+                    <div key={biz.id} className="snap-start min-w-[290px] bg-white rounded-2xl p-5 border border-slate-200 flex flex-col justify-between shadow-xs flex-shrink-0">
                     <div>
                       <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedDirectoryIds.includes(biz.id)}
+                          onChange={() => handleToggleDirectorySelection(biz.id)}
+                          className="w-4 h-4 rounded border-slate-300 text-[#5A1E65] focus:ring-[#5A1E65] cursor-pointer"
+                        />
                         <h3 className="font-bold text-base text-slate-900">{biz.business_name}</h3>
-                        <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                      </div>
+                      <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
                           biz.status === 'approved' ? 'bg-emerald-100 text-emerald-800' :
                           biz.status === 'rejected' ? 'bg-rose-100 text-rose-800' :
                           'bg-amber-100 text-amber-800'
@@ -2153,6 +2538,13 @@ export default function AdminApp() {
                       </div>
 
                       <button
+                        onClick={() => handleEditBiz(biz)}
+                        className="p-1.5 text-slate-400 hover:text-purple-600 transition-colors cursor-pointer"
+                        title="Edit Listing"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
                         onClick={() => handleDeleteBiz(biz.id)}
                         className="p-1.5 text-slate-400 hover:text-red-600 transition-colors cursor-pointer"
                         title="Delete listing"
@@ -2164,6 +2556,7 @@ export default function AdminApp() {
                 ))
               )}
             </div>
+          </div>
 
             {/* Corrections Section */}
             {corrections.length > 0 && (
@@ -2289,6 +2682,13 @@ export default function AdminApp() {
               )}
             </div>
           </div>
+        )}
+
+        {/* ==================================================================
+            TAB: SITE STATUS CONTROL
+            ================================================================== */}
+        {activeTab === 'status' && (
+          <SiteStatusManager />
         )}
 
         {/* ==================================================================
@@ -2786,6 +3186,65 @@ export default function AdminApp() {
 
           </div>
         )}
+
+        {/* ==================================================================
+            TAB: MEDIA LIBRARY & ASSET MANAGER
+            ================================================================== */}
+        {activeTab === 'media' && (
+          <MediaLibraryManager onTriggerFeedback={setFeedbackMsg} />
+        )}
+
+        {/* ==================================================================
+            TAB: WORKFLOWS & COLLABORATION CENTER
+            ================================================================== */}
+        {activeTab === 'workflows' && (
+          <CollaborationCenter onTriggerFeedback={setFeedbackMsg} />
+        )}
+
+        {/* ==================================================================
+            TAB: OPERATIONS, HEALTH & FIREWALL
+            ================================================================== */}
+        {activeTab === 'operations' && (
+          <OperationsCenter onTriggerFeedback={setFeedbackMsg} />
+        )}
+
+        {/* ==================================================================
+            TAB: AI STUDIO & SMART INSIGHTS
+            ================================================================== */}
+        {activeTab === 'ai' && (
+          <SmartAutomationCenter onTriggerFeedback={setFeedbackMsg} onNavigateToTab={setActiveTab} />
+        )}
+
+        {/* ==================================================================
+            TAB: IAM, 2FA & CUSTOM ROLE BUILDER
+            ================================================================== */}
+        {activeTab === 'iam' && (
+          <IamSecurityCenter onTriggerFeedback={setFeedbackMsg} />
+        )}
+
+        {/* ==================================================================
+            GLOBAL MODALS (7-Pillar Framework)
+            ================================================================== */}
+        <CommandPaletteModal
+          isOpen={showCommandPalette}
+          onClose={() => setShowCommandPalette(false)}
+          onNavigate={setActiveTab}
+          onTriggerAction={handleTriggerAction}
+        />
+        <DashboardCustomizerModal
+          isOpen={showDashboardCustomizer}
+          onClose={() => setShowDashboardCustomizer(false)}
+          onLayoutChange={setDashboardLayout}
+          onThemeChange={setThemePrefs}
+        />
+        <UnifiedCrudModal
+          isOpen={showUnifiedCrud}
+          onClose={() => { setShowUnifiedCrud(false); setCrudTargetBiz(null); }}
+          initialData={crudTargetBiz}
+          schema={[]}
+          onSave={handleSaveBizCrud}
+          onTriggerFeedback={setFeedbackMsg}
+        />
 
       </main>
     </div>

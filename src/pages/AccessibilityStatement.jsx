@@ -11,9 +11,10 @@ import {
   Keyboard, 
   Volume2 
 } from 'lucide-react';
-import { orgInfo } from '../data/dcvcData';
+import { useLiveOrgInfo } from '../hooks/useCmsLive';
 
 export default function AccessibilityStatement() {
+  const orgInfo = useLiveOrgInfo();
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
@@ -84,7 +85,7 @@ export default function AccessibilityStatement() {
             Measures Implemented to Support Accessibility
           </h2>
           <p className="text-slate-700 leading-relaxed">
-            Diversity Collective takes the following measures across this digital sanctuary:
+            Diversity Collective takes the following measures across this digital center:
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -205,7 +206,7 @@ export default function AccessibilityStatement() {
             >
               <MapPin className="w-5 h-5 text-amber-400" aria-hidden="true" />
               <div>
-                <span className="text-[11px] text-slate-400 block font-bold uppercase">Sanctuary</span>
+                <span className="text-[11px] text-slate-400 block font-bold uppercase">Center</span>
                 <span className="text-xs font-bold text-white">Ventura, CA 93003</span>
               </div>
             </a>

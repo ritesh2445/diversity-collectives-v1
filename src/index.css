@@ -13,11 +13,11 @@
   --bg-dark: #0F172A;
   --bg-dark-surface: #1E293B;
 
-  /* Typography Colors: Crisp, Restrained, High Contrast */
+  /* Typography Colors: Crisp, Sharper, High Contrast */
   --text-heading: #0F172A;
-  --text-body: #334155;
-  --text-muted: #64748B;
-  --text-light: #94A3B8;
+  --text-body: #1E293B;
+  --text-muted: #334155;
+  --text-light: #475569;
   --text-inverse: #FFFFFF;
 
   /* Restrained Signature Accent */
@@ -43,24 +43,19 @@
 html {
   font-size: 16px;
   scroll-behavior: smooth;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: auto;
   text-rendering: optimizeLegibility;
   background-color: #FAF5FF;
   color: var(--text-heading);
-  overflow-x: hidden;
+  overflow-x: hidden !important;
+  overflow-y: auto;
+  height: auto !important;
+  min-height: 100%;
   width: 100%;
-  max-width: 100%;
+  max-width: 100vw;
   -webkit-tap-highlight-color: transparent;
   scrollbar-width: none;
   -ms-overflow-style: none;
-}
-
-#root {
-  overflow-x: hidden;
-  width: 100%;
-  max-width: 100%;
-  min-height: 100vh;
 }
 
 body {
@@ -79,19 +74,99 @@ body {
   line-height: 1.65;
   letter-spacing: -0.011em;
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'tnum';
-  overflow-x: hidden;
+  overflow-x: hidden !important;
+  overflow-y: visible;
+  min-height: 100%;
   width: 100%;
-  max-width: 100%;
+  max-width: 100vw;
+  touch-action: manipulation;
   -webkit-text-size-adjust: 100%;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
 
 #root {
-  overflow-x: hidden;
+  overflow-x: hidden !important;
   width: 100%;
-  max-width: 100%;
+  max-width: 100vw;
   min-height: 100vh;
+}
+
+html.translated-ltr body,
+html.translated-rtl body,
+html[dir="rtl"] body,
+html:not([lang="en"]) body {
+  max-width: 100vw !important;
+  width: 100% !important;
+  overflow-x: clip !important;
+}
+
+html[dir="rtl"] #root,
+html.translated-rtl #root,
+html.translated-ltr #root {
+  max-width: 100vw !important;
+  width: 100% !important;
+  overflow-x: clip !important;
+}
+
+/* RTL (Arabic, Persian, Hebrew) Blink Engine Scroll Width Containment */
+html.translated-rtl,
+html[dir="rtl"],
+html.translated-rtl body,
+html[dir="rtl"] body,
+html.translated-rtl #root,
+html[dir="rtl"] #root {
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
+  width: 100% !important;
+}
+
+html.translated-rtl header,
+html.translated-rtl main,
+html.translated-rtl footer,
+html.translated-rtl section,
+html[dir="rtl"] header,
+html[dir="rtl"] main,
+html[dir="rtl"] footer,
+html[dir="rtl"] section {
+  max-width: 100vw !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 767px) {
+  /* Enforce mobile-only header on small screens under any translation state */
+  .hidden.md\:block,
+  .hidden.md\:flex,
+  .hidden.md\:inline-flex,
+  button.hidden.md\:inline-flex,
+  div.hidden.md\:flex,
+  span.hidden.md\:block {
+    display: none !important;
+  }
+  .md\:hidden {
+    display: flex !important;
+  }
+
+  html.translated-rtl .container-clean,
+  html[dir="rtl"] .container-clean {
+    max-width: 100vw !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+  #accessibility-launcher-button > div:not(:first-child),
+  #ask-luna-launcher-button > div:not(:first-child) {
+    display: none !important;
+  }
+  #accessibility-launcher-button,
+  #ask-luna-launcher-button {
+    padding-right: 0.5rem !important;
+  }
+}
+
+.overflow-x-clip {
+  overflow-x: clip !important;
 }
 
 /* Hide browser vertical scrollbar completely to prevent header/nav overlap */
@@ -103,6 +178,29 @@ body::-webkit-scrollbar,
   height: 0 !important;
   -webkit-appearance: none;
   background: transparent !important;
+}
+
+/* Hide horizontal scrollbar for swipable card containers */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Mobile card grid snap container enhancements */
+@media (max-width: 639px) {
+  .snap-x {
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y pan-x;
+  }
+  .snap-start {
+    scroll-snap-align: start;
+  }
 }
 
 @layer base {
@@ -158,7 +256,9 @@ img {
 /* Layout Containers */
 .container, .container-clean {
   width: 100%;
-  max-width: var(--max-width);
+  max-width: min(var(--max-width), 100vw);
+  min-width: 0;
+  box-sizing: border-box;
   margin-left: auto;
   margin-right: auto;
   padding-left: clamp(1rem, 4vw, 3.5rem);
@@ -294,16 +394,24 @@ img {
   -webkit-text-fill-color: transparent;
 }
 
-/* High-End Vibrant Buttons */
+/* High-End Vibrant Buttons — Resilient Multi-Language Layout */
 .btn-primary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.6rem;
-  padding: 0.875rem 2rem;
+  padding: 0.875rem 1.5rem;
   font-size: 0.9rem;
   font-weight: 700;
-  white-space: nowrap;
+  max-width: 100%;
+  min-width: 0;
+  text-align: center;
+  overflow: hidden;
+  text-wrap: balance;
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: auto;
+  line-height: 1.2;
   flex-shrink: 0;
   border-radius: var(--dcvc-btn-radius, 9999px);
   background: var(--dcvc-btn-primary-bg, linear-gradient(135deg, #5A1E65 0%, #7E22CE 55%, #4338CA 100%));
@@ -317,6 +425,20 @@ img {
 .btn-primary *,
 .btn-primary span {
   color: var(--dcvc-btn-primary-text, #FFFFFF) !important;
+  max-width: 100%;
+}
+
+.btn-primary > span,
+.btn-secondary > span,
+.btn-vibrant-coral > span,
+.btn-dark > span {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  text-align: center;
 }
 
 .btn-primary:hover {
@@ -331,10 +453,18 @@ img {
   align-items: center;
   justify-content: center;
   gap: 0.6rem;
-  padding: 0.875rem 2rem;
+  padding: 0.875rem 1.5rem;
   font-size: 0.9rem;
   font-weight: 700;
-  white-space: nowrap;
+  max-width: 100%;
+  min-width: 0;
+  text-align: center;
+  overflow: hidden;
+  text-wrap: balance;
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: auto;
+  line-height: 1.2;
   flex-shrink: 0;
   border-radius: 9999px;
   background: linear-gradient(135deg, #E11D48 0%, #F43F5E 50%, #FB923C 100%);
@@ -354,10 +484,18 @@ img {
   align-items: center;
   justify-content: center;
   gap: 0.6rem;
-  padding: 0.875rem 2rem;
+  padding: 0.875rem 1.5rem;
   font-size: 0.9rem;
   font-weight: 700;
-  white-space: nowrap;
+  max-width: 100%;
+  min-width: 0;
+  text-align: center;
+  overflow: hidden;
+  text-wrap: balance;
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: auto;
+  line-height: 1.2;
   flex-shrink: 0;
   border-radius: 9999px;
   background: var(--dcvc-btn-secondary-bg, rgba(255, 255, 255, 0.95));
@@ -381,10 +519,18 @@ img {
   align-items: center;
   justify-content: center;
   gap: 0.6rem;
-  padding: 0.875rem 2rem;
+  padding: 0.875rem 1.5rem;
   font-size: 0.9rem;
   font-weight: 700;
-  white-space: nowrap;
+  max-width: 100%;
+  min-width: 0;
+  text-align: center;
+  overflow: hidden;
+  text-wrap: balance;
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: auto;
+  line-height: 1.2;
   flex-shrink: 0;
   border-radius: 9999px;
   background-color: var(--bg-dark);
@@ -429,12 +575,32 @@ img {
 .nav-bar-btn:hover,
 .nav-bar-btn.nav-bar-btn-active {
   background: var(--dcvc-nav-active-bg, linear-gradient(90deg, #5A1E65 0%, #7E22CE 100%));
-  color: var(--dcvc-nav-active-text, #FFFFFF);
+  color: var(--dcvc-nav-active-text, #FFFFFF) !important;
+}
+
+.nav-bar-btn:hover *,
+.nav-bar-btn.nav-bar-btn-active *,
+.nav-bar-btn:hover span,
+.nav-bar-btn.nav-bar-btn-active span,
+.nav-bar-btn:hover p,
+.nav-bar-btn.nav-bar-btn-active p,
+.nav-bar-btn:hover div,
+.nav-bar-btn.nav-bar-btn-active div {
+  color: #FFFFFF !important;
+}
+
+.nav-bar-btn:hover span:last-child,
+.nav-bar-btn.nav-bar-btn-active span:last-child,
+.nav-bar-btn:hover [class*="text-slate"],
+.nav-bar-btn.nav-bar-btn-active [class*="text-slate"],
+.nav-bar-btn:hover .nav-desc,
+.nav-bar-btn.nav-bar-btn-active .nav-desc {
+  color: rgba(255, 255, 255, 0.95) !important;
 }
 
 .nav-bar-btn:hover svg,
 .nav-bar-btn.nav-bar-btn-active svg {
-  color: var(--dcvc-nav-active-text, #FFFFFF);
+  color: var(--dcvc-nav-active-text, #FFFFFF) !important;
 }
 
 .nav-support-btn {
@@ -1475,6 +1641,393 @@ body {
     background-color: #FFFFFF;
   }
 }
+
+/* Horizontal Auto-Moving Partnerships Strip */
+@keyframes dcvcPartnersMarquee {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.partners-marquee-wrap {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+}
+
+.partners-marquee-track {
+  display: flex;
+  align-items: stretch;
+  gap: 1.25rem;
+  width: max-content;
+  animation: dcvcPartnersMarquee 38s linear infinite;
+  will-change: transform;
+}
+
+.partners-marquee-wrap:hover .partners-marquee-track,
+.partners-marquee-wrap:focus-within .partners-marquee-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .partners-marquee-wrap {
+    overflow-x: auto;
+  }
+  .partners-marquee-track {
+    animation: none;
+  }
+}
+
+/* Auto Broadcast Horizontal Text Marquee */
+@keyframes dcvcTextMarquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  display: inline-block;
+  padding-left: 100%;
+  animation: dcvcTextMarquee 22s linear infinite;
+  white-space: nowrap;
+}
+
+.animate-marquee:hover,
+.animate-marquee:focus {
+  animation-play-state: paused;
+}
+
+/* ==========================================================================
+   GLOBAL SUBTEXT & CARD PROSE CLARITY LAYER (No Layout/Design Change)
+   Sharpens faint slate grays and lifts tiny 11px/12px card prose across
+   all public light surfaces while excluding dark sections and Admin UI.
+   ========================================================================== */
+
+/* ==========================================================================
+   SITE STATUS OVERLAY ANIMATIONS (Launch Timer & Maintenance)
+   ========================================================================== */
+
+.dcvc-rainbow-bg {
+  background: linear-gradient(270deg, #5A1E65, #9333ea, #3b82f6, #06b6d4, #10b981, #f59e0b, #ef4444, #5A1E65);
+  background-size: 400% 400%;
+  animation: dcvcRainbowMove 10s ease infinite;
+}
+
+@keyframes dcvc-shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.dcvc-shimmer-text {
+  background: linear-gradient(90deg, #fff 25%, #d8b4fe 50%, #fff 75%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: dcvc-shimmer 3s linear infinite;
+}
+
+@keyframes dcvc-fade-in-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.dcvc-fade-in-up {
+  animation: dcvc-fade-in-up 0.5s ease both;
+}
+
+@keyframes dcvc-pulse-ring {
+  0%   { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(2.0); opacity: 0; }
+}
+
+.dcvc-pulse-ring {
+  animation: dcvc-pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+.dcvc-light-sweep {
+  animation: dcvcLightSweep 8s linear infinite;
+  background: linear-gradient(90deg, rgba(255,255,255,0.15), transparent, rgba(255,255,255,0.15));
+}
+
+.dcvc-status-font {
+  font-family: var(--dcvc-status-font, '"Plus Jakarta Sans", Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
+}
+
+@keyframes dcvcRainbowMove {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes dcvcLightSweep {
+  0% { transform: translateX(-100%) rotate(45deg); }
+  100% { transform: translateX(100%) rotate(45deg); }
+}
+
+/* Respect Reduced Motion for status overlay */
+@media (prefers-reduced-motion: reduce) {
+  .dcvc-rainbow-bg {
+    animation: none;
+    background-position: 0% 50%;
+  }
+  .dcvc-light-sweep {
+    animation: none;
+    display: none;
+  }
+}
+main :is(.text-slate-600, .text-gray-600):not(:is(footer, .admin-workspace, .aurora-bg, .bg-slate-950, .bg-slate-900, .bg-slate-800, .bg-purple-950, [class*="from-slate-950"], [class*="from-slate-900"], [class*="from-purple-950"]) *):not(:hover) {
+  color: #1E293B;
+}
+
+main :is(.text-slate-500, .text-gray-500):not(:is(footer, .admin-workspace, .aurora-bg, .bg-slate-950, .bg-slate-900, .bg-slate-800, .bg-purple-950, [class*="from-slate-950"], [class*="from-slate-900"], [class*="from-purple-950"]) *):not(:hover),
+header :is(.text-slate-500, .text-gray-500):not(.nav-desc):not(.nav-title):not(:is(footer, .admin-workspace, .nav-bar-btn, .nav-bar-btn-active, [class*="bg-[#5A1E65]"], [class*="bg-purple-"]) *):not(:hover) {
+  color: #334155;
+}
+
+/* Navigation Bar Dropdown Items & Mobile Drawer: Bulletproof Crisp White Contrast on Hover & Active */
+.nav-bar-btn:hover .nav-desc,
+.nav-bar-btn.nav-bar-btn-active .nav-desc,
+.nav-bar-btn:hover [class*="nav-desc"],
+.nav-bar-btn.nav-bar-btn-active [class*="nav-desc"],
+.nav-bar-btn:hover span:last-child,
+.nav-bar-btn.nav-bar-btn-active span:last-child {
+  color: rgba(255, 255, 255, 0.95) !important;
+  opacity: 1 !important;
+}
+
+.nav-bar-btn:hover .nav-title,
+.nav-bar-btn.nav-bar-btn-active .nav-title,
+.nav-bar-btn:hover [class*="nav-title"],
+.nav-bar-btn.nav-bar-btn-active [class*="nav-title"],
+.nav-bar-btn:hover span:first-child,
+.nav-bar-btn.nav-bar-btn-active span:first-child {
+  color: #FFFFFF !important;
+}
+
+main :is(.text-slate-400, .text-gray-400):not(:is(footer, .admin-workspace, .aurora-bg, .bg-slate-950, .bg-slate-900, .bg-slate-800, .bg-purple-950, [class*="from-slate-950"], [class*="from-slate-900"], [class*="from-purple-950"]) *):not(:hover),
+header :is(.text-slate-400, .text-gray-400):not(:is(footer, .admin-workspace) *):not(:hover) {
+  color: #475569;
+}
+
+main p.text-xs:not(:is(footer, .admin-workspace, .aurora-bg, .bg-slate-950, .bg-slate-900, .bg-slate-800, .bg-purple-950) *),
+main li.text-xs:not(:is(footer, .admin-workspace, .aurora-bg, .bg-slate-950, .bg-slate-900, .bg-slate-800, .bg-purple-950) *),
+main p[class*="text-[11px]"]:not(:is(footer, .admin-workspace, .aurora-bg, .bg-slate-950, .bg-slate-900, .bg-slate-800, .bg-purple-950) *) {
+  font-size: 0.875rem;
+  line-height: 1.62;
+  font-weight: 500;
+}
+
+main p.font-serif.italic.text-xs:not(:is(footer, .admin-workspace) *) {
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   COOL WHITE ADMIN STUDIO PALETTE
+   Replaces glaring pure-white Admin surfaces with a soft cool ice-white tint,
+   crisp input borders, and high-contrast slate typography across all fields.
+   ========================================================================== */
+.dcvc-admin-cool {
+  background-color: #E9EFF6;
+  color: #0F172A;
+}
+
+.dcvc-admin-cool .bg-white:not(.dcvc-preview-stage):not(.dcvc-preview-stage *) {
+  background-color: #F4F8FC;
+}
+
+.dcvc-admin-cool .bg-slate-50:not(.dcvc-preview-stage):not(.dcvc-preview-stage *) {
+  background-color: #EBF1F8;
+}
+
+.dcvc-admin-cool .bg-slate-100:not(.dcvc-preview-stage):not(.dcvc-preview-stage *) {
+  background-color: #E2EAF4;
+}
+
+.dcvc-admin-cool .border-slate-200:not(.dcvc-preview-stage):not(.dcvc-preview-stage *) {
+  border-color: #C2CFE0;
+}
+
+.dcvc-admin-cool .border-slate-100:not(.dcvc-preview-stage):not(.dcvc-preview-stage *) {
+  border-color: #D2DCE9;
+}
+
+.dcvc-admin-cool :is(input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="range"]), textarea, select):not(.dcvc-preview-stage *):not(.bg-slate-800) {
+  background-color: #F9FBFE;
+  border-color: #9FB1C8;
+  color: #0F172A;
+}
+
+.dcvc-admin-cool :is(input, textarea)::placeholder {
+  color: #475569;
+  opacity: 1;
+}
+
+.dcvc-admin-cool :is(input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="range"]), textarea, select):focus {
+  background-color: #FFFFFF;
+  border-color: #5A1E65;
+}
+
+.dcvc-admin-cool label:not(.dcvc-preview-stage *) {
+  color: #1E293B;
+}
+
+.dcvc-admin-cool :is(.text-slate-400, .text-gray-400):not(:is(.dcvc-preview-stage *, .bg-slate-900 *, .bg-slate-950 *, .bg-purple-950 *, [class*="from-purple-950"] *, [class*="from-slate-9"] *)) {
+  color: #475569;
+}
+
+.dcvc-admin-cool :is(.text-slate-500, .text-gray-500):not(:is(.dcvc-preview-stage *, .bg-slate-900 *, .bg-slate-950 *, .bg-purple-950 *, [class*="from-purple-950"] *, [class*="from-slate-9"] *)) {
+  color: #334155;
+}
+
+.dcvc-admin-cool :is(.text-slate-600, .text-gray-600):not(:is(.dcvc-preview-stage *, .bg-slate-900 *, .bg-slate-950 *, .bg-purple-950 *, [class*="from-purple-950"] *, [class*="from-slate-9"] *)) {
+  color: #1E293B;
+}
+
+.dcvc-preview-stage .bg-white {
+  background-color: #FFFFFF;
+}
+
+/* ===== Mobile Horizontal Swipe Carousel ===== */
+.mobile-card-scroll {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  touch-action: pan-y pan-x;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.mobile-card-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Carousel dots indicator */
+.carousel-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 12px;
+}
+.carousel-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #d1d5db;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+.carousel-dot.active {
+  background: #5A1E65;
+  width: 20px;
+  border-radius: 4px;
+}
+
+/* ==========================================================================
+   UNIVERSAL BUTTON & CTA MULTI-LANGUAGE RESILIENCE SYSTEM
+   Ensures text never overflows, clips awkwardly, or spills outside buttons
+   across all supported languages (Spanish, German, Vietnamese, Tagalog, etc.)
+   ========================================================================== */
+
+/* 1. All buttons, CTA links, and button pills must be resilient flex containers */
+button,
+a.btn-primary,
+a.btn-secondary,
+a.btn-vibrant-coral,
+a.btn-dark,
+.btn-primary,
+.btn-secondary,
+.btn-vibrant-coral,
+.btn-dark,
+[class*="btn-"],
+.nav-bar-btn,
+.nav-donate-btn,
+.nav-support-btn,
+[role="button"] {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: auto;
+}
+
+/* 2. All child elements (spans, fonts, text nodes) inside any button */
+button *,
+a.btn-primary *,
+a.btn-secondary *,
+a.btn-vibrant-coral *,
+a.btn-dark *,
+.btn-primary *,
+.btn-secondary *,
+.btn-vibrant-coral *,
+.btn-dark *,
+[class*="btn-"] *,
+.nav-bar-btn *,
+.nav-donate-btn *,
+.nav-support-btn *,
+[role="button"] * {
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+/* 3. Global Translated state rules (Google Translate and DCVC Language Switch) */
+html.translated-ltr button,
+html.translated-rtl button,
+html:not([lang="en"]) button,
+html.translated-ltr a[class*="rounded-"],
+html.translated-rtl a[class*="rounded-"],
+html:not([lang="en"]) a[class*="rounded-"],
+html.translated-ltr [class*="btn-"],
+html.translated-rtl [class*="btn-"],
+html:not([lang="en"]) [class*="btn-"],
+html.translated-ltr .nav-bar-btn,
+html.translated-rtl .nav-bar-btn,
+html:not([lang="en"]) .nav-bar-btn,
+html.translated-ltr .nav-donate-btn,
+html.translated-rtl .nav-donate-btn,
+html:not([lang="en"]) .nav-donate-btn {
+  white-space: normal !important;
+  text-wrap: balance !important;
+  overflow-wrap: break-word !important;
+  word-break: normal !important;
+  hyphens: auto !important;
+  font-size: clamp(0.72rem, 2.4vw, 0.9rem) !important;
+  line-height: 1.25 !important;
+  height: auto !important;
+  min-height: min-content !important;
+}
+
+html.translated-ltr button *,
+html.translated-rtl button *,
+html:not([lang="en"]) button *,
+html.translated-ltr a[class*="rounded-"] *,
+html.translated-rtl a[class*="rounded-"] *,
+html:not([lang="en"]) a[class*="rounded-"] *,
+html.translated-ltr [class*="btn-"] *,
+html.translated-rtl [class*="btn-"] *,
+html:not([lang="en"]) [class*="btn-"] *,
+html.translated-ltr .nav-bar-btn *,
+html.translated-rtl .nav-bar-btn *,
+html:not([lang="en"]) .nav-bar-btn *,
+html.translated-ltr .nav-donate-btn *,
+html.translated-rtl .nav-donate-btn *,
+html:not([lang="en"]) .nav-donate-btn * {
+  white-space: normal !important;
+  overflow-wrap: break-word !important;
+  word-break: normal !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
+  max-width: 100% !important;
+}
+
 
 
 

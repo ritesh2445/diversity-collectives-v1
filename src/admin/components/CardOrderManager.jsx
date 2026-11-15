@@ -17,6 +17,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { cmsStore } from '../../services/cmsStore';
+import { publishAdminSitePatch } from '../../services/liveSync';
 
 export default function CardOrderManager() {
   const [collection, setCollection] = useState('programs'); // 'programs' | 'events' | 'resources' | 'board' | 'milestones'
@@ -25,9 +26,11 @@ export default function CardOrderManager() {
   const [draggedIdx, setDraggedIdx] = useState(null);
   const [dragOverIdx, setDragOverIdx] = useState(null);
 
-  // Load items from cmsStore when collection changes
+  // Load items from cmsStore when collection changes or CMS updates
   useEffect(() => {
     loadCollectionItems(collection);
+    const unsub = cmsStore.subscribe(() => loadCollectionItems(collection));
+    return unsub;
   }, [collection]);
 
   const loadCollectionItems = (col) => {
@@ -41,6 +44,10 @@ export default function CardOrderManager() {
       const allStaff = cmsStore.getStaff() || [];
       const boardOnly = allStaff.filter(s => s.category === 'board');
       setItems(boardOnly);
+    } else if (col === 'sponsors') {
+      setItems(cmsStore.getSponsors() || []);
+    } else if (col === 'trainings') {
+      setItems(cmsStore.getTrainings() || []);
     } else if (col === 'milestones') {
       setItems(cmsStore.getMemoryLane() || []);
     }
@@ -82,7 +89,7 @@ export default function CardOrderManager() {
     setDragOverIdx(null);
   };
 
-  const handleSaveOrder = () => {
+  const handleSaveOrder = async () => {
     if (collection === 'programs') {
       cmsStore.savePrograms(items);
     } else if (collection === 'events') {
@@ -93,11 +100,20 @@ export default function CardOrderManager() {
       const allStaff = cmsStore.getStaff() || [];
       const nonBoard = allStaff.filter(s => s.category !== 'board');
       cmsStore.saveStaff([...nonBoard, ...items]);
+    } else if (collection === 'sponsors') {
+      cmsStore.saveSponsors(items);
+    } else if (collection === 'trainings') {
+      cmsStore.saveTrainings(items);
     } else if (collection === 'milestones') {
       cmsStore.saveMemoryLane(items);
     }
 
-    setSaveStatus(`Order of ${collection} saved and published to live website!`);
+    const result = await publishAdminSitePatch({ cmsData: cmsStore.getData() });
+    setSaveStatus(
+      result.syncedToServer
+        ? `Order of ${collection} published live (v${result.version}) — instant across all open tabs!`
+        : `Order of ${collection} updated in this browser.`
+    );
     setTimeout(() => setSaveStatus(''), 4000);
   };
 
@@ -109,13 +125,15 @@ export default function CardOrderManager() {
     if (collection === 'programs') return item.tagline || item.audience;
     if (collection === 'events') return `${item.month} ${item.day}, ${item.year} · ${item.location}`;
     if (collection === 'board') return item.role;
+    if (collection === 'sponsors') return item.role || item.url;
+    if (collection === 'trainings') return `${item.badge || 'Training'} · ${item.duration || 'Tailored Session'}`;
     if (collection === 'resources') return `${item.items?.length || 0} providers`;
     if (collection === 'milestones') return `Year ${item.year} · ${item.stat}`;
     return '';
   };
 
   const getItemImage = (item) => {
-    return item.heroImage || item.image || item.photo || null;
+    return item.heroImage || item.image || item.photo || item.logo || null;
   };
 
   return (
@@ -162,8 +180,10 @@ export default function CardOrderManager() {
         {[
           { id: 'programs', label: 'Programs Cards', icon: BookOpen },
           { id: 'events', label: 'Events Cards', icon: Calendar },
-          { id: 'board', label: 'Board of Directors Cards', icon: Award },
-          { id: 'resources', label: 'Resource Groups', icon: Users },
+          { id: 'sponsors', label: 'Sponsors & Partners', icon: Sparkles },
+          { id: 'trainings', label: 'P.R.I.D.E. Trainings', icon: Award },
+          { id: 'board', label: 'Board of Directors Cards', icon: Users },
+          { id: 'resources', label: 'Resource Groups', icon: Layers },
           { id: 'milestones', label: 'Memory Lane Milestones', icon: Sparkles }
         ].map((tab) => {
           const TabIcon = tab.icon;

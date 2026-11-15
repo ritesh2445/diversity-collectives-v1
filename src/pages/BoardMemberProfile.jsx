@@ -86,7 +86,7 @@ export default function BoardMemberProfile() {
   const portraitUrl = member.photo || member.image || '/images/volunteers.jpg';
   const focusAreas = member.focusAreas && member.focusAreas.length > 0
     ? member.focusAreas
-    : ['501(c)(3) Institutional Stewardship', 'LGBTQ+ Sanctuary Advocacy', 'Community Partnership Building', 'Ventura County Equity'];
+    : ['501(c)(3) Institutional Stewardship', 'LGBTQ+ Center Advocacy', 'Community Partnership Building', 'Ventura County Equity'];
   const paragraphs = member.extendedBio && member.extendedBio.length > 0
     ? member.extendedBio
     : [member.bio];
@@ -388,7 +388,7 @@ export default function BoardMemberProfile() {
               to="/donate"
               className="flex-1 sm:flex-initial text-center px-5 py-2.5 rounded-full bg-white hover:bg-purple-50 border border-purple-300 text-[#5A1E65] text-xs font-extrabold transition-all shadow-2xs"
             >
-              Support Our Sanctuary
+              Support Our Center
             </Link>
           </div>
         </div>

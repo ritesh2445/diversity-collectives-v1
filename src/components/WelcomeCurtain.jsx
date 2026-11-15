@@ -16,6 +16,9 @@ export default function WelcomeCurtain() {
 
   const handleDismiss = useCallback(() => {
     setFadingOut(true);
+    try {
+      sessionStorage.setItem('dcvc_welcome_seen', 'true');
+    } catch { }
     setTimeout(() => {
       setAnimating(false);
       setFadingOut(false);
@@ -67,7 +70,7 @@ export default function WelcomeCurtain() {
     { color: '#7C3AED', startDeg: 160, endDeg: 140 }, // Royal Violet
     { color: '#2563EB', startDeg: 140, endDeg: 120 }, // Sapphire Blue
     { color: '#0284C7', startDeg: 120, endDeg: 100 }, // Ocean Azure
-    { color: '#0D9488', startDeg: 100, endDeg: 80 },  // Sanctuary Teal
+    { color: '#0D9488', startDeg: 100, endDeg: 80 },  // Center Teal
     { color: '#10B981', startDeg: 80, endDeg: 60 },   // Emerald Green
     { color: '#FBBF24', startDeg: 60, endDeg: 40 },   // Sunlight Gold
     { color: '#F97316', startDeg: 40, endDeg: 20 },   // Sunset Tangerine
@@ -150,8 +153,8 @@ export default function WelcomeCurtain() {
         </svg>
       </div>
 
-      {/* Top Skip Button */}
-      <div className="absolute top-4 sm:top-6 right-4 sm:right-6 z-50 pointer-events-auto">
+      {/* Top Skip Button - Placed below header navbar on mobile so it never occludes mobile menu */}
+      <div className="absolute top-16 sm:top-6 right-4 sm:right-6 z-50 pointer-events-auto">
         <button
           type="button"
           onClick={handleDismiss}

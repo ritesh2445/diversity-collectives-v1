@@ -20,7 +20,7 @@ export default function ImagePicker({
   onChange, 
   label = 'Picture / Cover Image',
   aspectRatio = 'aspect-[16/9]',
-  helpText = 'Upload a picture from your computer or choose from the DCVC Sanctuary library.'
+  helpText = 'Upload a picture from your computer or choose from the DCVC Center library.'
 }) {
   const [showLibrary, setShowLibrary] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
@@ -226,7 +226,7 @@ export default function ImagePicker({
               <div>
                 <h3 className="font-extrabold text-slate-900 text-base flex items-center gap-2">
                   <FolderOpen className="w-5 h-5 text-[#5A1E65]" />
-                  <span>DCVC Sanctuary Photo Library</span>
+                  <span>DCVC Center Photo Library</span>
                 </h3>
                 <p className="text-xs text-slate-500">
                   Select an authentic, pre-optimized community photo to use for this item.

@@ -13,6 +13,7 @@ import {
   staffMembers,
   sponsorsList,
   trainingCourses,
+  communityGroups,
   newsArticles,
   galleryPhotos,
   memoryLaneMilestones,
@@ -24,8 +25,16 @@ import {
   preloadImageUrls
 } from '../lib/sanity.js';
 import { setActiveHeroTheme } from './heroThemeStore.js';
+import {
+  DEFAULT_PAGE_BLOCKS,
+  normalizePageLayoutBlocks,
+  replaceSanctuaryWithCenter
+} from '../data/siteDefaults.js';
+import { normalizeCmsEvent, normalizeCmsEventList } from '../utils/eventDates.js';
+import { SYNC_EVENTS, hasPublishedSiteState, broadcastPatch, fetchAndApplyLiveSiteState } from './liveSync.js';
 
 const CMS_STORAGE_KEY = 'dcvc_live_cms_data';
+const HERO_THEME_STORAGE_KEY = 'dcvc_active_hero_theme';
 const LAYOUT_STORAGE_KEY = 'dcvc_admin_custom_layout';
 const THEME_STORAGE_KEY = 'dcvc_site_theme_settings';
 
@@ -85,7 +94,7 @@ export const INITIAL_CMS_DATA = {
     hours: orgInfo.hours || "1:00 PM – 5:00 PM Weekdays (Drop-ins & Testing)",
     emergencyCrisisNotice: "24/7 LGBTQ+ Suicide & Crisis Lifeline: Dial 988 or text 'START' to 678-678 (Trevor Project).",
     bannerAlertActive: true,
-    bannerAlertText: "Sanctuary Open Today · Mon–Fri 1:00 PM – 5:00 PM · Free HIV/STI Screenings",
+    bannerAlertText: "Center Open Today · Mon–Fri 1:00 PM – 5:00 PM · HIV/STI Screenings 1st Mon 3–7 PM",
     bannerAlertLink: "/events",
     donationUrl: orgInfo.donationUrl || "/donate",
     volunteerUrl: orgInfo.volunteerUrl || "/volunteer",
@@ -94,11 +103,17 @@ export const INITIAL_CMS_DATA = {
     youtube: orgInfo.socials?.youtube || "https://www.youtube.com/@diversitycollectivevc"
   },
   programs: programsList || [],
-  events: liveEvents || [],
-  news: newsArticles || [],
+  events: normalizeCmsEventList(liveEvents || []),
+  news: (newsArticles || []).map((n, i) => ({
+    id: n.id || n.slug || `news-${i}`,
+    ...n,
+    body: n.body || n.content || '',
+    content: n.content || (Array.isArray(n.body) ? n.body.join('\n\n') : (n.body || n.excerpt || ''))
+  })),
   resources: resourcesDirectory || [],
   sponsors: sponsorsList || [],
   trainings: trainingCourses || [],
+  communityGroups: communityGroups || [],
   staff: [
     ...(staffMembers || []).map(s => ({ ...s, category: 'staff' })),
     ...(boardMembers || []).map(b => ({ ...b, category: 'board' }))
@@ -116,7 +131,12 @@ class CmsStoreEngine {
       window.addEventListener('storage', (e) => {
         if (e.key === CMS_STORAGE_KEY && e.newValue) {
           try {
-            this.data = JSON.parse(e.newValue);
+            const parsed = JSON.parse(e.newValue);
+            this.data = {
+              ...INITIAL_CMS_DATA,
+              ...parsed,
+              events: normalizeCmsEventList(parsed.events || INITIAL_CMS_DATA.events)
+            };
             this.notify();
           } catch (err) {
             console.error('[CMS Store] Cross-tab parse error:', err);
@@ -124,10 +144,31 @@ class CmsStoreEngine {
         }
       });
 
-      // Automatically hydrate from Sanity Edge APICDN in the background on load
+      window.addEventListener(SYNC_EVENTS.CMS_CHANGED, (e) => {
+        if (e.detail && e.detail._fromCmsStore) return;
+        this.data = this.loadData();
+        this.notify();
+      });
+
+      // 1. Fetch live published site state from Cloudflare Worker backend on startup
+      fetchAndApplyLiveSiteState().catch(() => {});
+
+      // 2. Poll server state on tab focus / visibility
+      window.addEventListener('focus', () => {
+        fetchAndApplyLiveSiteState().catch(() => {});
+      });
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+          fetchAndApplyLiveSiteState().catch(() => {});
+        }
+      });
+
+      // 3. Hydrate from Sanity Edge APICDN only when Admin has NOT published custom live state
       setTimeout(() => {
-        this.syncFromSanity().catch(() => {});
-      }, 0);
+        if (!hasPublishedSiteState()) {
+          this.syncFromSanity().catch(() => {});
+        }
+      }, 350);
     }
   }
 
@@ -137,6 +178,7 @@ class CmsStoreEngine {
    */
   async syncFromSanity(force = false) {
     if (typeof window === 'undefined') return null;
+    if (!force && hasPublishedSiteState()) return this.data;
     if (this._syncPromise && !force) return this._syncPromise;
 
     this._syncPromise = (async () => {
@@ -191,22 +233,21 @@ class CmsStoreEngine {
 
       // 2. Events
       if (Array.isArray(sanityData.events) && sanityData.events.length > 0) {
-        nextData.events = sanityData.events.map((e) => {
+        nextData.events = normalizeCmsEventList(sanityData.events.map((e) => {
           const fb = evtFallbacks.get(e.slug) || {};
           const img = e.image
             ? optimizeSanityImageUrl(e.image, { width: 1200, quality: 85 })
             : fb.image || '/images/community-gathering.jpg';
           if (img.includes('cdn.sanity.io')) preloadUrls.push(img);
-          const dateTokens = String(e.date || '').replace(/,/g, '').split(/\s+/);
-          return {
+          return normalizeCmsEvent({
             ...fb,
             id: e._id,
             slug: e.slug,
             title: e.title,
             date: e.date,
-            month: e.month || fb.month || (dateTokens[0] ? dateTokens[0].slice(0, 3).toUpperCase() : 'TBD'),
-            day: e.day || fb.day || (dateTokens[1] ? dateTokens[1].padStart(2, '0') : '01'),
-            year: e.year || fb.year || '2026',
+            month: e.month || fb.month,
+            day: e.day || fb.day,
+            year: e.year || fb.year,
             time: e.time || fb.time || 'Check schedule',
             category: e.category || fb.category || 'Support',
             location: e.location || fb.location,
@@ -220,8 +261,8 @@ class CmsStoreEngine {
             cancellationNotice: e.cancellationReason || '',
             featured: typeof e.featured === 'boolean' ? e.featured : !!fb.featured,
             image: img
-          };
-        });
+          });
+        }));
       }
 
       // 3. Board & Staff
@@ -329,7 +370,7 @@ class CmsStoreEngine {
             ...fb,
             id: g._id || fb.id || `gal-${idx + 1}`,
             title: g.title,
-            category: g.eventTag || fb.category || 'Sanctuary & Community',
+            category: g.eventTag || fb.category || 'Center & Community',
             year: g.year || fb.year || '2026',
             quote: g.caption || fb.quote || '',
             description: g.alt || g.caption || fb.description || g.title,
@@ -385,81 +426,92 @@ class CmsStoreEngine {
           bannerAlertLink: ss.announcementBanner?.linkUrl || nextData.settings.bannerAlertLink
         };
 
-        // Sync Hero Props & Section Order from Sanity
-        try {
-          const existingRaw = localStorage.getItem(LAYOUT_STORAGE_KEY);
-          const existingBlocks = existingRaw ? JSON.parse(existingRaw) : [];
-          let nextBlocks = Array.isArray(existingBlocks) ? [...existingBlocks] : [];
+        // Sync Hero Props & Section Order from Sanity only if no Admin layout/hero exists locally
+        const hasLocalLayout = Boolean(localStorage.getItem(LAYOUT_STORAGE_KEY));
+        const hasLocalHero = Boolean(localStorage.getItem(HERO_THEME_STORAGE_KEY));
+        if (!hasLocalLayout) {
+          try {
+            let nextBlocks = normalizePageLayoutBlocks(DEFAULT_PAGE_BLOCKS);
+            const existingByType = new Map(nextBlocks.map((b) => [b.type, b]));
 
-          if (Array.isArray(ss.sections) && ss.sections.length > 0) {
-            const heroExistingProps = nextBlocks.find((b) => b.type === 'hero_banner')?.props || {};
-            nextBlocks = ss.sections.map((sec, idx) => ({
-              id: `block-${sec.sectionId || idx}`,
-              type: sec.sectionId,
-              label: sec.label || sec.sectionId,
-              enabled: sec.visible !== false,
-              props: sec.sectionId === 'hero_banner' ? { ...heroExistingProps } : undefined
-            }));
-          }
-
-          if (ss.hero) {
-            const heroImg = ss.hero.spotlightImage
-              ? optimizeSanityImageUrl(ss.hero.spotlightImage, { width: 1400, quality: 88 })
-              : null;
-            if (heroImg) preloadUrls.unshift(heroImg);
-
-            const heroPatch = {
-              ...(ss.hero.titleLine1 ? { titleLine1: ss.hero.titleLine1 } : {}),
-              ...(ss.hero.titleAccentWord ? { titleAccentWord: ss.hero.titleAccentWord } : {}),
-              ...(ss.hero.titleLine2 ? { titleLine2: ss.hero.titleLine2 } : {}),
-              ...(ss.hero.subtitle ? { subtitle: ss.hero.subtitle } : {}),
-              ...(ss.hero.primaryCtaText ? { primaryCtaText: ss.hero.primaryCtaText } : {}),
-              ...(ss.hero.primaryCtaLink ? { primaryCtaLink: ss.hero.primaryCtaLink } : {}),
-              ...(ss.hero.secondaryCtaText ? { secondaryCtaText: ss.hero.secondaryCtaText } : {}),
-              ...(ss.hero.secondaryCtaLink ? { secondaryCtaLink: ss.hero.secondaryCtaLink } : {}),
-              ...(ss.hero.emailAddress ? { emailAddress: ss.hero.emailAddress } : {}),
-              ...(heroImg ? { spotlightImage: heroImg } : {}),
-              ...(ss.hero.cardTitle ? { cardTitle: ss.hero.cardTitle } : {}),
-              ...(ss.hero.cardSubtitle ? { cardSubtitle: ss.hero.cardSubtitle } : {}),
-              ...(ss.hero.helplineText ? { helplineText: ss.hero.helplineText } : {})
-            };
-
-            const heroIdx = nextBlocks.findIndex((b) => b.type === 'hero_banner');
-            if (heroIdx >= 0) {
-              nextBlocks[heroIdx] = {
-                ...nextBlocks[heroIdx],
-                props: { ...(nextBlocks[heroIdx].props || {}), ...heroPatch }
-              };
-            } else {
-              nextBlocks.unshift({
-                id: 'block-hero_banner',
-                type: 'hero_banner',
-                label: 'Hero Sanctuary Banner',
-                enabled: true,
-                props: heroPatch
+            const sanityHasPartnerships = Array.isArray(ss.sections) && ss.sections.some((s) => s.sectionId === 'partnerships_section');
+            if (Array.isArray(ss.sections) && ss.sections.length > 0 && sanityHasPartnerships) {
+              nextBlocks = ss.sections.map((sec, idx) => {
+                const matched = existingByType.get(sec.sectionId);
+                return {
+                  id: matched?.id || `block-${sec.sectionId || idx}`,
+                  type: sec.sectionId,
+                  title: sec.label || matched?.title || sec.sectionId,
+                  label: sec.label || matched?.label || matched?.title || sec.sectionId,
+                  enabled: sec.visible !== false,
+                  props: { ...(matched?.props || {}) }
+                };
+              });
+            } else if (Array.isArray(ss.sections) && ss.sections.length > 0) {
+              // Legacy Sanity document predates partnerships_section — keep updated homepage order
+              // while syncing label & visibility overrides cleanly for matching blocks
+              const sanityById = new Map(ss.sections.map((s) => [s.sectionId, s]));
+              nextBlocks = nextBlocks.map((block) => {
+                const sec = sanityById.get(block.type);
+                if (!sec) return block;
+                return {
+                  ...block,
+                  title: sec.label || block.title,
+                  label: sec.label || block.label || block.title,
+                  enabled: sec.visible !== false
+                };
               });
             }
 
-            if (ss.hero.heroTheme) {
-              setActiveHeroTheme(ss.hero.heroTheme);
-            }
-          }
+            if (ss.hero) {
+              const heroImg = ss.hero.spotlightImage
+                ? optimizeSanityImageUrl(ss.hero.spotlightImage, { width: 1400, quality: 88 })
+                : null;
+              if (heroImg) preloadUrls.unshift(heroImg);
 
-          if (nextBlocks.length > 0) {
-            localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(nextBlocks));
-            window.dispatchEvent(new Event('dcvc_layout_updated'));
+              const heroPatch = {
+                ...(ss.hero.titleLine1 ? { titleLine1: ss.hero.titleLine1 } : {}),
+                ...(ss.hero.titleAccentWord ? { titleAccentWord: ss.hero.titleAccentWord } : {}),
+                ...(ss.hero.titleLine2 ? { titleLine2: ss.hero.titleLine2 } : {}),
+                ...(ss.hero.subtitle ? { subtitle: ss.hero.subtitle, description: ss.hero.subtitle } : {}),
+                ...(ss.hero.primaryCtaText ? { primaryCtaText: ss.hero.primaryCtaText } : {}),
+                ...(ss.hero.primaryCtaLink ? { primaryCtaLink: ss.hero.primaryCtaLink } : {}),
+                ...(ss.hero.secondaryCtaText ? { secondaryCtaText: ss.hero.secondaryCtaText } : {}),
+                ...(ss.hero.secondaryCtaLink ? { secondaryCtaLink: ss.hero.secondaryCtaLink } : {}),
+                ...(ss.hero.emailAddress ? { emailAddress: ss.hero.emailAddress } : {}),
+                ...(heroImg ? { spotlightImage: heroImg, photoUrl: heroImg } : {}),
+                ...(ss.hero.cardTitle ? { cardTitle: ss.hero.cardTitle } : {}),
+                ...(ss.hero.cardSubtitle ? { cardSubtitle: ss.hero.cardSubtitle } : {}),
+                ...(ss.hero.helplineText ? { helplineText: ss.hero.helplineText } : {})
+              };
+
+              const heroIdx = nextBlocks.findIndex((b) => b.type === 'hero_banner');
+              if (heroIdx >= 0) {
+                nextBlocks[heroIdx] = {
+                  ...nextBlocks[heroIdx],
+                  props: { ...(nextBlocks[heroIdx].props || {}), ...heroPatch }
+                };
+              }
+            }
+
+            nextBlocks = normalizePageLayoutBlocks(nextBlocks);
+            if (nextBlocks.length > 0) {
+              localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(nextBlocks));
+              window.dispatchEvent(new Event(SYNC_EVENTS.LAYOUT_CHANGED));
+            }
+          } catch (err) {
+            console.warn('[Sanity Sync] Layout merge skipped:', err.message);
           }
-        } catch (err) {
-          console.warn('[Sanity Sync] Layout merge skipped:', err.message);
         }
 
-        // Sync Colors, Buttons & Fonts from Sanity
-        if (ss.theme) {
+        if (!hasLocalHero && ss.hero?.heroTheme) {
+          setActiveHeroTheme(ss.hero.heroTheme);
+        }
+
+        // Sync Colors, Buttons & Fonts from Sanity only if no Admin theme is saved locally
+        if (ss.theme && !localStorage.getItem(THEME_STORAGE_KEY)) {
           try {
-            const rawTheme = localStorage.getItem(THEME_STORAGE_KEY);
-            const curTheme = rawTheme ? JSON.parse(rawTheme) : {};
             const mergedTheme = {
-              ...curTheme,
               ...(ss.theme.btnPrimaryBg ? { btnPrimaryBg: ss.theme.btnPrimaryBg, btnPrimaryBgGradient: ss.theme.btnPrimaryBg } : {}),
               ...(ss.theme.btnPrimaryText ? { btnPrimaryText: ss.theme.btnPrimaryText } : {}),
               ...(ss.theme.btnSecondaryBg ? { btnSecondaryBg: ss.theme.btnSecondaryBg } : {}),
@@ -475,21 +527,8 @@ class CmsStoreEngine {
               ...(ss.theme.bodyFont ? { bodyFont: ss.theme.bodyFont } : {})
             };
             localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(mergedTheme));
-            const root = document.documentElement;
-            if (mergedTheme.btnPrimaryBg) root.style.setProperty('--dcvc-btn-primary-bg', mergedTheme.btnPrimaryBg);
-            if (mergedTheme.btnPrimaryText) root.style.setProperty('--dcvc-btn-primary-text', mergedTheme.btnPrimaryText);
-            if (mergedTheme.btnPrimaryRadius) root.style.setProperty('--dcvc-btn-radius', mergedTheme.btnPrimaryRadius);
-            if (mergedTheme.btnSecondaryBg) root.style.setProperty('--dcvc-btn-secondary-bg', mergedTheme.btnSecondaryBg);
-            if (mergedTheme.btnSecondaryText) root.style.setProperty('--dcvc-btn-secondary-text', mergedTheme.btnSecondaryText);
-            if (mergedTheme.btnDonateBg) root.style.setProperty('--dcvc-btn-donate-bg', mergedTheme.btnDonateBg);
-            if (mergedTheme.btnDonateText) root.style.setProperty('--dcvc-btn-donate-text', mergedTheme.btnDonateText);
-            if (mergedTheme.navBtnText) root.style.setProperty('--dcvc-nav-text', mergedTheme.navBtnText);
-            if (mergedTheme.navBtnActiveBg) root.style.setProperty('--dcvc-nav-active-bg', mergedTheme.navBtnActiveBg);
-            if (mergedTheme.navBtnActiveText) root.style.setProperty('--dcvc-nav-active-text', mergedTheme.navBtnActiveText);
-            if (mergedTheme.headingFont) root.style.setProperty('--font-display', `'${mergedTheme.headingFont}', sans-serif`);
-            if (mergedTheme.bodyFont) root.style.setProperty('--font-sans', `'${mergedTheme.bodyFont}', sans-serif`);
-            if (mergedTheme.cardRadius) root.style.setProperty('--dcvc-card-radius', mergedTheme.cardRadius);
             window.dispatchEvent(new CustomEvent('SITE_THEME_UPDATED', { detail: mergedTheme }));
+            window.dispatchEvent(new CustomEvent(SYNC_EVENTS.THEME_CHANGED, { detail: mergedTheme }));
           } catch (err) {
             console.warn('[Sanity Sync] Theme merge skipped:', err.message);
           }
@@ -497,7 +536,7 @@ class CmsStoreEngine {
       }
 
       if (preloadUrls.length > 0) preloadImageUrls(preloadUrls);
-      this.saveData(nextData);
+      this.saveData(nextData, { broadcast: false });
       return nextData;
     })();
 
@@ -534,15 +573,30 @@ class CmsStoreEngine {
         this.saveData(INITIAL_CMS_DATA);
         return INITIAL_CMS_DATA;
       }
-      const parsed = JSON.parse(stored);
+      const parsed = replaceSanctuaryWithCenter(JSON.parse(stored));
+      if (stored.includes('anctuary')) {
+        try {
+          localStorage.setItem(CMS_STORAGE_KEY, JSON.stringify(parsed));
+        } catch {}
+      }
       // Ensure all primary collections exist
       return {
         ...INITIAL_CMS_DATA,
         ...parsed,
         settings: { ...INITIAL_CMS_DATA.settings, ...(parsed.settings || {}) },
         programs: parsed.programs || INITIAL_CMS_DATA.programs,
-        events: parsed.events || INITIAL_CMS_DATA.events,
-        news: parsed.news || INITIAL_CMS_DATA.news,
+        events: normalizeCmsEventList(parsed.events || INITIAL_CMS_DATA.events),
+        sponsors: parsed.sponsors || INITIAL_CMS_DATA.sponsors,
+        trainings: parsed.trainings || INITIAL_CMS_DATA.trainings,
+        communityGroups: parsed.communityGroups || INITIAL_CMS_DATA.communityGroups,
+        news: (parsed.news && Array.isArray(parsed.news) && parsed.news.length > 0)
+          ? parsed.news.map((n, i) => ({
+              id: n.id || n.slug || `news-${i}`,
+              ...n,
+              body: n.body || n.content || '',
+              content: n.content || (Array.isArray(n.body) ? n.body.join('\n\n') : (n.body || n.excerpt || ''))
+            }))
+          : INITIAL_CMS_DATA.news,
         resources: parsed.resources || INITIAL_CMS_DATA.resources,
         staff: parsed.staff || INITIAL_CMS_DATA.staff,
         gallery: parsed.gallery || INITIAL_CMS_DATA.gallery,
@@ -553,8 +607,13 @@ class CmsStoreEngine {
     }
   }
 
-  saveData(data) {
-    this.data = { ...data, lastUpdated: new Date().toISOString() };
+  saveData(data, { broadcast = true } = {}) {
+    const cleanData = {
+      ...data,
+      events: normalizeCmsEventList(data.events || this.data.events || []),
+      lastUpdated: new Date().toISOString()
+    };
+    this.data = cleanData;
     if (typeof localStorage !== 'undefined') {
       try {
         localStorage.setItem(CMS_STORAGE_KEY, JSON.stringify(this.data));
@@ -564,7 +623,12 @@ class CmsStoreEngine {
     }
     this.notify();
     if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('dcvc-cms-updated', { detail: this.data }));
+      window.dispatchEvent(new CustomEvent(SYNC_EVENTS.CMS_CHANGED, {
+        detail: { ...this.data, _fromCmsStore: true }
+      }));
+    }
+    if (broadcast) {
+      broadcastPatch({ cmsData: this.data });
     }
   }
 
@@ -647,6 +711,12 @@ class CmsStoreEngine {
     return existing;
   }
 
+  savePrograms(programs) {
+    if (!Array.isArray(programs)) return this.data.programs;
+    this.saveData({ ...this.data, programs });
+    return programs;
+  }
+
   deleteProgram(slugOrId) {
     const existing = this.data.programs.filter(p => p.slug !== slugOrId && p.id !== slugOrId);
     this.saveData({ ...this.data, programs: existing });
@@ -664,17 +734,24 @@ class CmsStoreEngine {
     const existing = [...this.data.events];
     const index = existing.findIndex(e => e.id === event.id || e.slug === event.slug);
     if (index >= 0) {
-      existing[index] = { ...existing[index], ...event };
+      existing[index] = normalizeCmsEvent({ ...existing[index], ...event });
     } else {
-      const newEvent = {
+      const newEvent = normalizeCmsEvent({
         ...event,
         id: event.id || `evt-${Date.now()}`,
         slug: event.slug || (event.title || 'event').toLowerCase().replace(/[^a-z0-9]+/g, '-')
-      };
+      });
       existing.unshift(newEvent);
     }
     this.saveData({ ...this.data, events: existing });
     return existing;
+  }
+
+  saveEvents(events) {
+    if (!Array.isArray(events)) return this.data.events;
+    const normalized = normalizeCmsEventList(events);
+    this.saveData({ ...this.data, events: normalized });
+    return normalized;
   }
 
   toggleEventCancellation(eventId, cancellationNotice = '') {
@@ -707,23 +784,40 @@ class CmsStoreEngine {
   }
 
   saveNews(article) {
+    if (!article) return this.data.news;
     const existing = [...this.data.news];
-    const index = existing.findIndex(n => n.id === article.id || n.slug === article.slug);
+    const targetId = article.id || article.originalId;
+    const targetSlug = article.slug || article.originalSlug;
+
+    // Safely match without allowing undefined === undefined
+    const index = existing.findIndex(n => {
+      if (targetId && n.id && n.id === targetId) return true;
+      if (targetSlug && n.slug && n.slug === targetSlug) return true;
+      if (article.slug && n.slug && n.slug === article.slug) return true;
+      if (article.title && n.title && n.title.toLowerCase().trim() === article.title.toLowerCase().trim()) return true;
+      return false;
+    });
+
+    const normalizedArticle = {
+      ...article,
+      id: article.id || (index >= 0 ? existing[index].id : null) || article.slug || `news-${Date.now()}`,
+      slug: article.slug || (index >= 0 ? existing[index].slug : null) || (article.title || 'article').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+      body: article.body || article.content || '',
+      content: article.content || article.body || '',
+      publishedAt: article.publishedAt || article.date || (index >= 0 ? existing[index].publishedAt : null) || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    };
+
     if (index >= 0) {
-      existing[index] = { ...existing[index], ...article };
+      existing[index] = { ...existing[index], ...normalizedArticle };
     } else {
-      const newArticle = {
-        ...article,
-        id: article.id || `news-${Date.now()}`,
-        slug: article.slug || (article.title || 'article').toLowerCase().replace(/[^a-z0-9]+/g, '-')
-      };
-      existing.unshift(newArticle);
+      existing.unshift(normalizedArticle);
     }
     this.saveData({ ...this.data, news: existing });
     return existing;
   }
 
   deleteNews(articleId) {
+    if (!articleId) return this.data.news;
     const existing = this.data.news.filter(n => n.id !== articleId && n.slug !== articleId);
     this.saveData({ ...this.data, news: existing });
     return existing;
@@ -752,6 +846,12 @@ class CmsStoreEngine {
     return existing;
   }
 
+  saveResources(resources) {
+    if (!Array.isArray(resources)) return this.data.resources;
+    this.saveData({ ...this.data, resources });
+    return resources;
+  }
+
   deleteResource(resourceId) {
     const existing = this.data.resources.filter(r => r.id !== resourceId);
     this.saveData({ ...this.data, resources: existing });
@@ -765,15 +865,19 @@ class CmsStoreEngine {
     return this.data.staff;
   }
 
-  saveStaff(member) {
+  saveStaff(memberOrList) {
+    if (Array.isArray(memberOrList)) {
+      this.saveData({ ...this.data, staff: memberOrList });
+      return memberOrList;
+    }
     const existing = [...this.data.staff];
-    const index = existing.findIndex(s => s.id === member.id || (s.name === member.name && s.category === member.category));
+    const index = existing.findIndex(s => s.id === memberOrList.id || (s.name === memberOrList.name && s.category === memberOrList.category));
     if (index >= 0) {
-      existing[index] = { ...existing[index], ...member };
+      existing[index] = { ...existing[index], ...memberOrList };
     } else {
       const newMember = {
-        ...member,
-        id: member.id || `staff-${Date.now()}`
+        ...memberOrList,
+        id: memberOrList.id || `staff-${Date.now()}`
       };
       existing.push(newMember);
     }
@@ -836,9 +940,124 @@ class CmsStoreEngine {
     return existing;
   }
 
+  saveMemoryLane(milestones) {
+    if (!Array.isArray(milestones)) return this.data.memoryLane;
+    this.saveData({ ...this.data, memoryLane: milestones });
+    return milestones;
+  }
+
   deleteMilestone(year) {
     const existing = this.data.memoryLane.filter(m => m.year !== year);
     this.saveData({ ...this.data, memoryLane: existing });
+    return existing;
+  }
+
+  // --------------------------------------------------------------------------
+  // Sponsors & Partnerships CRUD
+  // --------------------------------------------------------------------------
+  saveSponsor(sponsor) {
+    const existing = [...(this.data.sponsors || sponsorsList || [])];
+    const targetId = sponsor.id || sponsor.name;
+    const index = existing.findIndex(
+      (s) => (s.id && s.id === sponsor.id) || (s.name && s.name === targetId)
+    );
+    if (index >= 0) {
+      existing[index] = { ...existing[index], ...sponsor };
+    } else {
+      existing.unshift({
+        ...sponsor,
+        id: sponsor.id || `sp-${Date.now()}`
+      });
+    }
+    this.saveData({ ...this.data, sponsors: existing });
+    return existing;
+  }
+
+  saveSponsors(sponsors) {
+    if (!Array.isArray(sponsors)) return this.getSponsors();
+    this.saveData({ ...this.data, sponsors });
+    return sponsors;
+  }
+
+  deleteSponsor(idOrName) {
+    const existing = (this.data.sponsors || sponsorsList || []).filter(
+      (s) => s.id !== idOrName && s.name !== idOrName
+    );
+    this.saveData({ ...this.data, sponsors: existing });
+    return existing;
+  }
+
+  // --------------------------------------------------------------------------
+  // P.R.I.D.E. Trainings CRUD
+  // --------------------------------------------------------------------------
+  saveTraining(training) {
+    const existing = [...(this.data.trainings || trainingCourses || [])];
+    const slug =
+      training.slug ||
+      (training.title || 'training').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const index = existing.findIndex(
+      (t) => (t.id && t.id === training.id) || t.slug === slug
+    );
+    if (index >= 0) {
+      existing[index] = { ...existing[index], ...training, slug };
+    } else {
+      existing.unshift({
+        ...training,
+        id: training.id || `trn-${Date.now()}`,
+        slug,
+        learningObjectives: Array.isArray(training.learningObjectives)
+          ? training.learningObjectives
+          : [],
+        materials: Array.isArray(training.materials) ? training.materials : []
+      });
+    }
+    this.saveData({ ...this.data, trainings: existing });
+    return existing;
+  }
+
+  saveTrainings(trainings) {
+    if (!Array.isArray(trainings)) return this.getTrainings();
+    this.saveData({ ...this.data, trainings });
+    return trainings;
+  }
+
+  deleteTraining(slugOrId) {
+    const existing = (this.data.trainings || trainingCourses || []).filter(
+      (t) => t.slug !== slugOrId && t.id !== slugOrId
+    );
+    this.saveData({ ...this.data, trainings: existing });
+    return existing;
+  }
+
+  // --------------------------------------------------------------------------
+  // Community Peer Groups CRUD
+  // --------------------------------------------------------------------------
+  getCommunityGroups() {
+    return this.data.communityGroups || communityGroups || [];
+  }
+
+  saveCommunityGroup(group) {
+    const existing = [...this.getCommunityGroups()];
+    const slug =
+      group.slug ||
+      (group.name || group.title || 'group').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const index = existing.findIndex(
+      (g) => (g.id && g.id === group.id) || g.slug === slug
+    );
+    if (index >= 0) {
+      existing[index] = { ...existing[index], ...group, slug };
+    } else {
+      existing.unshift({ ...group, id: group.id || `grp-${Date.now()}`, slug });
+    }
+    this.saveData({ ...this.data, communityGroups: existing });
+    return existing;
+  }
+
+  deleteCommunityGroup(slugOrId) {
+    const existing = this.getCommunityGroups().filter(
+      (g) => g.slug !== slugOrId && g.id !== slugOrId
+    );
+    this.saveData({ ...this.data, communityGroups: existing });
     return existing;
   }
 }

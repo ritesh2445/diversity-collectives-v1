@@ -217,9 +217,9 @@ export function buildLiveSiteIndex(customSnapshot = null) {
       type: 'Page',
       title: 'Home · Diversity Collective Ventura County',
       subtitle: settings.tagline || 'You Are Always Welcome Here.',
-      snippet: `${settings.name || 'Diversity Collective Ventura County'} — 501(c)(3) nonprofit sanctuary in Ventura, CA (${settings.address || '2471 Portola Road, Suite 100'}). Hours: ${settings.hours || 'Mon–Fri 1:00 PM – 5:00 PM'}.`,
+      snippet: `${settings.name || 'Diversity Collective Ventura County'} — 501(c)(3) nonprofit center in Ventura, CA (${settings.address || '2471 Portola Road, Suite 100'}). Hours: ${settings.hours || 'Mon–Fri 1:00 PM – 5:00 PM'}.`,
       url: '/',
-      keywords: ['home', 'sanctuary', 'hours', 'address', 'welcome', 'portola', 'mission', 'phone', settings.email || 'info@diversitycollective.org']
+      keywords: ['home', 'center', 'hours', 'address', 'welcome', 'portola', 'mission', 'phone', settings.email || 'info@diversitycollective.org']
     },
     {
       id: 'page-about',
@@ -253,7 +253,7 @@ export function buildLiveSiteIndex(customSnapshot = null) {
       type: 'Accessibility',
       title: 'Accessibility & Dyslexia Support Tools',
       subtitle: 'OpenDyslexic, Lexend, Bionic Anchor Reading, Focus Audio & Color Overlays',
-      snippet: 'Open the Accessibility Companion (Alt + A) for Dyslexia Sanctuary Mode, OpenDyslexic & Lexend fonts, Bionic reading anchors, ambient focus audio tracks, screen reader, and Irlen overlays.',
+      snippet: 'Open the Accessibility Companion (Alt + A) for Dyslexia Center Mode, OpenDyslexic & Lexend fonts, Bionic reading anchors, ambient focus audio tracks, screen reader, and Irlen overlays.',
       url: '/accessibility',
       keywords: ['accessibility', 'dyslexia', 'dyslexic', 'opendyslexic', 'lexend', 'bionic', 'focus audio', 'rain', 'screen reader', 'irlen', 'font']
     },
@@ -692,3 +692,4 @@ export function searchSiteWithSuggestions(rawQuery = '', options = {}) {
     isEmptyQuery: false
   };
 }
+

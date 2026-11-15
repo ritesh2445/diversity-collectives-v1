@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   Palette, 
   Type, 
   Save, 
@@ -14,42 +14,19 @@ import {
   Layers,
   ArrowRight
 } from 'lucide-react';
+import { DEFAULT_SITE_THEME } from '../../data/siteDefaults';
+import {
+  applySiteThemeToDOM,
+  publishAdminSitePatch,
+  resetAdminSiteState,
+  SYNC_EVENTS
+} from '../../services/liveSync';
 
 export const THEME_STORAGE_KEY = 'dcvc_site_theme_settings';
 
-export const DEFAULT_THEME_SETTINGS = {
-  // Primary Buttons (e.g. Explore Free Programs, Submit, Inquire)
-  btnPrimaryBg: '#5A1E65',
-  btnPrimaryBgGradient: 'linear-gradient(135deg, #5A1E65 0%, #7E22CE 55%, #4338CA 100%)',
-  btnPrimaryText: '#FFFFFF',
-  btnPrimaryHoverBg: '#4A1553',
-  btnPrimaryRadius: '9999px', // '9999px' (pill) | '16px' (modern 2xl) | '8px' (rounded-md)
+export const DEFAULT_THEME_SETTINGS = DEFAULT_SITE_THEME;
 
-  // Secondary Buttons (e.g. Visit Sanctuary, Call, Secondary CTAs)
-  btnSecondaryBg: '#FFFFFF',
-  btnSecondaryText: '#0F172A',
-  btnSecondaryBorder: '#E2E8F0',
-  btnSecondaryHoverBg: '#FAF5FF',
-
-  // Donate / Gold Action Button
-  btnDonateBg: '#FDE047',
-  btnDonateText: '#020617',
-  btnDonateHoverBg: '#FACC15',
-
-  // Top Navigation Bar Buttons
-  navBtnText: '#000000',
-  navBtnActiveBg: '#5A1E65',
-  navBtnActiveText: '#FFFFFF',
-
-  // Typography Stacks
-  headingFont: 'Plus Jakarta Sans', // 'Plus Jakarta Sans', 'Playfair Display', 'Syne', 'Outfit', 'Cinzel', 'Inter'
-  bodyFont: 'Plus Jakarta Sans',    // 'Plus Jakarta Sans', 'Inter', 'Roboto', 'OpenDyslexic', 'Arial'
-  fontSizeScale: 100, // 90%, 100%, 110%
-
-  // Card Appearance
-  cardRadius: '24px', // '16px', '24px', '32px'
-  cardElevation: 'standard' // 'subtle', 'standard', 'pronounced'
-};
+export { applySiteThemeToDOM };
 
 export function loadSiteTheme() {
   if (typeof window === 'undefined') return DEFAULT_THEME_SETTINGS;
@@ -62,83 +39,71 @@ export function loadSiteTheme() {
   }
 }
 
-export function applySiteThemeToDOM(theme) {
-  if (typeof document === 'undefined') return;
-  const root = document.documentElement;
-
-  // Primary Button Colors
-  root.style.setProperty('--dcvc-btn-primary-bg', theme.btnPrimaryBgGradient || theme.btnPrimaryBg);
-  root.style.setProperty('--dcvc-btn-primary-text', theme.btnPrimaryText);
-  root.style.setProperty('--dcvc-btn-primary-hover', theme.btnPrimaryHoverBg);
-  root.style.setProperty('--dcvc-btn-radius', theme.btnPrimaryRadius);
-
-  // Secondary Button Colors
-  root.style.setProperty('--dcvc-btn-secondary-bg', theme.btnSecondaryBg);
-  root.style.setProperty('--dcvc-btn-secondary-text', theme.btnSecondaryText);
-  root.style.setProperty('--dcvc-btn-secondary-border', theme.btnSecondaryBorder);
-
-  // Donate Button Colors
-  root.style.setProperty('--dcvc-btn-donate-bg', theme.btnDonateBg);
-  root.style.setProperty('--dcvc-btn-donate-text', theme.btnDonateText);
-
-  // Top Navigation Bar Button Colors
-  root.style.setProperty('--dcvc-nav-text', theme.navBtnText || '#000000');
-  root.style.setProperty('--dcvc-nav-active-bg', theme.navBtnActiveBg || theme.btnPrimaryBg || '#5A1E65');
-  root.style.setProperty('--dcvc-nav-active-text', theme.navBtnActiveText || '#FFFFFF');
-
-  // Fonts
-  if (theme.headingFont) {
-    root.style.setProperty('--font-display', `'${theme.headingFont}', sans-serif`);
-  }
-  if (theme.bodyFont) {
-    root.style.setProperty('--font-sans', `'${theme.bodyFont}', sans-serif`);
-  }
-
-  // Card Radius
-  root.style.setProperty('--dcvc-card-radius', theme.cardRadius);
-}
-
 export default function SiteThemeStudio({ onThemeSaved }) {
   const [theme, setTheme] = useState(loadSiteTheme);
   const [saveToast, setSaveToast] = useState('');
+  const [publishing, setPublishing] = useState(false);
 
   useEffect(() => {
     applySiteThemeToDOM(theme);
   }, [theme]);
 
+  useEffect(() => {
+    const onExternalTheme = (e) => {
+      if (e?.detail && typeof e.detail === 'object') {
+        setTheme({ ...DEFAULT_THEME_SETTINGS, ...e.detail });
+      }
+    };
+    window.addEventListener(SYNC_EVENTS.THEME_CHANGED, onExternalTheme);
+    return () => window.removeEventListener(SYNC_EVENTS.THEME_CHANGED, onExternalTheme);
+  }, []);
+
   const handleColorChange = (key, val) => {
     setTheme(prev => ({ ...prev, [key]: val }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    setPublishing(true);
     try {
-      localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(theme));
+      const result = await publishAdminSitePatch({ siteTheme: theme });
       applySiteThemeToDOM(theme);
-      window.dispatchEvent(new CustomEvent('dcvc-site-theme-updated', { detail: theme }));
       window.dispatchEvent(new CustomEvent('SITE_THEME_UPDATED', { detail: theme }));
-      setSaveToast('Global site styles & button colors published successfully!');
+      setSaveToast(
+        result.syncedToServer
+          ? `Global site styles published live (v${result.version}) — instant across all open tabs!`
+          : 'Styles applied to this browser (sign in to publish globally to all visitors).'
+      );
       if (onThemeSaved) onThemeSaved(theme);
-      setTimeout(() => setSaveToast(''), 4000);
+      setTimeout(() => setSaveToast(''), 4500);
     } catch (err) {
       console.error('Failed to save theme:', err);
+      setSaveToast('Unable to save theme settings.');
+    } finally {
+      setPublishing(false);
     }
   };
 
-  const handleReset = () => {
+  const handleReset = async () => {
     if (window.confirm('Reset all button colors, fonts, and styling back to DCVC Flagship defaults?')) {
-      setTheme(DEFAULT_THEME_SETTINGS);
-      localStorage.removeItem(THEME_STORAGE_KEY);
-      applySiteThemeToDOM(DEFAULT_THEME_SETTINGS);
-      setSaveToast('Reset to original flagship defaults.');
-      setTimeout(() => setSaveToast(''), 3000);
+      setPublishing(true);
+      try {
+        setTheme(DEFAULT_THEME_SETTINGS);
+        applySiteThemeToDOM(DEFAULT_THEME_SETTINGS);
+        await resetAdminSiteState('theme');
+        window.dispatchEvent(new CustomEvent('SITE_THEME_UPDATED', { detail: DEFAULT_THEME_SETTINGS }));
+        setSaveToast('Reset to flagship defaults across live site.');
+        setTimeout(() => setSaveToast(''), 3500);
+      } finally {
+        setPublishing(false);
+      }
     }
   };
 
   const COLOR_PALETTES = [
-    { name: 'Royal Sanctuary Purple (Default)', primary: '#5A1E65', text: '#FFFFFF', gradient: 'linear-gradient(135deg, #5A1E65 0%, #7E22CE 55%, #4338CA 100%)' },
+    { name: 'Royal Center Purple (Default)', primary: '#5A1E65', text: '#FFFFFF', gradient: 'linear-gradient(135deg, #5A1E65 0%, #7E22CE 55%, #4338CA 100%)' },
     { name: 'Electric Violet & Magenta', primary: '#7C3AED', text: '#FFFFFF', gradient: 'linear-gradient(135deg, #7C3AED 0%, #C026D3 100%)' },
     { name: 'Sunset Coral & Amber', primary: '#E11D48', text: '#FFFFFF', gradient: 'linear-gradient(135deg, #E11D48 0%, #F59E0B 100%)' },
-    { name: 'Emerald Sanctuary & Teal', primary: '#059669', text: '#FFFFFF', gradient: 'linear-gradient(135deg, #059669 0%, #0D9488 100%)' },
+    { name: 'Emerald Center & Teal', primary: '#059669', text: '#FFFFFF', gradient: 'linear-gradient(135deg, #059669 0%, #0D9488 100%)' },
     { name: 'High-Contrast Midnight & Gold', primary: '#0F172A', text: '#FDE047', gradient: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)' },
     { name: 'Ocean Coastal Cyan', primary: '#0284C7', text: '#FFFFFF', gradient: 'linear-gradient(135deg, #0284C7 0%, #3B82F6 100%)' }
   ];
@@ -254,7 +219,7 @@ export default function SiteThemeStudio({ onThemeSaved }) {
               }}
               className="px-5 py-3 font-bold text-xs border-2 shadow-xs inline-flex items-center gap-2 transition-all cursor-pointer"
             >
-              <span>Visit Sanctuary</span>
+              <span>Visit Center</span>
             </button>
             <span className="text-[10px] text-slate-400 block">
               Text Color: <code className="text-white font-mono">{theme.btnSecondaryText}</code>

@@ -16,16 +16,16 @@ export const HERO_THEMES = [
     badgeColor: 'bg-purple-100 text-[#5A1E65] border-purple-300',
     description: 'Vivid multi-color aurora atmosphere, Fraunces humanist serif, animated liquid-flow "Always", 3 stacked high-contrast action pills, authentic volunteers photography, and flowing Pride aurora waves.',
     palette: ['#FAF7F2', '#5A1E65', '#E11D48', '#F59E0B', '#06B6D4'],
-    bestFor: 'Everyday high-visibility sanctuary presence with rich gradients & flowing Pride ribbons'
+    bestFor: 'Everyday high-visibility center presence with rich gradients & flowing Pride ribbons'
   },
   {
     id: 'spotlight',
     number: '02',
-    name: 'Design 2: Civic Sanctuary & 3D Spotlight Pathfinder',
+    name: 'Design 2: Civic Center & 3D Spotlight Pathfinder',
     category: 'layout',
     badge: 'Design 2 · Civic Pathfinder',
     badgeColor: 'bg-teal-100 text-teal-900 border-teal-300',
-    description: 'Civic sanctuary presence from official mockup: Dual helpline command bar, eyebrow pill, "You Are Always Welcome Here" with sunset serif underline, 3 CTA buttons, 4-tab Instant Sanctuary Navigator, and interactive 3D Card Spotlight with Portola Rd safe harbor emblem.',
+    description: 'Civic center presence from official mockup: Dual helpline command bar, eyebrow pill, "You Are Always Welcome Here" with sunset serif underline, 3 CTA buttons, 4-tab Instant Center Navigator, and interactive 3D Card Spotlight with Portola Rd safe harbor emblem.',
     palette: ['#5A1E65', '#B45309', '#0F172A', '#FAF5FF', '#38BDF8'],
     bestFor: 'Immediate community service triage, direct helpline access, and interactive 3D safe harbor showcase'
   },
@@ -36,14 +36,14 @@ export const HERO_THEMES = [
     category: 'layout',
     badge: 'Design 2 Alias',
     badgeColor: 'bg-slate-100 text-slate-800 border-slate-300',
-    description: 'Legacy alias mapping directly to Design 2 (Civic Sanctuary & 3D Spotlight Pathfinder).',
+    description: 'Legacy alias mapping directly to Design 2 (Civic Center & 3D Spotlight Pathfinder).',
     palette: ['#5A1E65', '#B45309', '#0F172A', '#FAF5FF', '#38BDF8'],
     bestFor: 'System compatibility'
   },
   {
     id: 'portal',
     number: '03',
-    name: 'Sanctuary Navigator Portal',
+    name: 'Center Navigator Portal',
     category: 'layout',
     badge: 'Civic Service Finder',
     badgeColor: 'bg-teal-100 text-teal-900 border-teal-300',
@@ -120,7 +120,7 @@ export const HERO_THEMES = [
   {
     id: 'night',
     number: '10',
-    name: 'Luminous Night Sanctuary',
+    name: 'Luminous Night Center',
     category: 'layout',
     badge: 'Dark Luxe Obsidian',
     badgeColor: 'bg-purple-950 text-purple-200 border-purple-700',
@@ -251,12 +251,18 @@ export const HERO_THEMES = [
 
 const STORAGE_KEY = 'dcvc_active_hero_theme';
 
+export function resolveHeroTheme(themeId) {
+  if (!themeId) return HERO_THEMES[0];
+  const normalized = themeId === 'default' ? 'spotlight' : themeId;
+  return HERO_THEMES.find((t) => t.id === normalized || t.id === themeId) || HERO_THEMES[0];
+}
+
 export function getActiveHeroTheme() {
   if (typeof window === 'undefined') return 'aurora';
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved === 'default') return 'spotlight';
-    if (saved && HERO_THEMES.some(t => t.id === saved)) {
+    if (saved && HERO_THEMES.some((t) => t.id === saved)) {
       return saved;
     }
   } catch {
@@ -269,12 +275,12 @@ export function setActiveHeroTheme(themeId) {
   if (typeof window === 'undefined') return;
   try {
     const normalizedId = themeId === 'default' ? 'spotlight' : themeId;
-    const theme = HERO_THEMES.find(t => t.id === normalizedId || t.id === themeId);
+    const theme = HERO_THEMES.find((t) => t.id === normalizedId || t.id === themeId);
     if (theme) {
       localStorage.setItem(STORAGE_KEY, normalizedId);
-      window.dispatchEvent(new CustomEvent('dcvc-hero-theme-changed', { 
-        detail: { themeId: normalizedId, theme } 
-      }));
+      const detail = { themeId: normalizedId, theme };
+      window.dispatchEvent(new CustomEvent('dcvc-hero-theme-changed', { detail }));
+      window.dispatchEvent(new CustomEvent('dcvc_hero_theme_updated', { detail }));
     }
   } catch (err) {
     console.error('Error saving hero theme:', err);
@@ -283,11 +289,26 @@ export function setActiveHeroTheme(themeId) {
 
 export function subscribeToHeroTheme(callback) {
   if (typeof window === 'undefined') return () => {};
-  
+
   const handler = (e) => {
-    callback(e.detail.themeId, e.detail.theme);
+    const nextId = e?.detail?.themeId || getActiveHeroTheme();
+    const theme = resolveHeroTheme(nextId);
+    callback(theme.id, theme);
   };
-  
+
+  const storageHandler = (e) => {
+    if (e.key === STORAGE_KEY) {
+      const theme = resolveHeroTheme(e.newValue || 'aurora');
+      callback(theme.id, theme);
+    }
+  };
+
   window.addEventListener('dcvc-hero-theme-changed', handler);
-  return () => window.removeEventListener('dcvc-hero-theme-changed', handler);
+  window.addEventListener('dcvc_hero_theme_updated', handler);
+  window.addEventListener('storage', storageHandler);
+  return () => {
+    window.removeEventListener('dcvc-hero-theme-changed', handler);
+    window.removeEventListener('dcvc_hero_theme_updated', handler);
+    window.removeEventListener('storage', storageHandler);
+  };
 }

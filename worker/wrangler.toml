@@ -21,6 +21,13 @@ FRONTEND_BASE_URL = "https://diversitycollectivevc.org"
 DCVC_STAFF_EMAIL = "info@diversitycollective.org"
 RESEND_FROM_EMAIL = "Diversity Collective <noreply@diversitycollective.org>"
 
+# Auth0 OIDC / PKCE Single Sign-On (Admin Panel)
+AUTH0_DOMAIN = "dev-ekslx0d2qyju2u1v.us.auth0.com"
+AUTH0_CLIENT_ID = "tgdziPMdxjoHh6LrNrJ82NI3MidPHaLC"
+AUTH0_AUDIENCE = "https://api.diversitycollectivevc.org"
+AUTH0_ENFORCE_SSO = "false"
+
+
 # Configurable Donation Appreciation Card Thresholds (in USD Dollars)
 APPRECIATION_TIER_1_MIN = "1"    # Community Ally ($1 - $49)
 APPRECIATION_TIER_2_MIN = "50"   # Pride Advocate ($50 - $149)

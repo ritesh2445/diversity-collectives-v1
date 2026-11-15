@@ -69,7 +69,7 @@ html[data-a11y-font-family="lexend"] footer *:not(svg):not(path) {
   font-family: 'Lexend', 'Atkinson Hyperlegible', sans-serif !important;
 }
 
-/* Dyslexia Sanctuary Mode Global Reading Comfort Rules */
+/* Dyslexia Center Mode Global Reading Comfort Rules */
 html[data-a11y-dyslexia-mode="true"] main p,
 html[data-a11y-dyslexia-mode="true"] main li,
 html[data-a11y-dyslexia-mode="true"] main blockquote {

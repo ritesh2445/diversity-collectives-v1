@@ -1,11 +1,11 @@
 /**
  * Determine Appreciation Card Tier based on amount and configurable thresholds
  */
-export function resolveAppreciationTier(amountDollars, env) {
-  const t1 = parseInt(env.APPRECIATION_TIER_1_MIN || '1', 10);
-  const t2 = parseInt(env.APPRECIATION_TIER_2_MIN || '50', 10);
-  const t3 = parseInt(env.APPRECIATION_TIER_3_MIN || '150', 10);
-  const t4 = parseInt(env.APPRECIATION_TIER_4_MIN || '500', 10);
+export function resolveAppreciationTier(amountDollars, env = {}) {
+  const t1 = parseInt(env?.APPRECIATION_TIER_1_MIN || '1', 10);
+  const t2 = parseInt(env?.APPRECIATION_TIER_2_MIN || '50', 10);
+  const t3 = parseInt(env?.APPRECIATION_TIER_3_MIN || '150', 10);
+  const t4 = parseInt(env?.APPRECIATION_TIER_4_MIN || '500', 10);
 
   if (amountDollars >= t4) {
     return {
@@ -39,7 +39,7 @@ export function resolveAppreciationTier(amountDollars, env) {
     tierName: 'Community Ally',
     badge: 'COMMUNITY ALLY',
     tagline: 'Lifting Each Other Up, One Step at a Time',
-    impact: 'Your generous contribution provides vital safer-sex supplies, harm reduction kits, and welcoming computer access for local community members finding sanctuary at our Ventura Community Resource Center.'
+    impact: 'Your generous contribution provides vital safer-sex supplies, harm reduction kits, and welcoming computer access for local community members finding center at our Ventura Community Resource Center.'
   };
 }
 

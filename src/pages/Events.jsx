@@ -19,17 +19,16 @@ import {
 import { cmsStore } from '../services/cmsStore';
 import { annualSignatureEvents } from '../data/dcvcData';
 import CardSpotlight from '../components/CardSpotlight';
+import MobileCarousel from '../components/MobileCarousel.jsx';
 import { usePageMeta } from '../utils/seo';
+import {
+  MONTH_ABBRS,
+  MONTH_FULL,
+  parseEventDate,
+  findBestCalendarMonth
+} from '../utils/eventDates';
 
-const MONTH_NAMES = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December'
-];
-
-const MONTH_ABBRS = [
-  'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
-  'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'
-];
+const MONTH_NAMES = MONTH_FULL;
 
 export default function Events() {
   usePageMeta({
@@ -43,28 +42,38 @@ export default function Events() {
   const [searchInput, setSearchInput] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [viewMode, setViewMode] = useState('list'); // 'list' | 'calendar'
-  
-  // Traditional Monthly Calendar State
-  const [currentCalendarDate, setCurrentCalendarDate] = useState(() => new Date(2026, 9, 1)); // Oct 2026 default to align with authentic events
-  const [selectedDateFilter, setSelectedDateFilter] = useState(null); // '2026-10-09' or null
+
+  // Traditional Monthly Calendar State — smartly focuses on active scheduled events
+  const [currentCalendarDate, setCurrentCalendarDate] = useState(() =>
+    findBestCalendarMonth(cmsStore.getEvents())
+  );
+  const [selectedDateFilter, setSelectedDateFilter] = useState(null);
 
   useEffect(() => {
     const unsubscribe = cmsStore.subscribe((data) => {
-      if (data?.events) setEvents(data.events);
+      if (data?.events) {
+        setEvents(data.events);
+      }
     });
     return unsubscribe;
   }, []);
 
-  const categories = [
-    'All', 
-    'Health & Wellness', 
-    'Youth', 
-    'Adult Support', 
-    'Seniors', 
-    'Professional Growth', 
-    'Signature Event', 
-    'Festival & Celebration'
-  ];
+  const categories = useMemo(() => {
+    const defaults = [
+      'All',
+      'Health & Wellness',
+      'Youth',
+      'Adult Support',
+      'Seniors',
+      'Professional Growth',
+      'Signature Event',
+      'Festival & Celebration'
+    ];
+    const extras = (events || [])
+      .map((e) => e.category)
+      .filter((c) => c && !defaults.includes(c));
+    return [...defaults, ...Array.from(new Set(extras))];
+  }, [events]);
 
   const handleSearchSubmit = (e) => {
     e?.preventDefault();
@@ -72,24 +81,37 @@ export default function Events() {
     setSelectedDateFilter(null);
   };
 
-  // Helper to parse event month abbreviation
-  const getEventDateKey = (evt) => {
-    const monthIndex = MONTH_ABBRS.indexOf((evt.month || '').toUpperCase());
-    if (monthIndex === -1) return null;
-    const year = evt.year || '2026';
-    const day = String(evt.day || '1').padStart(2, '0');
-    const month = String(monthIndex + 1).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
+  const getEventDateKey = (evt) => parseEventDate(evt)?.dateKey || null;
+
+  const scheduledMonths = useMemo(() => {
+    const buckets = new Map();
+    (events || []).forEach((evt) => {
+      const parsed = parseEventDate(evt);
+      if (!parsed) return;
+      const key = `${parsed.year}-${String(parsed.monthIndex + 1).padStart(2, '0')}`;
+      const existing = buckets.get(key) || {
+        key,
+        year: parsed.year,
+        monthIndex: parsed.monthIndex,
+        label: `${MONTH_ABBRS[parsed.monthIndex]} ${parsed.year}`,
+        count: 0
+      };
+      existing.count += 1;
+      buckets.set(key, existing);
+    });
+    return Array.from(buckets.values()).sort((a, b) =>
+      a.year !== b.year ? a.year - b.year : a.monthIndex - b.monthIndex
+    );
+  }, [events]);
 
   const filteredEvents = useMemo(() => {
-    return events.filter(evt => {
+    return (events || []).filter((evt) => {
       const q = searchQuery.toLowerCase();
-      const matchesSearch = !q || 
-        evt.title.toLowerCase().includes(q) ||
-        evt.description.toLowerCase().includes(q) ||
-        evt.location.toLowerCase().includes(q) ||
-        evt.category.toLowerCase().includes(q);
+      const matchesSearch = !q ||
+        (evt.title || '').toLowerCase().includes(q) ||
+        (evt.description || '').toLowerCase().includes(q) ||
+        (evt.location || '').toLowerCase().includes(q) ||
+        (evt.category || '').toLowerCase().includes(q);
 
       const matchesCat = selectedCategory === 'All' || evt.category === selectedCategory;
 
@@ -109,13 +131,12 @@ export default function Events() {
   // Group events by day of current calendar month
   const eventsByDay = useMemo(() => {
     const map = {};
-    events.forEach(evt => {
-      const monthIndex = MONTH_ABBRS.indexOf((evt.month || '').toUpperCase());
-      const evtYear = parseInt(evt.year || '2026', 10);
-      if (monthIndex === calendarMonth && evtYear === calendarYear) {
-        const dayNum = parseInt(evt.day, 10);
-        if (!map[dayNum]) map[dayNum] = [];
-        map[dayNum].push(evt);
+    (events || []).forEach((evt) => {
+      const parsed = parseEventDate(evt);
+      if (!parsed) return;
+      if (parsed.monthIndex === calendarMonth && parsed.year === calendarYear) {
+        if (!map[parsed.day]) map[parsed.day] = [];
+        map[parsed.day].push(evt);
       }
     });
     return map;
@@ -143,7 +164,7 @@ export default function Events() {
   };
 
   return (
-    <div className="pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
+    <div className="w-full max-w-full overflow-x-clip pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
       
       {/* Header */}
       <section className="container-clean pb-14 border-b border-slate-100 relative overflow-hidden">
@@ -302,6 +323,34 @@ export default function Events() {
               </div>
             </div>
 
+            {scheduledMonths.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2 mb-6">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mr-1">
+                  Months With Scheduled Events:
+                </span>
+                {scheduledMonths.map((bucket) => {
+                  const isActiveMonth = bucket.year === calendarYear && bucket.monthIndex === calendarMonth;
+                  return (
+                    <button
+                      key={bucket.key}
+                      type="button"
+                      onClick={() => {
+                        setCurrentCalendarDate(new Date(bucket.year, bucket.monthIndex, 1));
+                        setSelectedDateFilter(null);
+                      }}
+                      className={`px-3 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer border ${
+                        isActiveMonth
+                          ? 'bg-[#5A1E65] text-white border-[#5A1E65] shadow-xs'
+                          : 'bg-purple-50/70 text-[#5A1E65] border-purple-200 hover:bg-purple-100'
+                      }`}
+                    >
+                      {bucket.label} ({bucket.count})
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
             {/* Days of the Week */}
             <div className="grid grid-cols-7 gap-2 text-center text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
               <span>Sun</span>
@@ -457,13 +506,21 @@ export default function Events() {
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
                     
                     {/* Large Typographic Date Badge */}
-                    <div className="md:col-span-2 flex md:justify-center">
-                      <div className={`flex flex-col items-center justify-center min-w-[80px] p-4 rounded-2xl bg-gradient-to-b ${dateGradients[idx % dateGradients.length]} shadow-md`}>
-                        <span className="text-[10px] font-black uppercase tracking-wider text-amber-200">{evt.month}</span>
-                        <span className="font-display text-2xl sm:text-3xl font-black">{evt.day}</span>
-                        <span className="text-[10px] font-mono text-white/70 mt-0.5">{evt.year}</span>
-                      </div>
-                    </div>
+                    {(() => {
+                      const parsedDate = parseEventDate(evt);
+                      const badgeMonth = parsedDate?.monthAbbr || evt.month || 'TBD';
+                      const badgeDay = parsedDate?.dayStr || evt.day || '—';
+                      const badgeYear = parsedDate?.yearStr || evt.year || '2026';
+                      return (
+                        <div className="md:col-span-2 flex md:justify-center">
+                          <div className={`flex flex-col items-center justify-center min-w-[80px] p-4 rounded-2xl bg-gradient-to-b ${dateGradients[idx % dateGradients.length]} shadow-md`}>
+                            <span className="text-[10px] font-black uppercase tracking-wider text-amber-200">{badgeMonth}</span>
+                            <span className="font-display text-2xl sm:text-3xl font-black">{badgeDay}</span>
+                            <span className="text-[10px] font-mono text-white/70 mt-0.5">{badgeYear}</span>
+                          </div>
+                        </div>
+                      );
+                    })()}
 
                     {/* Event Details */}
                     <div className="md:col-span-7 space-y-2">
@@ -518,14 +575,25 @@ export default function Events() {
                       </Link>
 
                       {evt.registrationUrl ? (
-                        <Link
-                          to={evt.registrationUrl.startsWith('http') ? '/appointments' : evt.registrationUrl}
-                          className="text-xs font-bold text-[#5A1E65] hover:underline flex items-center gap-1 py-1"
-                        >
-                          <Ticket className="w-3.5 h-3.5" />
-                          <span>Direct Registration</span>
-                          <ArrowUpRight className="w-3 h-3" />
-                        </Link>
+                        evt.registrationUrl.startsWith('http') ? (
+                          <a
+                            href={evt.registrationUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs font-bold text-[#5A1E65] hover:underline flex items-center gap-1 py-1"
+                          >
+                            <span>External Registration Link</span>
+                            <ArrowUpRight className="w-3.5 h-3.5" />
+                          </a>
+                        ) : (
+                          <Link
+                            to={evt.registrationUrl}
+                            className="text-xs font-bold text-[#5A1E65] hover:underline flex items-center gap-1 py-1"
+                          >
+                            <span>{evt.category === 'Health & Wellness' ? 'Book Screening Slot' : 'Direct Registration'}</span>
+                            <ArrowUpRight className="w-3.5 h-3.5" />
+                          </Link>
+                        )
                       ) : (
                         <span className="text-[11px] text-slate-400 font-medium">Free Drop-In · No Ticket Needed</span>
                       )}
@@ -555,12 +623,12 @@ export default function Events() {
               Throughout the year, DCVC convenes our county for premier celebratory milestones — including Ventura County Pride, the Diversity Gala, and the AIDS Walk.
             </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-4">
+            <MobileCarousel cols={3} autoScrollMs={0} className="pt-4">
               {annualSignatureEvents.map((sig) => (
                 <Link
                   key={sig.title}
                   to={sig.link.startsWith('http') ? '/events' : sig.link}
-                  className="p-6 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 hover:border-amber-300 transition-all hover:scale-102 flex flex-col justify-between group cursor-pointer"
+                  className="p-6 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 hover:border-amber-300 transition-all hover:scale-102 flex flex-col justify-between group cursor-pointer h-full"
                 >
                   <div className="space-y-2">
                     <span className="text-[11px] font-black uppercase tracking-wider text-amber-300">{sig.season || 'Annual'}</span>
@@ -572,7 +640,7 @@ export default function Events() {
                   </div>
                 </Link>
               ))}
-            </div>
+            </MobileCarousel>
           </div>
         </div>
       </section>

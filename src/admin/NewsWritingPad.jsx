@@ -36,7 +36,7 @@ const BRAND_COLORS = [
   { name: 'DCVC Amethyst', hex: '#5A1E65' },
   { name: 'Pride Rose', hex: '#E11D48' },
   { name: 'Sunset Amber', hex: '#D97706' },
-  { name: 'Sanctuary Teal', hex: '#0D9488' },
+  { name: 'Center Teal', hex: '#0D9488' },
   { name: 'Sapphire Blue', hex: '#2563EB' },
   { name: 'Slate Gray', hex: '#475569' },
   { name: 'Pure Black', hex: '#000000' }

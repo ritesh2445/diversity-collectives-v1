@@ -374,7 +374,7 @@ export function getCommunityGroupData(groupNameOrSlug) {
         date: "March 2026",
         readTime: "3 min read",
         excerpt: "Every peer group at Diversity Collective exists to ensure nobody in our county ever walks alone.",
-        content: "<p>Diversity Collective Ventura County is committed to providing free, accessible, and affirming sanctuary spaces for all LGBTQ+ individuals, families, and allies.</p>"
+        content: "<p>Diversity Collective Ventura County is committed to providing free, accessible, and affirming center spaces for all LGBTQ+ individuals, families, and allies.</p>"
       }
     ]
   };

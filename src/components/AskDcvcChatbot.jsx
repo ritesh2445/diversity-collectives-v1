@@ -15,15 +15,17 @@ import {
   EyeOff
 } from 'lucide-react';
 import { askDcvcChat } from '../services/api';
+import { translationService } from '../services/translationService';
+import { useScrollLock } from '../utils/scrollLock';
 
 const SUGGESTED_QUESTIONS = [
-  "Are your services free?",
-  "What events are coming up?",
-  "Where is the Community Resource Center?",
-  "How can I volunteer?",
-  "What is Rainbow Umbrella?",
-  "Do you offer training?",
-  "How can I donate?"
+  { key: 'chatbot_q_services', en: 'Are your services free?', es: '¿Sus servicios son gratuitos?' },
+  { key: 'chatbot_q_events', en: 'What events are coming up?', es: '¿Qué eventos se aproximan?' },
+  { key: 'chatbot_q_center', en: 'Where is the Community Resource Center?', es: '¿Dónde está el Centro de Recursos?' },
+  { key: 'chatbot_q_volunteer', en: 'How can I volunteer?', es: '¿Cómo puedo ser voluntario?' },
+  { key: 'chatbot_q_rainbow', en: 'What is Rainbow Umbrella?', es: '¿Qué es Rainbow Umbrella?' },
+  { key: 'chatbot_q_training', en: 'Do you offer training?', es: '¿Ofrecen capacitaciones?' },
+  { key: 'chatbot_q_donate', en: 'How can I donate?', es: '¿Cómo puedo donar?' }
 ];
 
 /**
@@ -40,7 +42,7 @@ export default function AskDcvcChatbot() {
     {
       id: 'welcome',
       role: 'assistant',
-      text: "Hello! I'm Luna, your free community guide. Ask me about our free health testing, youth groups, center hours, events, or volunteer opportunities.",
+      text: translationService.t('chatbot_welcome', "Hello! I'm Luna, your free community guide. Ask me about our free health testing, youth groups, center hours, events, or volunteer opportunities."),
       citations: [
         { title: "Programs", url: "/programs" },
         { title: "Contact Us", url: "/contact" }
@@ -50,6 +52,7 @@ export default function AskDcvcChatbot() {
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [currentLang, setCurrentLang] = useState(() => translationService.getLanguage());
   const [isDismissed, setIsDismissed] = useState(() => {
     if (typeof window !== 'undefined') {
       return sessionStorage.getItem('dcvc_hide_luna_launcher') === 'true';
@@ -57,10 +60,69 @@ export default function AskDcvcChatbot() {
     return false;
   });
   const [showHidePrompt, setShowHidePrompt] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [mobileViewportStyle, setMobileViewportStyle] = useState({});
   const location = useLocation();
   const pressTimerRef = useRef(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+
+  // Dynamically pin to mobile visualViewport above virtual keyboard (zero viewport jump)
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const updateMobileViewport = () => {
+      const isMobile = window.innerWidth < 640;
+      if (!isMobile) {
+        setMobileViewportStyle({});
+        return;
+      }
+
+      if (window.visualViewport) {
+        const vv = window.visualViewport;
+        setMobileViewportStyle({
+          position: 'fixed',
+          top: `${vv.offsetTop}px`,
+          left: '0px',
+          right: '0px',
+          width: '100%',
+          height: `${vv.height}px`,
+          maxHeight: `${vv.height}px`,
+        });
+      } else {
+        setMobileViewportStyle({
+          position: 'fixed',
+          inset: 0,
+          width: '100%',
+          height: '100dvh',
+          maxHeight: '100dvh',
+        });
+      }
+    };
+
+    updateMobileViewport();
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', updateMobileViewport);
+      window.visualViewport.addEventListener('scroll', updateMobileViewport);
+    }
+    window.addEventListener('resize', updateMobileViewport);
+
+    return () => {
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', updateMobileViewport);
+        window.visualViewport.removeEventListener('scroll', updateMobileViewport);
+      }
+      window.removeEventListener('resize', updateMobileViewport);
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsCollapsed(true);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handlePressStart = () => {
     pressTimerRef.current = setTimeout(() => {
@@ -119,24 +181,22 @@ export default function AskDcvcChatbot() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen]);
 
-  // Lock background scrolling on desktop and mobile when Luna chat is open
+  // Subscribe to language changes — re-translate welcome message and suggested questions
   useEffect(() => {
-    if (isOpen) {
-      const originalOverflow = document.body.style.overflow;
-      const originalTouchAction = document.body.style.touchAction;
-      const originalOverscroll = document.body.style.overscrollBehavior;
+    const unsub = translationService.subscribe((langCode) => {
+      setCurrentLang(langCode);
+      const translatedWelcome = translationService.t('chatbot_welcome');
+      setMessages((prev) => prev.map((m) =>
+        (m.id === 'welcome' || m.id === 'welcome_reset')
+          ? { ...m, text: translatedWelcome }
+          : m
+      ));
+    });
+    return () => unsub();
+  }, []);
 
-      document.body.style.overflow = 'hidden';
-      document.body.style.touchAction = 'none';
-      document.body.style.overscrollBehavior = 'none';
-
-      return () => {
-        document.body.style.overflow = originalOverflow;
-        document.body.style.touchAction = originalTouchAction;
-        document.body.style.overscrollBehavior = originalOverscroll;
-      };
-    }
-  }, [isOpen]);
+  // Lock background scrolling on desktop and mobile when Luna chat is open
+  useScrollLock(isOpen);
 
   // External voice / programmatic / search triggers for hands-free & search handoff
   const pendingQueryRef = useRef('');
@@ -180,6 +240,9 @@ export default function AskDcvcChatbot() {
 
     setMessages(newMessages);
     setInput('');
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 10);
     setIsLoading(true);
 
     try {
@@ -215,7 +278,7 @@ export default function AskDcvcChatbot() {
       {
         id: 'welcome_reset',
         role: 'assistant',
-        text: "Conversation cleared. Ask me about our free health testing, youth groups, center hours, events, or volunteer opportunities.",
+        text: translationService.t('chatbot_clear', 'Conversation cleared. Ask me about our free health testing, youth groups, center hours, events, or volunteer opportunities.'),
         citations: [{ title: "Programs", url: "/programs" }],
         timestamp: new Date().toISOString()
       }
@@ -419,12 +482,22 @@ export default function AskDcvcChatbot() {
             aria-haspopup="dialog"
             aria-label="Open Luna Free AI Community Assistant (Alt + C). Long press to hide."
             title="Ask Luna (Alt + C) • Long-press to hide"
-            className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-3 rounded-full bg-gradient-to-r from-[#5A1E65] via-purple-900 to-[#43144A] text-white shadow-xl hover:shadow-2xl border-2 border-amber-300 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer select-none focus:outline-none focus:ring-4 focus:ring-amber-300"
+            id="ask-luna-launcher-button"
+            className={`inline-flex items-center p-2 rounded-full bg-gradient-to-r from-[#5A1E65] via-purple-900 to-[#43144A] text-white shadow-xl hover:shadow-2xl border-2 border-amber-300 hover:scale-105 active:scale-95 transition-all duration-700 ease-in-out cursor-pointer select-none focus:outline-none focus:ring-4 focus:ring-amber-300 ${
+              isCollapsed ? 'pr-2' : 'pr-2 md:pr-4'
+            }`}
           >
-            <div className="w-6 h-6 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center font-bold shadow-xs flex-shrink-0">
-              <Sparkles className="w-3.5 h-3.5 fill-current" />
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center font-bold shadow-xs flex-shrink-0">
+              <Sparkles className="w-4 h-4 fill-current" />
             </div>
-            <div className="flex flex-col text-left">
+            <div
+              className={`hidden md:flex flex-col text-left overflow-hidden whitespace-nowrap transition-all duration-700 ease-in-out ${
+                isCollapsed
+                  ? 'max-w-0 opacity-0 -translate-x-2 ml-0 pointer-events-none'
+                  : 'max-w-[140px] opacity-100 translate-x-0 ml-2.5'
+              }`}
+              aria-hidden={isCollapsed}
+            >
               <span className="font-extrabold text-xs tracking-wide text-white leading-tight flex items-center gap-1.5 whitespace-nowrap">
                 <span>Ask Luna</span>
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -446,7 +519,7 @@ export default function AskDcvcChatbot() {
         />
       )}
 
-      {/* Floating Dialog Window - Robust screen-fixed positioning */}
+      {/* Floating Dialog Window - Robust screen-fixed positioning with visualViewport keyboard optimization */}
       {isOpen && (
         <div
           role="dialog"
@@ -454,7 +527,8 @@ export default function AskDcvcChatbot() {
           aria-label="Luna • DCVC Community Guide"
           onWheel={(e) => e.stopPropagation()}
           onTouchMove={(e) => e.stopPropagation()}
-          className="fixed inset-x-3 bottom-3 sm:inset-x-auto sm:right-6 sm:bottom-6 sm:w-[420px] max-h-[calc(100dvh-24px)] sm:max-h-[640px] h-[min(580px,calc(100dvh-24px))] bg-white rounded-3xl shadow-2xl border-2 border-purple-200 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200 print:hidden z-[9999] overscroll-contain"
+          style={mobileViewportStyle}
+          className="fixed inset-x-0 bottom-0 sm:inset-x-auto sm:right-6 sm:bottom-6 sm:w-[420px] max-h-[100dvh] sm:max-h-[640px] h-full sm:h-[min(580px,calc(100dvh-24px))] bg-white rounded-none sm:rounded-3xl shadow-2xl border-t-2 sm:border-2 border-purple-200 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200 print:hidden z-[9999] overscroll-contain"
         >
           {/* Header Bar */}
           <div className="p-4 bg-gradient-to-r from-[#5A1E65] via-purple-900 to-[#3b0764] text-white flex items-center justify-between shadow-md">
@@ -473,7 +547,7 @@ export default function AskDcvcChatbot() {
                   </span>
                 </div>
                 <p className="text-[11px] text-purple-200">
-                  DCVC Community Guide • Ventura County
+                  {translationService.t('chatbot_subtitle', 'DCVC Community Guide • Ventura County')}
                 </p>
               </div>
             </div>
@@ -502,9 +576,9 @@ export default function AskDcvcChatbot() {
 
           {/* Privacy & Safety Disclaimer Bar */}
           <div className="px-3.5 py-1.5 bg-purple-50/80 border-b border-purple-100 flex items-center justify-between text-[10px] text-purple-900">
-            <span className="flex items-center gap-1 font-semibold truncate">
-              <ShieldAlert className="w-3.5 h-3.5 text-purple-700 flex-shrink-0" />
-              <span>Informational only • Not medical/legal advice</span>
+              <span className="flex items-center gap-1 font-semibold truncate">
+                <ShieldAlert className="w-3.5 h-3.5 text-purple-700 flex-shrink-0" />
+                <span>{translationService.t('chatbot_disclaimer', 'Informational only • Not medical/legal advice')}</span>
             </span>
             <span className="text-slate-400 text-[9px] flex-shrink-0 font-medium">
               Alt + C
@@ -575,7 +649,7 @@ export default function AskDcvcChatbot() {
                   <div className="w-1.5 h-1.5 rounded-full bg-purple-600 animate-bounce [animation-delay:0.2s]" />
                   <div className="w-1.5 h-1.5 rounded-full bg-purple-600 animate-bounce [animation-delay:0.4s]" />
                   <span className="text-[11px] font-medium text-slate-500 ml-1">
-                    Consulting verified DCVC records...
+                    {translationService.t('chatbot_loading', 'Consulting verified DCVC records...')}
                   </span>
                 </div>
               </div>
@@ -587,19 +661,22 @@ export default function AskDcvcChatbot() {
           {/* Suggested Questions Pills (Horizontal Scroll) */}
           <div className="px-3 py-2 bg-white border-t border-slate-100 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex-shrink-0">
-              Suggestions:
+              {translationService.t('chatbot_suggestions', 'Suggestions:')}
             </span>
-            {SUGGESTED_QUESTIONS.map((q, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => handleSend(q)}
-                disabled={isLoading}
-                className="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-purple-100 text-slate-700 hover:text-[#5A1E65] text-[11px] font-semibold border border-slate-200 hover:border-purple-300 transition-colors whitespace-nowrap cursor-pointer flex-shrink-0"
-              >
-                {q}
-              </button>
-            ))}
+            {SUGGESTED_QUESTIONS.map((qItem, idx) => {
+              const qText = translationService.t(qItem.key, currentLang === 'es' ? qItem.es : qItem.en);
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => handleSend(qText)}
+                  disabled={isLoading}
+                  className="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-purple-100 text-slate-700 hover:text-[#5A1E65] text-[11px] font-semibold border border-slate-200 hover:border-purple-300 transition-colors whitespace-nowrap cursor-pointer flex-shrink-0"
+                >
+                  {qText}
+                </button>
+              );
+            })}
           </div>
 
           {/* Input Footer */}
@@ -615,7 +692,7 @@ export default function AskDcvcChatbot() {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value.slice(0, 300))}
-              placeholder="Say hi or ask anything about DCVC..."
+              placeholder={translationService.t('chatbot_placeholder', 'Say hi or ask anything about DCVC...')}
               maxLength={300}
               disabled={isLoading}
               className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all"
@@ -623,9 +700,11 @@ export default function AskDcvcChatbot() {
 
             <button
               type="submit"
+              onMouseDown={(e) => e.preventDefault()}
+              onTouchStart={(e) => e.preventDefault()}
               disabled={!input.trim() || isLoading}
               className="p-2.5 rounded-xl bg-[#5A1E65] hover:bg-purple-800 disabled:opacity-40 disabled:cursor-not-allowed text-white shadow-xs transition-colors cursor-pointer flex-shrink-0"
-              aria-label="Send question"
+              aria-label={translationService.t('chatbot_send_question', 'Send question')}
             >
               <Send className="w-4 h-4" />
             </button>
@@ -640,4 +719,3 @@ export default function AskDcvcChatbot() {
     </>
   );
 }
-

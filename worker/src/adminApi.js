@@ -25,13 +25,22 @@ function encodeBase64Url(bytesOrString) {
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
-function decodeBase64UrlToString(b64u) {
+function decodeBase64UrlToUint8Array(b64u) {
   let base64 = String(b64u || '').replace(/-/g, '+').replace(/_/g, '/');
   while (base64.length % 4) base64 += '=';
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return new TextDecoder().decode(bytes);
+  return bytes;
+}
+
+function decodeBase64UrlToString(b64u) {
+  return new TextDecoder().decode(decodeBase64UrlToUint8Array(b64u));
+}
+
+export async function sha256Hex(value) {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(value || '')));
+  return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 // Constant-time string/byte comparison (resists timing side-channel attacks)
@@ -384,20 +393,21 @@ export function generateEphemeralOtp(digits = 6) {
   return (val % mod).toString().padStart(digits, '0');
 }
 
-// Generate short-lived ephemeral token for pending 2FA step (valid for 5 minutes)
-export async function generateTempToken(payload, secret, expiresInSec = 300) {
+// Generate short-lived ephemeral token for pending 2FA / OTP step (valid for 5-10 minutes)
+export async function generateTempToken(payload, secret, expiresInSec = 300, defaultPurpose = '2fa_login') {
   const validSecret = assertSigningSecret(secret);
   const enc = new TextEncoder();
   const header = encodeBase64Url(JSON.stringify({ alg: 'HS256', typ: 'TEMP_2FA' }));
   const nowSec = Math.floor(Date.now() / 1000);
   const jti = payload?.jti || crypto.randomUUID();
+  const purpose = payload?.purpose || defaultPurpose;
   const body = encodeBase64Url(
     JSON.stringify({
       ...payload,
       jti,
       iat: nowSec,
       exp: nowSec + expiresInSec,
-      purpose: '2fa_login'
+      purpose
     })
   );
 
@@ -415,8 +425,8 @@ export async function generateTempToken(payload, secret, expiresInSec = 300) {
   return `${dataToSign}.${sigBase64}`;
 }
 
-// Verify short-lived ephemeral token strictly
-export async function verifyTempToken(token, secret) {
+// Verify short-lived ephemeral token strictly (supports 2FA & OTP purposes)
+export async function verifyTempToken(token, secret, { allowedPurposes = ['2fa_login', 'otp_login'] } = {}) {
   if (!token || typeof token !== 'string' || !token.includes('.')) return null;
   if (!secret || typeof secret !== 'string' || secret.trim().length === 0) return null;
 
@@ -453,7 +463,8 @@ export async function verifyTempToken(token, secret) {
     if (!payload || !payload.exp || payload.exp < nowSec) {
       return null;
     }
-    if (payload.purpose !== '2fa_login') {
+    const targetPurposes = Array.isArray(allowedPurposes) ? allowedPurposes : [allowedPurposes];
+    if (!targetPurposes.includes(payload.purpose)) {
       return null;
     }
 
@@ -461,4 +472,249 @@ export async function verifyTempToken(token, secret) {
   } catch {
     return null;
   }
+}
+
+// =======================================================================
+// Google OpenID Connect / Identity Services ID Token & Access Token Verification
+// =======================================================================
+export async function verifyGoogleToken({ idToken, accessToken, clientId = '', fetchImpl = fetch } = {}) {
+  try {
+    if (idToken) {
+      const url = `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`;
+      const res = await fetchImpl(url, { headers: { 'Accept': 'application/json' } });
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (!data || !data.email) return null;
+      const isVerified = data.email_verified === 'true' || data.email_verified === true;
+      if (!isVerified) return null;
+      if (clientId && data.aud !== clientId) return null;
+      return {
+        email: String(data.email).toLowerCase().trim(),
+        name: data.name || data.email.split('@')[0],
+        sub: data.sub,
+        picture: data.picture || '',
+        emailVerified: true
+      };
+    }
+    if (accessToken) {
+      const url = 'https://www.googleapis.com/oauth2/v3/userinfo';
+      const res = await fetchImpl(url, {
+        headers: { 'Authorization': `Bearer ${accessToken}`, 'Accept': 'application/json' }
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (!data || !data.email) return null;
+      const isVerified = data.email_verified === true || data.email_verified === 'true';
+      if (!isVerified) return null;
+      return {
+        email: String(data.email).toLowerCase().trim(),
+        name: data.name || data.email.split('@')[0],
+        sub: data.sub,
+        picture: data.picture || '',
+        emailVerified: true
+      };
+    }
+  } catch (err) {
+    console.error('Google token verification error:', err);
+    return null;
+  }
+  return null;
+}
+
+// =======================================================================
+// Auth0 OIDC / RS256 JWKS Verification Engine
+// =======================================================================
+
+const JWKS_CACHE = new Map(); // domain -> { keys, fetchedAt }
+const JWKS_CACHE_TTL_MS = 60 * 60 * 1000;
+
+export function normalizeAuth0Domain(rawDomain) {
+  if (!rawDomain || typeof rawDomain !== 'string') return '';
+  const stripped = rawDomain.trim().replace(/^https?:\/\//i, '').replace(/\/+$/, '');
+  if (!stripped || stripped.includes('/') || stripped.includes('?') || stripped.includes('#') || stripped.includes('@')) {
+    return '';
+  }
+  return /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/i.test(stripped)
+    ? stripped.toLowerCase()
+    : '';
+}
+
+export async function fetchAuth0Jwks(domain, { forceRefresh = false, fetchImpl = fetch } = {}) {
+  const cleanDomain = normalizeAuth0Domain(domain);
+  if (!cleanDomain) {
+    throw new Error('Invalid Auth0 domain.');
+  }
+
+  const now = Date.now();
+  const cached = JWKS_CACHE.get(cleanDomain);
+  if (!forceRefresh && cached && (now - cached.fetchedAt) < JWKS_CACHE_TTL_MS) {
+    return cached.keys;
+  }
+
+  const res = await fetchImpl(`https://${cleanDomain}/.well-known/jwks.json`, {
+    headers: { 'Accept': 'application/json' }
+  });
+  if (!res.ok) {
+    throw new Error(`Unable to fetch Auth0 JWKS (${res.status}).`);
+  }
+
+  const data = await res.json();
+  if (!data || !Array.isArray(data.keys) || data.keys.length === 0) {
+    throw new Error('Auth0 JWKS response contained no signing keys.');
+  }
+
+  JWKS_CACHE.set(cleanDomain, { keys: data.keys, fetchedAt: now });
+  return data.keys;
+}
+
+function findMatchingRsaJwk(keys, kid) {
+  if (!Array.isArray(keys) || !kid) return null;
+  return keys.find((k) =>
+    k &&
+    k.kid === kid &&
+    k.kty === 'RSA' &&
+    (!k.use || k.use === 'sig') &&
+    (!k.alg || k.alg === 'RS256') &&
+    typeof k.n === 'string' &&
+    typeof k.e === 'string'
+  ) || null;
+}
+
+function validateAudienceClaim(audClaim, allowedAudiences, azpClaim, requireAzp) {
+  const allowed = (allowedAudiences || []).filter((a) => typeof a === 'string' && a.length > 0);
+  if (allowed.length === 0) return false;
+
+  if (typeof audClaim === 'string') {
+    return allowed.includes(audClaim);
+  }
+  if (Array.isArray(audClaim)) {
+    const hasMatch = audClaim.some((aud) => typeof aud === 'string' && allowed.includes(aud));
+    if (!hasMatch) return false;
+    if (audClaim.length > 1 && requireAzp) {
+      return azpClaim === requireAzp;
+    }
+    return true;
+  }
+  return false;
+}
+
+async function verifyAuth0Jwt(token, {
+  domain,
+  allowedAudiences = [],
+  requireEmailVerified = false,
+  requireAzp = '',
+  jwks = null,
+  fetchImpl = fetch,
+  nowSec = null,
+  clockSkewSec = 60
+} = {}) {
+  const cleanDomain = normalizeAuth0Domain(domain);
+  if (!cleanDomain || !token || typeof token !== 'string') return null;
+
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+
+  try {
+    const [headerB64, bodyB64, sigB64] = parts;
+    const header = JSON.parse(decodeBase64UrlToString(headerB64));
+    if (!header || header.alg !== 'RS256' || typeof header.kid !== 'string' || !header.kid.trim()) {
+      return null;
+    }
+
+    let keys = Array.isArray(jwks) ? jwks : await fetchAuth0Jwks(cleanDomain, { fetchImpl });
+    let jwk = findMatchingRsaJwk(keys, header.kid);
+    if (!jwk && !Array.isArray(jwks)) {
+      keys = await fetchAuth0Jwks(cleanDomain, { forceRefresh: true, fetchImpl });
+      jwk = findMatchingRsaJwk(keys, header.kid);
+    }
+    if (!jwk) return null;
+
+    const cryptoKey = await crypto.subtle.importKey(
+      'jwk',
+      { kty: jwk.kty, n: jwk.n, e: jwk.e, alg: 'RS256', ext: true },
+      { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+      false,
+      ['verify']
+    );
+
+    const enc = new TextEncoder();
+    const isValid = await crypto.subtle.verify(
+      'RSASSA-PKCS1-v1_5',
+      cryptoKey,
+      decodeBase64UrlToUint8Array(sigB64),
+      enc.encode(`${headerB64}.${bodyB64}`)
+    );
+    if (!isValid) return null;
+
+    const payload = JSON.parse(decodeBase64UrlToString(bodyB64));
+    if (!payload || typeof payload !== 'object') return null;
+
+    // Issuer check (Auth0 trailing slash standard)
+    if (payload.iss !== `https://${cleanDomain}/`) return null;
+    if (typeof payload.sub !== 'string' || !payload.sub.trim()) return null;
+
+    if (!validateAudienceClaim(payload.aud, allowedAudiences, payload.azp, requireAzp)) {
+      return null;
+    }
+
+    const currentSec = Number.isFinite(nowSec) ? nowSec : Math.floor(Date.now() / 1000);
+    const exp = Number(payload.exp);
+    if (!Number.isFinite(exp) || exp <= (currentSec - clockSkewSec)) {
+      return null;
+    }
+    if (payload.nbf !== undefined && Number(payload.nbf) > (currentSec + clockSkewSec)) {
+      return null;
+    }
+    if (payload.iat !== undefined && Number(payload.iat) > (currentSec + Math.max(clockSkewSec, 120))) {
+      return null;
+    }
+
+    if (requireEmailVerified) {
+      if (payload.email_verified !== true) return null;
+      if (typeof payload.email !== 'string' || !payload.email.includes('@')) return null;
+    }
+
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+export async function verifyAuth0IdToken(idToken, {
+  domain,
+  clientId,
+  jwks = null,
+  fetchImpl = fetch,
+  nowSec = null
+} = {}) {
+  const cleanClientId = String(clientId || '').trim();
+  if (!cleanClientId) return null;
+  return verifyAuth0Jwt(idToken, {
+    domain,
+    allowedAudiences: [cleanClientId],
+    requireEmailVerified: true,
+    requireAzp: cleanClientId,
+    jwks,
+    fetchImpl,
+    nowSec
+  });
+}
+
+export async function verifyAuth0AccessToken(accessToken, {
+  domain,
+  audience,
+  jwks = null,
+  fetchImpl = fetch,
+  nowSec = null
+} = {}) {
+  const cleanAudience = String(audience || '').trim();
+  if (!cleanAudience) return null;
+  return verifyAuth0Jwt(accessToken, {
+    domain,
+    allowedAudiences: [cleanAudience],
+    requireEmailVerified: false,
+    jwks,
+    fetchImpl,
+    nowSec
+  });
 }

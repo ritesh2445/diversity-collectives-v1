@@ -23,7 +23,7 @@ export const TIER_CONFIGS = {
   [APPRECIATION_TIERS.COMMUNITY_ALLY]: {
     id: APPRECIATION_TIERS.COMMUNITY_ALLY,
     title: 'Community Ally',
-    circleName: 'Friend of Sanctuary',
+    circleName: 'Friend of Center',
     certificatePrefix: 'CA',
     minAmount: 1,
     accentColor: '#D97706', // Amber-600
@@ -32,7 +32,7 @@ export const TIER_CONFIGS = {
     borderStyle: 'border-amber-300 shadow-amber-900/10',
     badgeText: 'COMMUNITY ALLY',
     tagline: 'Lifting Each Other Up, One Step at a Time',
-    impactNarrative: 'Your generous contribution provides vital safer-sex supplies, harm reduction kits, welcoming computer access, and warm hospitality for local community members finding sanctuary at our Ventura Community Resource Center.',
+    impactNarrative: 'Your generous contribution provides vital safer-sex supplies, harm reduction kits, welcoming computer access, and warm hospitality for local community members finding center at our Ventura Community Resource Center.',
     quote: '"Thank you for believing that everyone deserves a space where they are welcomed without reservation."',
     insignia: 'Warm Amber Sunrise & Prismatic Leaf',
     envelopeAccent: 'from-amber-400 to-rose-400',
@@ -71,7 +71,7 @@ export const TIER_CONFIGS = {
     badgeText: 'RAINBOW CHAMPION',
     tagline: 'Fostering Resilience & Youth Leadership',
     impactNarrative: 'Your partnership underwrites weekly Rainbow Umbrella and Little Unicorns youth peer circles, creating lifelong friendships, mental health resilience, and affirming spaces where young people can be their authentic selves.',
-    quote: '"Research proves having even one affirming adult reduces youth suicide risk by 40%. Your support ensures that sanctuary is always open."',
+    quote: '"Research proves having even one affirming adult reduces youth suicide risk by 40%. Your support ensures that center is always open."',
     insignia: 'Prismatic Crystal & Emerald Laurel',
     envelopeAccent: 'from-emerald-600 to-teal-700',
     envelopeBg: 'bg-gradient-to-br from-[#ECFDF5] via-[#E0F2FE] to-[#F5F3FF]',

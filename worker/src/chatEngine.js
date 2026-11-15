@@ -461,7 +461,7 @@ export async function processChatRequest(userMessage, env = {}, clientIp = '', o
           success: true,
           answer: "Ask DCVC has reached its daily complimentary conversation limit for today. You can still explore all our programs, services, and hours directly on the website, or reach our staff directly at info@diversitycollective.org.",
           citations: [
-            { title: "Programs & Sanctuary", url: "/programs" },
+            { title: "Programs & Center", url: "/programs" },
             { title: "Contact DCVC", url: "/contact" }
           ],
           rateLimitRemaining: 0,

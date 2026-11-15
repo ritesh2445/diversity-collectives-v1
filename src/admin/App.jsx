@@ -82,6 +82,7 @@ import {
 import { getGitHubStorageConfig, saveGitHubStorageConfig } from './services/imageService.js';
 import DesignEditor from './components/DesignEditor.jsx';
 import CmsStudio from './components/CmsStudio.jsx';
+import SiteFeaturesStudio from './components/SiteFeaturesStudio.jsx';
 
 export default function AdminApp() {
   const [currentUser, setCurrentUser] = useState(getStoredUser());
@@ -561,6 +562,7 @@ export default function AdminApp() {
   const navigationTabs = [
     { id: 'overview', label: 'Overview', icon: LayoutGrid, badge: 'Home' },
     { id: 'cms', label: 'Site Content', icon: Sparkles, badge: 'Live CMS' },
+    { id: 'forms', label: 'Forms & Slots', icon: FileText, badge: 'Custom Forms' },
     { id: 'directory', label: 'Directory', icon: Building2, badge: pendingBizCount > 0 ? `${pendingBizCount} Pending` : null },
     { id: 'donations', label: 'Donations & Cards', icon: Heart, badge: '$54.3k' },
     { id: 'inquiries', label: 'Inquiries', icon: Mail, badge: newInqCount > 0 ? `${newInqCount} New` : null },
@@ -733,7 +735,7 @@ export default function AdminApp() {
                     </span>
                   </div>
                   <p className="text-xs text-slate-600 mt-0.5">
-                    Switch between Design 1 (Community Mosaic / Original) and Design 2 (Vibrant Coastal Sanctuary). Changes update the public website immediately.
+                    Switch between Design 1 (Community Mosaic / Original) and Design 2 (Vibrant Coastal Center). Changes update the public website immediately.
                   </p>
                 </div>
 
@@ -785,8 +787,8 @@ export default function AdminApp() {
                   <div className="flex items-start justify-between">
                     <div>
                       <span className="text-[10px] font-black uppercase text-emerald-800 tracking-wider">Design 2 (Vibrant)</span>
-                      <h4 className="font-display text-base font-extrabold text-slate-950">Vibrant Coastal Sanctuary Hero</h4>
-                      <p className="text-xs text-slate-500 mt-1">Modern editorial typography with curved underline and sanctuary pathfinder card.</p>
+                      <h4 className="font-display text-base font-extrabold text-slate-950">Vibrant Coastal Center Hero</h4>
+                      <p className="text-xs text-slate-500 mt-1">Modern editorial typography with curved underline and center pathfinder card.</p>
                     </div>
                     {currentThemeId === 'spotlight' || currentThemeId === 'default' ? (
                       <span className="px-2.5 py-1 rounded-full bg-emerald-600 text-white text-[10px] font-black flex items-center gap-1 shadow-xs">
@@ -913,6 +915,13 @@ export default function AdminApp() {
             ================================================================== */}
         {activeTab === 'cms' && (
           <CmsStudio />
+        )}
+
+        {/* ==================================================================
+            TAB: FORMS & SLOT BOOKING STUDIO (CUSTOM FORMS, EDIT & CHOOSE)
+            ================================================================== */}
+        {activeTab === 'forms' && (
+          <SiteFeaturesStudio initialSubTab="forms" />
         )}
 
         {/* ==================================================================
@@ -1123,7 +1132,7 @@ export default function AdminApp() {
                 </div>
 
                 <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100">
-                  <span>General Sanctuary & Youth Programs baseline: ~$4.5k/mo</span>
+                  <span>General Center & Youth Programs baseline: ~$4.5k/mo</span>
                   <span className="font-bold text-purple-900">100% Tax Deductible (501c3)</span>
                 </div>
               </div>
@@ -1155,7 +1164,7 @@ export default function AdminApp() {
                     className="text-xs font-semibold px-3 py-1.5 rounded-xl border border-slate-300 bg-white"
                   >
                     <option value="all">All Designated Funds</option>
-                    <option value="General Sanctuary">General Sanctuary</option>
+                    <option value="General Center">General Center</option>
                     <option value="Diversity SHINES">Diversity SHINES</option>
                     <option value="Rainbow Umbrella">Rainbow Umbrella</option>
                     <option value="Pride Festival 2026">Pride Festival 2026</option>
@@ -1947,7 +1956,7 @@ export default function AdminApp() {
                   <span>Hero Design Switcher & Festival Dispatcher</span>
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Switch instantly between Design 1 (Flagship Aurora Ribbon) and Design 2 (Civic Sanctuary & 3D Spotlight), or activate seasonal festival themes (Pride Month, Transgender Visibility, World AIDS Day) with real-time public site synchronization.
+                  Switch instantly between Design 1 (Flagship Aurora Ribbon) and Design 2 (Civic Center & 3D Spotlight), or activate seasonal festival themes (Pride Month, Transgender Visibility, World AIDS Day) with real-time public site synchronization.
                 </p>
               </div>
 

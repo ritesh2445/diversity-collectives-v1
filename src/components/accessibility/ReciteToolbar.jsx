@@ -1303,7 +1303,7 @@ export default function ReciteToolbar() {
         <div className="flex items-center gap-2 pl-2 border-l border-slate-800 flex-shrink-0">
           <div className="flex flex-col text-right hidden sm:flex">
             <span className="font-black text-xs text-white tracking-wide">
-              DCVC <span className="text-amber-400">Sanctuary</span>
+              DCVC <span className="text-amber-400">Center</span>
             </span>
             <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">
               Native A11y Suite
@@ -1409,7 +1409,7 @@ export default function ReciteToolbar() {
 
               <div className="grid grid-cols-2 gap-2">
                 {[
-                  { id: 'default', label: 'Default Sanctuary' },
+                  { id: 'default', label: 'Default Center' },
                   { id: 'opendyslexic', label: 'OpenDyslexic' },
                   { id: 'lexend', label: 'Lexend Reader' },
                   { id: 'atkinson', label: 'Atkinson Legible' },
@@ -1448,7 +1448,7 @@ export default function ReciteToolbar() {
                   <div className="flex items-center gap-2 text-left">
                     <span className="text-base">📖</span>
                     <div>
-                      <span className="block font-black">Dyslexia Sanctuary Mode</span>
+                      <span className="block font-black">Dyslexia Center Mode</span>
                       <span className="block text-[10px] opacity-80">OpenDyslexic + 1.8x Line Spacing + Tint</span>
                     </div>
                   </div>

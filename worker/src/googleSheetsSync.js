@@ -61,6 +61,26 @@ export const SHEET_COLUMNS = {
     'Preferred Format',
     'Requested Date',
     'Reference ID'
+  ],
+  subscribers: [
+    'Subscription ID',
+    'Email Address',
+    'Source',
+    'Active Status',
+    'Consent Timestamp',
+    'Subscribed Date',
+    'Unsubscribed Date'
+  ],
+  donations: [
+    'Card / Intent ID',
+    'Payment Reference',
+    'Donor Name',
+    'Recipient Email',
+    'Amount ($)',
+    'Frequency',
+    'Appreciation Tier',
+    'Status',
+    'Created At'
   ]
 };
 
@@ -160,6 +180,33 @@ export function formatTrainingRow(booking) {
     booking.preferred_format || 'in-person',
     booking.preferred_date || 'Flexible',
     booking.id || ''
+  ];
+}
+
+export function formatSubscriberRow(sub) {
+  return [
+    sub.id || '',
+    sub.email || '',
+    sub.source || 'website_footer',
+    sub.is_active ? 'Active' : 'Unsubscribed',
+    sub.consent_timestamp || '',
+    sub.created_at || '',
+    sub.unsubscribed_at || ''
+  ];
+}
+
+export function formatDonationRow(don) {
+  const amt = don.amount_cents ? (don.amount_cents / 100).toFixed(2) : '0.00';
+  return [
+    don.id || don.card_token || '',
+    don.payment_reference || '',
+    don.donor_display_name || 'Anonymous Supporter',
+    don.recipient_email || '',
+    `$${amt}`,
+    don.frequency || 'one-time',
+    don.tier_name || don.tier || 'Community Supporter',
+    don.status || 'active',
+    don.created_at || ''
   ];
 }
 

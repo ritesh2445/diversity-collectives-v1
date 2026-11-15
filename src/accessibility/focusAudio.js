@@ -265,7 +265,7 @@ class FocusAudioEngine {
 
     const now = this.ctx.currentTime;
 
-    // Track 1: 432Hz Warm Sanctuary Chord (audible across laptop & phone speakers)
+    // Track 1: 432Hz Warm Center Chord (audible across laptop & phone speakers)
     const freqs = [216, 324, 432, 540];
     const chordFilter = this.ctx.createBiquadFilter();
     chordFilter.type = 'lowpass';

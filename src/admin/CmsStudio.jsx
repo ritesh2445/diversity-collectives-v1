@@ -216,7 +216,7 @@ export default function CmsStudio() {
         subtitle: '',
         description: '',
         stat: '100% Community-Powered',
-        badge: 'Sanctuary Era',
+        badge: 'Center Era',
         image: '/images/community-gathering.jpg',
         pictureFolder: [],
         fontSize: 'base',
@@ -233,6 +233,10 @@ export default function CmsStudio() {
     if (type === 'news') {
       setFormData({
         ...item,
+        originalId: item.id || item.slug,
+        originalSlug: item.slug,
+        body: item.body || item.content || '',
+        content: item.content || item.body || '',
         tags: Array.isArray(item.tags) ? item.tags.join(', ') : (item.tags || '')
       });
     } else if (type === 'milestone') {
@@ -257,7 +261,12 @@ export default function CmsStudio() {
       const formattedTags = typeof formData.tags === 'string'
         ? formData.tags.split(',').map(t => t.trim()).filter(Boolean)
         : formData.tags;
-      saveCmsArticle({ ...formData, tags: formattedTags });
+      saveCmsArticle({
+        ...formData,
+        originalId: editingItem?.id || editingItem?.slug,
+        originalSlug: editingItem?.slug,
+        tags: formattedTags
+      });
       showToast(`Article "${formData.title}" saved.`);
     } else if (modalType === 'resource') {
       saveCmsResource(formData);
@@ -437,7 +446,7 @@ export default function CmsStudio() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h3 className="font-display text-xl font-bold text-slate-950">
-                Core Sanctuary Programs ({cmsData.programs?.length || 0})
+                Core Center Programs ({cmsData.programs?.length || 0})
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
                 Manage clinical services, youth circles, pre-teen programs, and physical center hours.
@@ -1228,7 +1237,7 @@ export default function CmsStudio() {
 
               <div className="md:col-span-2">
                 <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                  Physical Sanctuary Address
+                  Physical Center Address
                 </label>
                 <input
                   type="text"
@@ -1424,7 +1433,7 @@ export default function CmsStudio() {
                   <ImagePicker
                     value={formData.heroImage}
                     onChange={(url) => setFormData({ ...formData, heroImage: url })}
-                    label="Program Header / Sanctuary Picture"
+                    label="Program Header / Center Picture"
                     aspectRatio="aspect-[16/9]"
                   />
 
@@ -1698,7 +1707,7 @@ export default function CmsStudio() {
                     </label>
                     <NewsWritingPad
                       value={formData.body || formData.content || ''}
-                      onChange={(html) => setFormData(prev => ({ ...prev, body: html }))}
+                      onChange={(html) => setFormData(prev => ({ ...prev, body: html, content: html }))}
                       onReadTimeCalculated={(time) => setFormData(prev => ({ ...prev, readTime: time }))}
                     />
                   </div>
@@ -1950,7 +1959,7 @@ export default function CmsStudio() {
                       <label className="block text-xs font-bold text-slate-700 mb-1">Badge Tag</label>
                       <input
                         type="text"
-                        value={formData.badge || 'Sanctuary Era'}
+                        value={formData.badge || 'Center Era'}
                         onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
                         className="w-full px-3 py-2 border rounded-xl text-xs"
                       />

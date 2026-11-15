@@ -12,7 +12,8 @@ import {
   Calendar,
   Download,
   AlertTriangle,
-  Repeat
+  Repeat,
+  ArrowRight
 } from 'lucide-react';
 import { liveEvents, orgInfo } from '../data/dcvcData';
 import { cmsStore } from '../services/cmsStore';
@@ -202,17 +203,37 @@ export default function EventDetail() {
 
             {/* Action Bar */}
             <div className="pt-4 flex flex-wrap items-center gap-4">
-              {event.registrationUrl ? (
-                <a
-                  href={event.registrationUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+              {event.slug === 'free-hiv-sti-screening' ? (
+                <Link
+                  to="/appointments"
                   className="btn-primary py-3.5 px-7 text-sm font-bold inline-flex items-center gap-2 shadow-lg hover:shadow-xl"
                 >
                   <Ticket className="w-4 h-4 text-amber-300" />
-                  <span>Official Registration / RSVP</span>
-                  <ArrowUpRight className="w-4 h-4" />
-                </a>
+                  <span>Book Confidential Screening Slot</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              ) : event.registrationUrl ? (
+                event.registrationUrl.startsWith('http') ? (
+                  <a
+                    href={event.registrationUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-primary py-3.5 px-7 text-sm font-bold inline-flex items-center gap-2 shadow-lg hover:shadow-xl"
+                  >
+                    <Ticket className="w-4 h-4 text-amber-300" />
+                    <span>Official Registration / RSVP</span>
+                    <ArrowUpRight className="w-4 h-4" />
+                  </a>
+                ) : (
+                  <Link
+                    to={event.registrationUrl}
+                    className="btn-primary py-3.5 px-7 text-sm font-bold inline-flex items-center gap-2 shadow-lg hover:shadow-xl"
+                  >
+                    <Ticket className="w-4 h-4 text-amber-300" />
+                    <span>Official Registration / RSVP</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                )
               ) : (
                 <div className="p-4 bg-emerald-50 border-2 border-emerald-200 rounded-2xl text-xs text-emerald-900 font-bold flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-emerald-600" />
@@ -231,6 +252,29 @@ export default function EventDetail() {
 
             {/* Direct Event RSVP & Email Confirmation Form */}
             {!event.isCancelled && (
+              event.slug === 'free-hiv-sti-screening' ? (
+                <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-purple-50 via-teal-50/40 to-white border-2 border-purple-200 shadow-lg space-y-4">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full border border-emerald-300">
+                    Confidential Slot Booking System
+                  </span>
+                  <h3 className="font-display text-xl sm:text-2xl font-black text-slate-950">
+                    Book a Free HIV & STI Screening Time Slot
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-medium">
+                    Screenings take place every 1st Monday of the month from 3:00 PM – 7:00 PM at DCVC CRC (2471 Portola Rd, Suite 100). Certified HIV counselors provide confidential 15-minute rapid testing plus STI panels (syphilis, chlamydia, gonorrhea).
+                  </p>
+                  <div className="pt-2">
+                    <Link
+                      to="/appointments"
+                      className="btn-primary py-3 px-6 text-xs sm:text-sm font-bold inline-flex items-center gap-2 shadow-md hover:shadow-xl"
+                    >
+                      <Ticket className="w-4 h-4 text-amber-300" />
+                      <span>Choose Date & Reserved Time Slot</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
+                  </div>
+                </div>
+              ) : (
               <div className="p-6 sm:p-8 rounded-3xl bg-white border-2 border-purple-100 shadow-lg space-y-5">
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-4">
                   <div>
@@ -358,6 +402,7 @@ export default function EventDetail() {
                   </form>
                 )}
               </div>
+              )
             )}
           </div>
 

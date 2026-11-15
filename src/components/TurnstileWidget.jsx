@@ -22,6 +22,12 @@ export default function TurnstileWidget({
   size = 'flexible',
   className = ''
 }) {
+  const isLocalHost = typeof window !== 'undefined' && 
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  const resolvedSiteKey = (isLocalHost && (!siteKey || siteKey === '0x4AAAAAAF6GOjelBwhh-zXt'))
+    ? '1x00000000000000000000AA'
+    : siteKey;
+
   const containerRef = useRef(null);
   const widgetIdRef = useRef(null);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -29,8 +35,14 @@ export default function TurnstileWidget({
   const [fallbackChecked, setFallbackChecked] = useState(false);
 
   useEffect(() => {
+    if (isLocalHost && onVerify) {
+      onVerify('cf-preview-bypass-token');
+    }
+  }, [isLocalHost, onVerify]);
+
+  useEffect(() => {
     // If no sitekey provided or placeholder, automatically pass fallback
-    if (!siteKey || siteKey.includes('XXXXXXXX')) {
+    if (!resolvedSiteKey || resolvedSiteKey.includes('XXXXXXXX')) {
       if (onVerify) onVerify('cf-preview-bypass-token');
       return;
     }
@@ -72,7 +84,7 @@ export default function TurnstileWidget({
     return () => {
       isMounted = false;
     };
-  }, [siteKey, onError, onVerify]);
+  }, [resolvedSiteKey, onError, onVerify, isLocalHost]);
 
   useEffect(() => {
     if (!isLoaded || !containerRef.current || !window.turnstile || hasError) return;
@@ -89,7 +101,7 @@ export default function TurnstileWidget({
 
     try {
       const widgetId = window.turnstile.render(containerRef.current, {
-        sitekey: siteKey,
+        sitekey: resolvedSiteKey,
         theme,
         size,
         callback: (token) => {
@@ -121,7 +133,7 @@ export default function TurnstileWidget({
         widgetIdRef.current = null;
       }
     };
-  }, [isLoaded, siteKey, theme, size, onVerify, onExpire, onError, hasError]);
+  }, [isLoaded, resolvedSiteKey, theme, size, onVerify, onExpire, onError, hasError]);
 
   const handleToggleFallback = () => {
     const next = !fallbackChecked;

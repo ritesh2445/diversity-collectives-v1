@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { cmsStore } from '../services/cmsStore';
 import { searchSiteWithSuggestions } from '../utils/smartSiteSearch';
+import { useScrollLock } from '../utils/scrollLock';
 
 const TYPE_FILTERS = ['All', 'Program', 'Event', 'Board Member', 'Training', 'Resource', 'Community Circle', 'News', 'Page'];
 
@@ -41,23 +42,27 @@ export default function SmartSearchModal({ isOpen, onClose }) {
     return cmsStore.subscribe(() => setCmsTick((t) => t + 1));
   }, []);
 
-  // Focus search input and lock body scroll while open
+  // Bulletproof cross-platform background scroll lock while open
+  useScrollLock(isOpen);
+
+  // Focus search input on open
   useEffect(() => {
     if (!isOpen) return;
     setActiveIndex(0);
     const t = setTimeout(() => inputRef.current?.focus(), 60);
-    const origOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      clearTimeout(t);
-      document.body.style.overflow = origOverflow;
-    };
+    return () => clearTimeout(t);
   }, [isOpen]);
+
+  const trimmedQuery = query.trim();
+  const hasTypedQuery = trimmedQuery.length > 0;
 
   const searchOutput = useMemo(() => {
     void cmsTick;
+    if (!hasTypedQuery) {
+      return { results: [], suggestions: [], correctedQuery: null, isEmptyQuery: true };
+    }
     return searchSiteWithSuggestions(query, { category, limit: 12 });
-  }, [query, category, cmsTick]);
+  }, [query, category, cmsTick, hasTypedQuery]);
 
   const results = searchOutput.results || [];
 
@@ -152,8 +157,8 @@ export default function SmartSearchModal({ isOpen, onClose }) {
           </button>
         </div>
 
-        {/* Spell-Correction & Smart Suggestions Strip */}
-        {(searchOutput.correctedQuery || (searchOutput.suggestions && searchOutput.suggestions.length > 0)) && (
+        {/* Spell-Correction & Smart Suggestions Strip (ONLY when user has typed something) */}
+        {hasTypedQuery && (searchOutput.correctedQuery || (searchOutput.suggestions && searchOutput.suggestions.length > 0)) && (
           <div className="px-4 py-2.5 bg-purple-50/70 border-b border-purple-100 flex flex-wrap items-center gap-1.5 text-xs">
             {searchOutput.correctedQuery ? (
               <span className="inline-flex items-center gap-1 text-[#5A1E65] font-bold mr-1">
@@ -162,7 +167,7 @@ export default function SmartSearchModal({ isOpen, onClose }) {
               </span>
             ) : (
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mr-1">
-                {searchOutput.isEmptyQuery ? 'Popular:' : 'Suggestions:'}
+                Suggestions:
               </span>
             )}
 
@@ -206,7 +211,19 @@ export default function SmartSearchModal({ isOpen, onClose }) {
 
         {/* Results List */}
         <div className="flex-1 overflow-y-auto p-2.5 sm:p-3 space-y-1.5 bg-slate-50/50">
-          {results.length === 0 ? (
+          {!hasTypedQuery ? (
+            <div className="py-10 px-6 text-center space-y-2">
+              <div className="w-10 h-10 rounded-2xl bg-purple-100 text-[#5A1E65] flex items-center justify-center mx-auto">
+                <Search className="w-5 h-5" />
+              </div>
+              <p className="text-sm font-bold text-slate-800">
+                Search Diversity Collective
+              </p>
+              <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                Start typing above to search programs, events, team members, resources, training, or any page across the site.
+              </p>
+            </div>
+          ) : results.length === 0 ? (
             <div className="py-10 px-6 text-center space-y-3">
               <p className="text-sm font-bold text-slate-700">
                 No direct page match found for "{query}"
@@ -288,3 +305,4 @@ export default function SmartSearchModal({ isOpen, onClose }) {
     </div>
   );
 }
+

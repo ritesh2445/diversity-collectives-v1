@@ -13,11 +13,13 @@ import {
   Sparkles,
   ShieldCheck
 } from 'lucide-react';
-import { trainingCourses, orgInfo } from '../data/dcvcData';
+import { useLiveOrgInfo, useLiveTrainings } from '../hooks/useCmsLive';
 import { usePageMeta } from '../utils/seo';
 
 export default function TrainingDetail() {
   const { slug } = useParams();
+  const orgInfo = useLiveOrgInfo();
+  const trainingCourses = useLiveTrainings();
   const course = trainingCourses.find(c => c.slug === slug);
 
   usePageMeta({

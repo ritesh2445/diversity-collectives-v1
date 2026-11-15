@@ -30,13 +30,13 @@ describe('Resend Email Templates (12 Professional Templates)', () => {
   });
 
   it('2. Contact Inquiry Notification template renders correctly', () => {
-    const res = templateContactStaffNotification({ 
-      name: 'Sam Chen', 
-      email: 'sam@example.com', 
-      phone: '805-555-0199', 
-      subject: 'Donations', 
+    const res = templateContactStaffNotification({
+      name: 'Sam Chen',
+      email: 'sam@example.com',
+      phone: '805-555-0199',
+      subject: 'Donations',
       message: 'Hello, how can I set up an estate gift?',
-      reference: 'ref_123' 
+      reference: 'ref_123'
     });
     assert.match(res.subject, /\[Website Inquiry\]/);
     assert.match(res.html, /Sam Chen/);
@@ -52,13 +52,13 @@ describe('Resend Email Templates (12 Professional Templates)', () => {
   });
 
   it('4. Volunteer Staff Notification renders correctly', () => {
-    const res = templateVolunteerStaffNotification({ 
-      fullName: 'Jordan Lee', 
-      email: 'jordan@example.com', 
-      phone: '805-555-1234', 
-      city: 'Ventura', 
-      roles: ['events', 'youth'], 
-      availability: 'Weekends' 
+    const res = templateVolunteerStaffNotification({
+      fullName: 'Jordan Lee',
+      email: 'jordan@example.com',
+      phone: '805-555-1234',
+      city: 'Ventura',
+      roles: ['events', 'youth'],
+      availability: 'Weekends'
     });
     assert.match(res.subject, /\[New Volunteer Application\] Jordan Lee/);
     assert.match(res.html, /jordan@example\.com/);
@@ -73,12 +73,12 @@ describe('Resend Email Templates (12 Professional Templates)', () => {
   });
 
   it('6. Business Moderation Notification renders correctly', () => {
-    const res = templateBusinessModerationNotification({ 
-      businessName: 'Coastal Law Group', 
-      category: 'Legal', 
-      city: 'Oxnard', 
-      ownerName: 'Pat Kim', 
-      ownerEmail: 'pat@coastallaw.example' 
+    const res = templateBusinessModerationNotification({
+      businessName: 'Coastal Law Group',
+      category: 'Legal',
+      city: 'Oxnard',
+      ownerName: 'Pat Kim',
+      ownerEmail: 'pat@coastallaw.example'
     });
     assert.match(res.subject, /\[Directory Moderation\] Coastal Law Group/);
     assert.match(res.html, /Coastal Law Group/);
@@ -86,10 +86,10 @@ describe('Resend Email Templates (12 Professional Templates)', () => {
   });
 
   it('7. Training Booking Acknowledgment renders correctly', () => {
-    const res = templateTrainingAcknowledgment({ 
-      contactName: 'Dr. Jamie Doe', 
-      organizationName: 'Ventura Clinic', 
-      courseTitle: 'LGBTQ+ Affirming Healthcare' 
+    const res = templateTrainingAcknowledgment({
+      contactName: 'Dr. Jamie Doe',
+      organizationName: 'Ventura Clinic',
+      courseTitle: 'LGBTQ+ Affirming Healthcare'
     });
     assert.match(res.subject, /P\.R\.I\.D\.E\. Training Request Received/);
     assert.match(res.html, /Ventura Clinic/);
@@ -97,14 +97,14 @@ describe('Resend Email Templates (12 Professional Templates)', () => {
   });
 
   it('8. Training Staff Notification renders correctly', () => {
-    const res = templateTrainingStaffNotification({ 
-      organizationName: 'County Health', 
-      contactName: 'Dana', 
-      email: 'dana@county.gov', 
-      phone: '805-555-9999', 
-      courseTitle: 'Foundations of Inclusion', 
-      attendees: 45, 
-      preferredFormat: 'in-person' 
+    const res = templateTrainingStaffNotification({
+      organizationName: 'County Health',
+      contactName: 'Dana',
+      email: 'dana@county.gov',
+      phone: '805-555-9999',
+      courseTitle: 'Foundations of Inclusion',
+      attendees: 45,
+      preferredFormat: 'in-person'
     });
     assert.match(res.subject, /\[Training Request\] County Health/);
     assert.match(res.html, /Dana/);
@@ -119,12 +119,12 @@ describe('Resend Email Templates (12 Professional Templates)', () => {
   });
 
   it('10. Accessibility Feedback Notification renders correctly', () => {
-    const res = templateAccessibilityStaffNotification({ 
-      pageUrl: 'https://diversitycollective.org/donate', 
-      barrierDescription: 'Screen reader gets stuck on modal close button.', 
-      assistiveTech: 'NVDA on Windows', 
-      contactName: 'Robin', 
-      contactEmail: 'robin@example.com' 
+    const res = templateAccessibilityStaffNotification({
+      pageUrl: 'https://diversitycollective.org/donate',
+      barrierDescription: 'Screen reader gets stuck on modal close button.',
+      assistiveTech: 'NVDA on Windows',
+      contactName: 'Robin',
+      contactEmail: 'robin@example.com'
     });
     assert.match(res.subject, /\[Accessibility Ticket\] Barrier reported/);
     assert.match(res.html, /NVDA on Windows/);
@@ -132,15 +132,15 @@ describe('Resend Email Templates (12 Professional Templates)', () => {
   });
 
   it('11. Donor Appreciation Card Email renders correctly', () => {
-    const res = templateDonorAppreciationEmail({ 
-      donorDisplayName: 'Casey Miller', 
-      formattedAmount: '$150', 
-      tierName: 'Rainbow Champion', 
-      badge: 'CHAMPION CIRCLE', 
-      tagline: 'Fostering Resilience & Youth Leadership', 
-      impact: 'Your partnership underwrites weekly Rainbow Umbrella peer circles.', 
-      cardUrl: 'https://diversitycollective.org/appreciation-card/dcvc_test', 
-      frequency: 'one-time' 
+    const res = templateDonorAppreciationEmail({
+      donorDisplayName: 'Casey Miller',
+      formattedAmount: '$150',
+      tierName: 'Rainbow Champion',
+      badge: 'CHAMPION CIRCLE',
+      tagline: 'Fostering Resilience & Youth Leadership',
+      impact: 'Your partnership underwrites weekly Rainbow Umbrella peer circles.',
+      cardUrl: 'https://diversitycollective.org/appreciation-card/dcvc_test',
+      frequency: 'one-time'
     });
     assert.match(res.subject, /Your DCVC Appreciation Card has arrived/);
     assert.match(res.html, /Casey Miller/);
@@ -150,12 +150,12 @@ describe('Resend Email Templates (12 Professional Templates)', () => {
   });
 
   it('12. Administrative Alert renders correctly', () => {
-    const res = templateAdminAlert({ 
-      action: 'Business Listing Approved', 
-      details: { businessId: 'biz-1', approvedBy: 'admin@diversitycollective.org' }, 
-      actorEmail: 'admin@diversitycollective.org', 
-      targetType: 'business', 
-      targetId: 'biz-1' 
+    const res = templateAdminAlert({
+      action: 'Business Listing Approved',
+      details: { businessId: 'biz-1', approvedBy: 'admin@diversitycollective.org' },
+      actorEmail: 'admin@diversitycollective.org',
+      targetType: 'business',
+      targetId: 'biz-1'
     });
     assert.match(res.subject, /\[DCVC Security\/Admin Alert\] Business Listing Approved/);
     assert.match(res.html, /admin@diversitycollective\.org/);
@@ -168,7 +168,7 @@ describe('Resend Email Templates (12 Professional Templates)', () => {
       formattedAmount: '$50',
       tierName: 'Community Ally',
       badge: 'ALLY',
-      tagline: 'Keeping Sanctuary Doors Open',
+      tagline: 'Keeping Center Doors Open',
       impact: 'Sustains weekly youth & trans support circles.',
       cardUrl: 'https://diversitycollective.org/appreciation-card/dcvc_rec_123',
       frequency: 'monthly'
@@ -229,6 +229,40 @@ describe('Resend Email Templates (12 Professional Templates)', () => {
     });
     assert.match(staff.subject, /\[COMMUNITY_JOIN\] Rainbow Umbrella Youth — from Sam Ortiz/);
     assert.match(staff.html, /Would love to join Thursdays!/);
+  });
+
+  it('17. Custom Admin Donation Template replaces dynamic donor placeholders', () => {
+    const customTemplate = {
+      subject: 'Special 💜 Gratitude to {{donor_name}} for {{amount}}',
+      title: 'Our Community Thanks You, {{donor_name}}!',
+      headline: 'Honoring Donor Partner',
+      bodyText: 'Dear {{donor_name}},\n\nYour gift of {{amount}} designated for {{designation}} ({{frequency}}) is making real change.\nReceipt Ref: {{reference}} on {{date}}.',
+      recurringNote: 'Dear {{donor_name}}, your {{amount}} recurring gift makes a daily difference! 💜',
+      taxNotice: 'DCVC EIN: {{ein}}. Thank you for your tax-deductible gift.'
+    };
+
+    const res = templateDonorAppreciationEmail({
+      donorDisplayName: 'Morgan Vance',
+      formattedAmount: '$250.00',
+      tierName: 'Rainbow Champion',
+      badge: 'CHAMPION CIRCLE',
+      tagline: 'Fostering Youth Resiliency',
+      impact: 'Provides monthly peer group supplies.',
+      cardUrl: 'https://diversitycollective.org/appreciation-card/card_xyz',
+      frequency: 'monthly',
+      designation: 'Diversity SHINES Health Screenings',
+      date: 'November 14, 2026',
+      reference: 'DCVC-DON-998877',
+      customTemplate
+    });
+
+    assert.strictEqual(res.subject, 'Special 💜 Gratitude to Morgan Vance for $250.00');
+    assert.match(res.html, /Our Community Thanks You, Morgan Vance!/);
+    assert.match(res.html, /designated for Diversity SHINES Health Screenings/);
+    assert.match(res.html, /DCVC-DON-998877/);
+    assert.match(res.html, /Morgan Vance, your \$250\.00 recurring gift makes a daily difference!/);
+    assert.match(res.html, /DCVC EIN: 46-1234567/);
+    assert.match(res.text, /Special 💜 Gratitude/);
   });
 
 });

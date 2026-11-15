@@ -20,8 +20,14 @@ import {
   validatePasswordStrength,
   parseCookies,
   buildSessionCookie,
-  clearSessionCookie
+  clearSessionCookie,
+  normalizeAuth0Domain,
+  sha256Hex,
+  verifyAuth0IdToken,
+  verifyAuth0AccessToken,
+  verifyGoogleToken
 } from '../worker/src/adminApi.js';
+import { templateAdminLoginOtp } from '../worker/src/emailTemplates.js';
 
 describe('Admin Authentication & RBAC Engine', () => {
 
@@ -248,7 +254,7 @@ describe('Admin Authentication & RBAC Engine', () => {
     assert.strictEqual(validatePasswordStrength('short').valid, false);
     assert.strictEqual(validatePasswordStrength('alllowercase12!').valid, false);
     assert.strictEqual(validatePasswordStrength('DCVC-Admin-2026!').valid, false);
-    assert.strictEqual(validatePasswordStrength('Sanctuary#2026!Strong').valid, true);
+    assert.strictEqual(validatePasswordStrength('CommunityCenter#2026!Strong').valid, true);
 
     const salt1 = generateRandomSalt(16);
     const salt2 = generateRandomSalt(16);
@@ -271,6 +277,299 @@ describe('Admin Authentication & RBAC Engine', () => {
     const cleared = clearSessionCookie({ crossOrigin: true });
     assert.ok(cleared.includes('Max-Age=0'));
     assert.ok(cleared.includes('SameSite=None'));
+  });
+
+  // =====================================================================
+  // Auth0 RS256 OIDC / JWKS Cryptographic Verification Tests
+  // =====================================================================
+
+  async function createTestRsaPair(kid = 'test-key-1') {
+    const keyPair = await crypto.subtle.generateKey(
+      {
+        name: 'RSASSA-PKCS1-v1_5',
+        modulusLength: 2048,
+        publicExponent: new Uint8Array([1, 0, 1]),
+        hash: 'SHA-256'
+      },
+      true,
+      ['sign', 'verify']
+    );
+    const pubJwk = await crypto.subtle.exportKey('jwk', keyPair.publicKey);
+    return {
+      privateKey: keyPair.privateKey,
+      jwk: {
+        ...pubJwk,
+        kid,
+        use: 'sig',
+        alg: 'RS256'
+      }
+    };
+  }
+
+  async function signTestRs256Jwt(privateKey, headerObj, payloadObj) {
+    const h = Buffer.from(JSON.stringify(headerObj)).toString('base64url');
+    const p = Buffer.from(JSON.stringify(payloadObj)).toString('base64url');
+    const input = new TextEncoder().encode(`${h}.${p}`);
+    const sig = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', privateKey, input);
+    const s = Buffer.from(sig).toString('base64url');
+    return `${h}.${p}.${s}`;
+  }
+
+  it('18. normalizes safe Auth0 domains and rejects SSRF / malformed domains', () => {
+    assert.strictEqual(normalizeAuth0Domain('https://dcvc-prod.us.auth0.com/'), 'dcvc-prod.us.auth0.com');
+    assert.strictEqual(normalizeAuth0Domain('DCVC-Prod.us.auth0.com'), 'dcvc-prod.us.auth0.com');
+    assert.strictEqual(normalizeAuth0Domain('evil.com/path'), '');
+    assert.strictEqual(normalizeAuth0Domain('user@evil.com'), '');
+    assert.strictEqual(normalizeAuth0Domain('localhost'), '');
+  });
+
+  it('19. verifies valid Auth0 RS256 ID token against JWKS and rejects unverified email / wrong issuer / expired', async () => {
+    const { privateKey, jwk } = await createTestRsaPair('kid-valid-1');
+    const domain = 'dcvc-test.us.auth0.com';
+    const clientId = 'client_abc_123';
+    const nowSec = Math.floor(Date.now() / 1000);
+
+    const validJwt = await signTestRs256Jwt(
+      privateKey,
+      { alg: 'RS256', typ: 'JWT', kid: 'kid-valid-1' },
+      {
+        iss: `https://${domain}/`,
+        sub: 'google-oauth2|1001',
+        aud: clientId,
+        email: 'admin@diversitycollective.org',
+        email_verified: true,
+        iat: nowSec - 10,
+        exp: nowSec + 3600
+      }
+    );
+
+    const verified = await verifyAuth0IdToken(validJwt, {
+      domain,
+      clientId,
+      jwks: [jwk],
+      nowSec
+    });
+    assert.ok(verified);
+    assert.strictEqual(verified.email, 'admin@diversitycollective.org');
+
+    // Unverified email must fail closed
+    const unverifiedJwt = await signTestRs256Jwt(
+      privateKey,
+      { alg: 'RS256', typ: 'JWT', kid: 'kid-valid-1' },
+      {
+        iss: `https://${domain}/`,
+        sub: 'auth0|999',
+        aud: clientId,
+        email: 'admin@diversitycollective.org',
+        email_verified: false,
+        iat: nowSec,
+        exp: nowSec + 3600
+      }
+    );
+    assert.strictEqual(await verifyAuth0IdToken(unverifiedJwt, { domain, clientId, jwks: [jwk], nowSec }), null);
+
+    // Wrong audience must fail
+    assert.strictEqual(await verifyAuth0IdToken(validJwt, { domain, clientId: 'other_client', jwks: [jwk], nowSec }), null);
+
+    // Wrong issuer must fail
+    const badIssJwt = await signTestRs256Jwt(
+      privateKey,
+      { alg: 'RS256', typ: 'JWT', kid: 'kid-valid-1' },
+      {
+        iss: 'https://attacker.auth0.com/',
+        sub: 'auth0|1',
+        aud: clientId,
+        email: 'admin@diversitycollective.org',
+        email_verified: true,
+        exp: nowSec + 3600
+      }
+    );
+    assert.strictEqual(await verifyAuth0IdToken(badIssJwt, { domain, clientId, jwks: [jwk], nowSec }), null);
+
+    // Expired token must fail
+    const expiredJwt = await signTestRs256Jwt(
+      privateKey,
+      { alg: 'RS256', typ: 'JWT', kid: 'kid-valid-1' },
+      {
+        iss: `https://${domain}/`,
+        sub: 'auth0|1',
+        aud: clientId,
+        email: 'admin@diversitycollective.org',
+        email_verified: true,
+        exp: nowSec - 120
+      }
+    );
+    assert.strictEqual(await verifyAuth0IdToken(expiredJwt, { domain, clientId, jwks: [jwk], nowSec }), null);
+  });
+
+  it('20. blocks alg:none, HS256 key confusion, and tampered RS256 payloads', async () => {
+    const { privateKey, jwk } = await createTestRsaPair('kid-tamper-1');
+    const domain = 'dcvc-test.us.auth0.com';
+    const clientId = 'client_abc_123';
+    const nowSec = Math.floor(Date.now() / 1000);
+
+    const validJwt = await signTestRs256Jwt(
+      privateKey,
+      { alg: 'RS256', typ: 'JWT', kid: 'kid-tamper-1' },
+      {
+        iss: `https://${domain}/`,
+        sub: 'auth0|1',
+        aud: clientId,
+        email: 'editor@diversitycollective.org',
+        email_verified: true,
+        exp: nowSec + 3600
+      }
+    );
+
+    // Tamper payload claim while preserving signature
+    const parts = validJwt.split('.');
+    const evilPayload = Buffer.from(JSON.stringify({
+      iss: `https://${domain}/`,
+      sub: 'auth0|1',
+      aud: clientId,
+      email: 'superadmin@diversitycollective.org',
+      email_verified: true,
+      exp: nowSec + 3600
+    })).toString('base64url');
+    assert.strictEqual(
+      await verifyAuth0IdToken(`${parts[0]}.${evilPayload}.${parts[2]}`, { domain, clientId, jwks: [jwk], nowSec }),
+      null
+    );
+
+    // Reject HS256 downgrade attempt
+    const hsHeader = Buffer.from(JSON.stringify({ alg: 'HS256', kid: 'kid-tamper-1' })).toString('base64url');
+    assert.strictEqual(
+      await verifyAuth0IdToken(`${hsHeader}.${parts[1]}.${parts[2]}`, { domain, clientId, jwks: [jwk], nowSec }),
+      null
+    );
+  });
+
+  it('21. validates API access tokens with audience & automatically refreshes JWKS on kid rotation', async () => {
+    const firstKey = await createTestRsaPair('kid-old');
+    const rotatedKey = await createTestRsaPair('kid-rotated');
+    const domain = 'dcvc-rotate-test.us.auth0.com';
+    const audience = 'https://api.diversitycollectivevc.org';
+    const nowSec = Math.floor(Date.now() / 1000);
+
+    let fetchCount = 0;
+    const mockFetch = async () => {
+      fetchCount += 1;
+      return {
+        ok: true,
+        json: async () => ({
+          keys: fetchCount === 1 ? [firstKey.jwk] : [firstKey.jwk, rotatedKey.jwk]
+        })
+      };
+    };
+
+    const firstToken = await signTestRs256Jwt(
+      firstKey.privateKey,
+      { alg: 'RS256', kid: 'kid-old' },
+      { iss: `https://${domain}/`, sub: 'auth0|staff', aud: audience, exp: nowSec + 1800 }
+    );
+    const ok1 = await verifyAuth0AccessToken(firstToken, { domain, audience, fetchImpl: mockFetch, nowSec });
+    assert.ok(ok1);
+    assert.strictEqual(fetchCount, 1);
+
+    // Token signed with new rotated kid triggers single JWKS refresh
+    const rotatedToken = await signTestRs256Jwt(
+      rotatedKey.privateKey,
+      { alg: 'RS256', kid: 'kid-rotated' },
+      { iss: `https://${domain}/`, sub: 'auth0|staff', aud: audience, exp: nowSec + 1800 }
+    );
+    const ok2 = await verifyAuth0AccessToken(rotatedToken, { domain, audience, fetchImpl: mockFetch, nowSec });
+    assert.ok(ok2);
+    assert.strictEqual(fetchCount, 2);
+
+    // SHA-256 replay digest determinism check
+    assert.strictEqual(await sha256Hex(rotatedToken), await sha256Hex(rotatedToken));
+    assert.notStrictEqual(await sha256Hex(rotatedToken), await sha256Hex(firstToken));
+  });
+
+  it('22. supports passwordless email OTP temp token generation and verification', async () => {
+    const payload = {
+      userId: 'adm-otp-test',
+      email: 'staff@diversitycollective.org',
+      name: 'Community Staff',
+      role: 'admin',
+      purpose: 'otp_login',
+      emailOtpHash: 'mock_hash',
+      emailOtpSalt: 'mock_salt'
+    };
+    const tempToken = await generateTempToken(payload, secret, 600, 'otp_login');
+    assert.ok(tempToken);
+
+    // Verifies with otp_login purpose
+    const verified = await verifyTempToken(tempToken, secret, { allowedPurposes: ['otp_login'] });
+    assert.ok(verified);
+    assert.strictEqual(verified.email, 'staff@diversitycollective.org');
+    assert.strictEqual(verified.purpose, 'otp_login');
+
+    // Rejects if purpose is not allowed
+    const wrongPurpose = await verifyTempToken(tempToken, secret, { allowedPurposes: ['2fa_login'] });
+    assert.strictEqual(wrongPurpose, null);
+  });
+
+  it('23. formats branded HTML and plaintext email OTP for admin sign-in', () => {
+    const emailData = templateAdminLoginOtp({ email: 'director@diversitycollective.org', otpCode: '849201' });
+    assert.ok(emailData.subject.includes('849201'));
+    assert.ok(emailData.html.includes('849201'));
+    assert.ok(emailData.html.includes('director@diversitycollective.org'));
+    assert.ok(emailData.text.includes('849201'));
+  });
+
+  it('24. verifies Google ID tokens and access tokens with tokeninfo/userinfo verification', async () => {
+    const mockGoogleFetch = async (url) => {
+      if (url.includes('tokeninfo')) {
+        return {
+          ok: true,
+          json: async () => ({
+            email: 'board@diversitycollective.org',
+            email_verified: 'true',
+            name: 'Board Member',
+            sub: 'google-sub-999',
+            aud: 'test-google-client-id'
+          })
+        };
+      }
+      if (url.includes('userinfo')) {
+        return {
+          ok: true,
+          json: async () => ({
+            email: 'board@diversitycollective.org',
+            email_verified: true,
+            name: 'Board Member',
+            sub: 'google-sub-888'
+          })
+        };
+      }
+      return { ok: false, status: 400 };
+    };
+
+    const idTokenUser = await verifyGoogleToken({
+      idToken: 'mock.google.idtoken',
+      clientId: 'test-google-client-id',
+      fetchImpl: mockGoogleFetch
+    });
+    assert.ok(idTokenUser);
+    assert.strictEqual(idTokenUser.email, 'board@diversitycollective.org');
+    assert.strictEqual(idTokenUser.sub, 'google-sub-999');
+
+    const accessTokenUser = await verifyGoogleToken({
+      accessToken: 'mock_google_access_token',
+      fetchImpl: mockGoogleFetch
+    });
+    assert.ok(accessTokenUser);
+    assert.strictEqual(accessTokenUser.email, 'board@diversitycollective.org');
+    assert.strictEqual(accessTokenUser.sub, 'google-sub-888');
+
+    // Rejects mismatched clientId
+    const wrongAud = await verifyGoogleToken({
+      idToken: 'mock.google.idtoken',
+      clientId: 'wrong-client-id',
+      fetchImpl: mockGoogleFetch
+    });
+    assert.strictEqual(wrongAud, null);
   });
 
 });

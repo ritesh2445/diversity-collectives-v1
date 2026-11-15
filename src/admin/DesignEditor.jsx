@@ -40,7 +40,7 @@ function generateDefaultProps(type) {
   switch (type) {
     case 'status_pill':
       return {
-        headline: 'Sanctuary Open Today',
+        headline: 'Center Open Today',
         schedule: 'Mon–Fri 1:00 PM – 5:00 PM',
         serviceTag: 'Free HIV/STI Screenings',
         linkUrl: '/programs/community-resource-center'
@@ -51,10 +51,10 @@ function generateDefaultProps(type) {
         titleLine1: 'You Are',
         titleAccentWord: 'Always',
         titleLine2: 'Welcome Here.',
-        description: "Diversity Collective is Ventura County's premier cultural sanctuary and clinical wellness home — delivering free rapid health testing, youth peer programs, mutual aid, and intersectional advocacy across all 10 county cities.",
+        description: "Diversity Collective is Ventura County's premier cultural center and clinical wellness home — delivering free rapid health testing, youth peer programs, mutual aid, and intersectional advocacy across all 10 county cities.",
         primaryCtaText: 'Explore Free Programs',
         primaryCtaUrl: '/programs',
-        secondaryCtaText: 'Visit Sanctuary',
+        secondaryCtaText: 'Visit Center',
         secondaryCtaUrl: '/contact',
         phoneText: '(805) 644-LGBT (5428)',
         phoneUrl: 'tel:8056445428',
@@ -95,7 +95,7 @@ function generateDefaultProps(type) {
     case 'event_spotlight':
       return {
         eventTitle: 'Rainbow Umbrella Youth Circle',
-        eventSchedule: 'Every Friday • 5:30 PM – 7:30 PM • Ventura Sanctuary',
+        eventSchedule: 'Every Friday • 5:30 PM – 7:30 PM • Ventura Center',
         badge: 'Featured Gathering'
       };
     default:
@@ -364,7 +364,7 @@ export default function DesignEditor({ onPublishSuccess }) {
             <option value="custom">Templates: Custom</option>
             <option value="default">Default Flagship Layout</option>
             <option value="pride_month">Pride Month Celebration</option>
-            <option value="youth_focus">Youth Sanctuary Focus</option>
+            <option value="youth_focus">Youth Center Focus</option>
           </select>
 
           {/* Export JSON */}
@@ -522,7 +522,7 @@ export default function DesignEditor({ onPublishSuccess }) {
             <div className="grid grid-cols-1 gap-2">
               {[
                 { type: 'hero_banner', title: 'Flagship Hero Banner', icon: Sparkles, desc: 'Headline, liquid rainbow, CTAs' },
-                { type: 'status_pill', title: 'Sanctuary Live Status', icon: Compass, desc: 'Pulsing green dot & hours' },
+                { type: 'status_pill', title: 'Center Live Status', icon: Compass, desc: 'Pulsing green dot & hours' },
                 { type: 'wave_ribbon', title: 'Continuous Aurora Waves', icon: Flame, desc: 'Full-bleed pride wave river' },
                 { type: 'four_pillars', title: '4-Pillars Accent Strip', icon: Award, desc: 'People, Safety, Wellness, Opp' },
                 { type: 'impact_stats', title: 'Impact Milestones (3)', icon: Users, desc: 'Counters & track record stats' },
@@ -746,7 +746,7 @@ export default function DesignEditor({ onPublishSuccess }) {
                           <div className="p-3 rounded-xl bg-purple-50 border border-purple-200">
                             <span className="text-[9px] font-black uppercase text-purple-800">Featured Gathering</span>
                             <h4 className="text-xs font-bold text-slate-900 mt-0.5">Rainbow Umbrella Youth Circle</h4>
-                            <p className="text-[10px] text-slate-500">Every Friday • 5:30 PM – 7:30 PM • Ventura Sanctuary</p>
+                            <p className="text-[10px] text-slate-500">Every Friday • 5:30 PM – 7:30 PM • Ventura Center</p>
                           </div>
                         </div>
                       )}

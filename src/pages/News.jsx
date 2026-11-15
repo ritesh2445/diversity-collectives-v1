@@ -36,8 +36,9 @@ export default function News() {
   const filteredArticles = useMemo(() => {
     return articles.filter((art) => {
       const matchesSearch = 
-        art.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        art.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
+        (art.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (art.excerpt || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (art.category || '').toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCat = selectedCategory === 'All' || art.category === selectedCategory;
       return matchesSearch && matchesCat;
     });
@@ -46,7 +47,7 @@ export default function News() {
   const featured = articles[0] || articles[0];
 
   return (
-    <div className="pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
+    <div className="w-full max-w-full overflow-x-clip pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
       
       {/* Header */}
       <section className="container-clean pb-14 border-b border-slate-100 relative overflow-hidden">
@@ -111,7 +112,7 @@ export default function News() {
                 <span className="font-black uppercase tracking-wider text-[#5A1E65] bg-purple-50 px-3 py-1 rounded-full border border-purple-200">
                   {featured.category}
                 </span>
-                <span className="text-slate-400 font-bold">{featured.publishedAt}</span>
+                <span className="text-slate-400 font-bold">{featured.publishedAt || featured.date}</span>
                 <span className="text-slate-400">·</span>
                 <span className="text-slate-500 font-bold">{featured.readingTime}</span>
               </div>
@@ -178,7 +179,7 @@ export default function News() {
               </div>
 
               <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-[#5A1E65]">
-                <span>{art.publishedAt}</span>
+                <span>{art.publishedAt || art.date}</span>
                 <Link
                   to={`/news/${art.slug}`}
                   className="inline-flex items-center gap-1 hover:underline"

@@ -219,13 +219,13 @@ export const FALLBACK_GALLERY_PHOTOS = [
   },
   {
     id: 'gal-5',
-    title: 'Community Resource Center Flagship Sanctuary',
-    category: 'Sanctuary & Community',
+    title: 'Community Resource Center Flagship Center',
+    category: 'Center & Community',
     year: '2026',
     image_url: '/images/crc-building.jpg',
     cdn_url: 'https://cdn.jsdelivr.net/gh/ritesh2445/diversity-collectives-v1@main/public/images/crc-building.jpg',
     github_path: 'public/images/crc-building.jpg',
-    description: 'Our physical sanctuary at 2471 Portola Road, Suite 100 in Ventura, CA.',
+    description: 'Our physical center at 2471 Portola Road, Suite 100 in Ventura, CA.',
     quote: 'A permanent front door for affirming care, education, and belonging.',
     featured: 1
   },

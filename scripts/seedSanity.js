@@ -182,10 +182,10 @@ async function runSeed() {
         titleAccentWord: 'Always Welcome',
         titleLine2: 'Here.',
         subtitle:
-          "Diversity Collective is Ventura County's premier cultural sanctuary and clinical wellness home — delivering free rapid health testing, youth peer programs, mutual aid, and intersectional advocacy across all 10 county cities.",
+          "Diversity Collective is Ventura County's premier cultural center and clinical wellness home — delivering free rapid health testing, youth peer programs, mutual aid, and intersectional advocacy across all 10 county cities.",
         primaryCtaText: 'Explore Free Programs',
         primaryCtaLink: '/programs',
-        secondaryCtaText: 'Visit Sanctuary',
+        secondaryCtaText: 'Visit Center',
         secondaryCtaLink: '/contact',
         emailAddress: orgInfo.email || 'info@diversitycollective.org',
         ...(heroSpotlightRef ? { spotlightImage: heroSpotlightRef } : {}),
@@ -206,7 +206,7 @@ async function runSeed() {
         bodyFont: 'Plus Jakarta Sans'
       },
       sections: [
-        { _key: 'sec-hero', sectionId: 'hero_banner', label: 'Hero Sanctuary Banner', visible: true },
+        { _key: 'sec-hero', sectionId: 'hero_banner', label: 'Hero Center Banner', visible: true },
         { _key: 'sec-impact', sectionId: 'impact_stats', label: 'Impact Stats Band', visible: true },
         { _key: 'sec-dir', sectionId: 'directory_cta', label: 'Affirming Business Directory CTA', visible: true },
         { _key: 'sec-prog', sectionId: 'programs_section', label: 'Core Programs Showcase', visible: true },
@@ -348,7 +348,7 @@ async function runSeed() {
         role: b.role,
         bio:
           b.bio ||
-          `${b.name} proudly serves on the Diversity Collective Board of Directors, advancing LGBTQ+ advocacy and sanctuary across Ventura County.`,
+          `${b.name} proudly serves on the Diversity Collective Board of Directors, advancing LGBTQ+ advocacy and community across Ventura County.`,
         ...(photoRef ? { photo: photoRef } : {}),
         order: idx + 1
       }

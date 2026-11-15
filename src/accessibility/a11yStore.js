@@ -2,7 +2,7 @@
 // DIVERSITY COLLECTIVE VENTURA COUNTY — NATIVE ACCESSIBILITY STORE
 // Full companion state management, persistence, live DOM attribute sync,
 // audio paragraph tracking, and WCAG luminance calculations.
-// 100% Native DCVC Community Sanctuary Accessibility Suite.
+// 100% Native DCVC Community Center Accessibility Suite.
 // ==========================================================================
 
 const STORAGE_KEY = 'dcvc_a11y_settings';
@@ -303,7 +303,7 @@ class NativeAccessibilityStore {
         ruler: true,
         dyslexiaTint: 'cream'
       });
-      this.announce('Dyslexia Sanctuary Mode enabled with OpenDyslexic font, wide letter and line spacing, left alignment, reading ruler, and warm cream visual comfort tint.');
+      this.announce('Dyslexia Center Mode enabled with OpenDyslexic font, wide letter and line spacing, left alignment, reading ruler, and warm cream visual comfort tint.');
     } else {
       this.updateMultiple({
         dyslexiaMode: false,
@@ -315,7 +315,7 @@ class NativeAccessibilityStore {
         ruler: false,
         dyslexiaTint: 'none'
       });
-      this.announce('Dyslexia Sanctuary Mode disabled. Default typography restored.');
+      this.announce('Dyslexia Center Mode disabled. Default typography restored.');
     }
   }
 

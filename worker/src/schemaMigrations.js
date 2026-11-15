@@ -282,6 +282,20 @@ export const SCHEMA_STATEMENTS = [
 
   `CREATE INDEX IF NOT EXISTS idx_admin_temp_exp ON admin_used_temp_tokens (expires_at)`,
 
+  `CREATE TABLE IF NOT EXISTS admin_email_otps (
+    id TEXT PRIMARY KEY,
+    email TEXT NOT NULL,
+    otp_code TEXT,
+    otp_hash TEXT NOT NULL,
+    salt TEXT NOT NULL,
+    attempts INTEGER DEFAULT 0,
+    consumed INTEGER DEFAULT 0,
+    expires_at INTEGER NOT NULL,
+    created_at TEXT DEFAULT (datetime('now'))
+  )`,
+
+  `CREATE INDEX IF NOT EXISTS idx_admin_email_otps_email ON admin_email_otps (email, consumed)`,
+
   // 12. Admin Audit Logs
   `CREATE TABLE IF NOT EXISTS admin_audit_logs (
     id TEXT PRIMARY KEY,
@@ -384,7 +398,16 @@ export const SCHEMA_STATEMENTS = [
   )`,
 
   `CREATE INDEX IF NOT EXISTS idx_gallery_category ON gallery_photos (category, year)`,
-  `CREATE INDEX IF NOT EXISTS idx_gallery_featured ON gallery_photos (featured, created_at DESC)`
+  `CREATE INDEX IF NOT EXISTS idx_gallery_featured ON gallery_photos (featured, created_at DESC)`,
+
+  // 17. Live Authoritative Site State (Hero Design, Layout, Global Theme & CMS Overrides)
+  `CREATE TABLE IF NOT EXISTS site_state (
+    state_key TEXT PRIMARY KEY,
+    payload_json TEXT NOT NULL,
+    version INTEGER NOT NULL DEFAULT 1,
+    updated_by TEXT,
+    updated_at TEXT DEFAULT (datetime('now'))
+  )`
 ];
 
 export const INITIAL_SEEDS = [
@@ -395,14 +418,21 @@ export const INITIAL_SEEDS = [
     args: []
   },
 
-  // Seed Baseline Admin Accounts ONLY if absent (never overwrite existing rotated passwords or 2FA secrets)
+  // Seed Baseline Admin Accounts ONLY if absent (never overwrite existing customized accounts)
+  {
+    sql: `DELETE FROM admin_users WHERE email IN ('moderator@diversitycollective.org', 'editor@diversitycollective.org', 'board-observer@diversitycollective.org')`,
+    args: []
+  },
+  {
+    sql: `UPDATE admin_users SET name = 'Admin (DCVC)' WHERE id = 'adm-1' AND name = 'Tess Allen (Executive Director)'`,
+    args: []
+  },
   {
     sql: `INSERT OR IGNORE INTO admin_users (id, email, name, role, password_hash, salt, is_active, must_change_password, token_version)
           VALUES 
-          ('adm-1', 'admin@diversitycollective.org', 'Tess Allen (Executive Director)', 'admin', '7b50f4cc95a9d7b234780c529e9f5c330da5a3ca8114eafb003ccd47c11e4dd5', 'dcvc_salt_2026', 1, 1, 1),
-          ('adm-2', 'moderator@diversitycollective.org', 'Community Directory Moderator', 'approver', '7b50f4cc95a9d7b234780c529e9f5c330da5a3ca8114eafb003ccd47c11e4dd5', 'dcvc_salt_2026', 1, 1, 1),
-          ('adm-3', 'editor@diversitycollective.org', 'Communications Specialist', 'editor', '7b50f4cc95a9d7b234780c529e9f5c330da5a3ca8114eafb003ccd47c11e4dd5', 'dcvc_salt_2026', 1, 1, 1),
-          ('adm-4', 'board-observer@diversitycollective.org', 'Board Secretary (Audit)', 'read_only', '7b50f4cc95a9d7b234780c529e9f5c330da5a3ca8114eafb003ccd47c11e4dd5', 'dcvc_salt_2026', 1, 1, 1)`,
+          ('adm-1', 'admin@diversitycollective.org', 'Admin (DCVC)', 'admin', '7b50f4cc95a9d7b234780c529e9f5c330da5a3ca8114eafb003ccd47c11e4dd5', 'dcvc_salt_2026', 1, 1, 1),
+          ('adm-celia', 'celia@diversitycollective.org', 'Celia Sandhya Daniels', 'admin', 'sso-only-auth0-required', 'sso_salt_celia_2026', 1, 0, 1),
+          ('adm-steve', 'steve@diversitycollective.org', 'Steve Somann', 'admin', 'sso-only-auth0-required', 'sso_salt_steve_2026', 1, 0, 1)`,
     args: []
   },
 
@@ -429,7 +459,7 @@ export const INITIAL_SEEDS = [
           ('gal-2', 'Rainbow Umbrella Youth Peer Circle', 'Youth & Safe Harbor', '2026', '/images/youth-umbrella.jpg', 'https://cdn.jsdelivr.net/gh/ritesh2445/diversity-collectives-v1@main/public/images/youth-umbrella.jpg', 'public/images/youth-umbrella.jpg', 'Weekly youth peer support circle exploring creative art and self-expression in a trauma-informed safe harbor.', 'Creating an unconditional safe harbor where every young person is celebrated.', 1),
           ('gal-3', 'First Countywide Youth Pride Prom', 'Youth & Safe Harbor', '2023', '/images/pride-prom.jpeg', 'https://cdn.jsdelivr.net/gh/ritesh2445/diversity-collectives-v1@main/public/images/pride-prom.jpeg', 'public/images/pride-prom.jpeg', 'Hundreds of LGBTQ+ high schoolers across all 10 county cities dancing freely without judgment.', 'The magical, affirming night we all deserved in high school.', 1),
           ('gal-4', 'Dedicated Community Volunteers & Mutual Aid', 'Volunteers & Action', '2026', '/images/volunteers.jpg', 'https://cdn.jsdelivr.net/gh/ritesh2445/diversity-collectives-v1@main/public/images/volunteers.jpg', 'public/images/volunteers.jpg', 'Passionate community members packing SHINE With Me safer-sex and hygiene kits at our outreach pavilion.', 'Grassroots mutual aid powered by over 300 passionate volunteers each year.', 1),
-          ('gal-5', 'Community Resource Center Flagship Sanctuary', 'Sanctuary & Community', '2026', '/images/crc-building.jpg', 'https://cdn.jsdelivr.net/gh/ritesh2445/diversity-collectives-v1@main/public/images/crc-building.jpg', 'public/images/crc-building.jpg', 'Our physical sanctuary at 2471 Portola Road, Suite 100 in Ventura, CA.', 'A permanent front door for affirming care, education, and belonging.', 1),
+          ('gal-5', 'Community Resource Center Flagship Center', 'Center & Community', '2026', '/images/crc-building.jpg', 'https://cdn.jsdelivr.net/gh/ritesh2445/diversity-collectives-v1@main/public/images/crc-building.jpg', 'public/images/crc-building.jpg', 'Our physical center at 2471 Portola Road, Suite 100 in Ventura, CA.', 'A permanent front door for affirming care, education, and belonging.', 1),
           ('gal-6', 'Diversity SHINES Health Testing Clinic', 'Health & Wellness', '2026', '/images/shines-screening.jpg', 'https://cdn.jsdelivr.net/gh/ritesh2445/diversity-collectives-v1@main/public/images/shines-screening.jpg', 'public/images/shines-screening.jpg', 'State-certified counselors administering free, confidential rapid HIV and STI screenings.', '15-minute rapid results with zero judgment and zero cost.', 1),
           ('gal-7', 'Pacific Coastline Sunset Solidarity Gathering', 'Festivals & Pride', '2025', '/images/ventura-coast.jpg', 'https://cdn.jsdelivr.net/gh/ritesh2445/diversity-collectives-v1@main/public/images/ventura-coast.jpg', 'public/images/ventura-coast.jpg', 'Sunset community connection gathering on the Ventura shore reflecting on a decade of progress.', 'Where our Pacific horizon meets our enduring community resilience.', 1),
           ('gal-8', 'Little Unicorns Family & Youth Circle', 'Kids & Families', '2026', '/images/little-unicorns.png', 'https://cdn.jsdelivr.net/gh/ritesh2445/diversity-collectives-v1@main/public/images/little-unicorns.png', 'public/images/little-unicorns.png', 'Monthly gentle gatherings for pre-teens ages 9–13, parents, caregivers, and affirming allies.', 'Empowering affirming families and building confidence from the very start.', 1)`,

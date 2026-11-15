@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { ArrowLeft, Calendar, Clock, User, Share2, Check, ArrowRight } from 'lucide-react';
 import { newsArticles } from '../data/dcvcData';
@@ -7,8 +7,21 @@ import { usePageMeta } from '../utils/seo';
 
 export default function NewsArticle() {
   const { slug } = useParams();
-  const article = newsArticles.find(a => a.slug === slug) || (cmsStore.data?.news || []).find(a => a.slug === slug || a.id === slug);
-  const [copied, setCopied] = React.useState(false);
+  const [articles, setArticles] = useState(() => cmsStore.getNews());
+  const [copied, setCopied] = useState(false);
+
+  // Subscribe to live CMS updates (0ms reflection when admin saves)
+  useEffect(() => {
+    const unsubscribe = cmsStore.subscribe((data) => {
+      if (data?.news) setArticles(data.news);
+    });
+    return unsubscribe;
+  }, []);
+
+  // Prioritize live CMS store so admin updates reflect immediately
+  const article = articles.find(a => a.slug === slug || a.id === slug) ||
+                  (cmsStore.data?.news || []).find(a => a.slug === slug || a.id === slug) ||
+                  newsArticles.find(a => a.slug === slug);
 
   usePageMeta({
     title: article ? article.title : 'News Article',
@@ -29,7 +42,9 @@ export default function NewsArticle() {
     }
   };
 
-  const related = newsArticles.filter(a => a.slug !== article.slug).slice(0, 2);
+  const related = articles.filter(a => a.slug !== article.slug).slice(0, 2);
+
+  const articleBody = article.body || article.content || article.excerpt;
 
   return (
     <div className="pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
@@ -91,14 +106,14 @@ export default function NewsArticle() {
         </div>
 
         {/* Article Body: Supports both rich HTML from Blogspot Writing Pad & traditional paragraphs */}
-        {typeof article.body === 'string' ? (
+        {typeof articleBody === 'string' ? (
           <div 
             className="prose prose-lg max-w-none text-slate-700 leading-relaxed font-medium news-rich-content"
-            dangerouslySetInnerHTML={{ __html: article.body }}
+            dangerouslySetInnerHTML={{ __html: articleBody }}
           />
         ) : (
           <div className="prose prose-lg max-w-none text-slate-700 space-y-6 leading-relaxed font-medium">
-            {(Array.isArray(article.body) ? article.body : [article.body || article.excerpt]).map((para, i) => (
+            {(Array.isArray(articleBody) ? articleBody : [articleBody]).map((para, i) => (
               <p key={i} className="text-base sm:text-lg">
                 {para}
               </p>

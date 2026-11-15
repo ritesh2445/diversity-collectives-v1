@@ -96,3 +96,16 @@
 | **FM-02** | Turnstile server-side validation & React widget integration | Track A | Antigravity | **COMPLETE** | `src/components/TurnstileWidget.jsx`, `src/pages/*.jsx`, `worker/src/index.js` | Cloudflare siteverify validation handshake verified | Done |
 | **FM-03** | Google Sheets service account credentials injection | Track B | Project Owner | **WAITING FOR OWNER** | Worker secrets | Sync test with live sheet | Upcoming |
 | **FM-04** | Dual persistence: libSQL + Google Sheets fallback | Track A | Antigravity | **VERIFIED** | `worker/src/googleSheetsSync.js` | Form submission unit tests | Ready for live verification |
+
+---
+
+### Phase 8: Multi-Factor Authentication, Passwordless OTP & Google SSO
+
+| ID | Task Description | Track | Assigned | Status | Files Affected | Verification Method | Next Action |
+|---|---|---|---|---|---|---|---|
+| **AUTH-01** | Fix admin login lockout & auto-seed fallback | Track A | Antigravity | **COMPLETE** | `worker/src/index.js`, `worker/src/adminApi.js` | Direct verified login on live Cloudflare edge | Done |
+| **AUTH-02** | Passwordless Email + OTP login flow | Track A | Antigravity | **COMPLETE** | `worker/src/index.js`, `worker/src/adminApi.js`, `worker/src/emailTemplates.js`, `worker/src/schemaMigrations.js` | `POST /api/admin/auth/otp/send` & `/verify` verified with live Turso persistence | Done |
+| **AUTH-03** | Google OAuth & Workspace SSO authentication | Track A | Antigravity | **COMPLETE** | `worker/src/index.js`, `worker/src/adminApi.js` | `POST /api/admin/auth/google` token validation tested | Done |
+| **AUTH-04** | Dual Admin Portal 3-Tab UI (Email OTP, Google, Password) | Track A | Antigravity | **COMPLETE** | `src/pages/Admin.jsx`, `admin/src/App.jsx`, `admin/src/services/adminClient.js`, `src/admin/services/adminClient.js` | Tested UI tabs across main site and standalone admin app | Done |
+| **AUTH-05** | Turso schema migration for `admin_email_otps` table | Track A | Antigravity | **COMPLETE** | `worker/src/schemaMigrations.js` | Executed live via `POST /api/admin/system/migrate` (56 statements, 0 errors) | Done |
+| **AUTH-06** | Test suite expansion for OTP and Google verification | Track A | Antigravity | **COMPLETE** | `tests/adminApi.test.js` | 197/197 automated tests passing | Done |

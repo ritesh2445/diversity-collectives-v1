@@ -1,11 +1,15 @@
-import React, { lazy, Suspense } from 'react';
+import React, { lazy, Suspense, useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { initLiveSiteSync, applySiteThemeToDOM } from './services/liveSync';
+import { forceResetScrollLock } from './utils/scrollLock';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
 import SmoothScroll from './components/SmoothScroll';
 import ScrollProgress from './components/ScrollProgress';
 import WelcomeCurtain from './components/WelcomeCurtain';
+import AutoBroadcastPopup from './components/AutoBroadcastPopup';
+import SiteStatusOverlay from './components/SiteStatusOverlay.jsx';
 
 import SkipNavigation from './components/accessibility/SkipNavigation';
 import ReciteToolbar from './components/accessibility/ReciteToolbar';
@@ -96,6 +100,49 @@ import GeneralError, { ErrorBoundary } from './pages/GeneralError';
 function AppLayout() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin');
+  const isAppreciationFullScreen = location.pathname.startsWith('/appreciation-card');
+  const [siteStatus, setSiteStatus] = useState(null);
+
+  useEffect(() => {
+    return initLiveSiteSync({ onThemeApply: applySiteThemeToDOM });
+  }, []);
+
+  // Guarantee all scroll locks are cleared upon route transitions
+  useEffect(() => {
+    forceResetScrollLock();
+  }, [location.pathname]);
+
+  // Read initial site status from localStorage
+  useEffect(() => {
+    if (typeof localStorage === 'undefined') return;
+    try {
+      const raw = localStorage.getItem('dcvc_site_status');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setSiteStatus(parsed);
+      }
+    } catch { }
+  }, []);
+
+  // Listen for live site status updates
+  useEffect(() => {
+    const handleStatusChange = (e) => {
+      if (e?.detail) {
+        setSiteStatus(e.detail);
+      }
+    };
+    window.addEventListener('dcvc-site-status-changed', handleStatusChange);
+    return () => window.removeEventListener('dcvc-site-status-changed', handleStatusChange);
+  }, []);
+
+  // If site is in non-live status, show full-screen overlay instead of normal content (except for admin route)
+  if (!isAdminRoute && siteStatus && siteStatus.type !== 'live') {
+    return (
+      <div className="min-h-screen w-full bg-slate-50 text-slate-900 font-sans">
+        <SiteStatusOverlay status={siteStatus} />
+      </div>
+    );
+  }
 
   if (isAdminRoute) {
     return (
@@ -120,6 +167,27 @@ function AppLayout() {
     );
   }
 
+  if (isAppreciationFullScreen) {
+    return (
+      <div className="min-h-screen w-full bg-slate-50 text-slate-900 font-sans">
+        <ScrollToTop />
+        <main id="main-content" tabIndex="-1" className="min-h-screen w-full focus:outline-none">
+          <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-slate-50 text-[#5A1E65]" role="status">
+              <div className="w-8 h-8 border-3 border-purple-200 border-t-[#5A1E65] rounded-full animate-spin" />
+            </div>
+          }>
+            <Routes>
+              <Route path="/appreciation-card/:token" element={<AppreciationCard />} />
+              <Route path="/appreciation-card/preview" element={<AppreciationCard />} />
+              <Route path="*" element={<Navigate to="/appreciation-card/preview" replace />} />
+            </Routes>
+          </Suspense>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <>
       {/* WCAG 2.4.1 Skip Navigation Links */}
@@ -134,11 +202,12 @@ function AppLayout() {
       <ScrollToTop />
       <ScrollProgress />
       <AskDcvcChatbot />
+      <AutoBroadcastPopup />
 
-      <div className="bg-transparent text-slate-900 min-h-screen flex flex-col font-sans selection:bg-[#5A1E65] selection:text-white">
+      <div className="bg-transparent text-slate-900 min-h-screen flex flex-col font-sans selection:bg-[#5A1E65] selection:text-white w-full max-w-full overflow-x-clip">
         <Header />
 
-        <main id="main-content" tabIndex="-1" className="editorial-main-content flex-grow focus:outline-none">
+        <main id="main-content" tabIndex="-1" className="editorial-main-content flex-grow focus:outline-none w-full max-w-full overflow-x-clip">
           <Suspense fallback={
             <div className="min-h-[60vh] flex items-center justify-center bg-slate-50/50" role="status" aria-label="Loading page">
               <div className="flex flex-col items-center gap-3">

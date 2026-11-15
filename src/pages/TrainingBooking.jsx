@@ -12,13 +12,14 @@ import {
   ShieldCheck 
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { trainingCourses, orgInfo } from '../data/dcvcData';
+import { useLiveTrainings } from '../hooks/useCmsLive';
 import { submitTrainingBooking } from '../services/api';
 import TurnstileWidget from '../components/TurnstileWidget';
 import { usePageMeta } from '../utils/seo';
 
 export default function TrainingBooking() {
   const { slug } = useParams();
+  const trainingCourses = useLiveTrainings();
   const selectedCourse = slug ? trainingCourses.find(c => c.slug === slug) : null;
 
   usePageMeta({

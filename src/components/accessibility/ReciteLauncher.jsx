@@ -13,8 +13,16 @@ export default function ReciteLauncher() {
     return false;
   });
   const [showHidePrompt, setShowHidePrompt] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
   const pressTimerRef = useRef(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsCollapsed(true);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const unsubscribe = a11yStore.subscribe((settings) => {
@@ -121,12 +129,21 @@ export default function ReciteLauncher() {
         aria-controls="native-accessibility-companion-ribbon"
         aria-label="Launch Accessibility & Audio Companion Toolbar (Alt + A). Long press to hide."
         title="Accessibility & Audio Tools (Alt + A) • Long-press to hide"
-        className="flex items-center gap-2 p-2.5 sm:px-4 sm:py-3 rounded-full bg-[#5A1E65] text-white shadow-xl hover:shadow-2xl border-2 border-amber-300 hover:bg-[#43144A] hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer select-none a11y-toolbar-isolated focus:outline-none focus:ring-4 focus:ring-amber-400 group"
+        className={`inline-flex items-center p-2 rounded-full bg-[#5A1E65] text-white shadow-xl hover:shadow-2xl border-2 border-amber-300 hover:bg-[#43144A] hover:scale-105 active:scale-95 transition-all duration-700 ease-in-out cursor-pointer select-none a11y-toolbar-isolated focus:outline-none focus:ring-4 focus:ring-amber-400 group ${
+          isCollapsed ? 'pr-2' : 'pr-2 md:pr-4'
+        }`}
       >
-        <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center font-bold shadow-xs flex-shrink-0">
+        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center font-bold shadow-xs flex-shrink-0">
           <TraditionalAccessibilityIcon className="w-4 h-4 sm:w-5 sm:h-5 text-slate-950" />
         </div>
-        <div className="hidden sm:flex flex-col text-left">
+        <div
+          className={`hidden md:flex flex-col text-left overflow-hidden whitespace-nowrap transition-all duration-700 ease-in-out ${
+            isCollapsed
+              ? 'max-w-0 opacity-0 -translate-x-2 ml-0 pointer-events-none'
+              : 'max-w-[140px] opacity-100 translate-x-0 ml-2.5'
+          }`}
+          aria-hidden={isCollapsed}
+        >
           <span className="font-extrabold text-xs tracking-wide text-white leading-tight">
             Accessibility
           </span>

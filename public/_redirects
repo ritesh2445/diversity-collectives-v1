@@ -1,3 +1,6 @@
+# API Proxy to Cloudflare Worker backend
+/api/*                                   https://dcvc-api.diversity-collective-vc.workers.dev/api/:splat 200
+
 # Legacy URL 301 Permanent Redirects for Diversity Collective Ventura County
 # Maps older WordPress URL structures and aliases to the new canonical routes
 

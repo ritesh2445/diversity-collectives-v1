@@ -3,12 +3,12 @@
  * Client-Side Image Optimization, GitHub Repository Storage & CDN Delivery.
  */
 
-// Pre-packaged authentic DCVC Sanctuary photography library
+// Pre-packaged authentic DCVC Center photography library
 export const DCVC_IMAGE_LIBRARY = [
   { id: 'crc', name: 'Community Resource Center', path: '/images/crc-building.jpg', category: 'Facilities' },
   { id: 'umbrella', name: 'Rainbow Umbrella Youth', path: '/images/youth-umbrella.jpg', category: 'Programs' },
   { id: 'shines', name: 'Diversity SHINES Clinical Room', path: '/images/shines-screening.jpg', category: 'Healthcare' },
-  { id: 'community', name: 'Community Gathering & Sanctuary', path: '/images/community-gathering.jpg', category: 'Community' },
+  { id: 'community', name: 'Community Gathering & Center', path: '/images/community-gathering.jpg', category: 'Community' },
   { id: 'volunteers', name: 'DCVC Volunteer Outreach Team', path: '/images/volunteers.jpg', category: 'Volunteers' },
   { id: 'prom', name: 'Pride Prom Celebration', path: '/images/pride-prom.jpeg', category: 'Events' },
   { id: 'unicorns', name: 'Little Unicorns Family Circle', path: '/images/little-unicorns.png', category: 'Programs' },

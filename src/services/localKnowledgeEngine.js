@@ -43,13 +43,13 @@ export const LOCAL_KNOWLEDGE_BASE = [
   {
     id: "crc",
     category: "program",
-    title: "Community Resource Center (Sanctuary)",
+    title: "Community Resource Center (Center)",
     officialUrl: "/programs/community-resource-center",
     costType: "100% Free",
     eligibility: "Open to all LGBTQ+ individuals, families, youth, and affirming allies.",
     hours: "Monday through Friday: 1:00 PM – 5:00 PM Pacific Time",
     location: "2471 Portola Road, Suite 100, Ventura, CA 93003",
-    summary: "The Community Resource Center is Ventura County's premier physical LGBTQ+ cultural sanctuary and drop-in hub offering a computer lab, library, mutual aid pantry, and community meeting space.",
+    summary: "The Community Resource Center is Ventura County's premier physical LGBTQ+ cultural center and drop-in hub offering a computer lab, library, mutual aid pantry, and community meeting space.",
     verifiedFacts: [
       "Location: 2471 Portola Road, Suite 100, Ventura, CA 93003",
       "Operating Hours: Monday – Friday, 1:00 PM – 5:00 PM PT (Closed weekends & major holidays)",
@@ -57,7 +57,7 @@ export const LOCAL_KNOWLEDGE_BASE = [
       "Amenities: Free high-speed computer/cyber lab, printing for essential needs, LGBTQ+ lending library, mutual aid food and hygiene supplies, safe harbor lounge.",
       "Phone: (805) 644-LGBT (805-644-5428)"
     ],
-    keywords: ["center", "sanctuary", "community resource center", "crc", "address", "location", "hours", "directions", "portola", "visit", "drop in", "computer", "wifi", "library", "pantry", "food", "open", "phone"]
+    keywords: ["center", "center", "community resource center", "crc", "address", "location", "hours", "directions", "portola", "visit", "drop in", "computer", "wifi", "library", "pantry", "food", "open", "phone"]
   },
   {
     id: "diversity-shines",
@@ -124,7 +124,7 @@ export const LOCAL_KNOWLEDGE_BASE = [
     eligibility: "Transgender, non-binary, genderqueer, and questioning adults ages 18+.",
     hours: "1st and 3rd Wednesday of each month: 6:30 PM – 8:00 PM Pacific Time",
     location: "Community Resource Center: 2471 Portola Road, Suite 100, Ventura, CA 93003",
-    summary: "A peer-led affinity sanctuary for trans and non-binary adults offering shared experiences, transition navigation, gender-affirming garment closet access, and community bonding.",
+    summary: "A peer-led affinity center for trans and non-binary adults offering shared experiences, transition navigation, gender-affirming garment closet access, and community bonding.",
     verifiedFacts: [
       "Eligibility: Trans, non-binary, Two-Spirit, gender-expansive adults (18+).",
       "Schedule: 1st & 3rd Wednesday, 6:30 PM – 8:00 PM PT.",
@@ -252,6 +252,41 @@ export const LOCAL_KNOWLEDGE_BASE = [
       "Partnership Inquiries: Organizations wishing to sponsor Ventura County Pride or become programmatic partners visit /sponsors."
     ],
     keywords: ["sponsor", "sponsors", "partners", "vcbh", "vcph", "county", "alliance", "corporate", "donors"]
+  },
+  {
+    id: "core-programs-ordered",
+    category: "program",
+    title: "Core Programs & Peer Support Groups",
+    officialUrl: "/programs",
+    costType: "100% Free",
+    summary: "DCVC's 9 featured community programs are: Queer Adulting, Little Unicorns, Rainbow Umbrella, PFLAG, Narcotics Anonymous, Trans Peer Group by Transverse, Toastmasters, Men's Collective, and Silver Collective.",
+    verifiedFacts: [
+      "1. Queer Adulting: Ages 18+, 1st & 3rd Wednesday of the month, 7:00 PM – 9:00 PM at the CRC.",
+      "2. Little Unicorns: Ages 9–13, last Saturday of the month, 1:00 PM – 3:00 PM.",
+      "3. Rainbow Umbrella: Ages 13–23, every Friday, 5:30 PM – 7:30 PM at the CRC.",
+      "4. PFLAG Ventura: Family & ally support (2nd Tuesday, 6:30 PM).",
+      "5. Narcotics Anonymous: LGBTQ+ welcoming recovery meeting every Monday, 7:00 PM – 8:30 PM.",
+      "6. Trans Peer Group by Transverse: Bi-weekly Sundays at 4:00 PM.",
+      "7. Diversity Toastmasters: 1st & 3rd Tuesday, 6:30 PM – 8:00 PM.",
+      "8. Men's Collective: Weekly peer support & social group for LGBTQ+ men and allies (18+).",
+      "9. Silver Collective: LGBTQ+ adults 55+, 2nd Thursday, 6:00 PM – 7:30 PM."
+    ],
+    keywords: ["programs", "queer adulting", "little unicorns", "rainbow umbrella", "pflag", "narcotics anonymous", "transverse", "toastmasters", "mens collective", "men's collective", "silver collective"]
+  },
+  {
+    id: "signature-events-distinct",
+    category: "event",
+    title: "Signature Events, Calendar & Special Engagements",
+    officialUrl: "/events",
+    costType: "Events, Programs & Calendar are 3 distinct offerings",
+    summary: "Events, Programs, and Calendar are separate at DCVC: Signature Events are AIDS Walk Ventura, Pride Prom, and Ventura County Pride; Special Engagements include Amplify Arts; and the Calendar lists scheduled upcoming dates.",
+    verifiedFacts: [
+      "Signature Events: 1. AIDS Walk Ventura, 2. Pride Prom (free youth prom ages 13–23), 3. Ventura County Pride (annual celebration at Plaza Park).",
+      "Special Engagements: Hosted partner programs such as Amplify Arts (Amplify After Hours) providing creative arts, music, and mental wellness for middle and high school youth.",
+      "Calendar: Dedicated schedule of upcoming dates and recurring gatherings at /events and on the homepage Calendar section.",
+      "Flex Space: Bookable community Flex Space at 2471 Portola Rd, Suite 100 with live availability and time-slot booking."
+    ],
+    keywords: ["events", "aids walk", "pride prom", "ventura county pride", "calendar", "special engagements", "amplify arts", "flex space", "workspace", "booking"]
   }
 ];
 
@@ -549,25 +584,33 @@ export function executeClientChat(query, options = {}) {
   // 6. High-Precision Verified Domain Synthesis (enriched with live Sanity records)
 
   // Events & Calendar (and past events check + live upcoming event details)
-  if (q.includes("event") || q.includes("pride") || q.includes("gala") || q.includes("prom") || q.includes("festival") || q.includes("calendar")) {
+  if (
+    q.includes("event") || q.includes("pride") || q.includes("gala") || q.includes("prom") || q.includes("festival") || q.includes("calendar") ||
+    q.includes("evento") || q.includes("eventos") || q.includes("calendario")
+  ) {
+    const isSpanish = q.includes("evento") || q.includes("eventos") || q.includes("calendario");
     if (q.includes("2023") || q.includes("2024") || q.includes("past") || q.includes("last year")) {
       return {
         success: true,
-        answer: `Past events (such as 2023 or 2024 Pride celebrations) have concluded and are not active. Our upcoming community celebrations include **Ventura County Pride** in August, the annual **Diversity Gala**, and the youth **Pride Prom**. View our live calendar at [Community Events](/events).`,
-        citations: [{ title: "Community Events", url: "/events" }],
+        answer: isSpanish
+          ? `Los eventos pasados han concluido. Nuestras celebraciones comunitarias próximas incluyen el festival **Ventura County Pride** en agosto, la **Gala de la Diversidad**, y el **Pride Prom** para jóvenes. Vea el calendario en vivo en [Eventos Comunitarios](/events).`
+          : `Past events (such as 2023 or 2024 Pride celebrations) have concluded and are not active. Our upcoming community celebrations include **Ventura County Pride** in August, the annual **Diversity Gala**, and the youth **Pride Prom**. View our live calendar at [Community Events](/events).`,
+        citations: [{ title: isSpanish ? "Eventos Comunitarios" : "Community Events", url: "/events" }],
         mode: "client-unlimited"
       };
     }
-    if (!q.includes("free") && !q.includes("hiv") && !q.includes("training") && !q.includes("workshop")) {
+    if (!q.includes("free") && !q.includes("hiv") && !q.includes("training") && !q.includes("workshop") && !q.includes("gratis")) {
       const liveEventHits = (siteSearch.results || []).filter((r) => r.type === 'Event').slice(0, 3);
       const liveHighlights = liveEventHits.length
-        ? `\n\nLatest highlights on our calendar:\n${liveEventHits.map((e) => `• **[${e.title}](${e.url})** — ${e.subtitle}`).join('\n')}`
+        ? `\n\n${isSpanish ? 'Próximos eventos destacados en nuestro calendario:' : 'Latest highlights on our calendar:'}\n${liveEventHits.map((e) => `• **[${e.title}](${e.url})** — ${e.subtitle}`).join('\n')}`
         : '';
       return {
         success: true,
-        answer: `Diversity Collective hosts premier regional events including the seaside **Ventura County Pride Festival** (held each August at Promenade Park), the annual **Diversity Gala** benefit, and youth **Pride Prom**. Check our active schedules, RSVPs, and volunteer opportunities at [Events Calendar](/events).${liveHighlights}`,
+        answer: isSpanish
+          ? `Diversity Collective organiza eventos regionales de primer nivel, incluyendo el **Festival de Orgullo del Condado de Ventura** (cada agosto en Promenade Park), la **Gala Anual de la Diversidad** y el **Pride Prom** juvenil. Consulte horarios, reservaciones y voluntariado en [Calendario de Eventos](/events).${liveHighlights}`
+          : `Diversity Collective hosts premier regional events including the seaside **Ventura County Pride Festival** (held each August at Promenade Park), the annual **Diversity Gala** benefit, and youth **Pride Prom**. Check our active schedules, RSVPs, and volunteer opportunities at [Events Calendar](/events).${liveHighlights}`,
         citations: [
-          { title: "Events Calendar", url: "/events" },
+          { title: isSpanish ? "Calendario de Eventos" : "Events Calendar", url: "/events" },
           ...liveEventHits.map((e) => ({ title: e.title, url: e.url }))
         ],
         mode: "client-unlimited"
@@ -636,7 +679,7 @@ export function executeClientChat(query, options = {}) {
   if (q.includes("dyslexia") || q.includes("bionic") || q.includes("opendyslexic") || q.includes("lexend") || q.includes("accessibility") || q.includes("focus audio")) {
     return {
       success: true,
-      answer: `Diversity Collective includes a built-in **Accessibility & Dyslexia Support Suite** (press **Alt + A** or click the **Accessibility** launcher)! Features include 1-click **Dyslexia Sanctuary Mode**, **OpenDyslexic, Lexend & Atkinson Hyperlegible** fonts, **Bionic Anchor Reading**, **Irlen color comfort overlays**, **ambient Focus Audio**, and a reading ruler. Learn more at [Accessibility Statement](/accessibility).`,
+      answer: `Diversity Collective includes a built-in **Accessibility & Dyslexia Support Suite** (press **Alt + A** or click the **Accessibility** launcher)! Features include 1-click **Dyslexia Center Mode**, **OpenDyslexic, Lexend & Atkinson Hyperlegible** fonts, **Bionic Anchor Reading**, **Irlen color comfort overlays**, **ambient Focus Audio**, and a reading ruler. Learn more at [Accessibility Statement](/accessibility).`,
       citations: [{ title: "Accessibility Tools", url: "/accessibility" }],
       mode: "client-unlimited"
     };
@@ -653,34 +696,52 @@ export function executeClientChat(query, options = {}) {
   }
 
   // Free Services / General Cost
-  if (q.includes("free") || q.includes("cost") || q.includes("fee") || q.includes("pay") || q.includes("price")) {
+  if (
+    q.includes("free") || q.includes("cost") || q.includes("fee") || q.includes("pay") || q.includes("price") ||
+    q.includes("gratis") || q.includes("gratuito") || q.includes("gratuitos") || q.includes("costo") || q.includes("precio") || q.includes("pago") || q.includes("cobran")
+  ) {
+    const isSpanish = q.includes("gratis") || q.includes("gratuito") || q.includes("gratuitos") || q.includes("costo") || q.includes("precio") || q.includes("cobran") || q.includes("servicios");
     return {
       success: true,
-      answer: `Yes! Services and programs provided by Diversity Collective — including [Community Resource Center](/programs/community-resource-center) drop-in access, [Diversity SHINES](/programs/diversity-shines) rapid HIV/STI testing, and [Rainbow Umbrella](/programs/rainbow-umbrella) youth groups — are **100% free of charge**. No insurance, payment, or membership fee is ever required.`,
+      answer: isSpanish
+        ? `¡Absolutamente! Los servicios y programas brindados por Diversity Collective — incluyendo el acceso sin cita al [Centro de Recursos Comunitarios](/programs/community-resource-center), las pruebas rápidas de VIH/ITS de [Diversity SHINES](/programs/diversity-shines), y los círculos juveniles de [Rainbow Umbrella](/programs/rainbow-umbrella) — son **100% gratuitos**. Nunca se requiere seguro médico, pago ni tarifa de membresía.`
+        : `Yes! Services and programs provided by Diversity Collective — including [Community Resource Center](/programs/community-resource-center) drop-in access, [Diversity SHINES](/programs/diversity-shines) rapid HIV/STI testing, and [Rainbow Umbrella](/programs/rainbow-umbrella) youth groups — are **100% free of charge**. No insurance, payment, or membership fee is ever required.`,
       citations: [
-        { title: "Free Programs", url: "/programs" },
-        { title: "Community Resource Center", url: "/programs/community-resource-center" }
+        { title: isSpanish ? "Programas Gratuitos" : "Free Programs", url: "/programs" },
+        { title: isSpanish ? "Centro de Recursos" : "Community Resource Center", url: "/programs/community-resource-center" }
       ],
       mode: "client-unlimited"
     };
   }
 
   // Contact Information
-  if (q.includes("email") || q.includes("phone") || q.includes("call") || q.includes("contact") || q.includes("number")) {
+  if (
+    q.includes("email") || q.includes("phone") || q.includes("call") || q.includes("contact") || q.includes("number") ||
+    q.includes("telefono") || q.includes("correo") || q.includes("contacto") || q.includes("llamar")
+  ) {
+    const isSpanish = q.includes("telefono") || q.includes("correo") || q.includes("contacto") || q.includes("llamar");
     return {
       success: true,
-      answer: `You can reach Diversity Collective at **(805) 644-LGBT (5428)** or by email at **info@diversitycollective.org**. Our administrative offices and Community Resource Center are located at 2471 Portola Road, Suite 100, Ventura, CA 93003. View full staff directory and inquiry forms at [Contact Us](/contact).`,
-      citations: [{ title: "Contact Us", url: "/contact" }],
+      answer: isSpanish
+        ? `Puede comunicarse con Diversity Collective al **(805) 644-LGBT (5428)** o por correo electrónico a **info@diversitycollective.org**. Nuestras oficinas administrativas y el Centro de Recursos Comunitarios están ubicados en 2471 Portola Road, Suite 100, Ventura, CA 93003. Conozca a nuestro equipo en [Contáctenos](/contact).`
+        : `You can reach Diversity Collective at **(805) 644-LGBT (5428)** or by email at **info@diversitycollective.org**. Our administrative offices and Community Resource Center are located at 2471 Portola Road, Suite 100, Ventura, CA 93003. View full staff directory and inquiry forms at [Contact Us](/contact).`,
+      citations: [{ title: isSpanish ? "Contáctenos" : "Contact Us", url: "/contact" }],
       mode: "client-unlimited"
     };
   }
 
   // Physical Location / Address
-  if (q.includes("where") || q.includes("location") || (q.includes("address") && !q.includes("email")) || q.includes("directions") || q.includes("portola")) {
+  if (
+    q.includes("where") || q.includes("location") || (q.includes("address") && !q.includes("email")) || q.includes("directions") || q.includes("portola") ||
+    q.includes("donde") || q.includes("ubicacion") || q.includes("direccion")
+  ) {
+    const isSpanish = q.includes("donde") || q.includes("ubicacion") || q.includes("direccion");
     return {
       success: true,
-      answer: `The Diversity Collective Community Resource Center is located at **2471 Portola Road, Suite 100, Ventura, CA 93003**. Drop-in hours are **Monday through Friday, 1:00 PM – 5:00 PM Pacific Time**. You can also reach the center at **(805) 644-LGBT**. Learn more at [Community Resource Center](/programs/community-resource-center).`,
-      citations: [{ title: "Community Resource Center", url: "/programs/community-resource-center" }],
+      answer: isSpanish
+        ? `El [Centro de Recursos Comunitarios](/programs/community-resource-center) está ubicado en **2471 Portola Road, Suite 100, Ventura, CA 93003** (cerca de la autopista 101 y Telephone Road). El horario de atención sin cita es de **lunes a viernes de 1:00 PM a 5:00 PM PT**.`
+        : `The [Community Resource Center](/programs/community-resource-center) is located at **2471 Portola Road, Suite 100, Ventura, CA 93003** (off Highway 101 and Telephone Road). Drop-in hours are **Monday through Friday from 1:00 PM to 5:00 PM PT**.`,
+      citations: [{ title: isSpanish ? "Centro de Recursos" : "Community Resource Center", url: "/programs/community-resource-center" }],
       mode: "client-unlimited"
     };
   }

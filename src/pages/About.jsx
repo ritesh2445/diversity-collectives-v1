@@ -23,13 +23,13 @@ export default function About() {
     });
   }, []);
   return (
-    <div className="pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
+    <div className="w-full max-w-full overflow-x-clip pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
       
       {/* Editorial Flagship Header with 3D Depth */}
-      <section className="container-clean pb-16 border-b border-slate-100 relative overflow-hidden">
+      <section className="container-clean pb-12 sm:pb-16 border-b border-slate-100 relative overflow-hidden">
         {/* Specular Ambient Glow */}
         <div 
-          className="absolute -top-24 right-10 w-96 h-96 rounded-full bg-purple-200/25 blur-3xl pointer-events-none" 
+          className="absolute -top-24 -right-10 w-72 h-72 sm:w-96 sm:h-96 rounded-full bg-purple-200/25 blur-3xl pointer-events-none" 
           aria-hidden="true" 
         />
 

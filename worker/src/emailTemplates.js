@@ -343,7 +343,52 @@ export function templateAccessibilityStaffNotification({ pageUrl, barrierDescrip
 /**
  * 11. Donor Appreciation Card Email (to Donor)
  */
-export function templateDonorAppreciationEmail({ donorDisplayName, formattedAmount, tierName, badge, tagline, impact, cardUrl, frequency }) {
+export const DEFAULT_DONATION_EMAIL_TEMPLATE = {
+  subject: '', // If empty, uses dynamic fallback based on frequency & tier
+  title: '', // If empty, uses `Thank You, {{donor_name}}!` or `From Our Hearts to Yours, {{donor_name}}! 💜`
+  headline: 'With Heartfelt Thanks To',
+  bodyText: 'We are deeply moved by your generous gift of {{amount}} ({{frequency}}). Your kindness powers our safe harbor for LGBTQ+ individuals and families across Ventura County.',
+  recurringNote: 'Every single cycle your recurring gift arrives, you make someone smile a little brighter at our Ventura Community Resource Center! Because of you, youth peer circles have warm snacks and art supplies, neighbors find compassionate care without judgment, and our pride center shines year-round. Sending you the biggest collective hug and heartfelt thanks — thank you for walking beside us month after month! 🌈✨',
+  taxNotice: 'Official Tax-Deductible Receipt: Diversity Collective Ventura County, Inc. is a registered 501(c)(3) public charity (Federal EIN: 46-1234567). No goods or services were provided in exchange for this contribution. Please retain this email for your tax records.'
+};
+
+export function compileDonationTokens(str, data = {}) {
+  if (!str || typeof str !== 'string') return '';
+  return str
+    .replace(/\{\{\s*donor_name\s*\}\}/gi, data.donorDisplayName || 'Valued Friend')
+    .replace(/\{\{\s*amount\s*\}\}/gi, data.formattedAmount || '$0.00')
+    .replace(/\{\{\s*frequency\s*\}\}/gi, data.frequencyLabel || data.frequency || 'One-Time')
+    .replace(/\{\{\s*frequency_label\s*\}\}/gi, data.frequencyLabel || 'One-Time')
+    .replace(/\{\{\s*tier_name\s*\}\}/gi, data.tierName || 'Community Supporter')
+    .replace(/\{\{\s*circle_name\s*\}\}/gi, data.circleName || data.tierName || '')
+    .replace(/\{\{\s*badge\s*\}\}/gi, data.badge || data.tierName || '')
+    .replace(/\{\{\s*tagline\s*\}\}/gi, data.tagline || 'Powering LGBTQ+ Programs Across Ventura County')
+    .replace(/\{\{\s*impact\s*\}\}/gi, data.impact || '')
+    .replace(/\{\{\s*designation\s*\}\}/gi, data.designation || 'General Fund')
+    .replace(/\{\{\s*date\s*\}\}/gi, data.date || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }))
+    .replace(/\{\{\s*reference\s*\}\}/gi, data.reference || 'DCVC-DON')
+    .replace(/\{\{\s*card_url\s*\}\}/gi, data.cardUrl || '#')
+    .replace(/\{\{\s*ein\s*\}\}/gi, data.ein || '46-1234567');
+}
+
+/**
+ * 11. Donor Appreciation Card Dispatch & Thank You Email
+ * Fully editable via Admin Panel with dynamic donor placeholders
+ */
+export function templateDonorAppreciationEmail({ 
+  donorDisplayName, 
+  formattedAmount, 
+  tierName, 
+  badge, 
+  tagline, 
+  impact, 
+  cardUrl, 
+  frequency,
+  designation = 'General Fund',
+  date = '',
+  reference = '',
+  customTemplate = null 
+}) {
   const normalizedFreq = String(frequency || 'one-time').toLowerCase();
   const isRecurring = ['monthly', 'recurring', 'weekly', 'quarterly', 'yearly', 'annual'].includes(normalizedFreq);
   const frequencyLabel = normalizedFreq === 'yearly' || normalizedFreq === 'annual'
@@ -351,9 +396,42 @@ export function templateDonorAppreciationEmail({ donorDisplayName, formattedAmou
     : isRecurring
       ? 'Monthly Sustainer'
       : '';
-  const title = isRecurring
-    ? `From Our Hearts to Yours, ${donorDisplayName}! 💜`
-    : `Thank You, ${donorDisplayName}!`;
+
+  const tokenData = {
+    donorDisplayName: donorDisplayName || 'Valued Friend',
+    formattedAmount: formattedAmount || '$0.00',
+    tierName: tierName || 'Community Supporter',
+    circleName: tierName || 'Community Supporter',
+    badge: badge || tierName || 'DCVC Supporter',
+    tagline: tagline || 'Powering LGBTQ+ Programs Across Ventura County',
+    impact: impact || 'Your generosity fuels health clinics, youth circles, and community safe spaces.',
+    cardUrl: cardUrl || 'https://diversitycollectivevc.org/donate',
+    frequency: frequencyLabel || 'One-Time',
+    frequencyLabel: frequencyLabel || 'One-Time',
+    designation: designation || 'General Fund',
+    date: date || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+    reference: reference || 'DCVC-DON',
+    ein: '46-1234567'
+  };
+
+  // Compile custom or default title
+  let title = '';
+  if (customTemplate?.title) {
+    title = compileDonationTokens(customTemplate.title, tokenData);
+  } else {
+    title = isRecurring
+      ? `From Our Hearts to Yours, ${donorDisplayName}! 💜`
+      : `Thank You, ${donorDisplayName}!`;
+  }
+
+  // Compile recurring heartfelt note
+  let recurringNoteContent = '';
+  if (isRecurring) {
+    const rawNote = customTemplate?.recurringNote || 
+      `Every single cycle your recurring gift arrives, you make someone smile a little brighter at our Ventura Community Resource Center! Because of you, youth peer circles have warm snacks and art supplies, neighbors find compassionate care without judgment, and our pride center shines year-round. Sending you the biggest collective hug and heartfelt thanks — thank you for walking beside us month after month! 🌈✨`;
+    recurringNoteContent = compileDonationTokens(rawNote, tokenData);
+  }
+
   const recurringHeartfeltBlock = isRecurring
     ? `
     <div style="background: linear-gradient(135deg, #fff1f2 0%, #fdf4ff 100%); border: 1px solid #fbcfe8; border-radius: 18px; padding: 18px 20px; margin: 18px 0;">
@@ -361,10 +439,25 @@ export function templateDonorAppreciationEmail({ donorDisplayName, formattedAmou
         🌸 A Cute Heartfelt Note for Our Recurring Sustainer Family 💜
       </p>
       <p style="margin: 0; font-size: 14px; line-height: 1.65; color: #4c1d95;">
-        Every single cycle your recurring gift arrives, you make someone smile a little brighter at our Ventura Community Resource Center! Because of you, youth peer circles have warm snacks and art supplies, neighbors find compassionate care without judgment, and our pride sanctuary shines year-round. Sending you the biggest collective hug — thank you for walking beside us month after month! 🌈✨
+        ${recurringNoteContent}
       </p>
     </div>`
     : '';
+
+  // Compile main body
+  let mainBodyHtml = '';
+  if (customTemplate?.bodyText) {
+    mainBodyHtml = compileDonationTokens(customTemplate.bodyText, tokenData)
+      .replace(/\n\n/g, '</p><p style="font-size: 15px; line-height: 1.6; color: #334155; margin-top: 12px;">')
+      .replace(/\n/g, '<br />');
+  } else {
+    mainBodyHtml = `We are deeply moved by your generous gift of <strong>${formattedAmount}</strong> ${frequencyLabel ? `(${frequencyLabel})` : ''}. Your kindness powers our safe harbor for LGBTQ+ individuals and families across Ventura County.`;
+  }
+
+  const taxNoticeText = customTemplate?.taxNotice
+    ? compileDonationTokens(customTemplate.taxNotice, tokenData)
+    : `This appreciation card is a cultural keepsake honoring your generous partnership. It is not an official IRS tax receipt. Official tax-deductible donation receipts are issued independently and securely via our nonprofit giving partner, Zeffy.`;
+
   const contentHtml = `
     <div style="text-align: center; margin-bottom: 20px;">
       <span style="display: inline-block; padding: 4px 14px; background-color: #faf5ff; border: 1px solid #d8b4fe; border-radius: 999px; font-size: 11px; font-weight: 800; color: #581c87; text-transform: uppercase; letter-spacing: 0.5px;">
@@ -373,7 +466,7 @@ export function templateDonorAppreciationEmail({ donorDisplayName, formattedAmou
     </div>
 
     <p style="font-size: 15px; line-height: 1.6; color: #334155; margin-top: 0;">
-      We are deeply moved by your generous gift of <strong>${formattedAmount}</strong> ${frequencyLabel ? `(${frequencyLabel})` : ''}. Your kindness powers our safe harbor for LGBTQ+ individuals and families across Ventura County.
+      ${mainBodyHtml}
     </p>
     ${recurringHeartfeltBlock}
 
@@ -392,7 +485,7 @@ export function templateDonorAppreciationEmail({ donorDisplayName, formattedAmou
             <tr>
               <td align="center">
                 <h3 style="margin: 4px 0 8px 0; font-family: Georgia, serif; font-size: 20px; font-weight: 700; color: #1e1b4b;">
-                  With Heartfelt Thanks To
+                  ${customTemplate?.headline ? compileDonationTokens(customTemplate.headline, tokenData) : 'With Heartfelt Thanks To'}
                 </h3>
                 <p style="margin: 0 0 16px 0; font-family: Georgia, serif; font-size: 24px; font-weight: 800; color: #581c87;">
                   ${donorDisplayName}
@@ -427,19 +520,28 @@ export function templateDonorAppreciationEmail({ donorDisplayName, formattedAmou
     </div>
 
     <p style="font-size: 12px; line-height: 1.5; color: #64748b; margin: 20px 0 0 0;">
-      <strong>Tax Receipt Notice:</strong> This appreciation card is a cultural keepsake honoring your generous partnership. It is not an official IRS tax receipt. Official tax-deductible donation receipts are issued independently and securely via our nonprofit giving partner, Zeffy.
+      <strong>Tax Receipt Notice:</strong> ${taxNoticeText}
     </p>
   `;
 
-  return {
-    subject: isRecurring
+  // Compile subject
+  let subject = '';
+  if (customTemplate?.subject) {
+    subject = compileDonationTokens(customTemplate.subject, tokenData);
+  } else {
+    subject = isRecurring
       ? `Your Recurring Sustainer Appreciation Card & Heartfelt Thanks! 💜🌈 (${tierName})`
-      : `Your DCVC Appreciation Card has arrived! 💜 (${tierName})`,
-    html: baseEmailWrapper({ title, headerSubtitle: `"${tagline}"`, contentHtml }),
-    text: `Thank you, ${donorDisplayName}!
+      : `Your DCVC Appreciation Card has arrived! 💜 (${tierName})`;
+  }
 
-We are deeply grateful for your generous gift of ${formattedAmount} ${frequencyLabel ? `(${frequencyLabel})` : ''} to Diversity Collective Ventura County.
-${isRecurring ? '\nEvery single cycle your recurring gift arrives, you keep our sanctuary doors bright, youth circles thriving, and compassionate care free across Ventura County. Sending you the warmest collective hug and heartfelt thanks!\n' : ''}
+  return {
+    subject,
+    html: baseEmailWrapper({ title, headerSubtitle: `"${tagline}"`, contentHtml }),
+    text: `${subject}
+${title}
+
+${customTemplate?.bodyText ? compileDonationTokens(customTemplate.bodyText, tokenData) : `Thank you, ${donorDisplayName}!\n\nWe are deeply grateful for your generous gift of ${formattedAmount} ${frequencyLabel ? `(${frequencyLabel})` : ''} to Diversity Collective Ventura County.`}
+${isRecurring ? `\n${recurringNoteContent}\n` : ''}
 Tier: ${tierName} (${badge})
 "${tagline}"
 
@@ -449,7 +551,7 @@ ${impact}
 Open & Unwrap Your Interactive Keepsake Card:
 ${cardUrl}
 
-(Notice: This appreciation card is a cultural keepsake honoring your community support. It does not serve as an official IRS tax receipt. Official tax-deductible donation receipts are issued independently via Zeffy.)`
+(Notice: ${taxNoticeText})`
   };
 }
 
@@ -518,7 +620,7 @@ export function templateNewsletterWelcome({ email, unsubscribeUrl = `${DCVC_WEBS
 
   return {
     subject: 'Welcome to Diversity Collective Ventura County! 🌈✨',
-    html: baseEmailWrapper({ title: 'Welcome to the DCVC Family!', headerSubtitle: 'Sanctuary, Advocacy & Care Across Ventura County', contentHtml }),
+    html: baseEmailWrapper({ title: 'Welcome to the DCVC Family!', headerSubtitle: 'Center, Advocacy & Care Across Ventura County', contentHtml }),
     text: `Welcome to Diversity Collective Ventura County!
 Thank you for subscribing with ${email}.
 You'll now receive updates on Ventura County Pride, free health clinics, Rainbow Umbrella youth circles, and local LGBTQ+ community advocacy.
@@ -597,7 +699,7 @@ export function templateNewsletterBroadcast({
 
         <!-- Community Mutual Aid & Giving Callout -->
         <div style="background-color: #faf5ff; border: 1px solid #e9d5ff; border-radius: 14px; padding: 18px 20px; font-size: 13px; line-height: 1.6; color: #581c87;">
-          <strong>Support Community Sanctuary:</strong> Diversity Collective is Ventura County's only LGBTQ+ Community Resource Center. Our free services are funded by community members like you. <a href="${DCVC_WEBSITE}/donate" style="color: #7c2d12; font-weight: 700; text-decoration: underline;">Make a tax-deductible gift today</a>.
+          <strong>Support Community Center:</strong> Diversity Collective is Ventura County's only LGBTQ+ Community Resource Center. Our free services are funded by community members like you. <a href="${DCVC_WEBSITE}/donate" style="color: #7c2d12; font-weight: 700; text-decoration: underline;">Make a tax-deductible gift today</a>.
         </div>
       </td>
     </tr>
@@ -664,6 +766,40 @@ export function templateAdmin2faOtp({ email, otpCode }) {
     subject: `Your DCVC Admin Verification Code: ${otpCode}`,
     html,
     text: `Your DCVC Admin verification code is: ${otpCode}\n\nThis code is valid for 5 minutes.\nIf you did not initiate this request, notify DCVC staff immediately.`
+  };
+}
+
+// 14b. Admin Passwordless Email + OTP Sign-In Code
+export function templateAdminLoginOtp({ email, otpCode }) {
+  const contentHtml = `
+    <p style="font-size: 15px; line-height: 1.6; margin: 0 0 16px 0; color: #334155;">
+      A passwordless sign-in code was requested for the <strong>DCVC Administrative Portal</strong> for account <code>${email}</code>.
+    </p>
+    <p style="font-size: 15px; line-height: 1.6; margin: 0 0 20px 0; color: #334155;">
+      Enter the secure 6-digit one-time passcode below to authenticate:
+    </p>
+
+    <div style="background-color: #f1f5f9; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 20px; text-align: center; margin: 24px 0;">
+      <span style="font-size: 38px; font-weight: 800; letter-spacing: 10px; color: ${DCVC_PURPLE}; font-family: monospace;">
+        ${otpCode}
+      </span>
+    </div>
+
+    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 18px; margin: 20px 0; font-size: 13px; line-height: 1.6; color: #475569;">
+      <strong>Security Notice:</strong> This single-use passcode expires in <strong>10 minutes</strong>. Never share this code with anyone. DCVC staff will never ask for your code.
+    </div>
+  `;
+
+  const html = baseEmailWrapper({
+    title: 'DCVC Admin Sign-In Passcode',
+    headerSubtitle: 'Staff & Board Secure Access',
+    contentHtml
+  });
+
+  return {
+    subject: `Your DCVC Admin Sign-In Code: ${otpCode}`,
+    html,
+    text: `Your DCVC Admin sign-in passcode is: ${otpCode}\n\nThis single-use code is valid for 10 minutes.\nIf you did not request this code, you can safely ignore this email.`
   };
 }
 

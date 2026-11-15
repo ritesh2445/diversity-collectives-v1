@@ -12,12 +12,12 @@ export default function LegalPrivacy() {
   });
 
   return (
-    <div className="pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
+    <div className="w-full max-w-full overflow-x-clip pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
       
       {/* Header */}
-      <section className="container-clean pb-14 border-b border-slate-100 relative overflow-hidden">
+      <section className="container-clean pb-10 sm:pb-14 border-b border-slate-100 relative overflow-hidden">
         <div 
-          className="absolute -top-24 right-10 w-96 h-96 rounded-full bg-purple-200/25 blur-3xl pointer-events-none" 
+          className="absolute -top-24 -right-10 w-72 h-72 sm:w-96 sm:h-96 rounded-full bg-purple-200/25 blur-3xl pointer-events-none" 
           aria-hidden="true" 
         />
 
@@ -46,7 +46,7 @@ export default function LegalPrivacy() {
       {/* Main Legal Content */}
       <section className="container-clean py-14 max-w-4xl space-y-10 text-slate-700 leading-relaxed text-sm sm:text-base font-medium">
         
-        {/* Core Sanctuary Commitment Box */}
+        {/* Core Center Commitment Box */}
         <div className="p-8 rounded-3xl bg-purple-50/70 border-2 border-purple-200 space-y-3 shadow-xs">
           <div className="flex items-center gap-2 text-[#5A1E65] font-display font-black text-xl">
             <ShieldCheck className="w-6 h-6 flex-shrink-0" />

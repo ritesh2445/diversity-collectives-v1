@@ -13,10 +13,11 @@ import {
   Phone
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { orgInfo } from '../data/dcvcData';
+import { useLiveOrgInfo } from '../hooks/useCmsLive';
 import CardSpotlight from '../components/CardSpotlight';
 
 export default function GetInvolved() {
+  const orgInfo = useLiveOrgInfo();
   const triggerConfetti = (e) => {
     try {
       const rect = e?.currentTarget?.getBoundingClientRect();

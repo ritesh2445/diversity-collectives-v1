@@ -10,10 +10,11 @@ import {
   LifeBuoy,
   Phone
 } from 'lucide-react';
-import { orgInfo } from '../data/dcvcData';
+import { useLiveOrgInfo } from '../hooks/useCmsLive';
 import { usePageMeta } from '../utils/seo';
 
 export default function NotFound() {
+  const orgInfo = useLiveOrgInfo();
   usePageMeta({
     title: 'Page Not Found (404)',
     description: 'The requested page could not be found. Find your way back to Diversity Collective Ventura County programs and resources.',
@@ -82,14 +83,14 @@ export default function NotFound() {
             className="btn-primary py-3.5 px-8 text-xs font-bold inline-flex items-center gap-2 shadow-lg"
           >
             <Home className="w-4 h-4" />
-            <span>Return to Sanctuary Homepage</span>
+            <span>Return to Center Homepage</span>
           </Link>
           <Link
             to="/contact"
             className="btn-secondary py-3.5 px-6 text-xs font-bold inline-flex items-center gap-2 bg-white"
           >
             <MapPin className="w-4 h-4 text-purple-600" />
-            <span>Visit Sanctuary (2471 Portola Rd)</span>
+            <span>Visit Center (2471 Portola Rd)</span>
           </Link>
         </div>
 

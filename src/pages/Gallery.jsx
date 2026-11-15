@@ -37,6 +37,7 @@ import { galleryPhotos, memoryLaneMilestones } from '../data/dcvcData';
 import { cmsStore } from '../services/cmsStore';
 import { getOptimizedImageUrl } from '../lib/cloudinary';
 import { usePageMeta } from '../utils/seo';
+import { useScrollLock } from '../utils/scrollLock';
 
 export default function Gallery() {
   usePageMeta({
@@ -93,6 +94,7 @@ export default function Gallery() {
 
   // Photo Wall State
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(null);
+  useScrollLock(Boolean(expandedPhoto || selectedPhotoIndex !== null));
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'wall'
 
@@ -307,7 +309,7 @@ export default function Gallery() {
     return () => clearInterval(timer);
   }, [isAutoPlayingMilestones, activeMilestoneIdx, milestones.length]);
 
-  const categories = ['All', 'Festivals & Pride', 'Youth & Community', 'Volunteers & Action', 'Sanctuary & CRC', 'Health & Wellness', 'Kids & Families'];
+  const categories = ['All', 'Festivals & Pride', 'Youth & Community', 'Volunteers & Action', 'Center & CRC', 'Health & Wellness', 'Kids & Families'];
 
   const filteredPhotos = selectedCategory === 'All'
     ? photos
@@ -427,7 +429,7 @@ export default function Gallery() {
             <h1 className="font-display text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-slate-950 leading-[1.05]">
               Moments of Joy, <br />
               <span className="font-serif italic font-normal text-transparent bg-clip-text bg-gradient-to-r from-[#5A1E65] via-[#D91B5C] to-[#EA580C]">
-                Sanctuary & Community.
+                Center & Community.
               </span>
             </h1>
             <p className="font-serif italic text-lg sm:text-xl md:text-2xl text-slate-700 leading-relaxed pt-1">
@@ -470,7 +472,7 @@ export default function Gallery() {
               </span>
             </div>
             <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-slate-950 mt-0.5">
-              Featured Sanctuary Spotlights
+              Featured Center Spotlights
             </h2>
           </div>
 
@@ -723,7 +725,7 @@ export default function Gallery() {
                       <span className="font-bold text-slate-900 text-[11px]">{expandedPhoto.year}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-500 text-[11px]">Sanctuary License:</span>
+                      <span className="font-bold text-slate-500 text-[11px]">Center License:</span>
                       <span className="font-bold text-purple-700 text-[11px]">Community Commons</span>
                     </div>
                   </div>
@@ -974,11 +976,11 @@ export default function Gallery() {
           <h2 className="font-display text-3xl sm:text-5xl font-extrabold text-slate-950 tracking-tight leading-tight">
             DCVC Memory Lane: <br />
             <span className="font-serif italic font-normal text-transparent bg-clip-text bg-gradient-to-r from-[#5A1E65] via-[#D91B5C] to-[#EA580C]">
-              Twelve Years of Courage & Sanctuary.
+              Twelve Years of Courage & Center.
             </span>
           </h2>
           <p className="font-serif italic text-base sm:text-xl text-slate-700 leading-relaxed mt-3">
-            Jump into our historical checkpoints from 2014 grassroots origins to Ventura County's premier LGBTQ+ sanctuary. Swipe or tap milestones to warp through time.
+            Jump into our historical checkpoints from 2014 grassroots origins to Ventura County's premier LGBTQ+ center. Swipe or tap milestones to warp through time.
           </p>
         </div>
 
@@ -1494,7 +1496,7 @@ export default function Gallery() {
               You Are Part of Our Living History.
             </h3>
             <p className="font-serif italic text-sm text-slate-600">
-              Help us write the next decade of affirming care, LGBTQ+ youth sanctuary, and countywide advocacy.
+              Help us write the next decade of affirming care, LGBTQ+ youth center, and countywide advocacy.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
               <Link

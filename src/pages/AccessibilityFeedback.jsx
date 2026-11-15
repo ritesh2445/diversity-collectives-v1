@@ -12,10 +12,11 @@ import {
 } from 'lucide-react';
 import { submitAccessibilityFeedback } from '../services/api';
 import TurnstileWidget from '../components/TurnstileWidget';
-import { orgInfo } from '../data/dcvcData';
+import { useLiveOrgInfo } from '../hooks/useCmsLive';
 import { usePageMeta } from '../utils/seo';
 
 export default function AccessibilityFeedback() {
+  const orgInfo = useLiveOrgInfo();
   usePageMeta({
     title: 'Accessibility Feedback & Barrier Report',
     description: 'Encountered a digital barrier on our website? Help Diversity Collective ensure equitable access for all community members.',

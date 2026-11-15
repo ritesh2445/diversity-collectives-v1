@@ -20,12 +20,14 @@ import {
   ChevronRight,
   Info
 } from 'lucide-react';
-import { communityGroups, orgInfo } from '../data/dcvcData';
+import { useLiveCommunityGroups } from '../hooks/useCmsLive';
 import { getCommunityGroupData } from '../data/communityData';
 import { submitInquiry } from '../services/api';
 import CardSpotlight from '../components/CardSpotlight';
+import { useScrollLock } from '../utils/scrollLock';
 
 export default function Community() {
+  const communityGroups = useLiveCommunityGroups();
   const [selectedFilter, setSelectedFilter] = useState('All');
   
   // Modals state
@@ -131,7 +133,7 @@ export default function Community() {
   };
 
   return (
-    <div className="pt-8 md:pt-14 pb-20 bg-transparent text-slate-800 font-sans">
+    <div className="w-full max-w-full overflow-x-clip pt-8 md:pt-14 pb-20 bg-transparent text-slate-800 font-sans">
       
       {/* Header */}
       <section className="container-clean pb-14 border-b border-slate-100 relative overflow-hidden">

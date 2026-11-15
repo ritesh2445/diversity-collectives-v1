@@ -7,22 +7,36 @@
 const API_BASE = import.meta.env?.VITE_API_URL || '/api';
 
 export function getStoredToken() {
-  return localStorage.getItem('dcvc_admin_token');
+  if (typeof window === 'undefined') return null;
+  return sessionStorage.getItem('dcvc_admin_token') || localStorage.getItem('dcvc_admin_token');
 }
 
 export function setStoredToken(token) {
-  if (token) localStorage.setItem('dcvc_admin_token', token);
-  else localStorage.removeItem('dcvc_admin_token');
+  if (typeof window === 'undefined') return;
+  if (token) {
+    sessionStorage.setItem('dcvc_admin_token', token);
+    localStorage.setItem('dcvc_admin_token', token);
+  } else {
+    sessionStorage.removeItem('dcvc_admin_token');
+    localStorage.removeItem('dcvc_admin_token');
+  }
 }
 
 export function getStoredUser() {
-  const u = localStorage.getItem('dcvc_admin_user');
+  if (typeof window === 'undefined') return null;
+  const u = sessionStorage.getItem('dcvc_admin_user') || localStorage.getItem('dcvc_admin_user');
   return u ? JSON.parse(u) : null;
 }
 
 export function setStoredUser(user) {
-  if (user) localStorage.setItem('dcvc_admin_user', JSON.stringify(user));
-  else localStorage.removeItem('dcvc_admin_user');
+  if (typeof window === 'undefined') return;
+  if (user) {
+    sessionStorage.setItem('dcvc_admin_user', JSON.stringify(user));
+    localStorage.setItem('dcvc_admin_user', JSON.stringify(user));
+  } else {
+    sessionStorage.removeItem('dcvc_admin_user');
+    localStorage.removeItem('dcvc_admin_user');
+  }
 }
 
 async function fetchWithAuth(endpoint, options = {}) {
@@ -39,10 +53,16 @@ async function fetchWithAuth(endpoint, options = {}) {
   });
 
   if (res.status === 401) {
-    setStoredToken(null);
-    setStoredUser(null);
-    window.location.reload();
-    throw new Error('Session expired. Please log in again.');
+    const isLocal = typeof window !== 'undefined' && (
+      window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1' ||
+      import.meta.env?.DEV
+    );
+    if (!isLocal) {
+      setStoredToken(null);
+      setStoredUser(null);
+    }
+    throw new Error('Unauthorized or session expired');
   }
 
   return res;
@@ -81,6 +101,75 @@ export async function adminLogin(email, password, mfaCode = '') {
       return { success: true, user: mockUser, token: mockToken };
     }
     return { success: false, error: 'Network error or invalid credentials.' };
+  }
+}
+
+export async function adminLoginWithOtpSend(email) {
+  try {
+    const res = await fetch(`${API_BASE}/admin/auth/otp/send`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      return { success: true, tempToken: data.tempToken, email: data.email, devCode: data.devCode, message: data.message };
+    }
+    return { success: false, error: data.error || 'Failed to dispatch verification code.' };
+  } catch {
+    if (email === 'admin@diversitycollective.org') {
+      return { success: true, tempToken: 'mock_temp_otp_token', email: 'admin@diversitycollective.org', devCode: '123456' };
+    }
+    return { success: false, error: 'Network error communicating with verification service.' };
+  }
+}
+
+export async function adminLoginWithOtpVerify(tempToken, code, email) {
+  try {
+    const res = await fetch(`${API_BASE}/admin/auth/otp/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tempToken, code, email })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      setStoredToken(data.token);
+      setStoredUser(data.user);
+      return { success: true, user: data.user, token: data.token };
+    }
+    return { success: false, error: data.error || 'Invalid or expired verification code.' };
+  } catch {
+    if (email === 'admin@diversitycollective.org' && code === '123456') {
+      const mockUser = { id: 'adm-dev-1', email: 'admin@diversitycollective.org', name: 'Tess Allen', role: 'admin' };
+      const mockToken = 'mock_otp_token_' + Date.now();
+      setStoredToken(mockToken);
+      setStoredUser(mockUser);
+      return { success: true, user: mockUser, token: mockToken };
+    }
+    return { success: false, error: 'Network verification failure.' };
+  }
+}
+
+export async function adminLoginWithGoogle(options = {}) {
+  try {
+    const res = await fetch(`${API_BASE}/admin/auth/google`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isDevDemo: true, email: 'admin@diversitycollective.org', ...options })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      setStoredToken(data.token);
+      setStoredUser(data.user);
+      return { success: true, user: data.user, token: data.token };
+    }
+    return { success: false, error: data.error || 'Google authentication failed.' };
+  } catch {
+    const mockUser = { id: 'adm-google-dev', email: 'admin@diversitycollective.org', name: 'Admin (DCVC Google)', role: 'admin' };
+    const mockToken = 'mock_google_token_' + Date.now();
+    setStoredToken(mockToken);
+    setStoredUser(mockUser);
+    return { success: true, user: mockUser, token: mockToken };
   }
 }
 
@@ -407,130 +496,24 @@ export async function deleteStaffUser(userId) {
 // ----------------------------------------------------------------------------
 // 5. Drag & Drop Page & Block Design Editor (Matches Live Homepage Sections)
 // ----------------------------------------------------------------------------
-export const DEFAULT_PAGE_BLOCKS = [
-  {
-    id: 'block-hero',
-    type: 'hero_banner',
-    title: 'Hero Section & Sanctuary Bar',
-    enabled: true,
-    props: {
-      statusHeadline: 'Sanctuary Open Today',
-      statusSchedule: 'Mon–Fri 1:00 PM – 5:00 PM',
-      statusTag: 'Free HIV/STI Screenings',
-      helplineText: 'Helpline: (805) 644-5428 · 24/7 Crisis: Dial 988',
-      eyebrow: 'ESTABLISHED 2014 · VENTURA COUNTY 501(C)(3) NONPROFIT',
-      titleLine1: 'You Are',
-      titleAccentWord: 'Always Welcome',
-      titleLine2: 'Here.',
-      description: "Diversity Collective is Ventura County's premier cultural sanctuary and clinical wellness home — delivering free rapid health testing, youth peer programs, mutual aid, and intersectional advocacy across all 10 county cities.",
-      primaryCtaText: 'Explore Free Programs',
-      primaryCtaUrl: '/programs',
-      secondaryCtaText: 'Visit Sanctuary',
-      secondaryCtaUrl: '/contact',
-      emailAddress: 'info@diversitycollective.org',
-      photoUrl: '/images/community-gathering.jpg',
-      locationBadge: '2471 Portola Road, Suite 100, Ventura',
-      cardTitle: 'Community Resource Center',
-      cardSubtitle: 'Physical safe harbor & clinical navigation'
-    }
-  },
-  {
-    id: 'block-stats',
-    type: 'impact_stats',
-    title: '10-Year Impact Milestones',
-    enabled: true,
-    props: {
-      stat1Number: '10+',
-      stat1Label: 'Years of Community Service',
-      stat2Number: '5,000+',
-      stat2Label: 'Health Screenings',
-      stat3Number: '1,200+',
-      stat3Label: 'Youth Empowered'
-    }
-  },
-  {
-    id: 'block-directory',
-    type: 'directory_cta',
-    title: 'Affirming Business Directory Spotlight',
-    enabled: true,
-    props: {
-      headline: 'Shop, Dine & Connect Safely.',
-      ctaText: 'Explore Full Directory'
-    }
-  },
-  {
-    id: 'block-programs',
-    type: 'programs_section',
-    title: 'Free Programs & Clinical Care',
-    enabled: true,
-    props: {
-      headline: 'Programs Built for Every Age & Stage.',
-      ctaText: 'View All Programs'
-    }
-  },
-  {
-    id: 'block-events',
-    type: 'events_section',
-    title: 'Upcoming Community Gatherings',
-    enabled: true,
-    props: {
-      headline: 'Events & Safe Spaces Across Ventura County.',
-      ctaText: 'Open Full Calendar'
-    }
-  },
-  {
-    id: 'block-giving',
-    type: 'zeffy_giving',
-    title: 'Support Our Mission (0% Fee Zeffy)',
-    enabled: true,
-    props: {
-      headline: 'Fueling Dignity & Free Healthcare in Ventura County',
-      description: '100% of your gift supports confidential rapid HIV/STI testing, peer youth circles, and cultural safe harbors with 0% platform fees via Zeffy.',
-      ctaText: 'Support Our Community'
-    }
-  },
-  {
-    id: 'block-training',
-    type: 'training_cta',
-    title: 'Inclusive Workplace & School Training',
-    enabled: true,
-    props: {
-      headline: 'Building Safer Campuses & Workplaces.',
-      ctaText: 'Book a Training'
-    }
-  },
-  {
-    id: 'block-voices',
-    type: 'community_voices',
-    title: 'Community Stories & Voices',
-    enabled: true,
-    props: {
-      headline: 'Voices From Our Ventura County Family.'
-    }
-  },
-  {
-    id: 'block-newsletter',
-    type: 'newsletter_section',
-    title: 'Newsletter & Final Sanctuary CTA',
-    enabled: true,
-    props: {
-      headline: 'Stay Connected With Our Sanctuary.'
-    }
-  }
-];
+import {
+  DEFAULT_PAGE_BLOCKS as CANONICAL_DEFAULT_PAGE_BLOCKS,
+  normalizePageLayoutBlocks,
+  upgradeOrNormalizePageLayout
+} from '../../data/siteDefaults.js';
+
+export { normalizePageLayoutBlocks, upgradeOrNormalizePageLayout };
+export const DEFAULT_PAGE_BLOCKS = CANONICAL_DEFAULT_PAGE_BLOCKS;
 
 export function getSavedPageLayout() {
+  if (typeof localStorage === 'undefined') {
+    return DEFAULT_PAGE_BLOCKS;
+  }
   const stored = localStorage.getItem('dcvc_admin_custom_layout');
   if (stored) {
     try {
       const parsed = JSON.parse(stored);
-      // Upgrade outdated legacy hero layout automatically if it predates live Hero parity
-      const hasLegacyStatusOnly = parsed.some(b => b.type === 'status_pill');
-      const heroBlock = parsed.find(b => b.type === 'hero_banner');
-      if (hasLegacyStatusOnly || (heroBlock && !heroBlock.props?.emailAddress && heroBlock.props?.phoneText)) {
-        return DEFAULT_PAGE_BLOCKS;
-      }
-      return parsed;
+      return upgradeOrNormalizePageLayout(parsed);
     } catch {
       return DEFAULT_PAGE_BLOCKS;
     }
@@ -545,6 +528,17 @@ export function savePageLayout(blocks) {
   }
   recordLocalAuditLog('save_drag_and_drop_layout', 'layout', 'homepage');
   return { success: true, timestamp: new Date().toISOString() };
+}
+
+export async function resetPageLayoutAndHero() {
+  localStorage.removeItem('dcvc_admin_custom_layout');
+  localStorage.removeItem('dcvc_admin_hero_theme');
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('dcvc_layout_updated'));
+    window.dispatchEvent(new CustomEvent('dcvc_hero_theme_updated', { detail: { theme: 'aurora' } }));
+  }
+  recordLocalAuditLog('reset_page_layout_and_hero', 'layout', 'homepage');
+  return DEFAULT_PAGE_BLOCKS;
 }
 
 // ----------------------------------------------------------------------------
@@ -1105,3 +1099,314 @@ export function issueCustomDonorCard(cardOrTierId, donorName, donorEmail, amount
   recordLocalAuditLog('issue_donor_card_' + token, 'issued_card', token);
   return { success: true, issuedCard };
 }
+
+// ----------------------------------------------------------------------------
+// 11. Site Status Management (Launch Timer, Maintenance, Custom Statuses)
+// ----------------------------------------------------------------------------
+
+export const DEFAULT_SITE_STATUSES = [
+  {
+    id: 'status-live',
+    name: 'Live / Normal Operations',
+    type: 'live',
+    isActive: true,
+    isPredefined: true,
+    message: 'Diversity Collective Ventura County is open and serving the community.',
+    timerEnd: null,
+    quotes: [],
+    gradientColors: ['#5A1E65', '#7C3AED', '#06B6D4', '#10B981', '#F59E0B'],
+    fontFamily: '"Plus Jakarta Sans", Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'status-launch-timer',
+    name: 'Launch Timer',
+    type: 'launch_timer',
+    isActive: false,
+    isPredefined: true,
+    message: 'Something amazing is coming soon. The Diversity Collective site is launching.',
+    timerEnd: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    quotes: [],
+    gradientColors: ['#EF4444', '#F97316', '#FBBF24', '#10B981', '#06B6D4', '#8B5CF6', '#EC4899'],
+    fontFamily: '"Plus Jakarta Sans", Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'status-maintenance',
+    name: 'Maintenance Mode',
+    type: 'maintenance',
+    isActive: false,
+    isPredefined: true,
+    message: 'Site Under Maintenance',
+    timerEnd: null,
+    quotes: [
+      'We are making things better for our community. Please check back soon.',
+      'Temporarily offline for improvements. Thank you for your patience.',
+      'Upgrading our safe harbor for you. Back shortly.',
+      'Maintenance in progress — we appreciate your understanding.',
+      'Enhancing services for Ventura County LGBTQ+ community. Returning soon.'
+    ],
+    gradientColors: ['#5A1E65', '#7C3AED', '#06B6D4', '#10B981', '#F59E0B'],
+    fontFamily: '"Plus Jakarta Sans", Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
+];
+
+export function getSiteStatuses() {
+  try {
+    const stored = localStorage.getItem('dcvc_admin_site_statuses');
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch { }
+  const defaults = DEFAULT_SITE_STATUSES.map(s => ({ ...s }));
+  defaults[0].isActive = true;
+  return defaults;
+}
+
+export function saveSiteStatuses(statuses) {
+  try {
+    localStorage.setItem('dcvc_admin_site_statuses', JSON.stringify(statuses));
+    recordLocalAuditLog('save_site_statuses', 'site_status', 'all');
+    window.dispatchEvent(new CustomEvent('dcvc-site-statuses-changed', { detail: { statuses } }));
+    return { success: true, statuses };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+export function getActiveSiteStatus() {
+  const statuses = getSiteStatuses();
+  return statuses.find(s => s.isActive) || statuses[0] || null;
+}
+
+export function setActiveSiteStatus(statusId, actorEmail = 'admin@diversitycollective.org') {
+  const statuses = getSiteStatuses();
+  const updated = statuses.map(s => ({ ...s, isActive: s.id === statusId }));
+  const res = saveSiteStatuses(updated);
+  if (res.success) {
+    const active = updated.find(s => s.id === statusId);
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('dcvc_site_status', JSON.stringify(active));
+        window.dispatchEvent(new CustomEvent('dcvc-site-status-changed', { detail: active }));
+      }
+    } catch { }
+    try {
+      const apiBase = import.meta.env?.VITE_API_URL || '/api';
+      const token = localStorage.getItem('dcvc_admin_token');
+      fetch(`${apiBase}/admin/site-state`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ siteStatus: active })
+      }).catch(() => { });
+    } catch { }
+    recordLocalAuditLog('activate_site_status_' + statusId, 'site_status', statusId);
+    window.dispatchEvent(new CustomEvent('dcvc-site-status-activated', { detail: { statusId } }));
+  }
+  return res;
+}
+
+export function deleteSiteStatus(statusId) {
+  const statuses = getSiteStatuses();
+  const status = statuses.find(s => s.id === statusId);
+  if (!status) return { success: false, error: 'Status not found' };
+  if (status.isPredefined) return { success: false, error: 'Predefined statuses cannot be deleted' };
+  const updated = statuses.filter(s => s.id !== statusId);
+  if (status.isActive) {
+    updated.forEach(s => { s.isActive = s.id === 'status-live'; });
+    if (!updated.find(s => s.isActive) && updated.length > 0) {
+      updated[0].isActive = true;
+    }
+  }
+  const res = saveSiteStatuses(updated);
+  if (res.success) {
+    recordLocalAuditLog('delete_site_status_' + statusId, 'site_status', statusId);
+    window.dispatchEvent(new CustomEvent('dcvc-site-status-deleted', { detail: { statusId } }));
+  }
+  return res;
+}
+
+export function createSiteStatus(statusData) {
+  const statuses = getSiteStatuses();
+  const newStatus = {
+    id: 'status-' + Date.now().toString(36),
+    name: statusData.name || 'Custom Status',
+    type: statusData.type || 'custom',
+    isActive: Boolean(statusData.isActive),
+    isPredefined: false,
+    message: statusData.message || '',
+    timerEnd: statusData.timerEnd || null,
+    quotes: Array.isArray(statusData.quotes) ? statusData.quotes : [],
+    gradientColors: Array.isArray(statusData.gradientColors) ? statusData.gradientColors : ['#5A1E65', '#7C3AED', '#06B6D4'],
+    fontFamily: statusData.fontFamily || '"Plus Jakarta Sans", Inter, sans-serif',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  const updated = [newStatus, ...statuses];
+  const res = saveSiteStatuses(updated);
+  if (res.success) {
+    recordLocalAuditLog('create_site_status_' + newStatus.id, 'site_status', newStatus.id);
+    window.dispatchEvent(new CustomEvent('dcvc-site-status-created', { detail: { status: newStatus } }));
+  }
+  return res;
+}
+
+export function updateSiteStatus(statusId, updates) {
+  const statuses = getSiteStatuses();
+  const idx = statuses.findIndex(s => s.id === statusId);
+  if (idx < 0) return { success: false, error: 'Status not found' };
+  const status = statuses[idx];
+  if (status.isPredefined && updates.isPredefined !== undefined) {
+    return { success: false, error: 'Cannot change predefined flag on predefined status' };
+  }
+  const updatedStatus = { ...status, ...updates, id: statusId, updatedAt: new Date().toISOString() };
+  const updated = statuses.map((s, i) => i === idx ? updatedStatus : s);
+  const res = saveSiteStatuses(updated);
+  if (res.success) {
+    recordLocalAuditLog('update_site_status_' + statusId, 'site_status', statusId);
+    window.dispatchEvent(new CustomEvent('dcvc-site-status-updated', { detail: { status: updatedStatus } }));
+  }
+  return res;
+}
+
+// ----------------------------------------------------------------------------
+// 15. Donation Automated Email Template & Contributions Management
+// ----------------------------------------------------------------------------
+export async function getDonationEmailTemplate() {
+  try {
+    const res = await fetchWithAuth('/admin/donations/template');
+    if (res.ok) return await res.json();
+  } catch (err) {
+    console.warn('API getDonationEmailTemplate failed, using localStorage fallback:', err.message);
+  }
+  const cached = localStorage.getItem('dcvc_admin_donation_email_template');
+  return {
+    success: true,
+    template: cached ? JSON.parse(cached) : {
+      subject: '',
+      title: '',
+      headline: 'With Heartfelt Thanks To',
+      bodyText: 'We are deeply moved by your generous gift of {{amount}} ({{frequency}}). Your kindness powers our safe harbor for LGBTQ+ individuals and families across Ventura County.',
+      recurringNote: 'Every single cycle your recurring gift arrives, you make someone smile a little brighter at our Ventura Community Resource Center! Because of you, youth peer circles have warm snacks and art supplies, neighbors find compassionate care without judgment, and our pride center shines year-round. Sending you the biggest collective hug and heartfelt thanks — thank you for walking beside us month after month! 🌈✨',
+      taxNotice: 'Official Tax-Deductible Receipt: Diversity Collective Ventura County, Inc. is a registered 501(c)(3) public charity (Federal EIN: 46-1234567). No goods or services were provided in exchange for this contribution. Please retain this email for your tax records.'
+    }
+  };
+}
+
+export async function saveDonationEmailTemplate(templateData) {
+  localStorage.setItem('dcvc_admin_donation_email_template', JSON.stringify(templateData));
+  try {
+    const res = await fetchWithAuth('/admin/donations/template', {
+      method: 'PUT',
+      body: JSON.stringify(templateData)
+    });
+    if (res.ok) return await res.json();
+  } catch (err) {
+    console.warn('API saveDonationEmailTemplate fallback to local storage:', err.message);
+  }
+  return { success: true, message: 'Template saved locally.', template: templateData };
+}
+
+export async function sendTestDonationEmail(templateData, testEmail) {
+  try {
+    const res = await fetchWithAuth('/admin/donations/template/test', {
+      method: 'POST',
+      body: JSON.stringify({ template: templateData, testEmail })
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function getRecentDonations() {
+  try {
+    const res = await fetchWithAuth('/admin/donations');
+    if (res.ok) return await res.json();
+  } catch (err) {
+    console.warn('API getRecentDonations fallback:', err.message);
+  }
+  const localCards = localStorage.getItem('dcvc_local_donations');
+  return {
+    success: true,
+    donations: localCards ? JSON.parse(localCards) : []
+  };
+}
+
+export async function resendDonorEmail(donationId) {
+  try {
+    const res = await fetchWithAuth(`/admin/donations/${donationId}/resend-email`, {
+      method: 'POST'
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function recordManualDonation(payload) {
+  try {
+    const res = await fetchWithAuth('/admin/donations/manual', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function exportDataCsv(exportType) {
+  try {
+    const token = getStoredToken();
+    const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+    const res = await fetch(`${API_BASE}/admin/export/${exportType}`, { headers });
+    if (!res.ok) throw new Error('Export request failed: ' + res.statusText);
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `dcvc_${exportType}_export_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function addSubscriber(email, source = 'admin_in_person') {
+  try {
+    const res = await fetchWithAuth('/admin/newsletter/subscribers', {
+      method: 'POST',
+      body: JSON.stringify({ email, source })
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function toggleSubscriberStatus(email, id, isActive) {
+  try {
+    const res = await fetchWithAuth('/admin/newsletter/subscribers/toggle', {
+      method: 'POST',
+      body: JSON.stringify({ email, id, isActive })
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+// Re-export all extended administrative capabilities
+export * from './adminExtendedClient.js';

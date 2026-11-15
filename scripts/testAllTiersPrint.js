@@ -26,7 +26,7 @@ const tiers = [
     textColor: '#0f172a',
     accentGrad: 'linear-gradient(to right, #f59e0b, #fb7185, #d97706)',
     quote: '"Thank you for believing that everyone deserves a space where they are welcomed without reservation."',
-    impact: 'Your generous contribution provides vital safer-sex supplies, harm reduction kits, welcoming computer access, and warm hospitality for local community members finding sanctuary at our Ventura Community Resource Center.'
+    impact: 'Your generous contribution provides vital safer-sex supplies, harm reduction kits, welcoming computer access, and warm hospitality for local community members finding community support at our Ventura Community Resource Center.'
   },
   {
     id: 'pride_advocate',
@@ -47,7 +47,7 @@ const tiers = [
     border: '#86efac',
     textColor: '#0f172a',
     accentGrad: 'linear-gradient(to right, #ef4444, #f59e0b, #10b981, #06b6d4, #8b5cf6)',
-    quote: '"Research proves having even one affirming adult reduces youth suicide risk by 40%. Your support ensures that sanctuary is always open."',
+    quote: '"Research proves having even one affirming adult reduces youth suicide risk by 40%. Your support ensures that our center is always open."',
     impact: 'Your partnership underwrites weekly Rainbow Umbrella and Little Unicorns youth peer circles, creating lifelong friendships, mental health resilience, and affirming spaces where young people can be their authentic selves.'
   },
   {
@@ -243,7 +243,7 @@ header, footer, nav, aside {
       <div>
         <div style="font-size: 11px; font-weight: bold; text-transform: uppercase;">With Deepest Gratitude</div>
         <div style="font-size: 16px; font-weight: bold; font-style: italic;">Diversity Collective Ventura County</div>
-        <div style="font-size: 11px; opacity: 0.8;">Board of Directors, Staff, Volunteers & Community Sanctuary</div>
+        <div style="font-size: 11px; opacity: 0.8;">Board of Directors, Staff, Volunteers & Community Center</div>
       </div>
       <div style="text-align: right;">
         <div style="font-size: 11px; font-weight: bold;">501(c)(3) Nonprofit Public Charity</div>

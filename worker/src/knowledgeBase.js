@@ -41,17 +41,17 @@ export const VERIFIED_KNOWLEDGE_BASE = [
     keywords: ["organization", "about", "history", "dcvc", "nonprofit", "501c3", "ein", "founded", "tess allen", "roland catabona", "mission", "ventura county", "leadership"]
   },
 
-  // 2. Community Resource Center (Physical Sanctuary)
+  // 2. Community Resource Center (Physical Center)
   {
     id: "crc",
     category: "program",
-    title: "Community Resource Center (Sanctuary)",
+    title: "Community Resource Center (Center)",
     officialUrl: "/programs/community-resource-center",
     costType: "100% Free",
     eligibility: "Open to all LGBTQ+ individuals, families, youth, and affirming allies.",
     hours: "Monday through Friday: 1:00 PM – 5:00 PM Pacific Time",
     location: "2471 Portola Road, Suite 100, Ventura, CA 93003",
-    summary: "The Community Resource Center is Ventura County's premier physical LGBTQ+ cultural sanctuary and drop-in hub offering a computer lab, library, mutual aid pantry, and community meeting space.",
+    summary: "The Community Resource Center is Ventura County's premier physical LGBTQ+ cultural center and drop-in hub offering a computer lab, library, mutual aid pantry, and community meeting space.",
     verifiedFacts: [
       "Location: 2471 Portola Road, Suite 100, Ventura, CA 93003",
       "Operating Hours: Monday – Friday, 1:00 PM – 5:00 PM PT (Closed weekends & major holidays)",
@@ -59,7 +59,7 @@ export const VERIFIED_KNOWLEDGE_BASE = [
       "Amenities: Free high-speed computer/cyber lab, printing for essential needs, LGBTQ+ lending library, mutual aid food and hygiene supplies, safe harbor lounge.",
       "Phone: (805) 644-LGBT (805-644-5428)"
     ],
-    keywords: ["center", "sanctuary", "community resource center", "crc", "address", "location", "hours", "directions", "portola", "visit", "drop in", "computer", "wifi", "library", "pantry", "food", "open", "phone"]
+    keywords: ["center", "center", "community resource center", "crc", "address", "location", "hours", "directions", "portola", "visit", "drop in", "computer", "wifi", "library", "pantry", "food", "open", "phone"]
   },
 
   // 3. Diversity SHINES (Free Rapid HIV & STI Testing Clinic)
@@ -160,22 +160,59 @@ export const VERIFIED_KNOWLEDGE_BASE = [
     keywords: ["mental health", "therapy", "counselor", "counseling", "therapist", "crisis", "depression", "suicide", "trevor project", "988", "vcbh", "help"]
   },
 
-  // 8. Signature Annual Events & Festivals
+  // 8. Signature Annual Events & Festivals (Distinct from Programs & Calendar)
   {
     id: "events",
     category: "event",
-    title: "Annual Community Events & Festivals",
+    title: "Signature Annual Events (AIDS Walk, Pride Prom, Ventura County Pride)",
     officialUrl: "/events",
-    costType: "Many events are free to enter; annual gala is a ticketed fundraiser",
-    summary: "DCVC produces Ventura County's premier LGBTQ+ celebrations including Ventura County Pride, the Diversity Gala, and youth Pride Prom.",
+    costType: "Pride Prom & many community gatherings are free; AIDS Walk & Pride support DCVC programs",
+    summary: "At DCVC, Events, Programs, and Calendar are three distinct areas: Signature Annual Events include AIDS Walk Ventura, Pride Prom, and Ventura County Pride.",
     verifiedFacts: [
-      "Ventura County Pride: Annual flagship seaside celebration held in August at Promenade Park / Surfers Point in Ventura. Features mainstage performances, food trucks, community resource booths, and youth zone.",
-      "Diversity Gala: Annual autumn formal awards celebration and fundraiser recognizing regional civic champions and equality advocates. (Ticketed benefit).",
-      "Pride Prom: Annual spring formal celebration specifically for LGBTQ+ and allied high school youth across Ventura County, providing an authentic, affirming prom experience.",
-      "Outdated Events Policy: Past festival editions (e.g. 2023 or 2024 Pride) have concluded and are not upcoming. Check /events for current active dates.",
-      "Cancellations: Any weather or public safety cancellations are published with official status badges on /events."
+      "1. AIDS Walk Ventura: Annual awareness, remembrance, and fundraising walk supporting HIV/AIDS education, prevention, and Diversity SHINES free rapid testing.",
+      "2. Pride Prom: Free, safe, and inclusive annual prom hosted by Rainbow Umbrella for LGBTQ+ youth and allies ages 13–23 (held in Downtown Ventura at venues such as The Palomino).",
+      "3. Ventura County Pride: Annual flagship celebration & festival in Ventura (Plaza Park) featuring main stage entertainment, vendors, local artists, and a community resource village.",
+      "Programs vs Events vs Calendar: Programs are ongoing recurring support/health initiatives (e.g., Queer Adulting, Rainbow Umbrella, Diversity SHINES); Events are major signature celebrations; the Calendar displays upcoming scheduled dates and times."
     ],
-    keywords: ["events", "pride", "festival", "ventura county pride", "gala", "prom", "pride prom", "calendar", "upcoming", "dates", "schedule", "august", "tickets"]
+    keywords: ["events", "aids walk", "pride", "festival", "ventura county pride", "prom", "pride prom", "gala", "dates", "upcoming"]
+  },
+
+  // 8b. Recurring Support Programs & Special Engagements
+  {
+    id: "core-programs-list",
+    category: "program",
+    title: "Core Programs & Peer Support Groups (9 Featured Programs)",
+    officialUrl: "/programs",
+    costType: "100% Free",
+    summary: "DCVC's 9 featured community programs are: Queer Adulting, Little Unicorns, Rainbow Umbrella, PFLAG, Narcotics Anonymous, Trans Peer Group by Transverse, Toastmasters, Men's Collective, and Silver Collective.",
+    verifiedFacts: [
+      "1. Queer Adulting: Ages 18+, 1st & 3rd Wednesday of the month, 7:00 PM – 9:00 PM at the CRC.",
+      "2. Little Unicorns: Ages 9–13, last Saturday of the month, 1:00 PM – 3:00 PM.",
+      "3. Rainbow Umbrella: Ages 13–23, every Friday, 5:30 PM – 7:30 PM at the CRC.",
+      "4. PFLAG (Ventura Chapter): Supporting families, allies & LGBTQ+ individuals (2nd Tuesday, 6:30 PM).",
+      "5. Narcotics Anonymous: LGBTQ+ welcoming recovery meeting every Monday, 7:00 PM – 8:30 PM.",
+      "6. Trans Peer Group by Transverse: Bi-weekly Sundays at 4:00 PM for trans & non-binary community.",
+      "7. Diversity Toastmasters: 1st & 3rd Tuesday, 6:30 PM – 8:00 PM for public speaking & leadership.",
+      "8. Men's Collective: Weekly social & personal growth peer group for LGBTQ+ men and allies (18+).",
+      "9. Silver Collective: LGBTQ+ adults 55+, 2nd Thursday of the month, 6:00 PM – 7:30 PM."
+    ],
+    keywords: ["programs", "list of programs", "all programs", "queer adulting", "pflag", "narcotics anonymous", "transverse", "trans peer", "toastmasters", "mens collective", "men's collective", "silver collective", "support groups"]
+  },
+
+  // 8c. Special Engagements, Calendar & Flex Space
+  {
+    id: "special-engagements-flex",
+    category: "community",
+    title: "Special Engagements (Amplify Arts), Calendar & Flex Space",
+    officialUrl: "/events",
+    costType: "Hosted Special Engagements & Slot-Bookable Flex Space",
+    summary: "DCVC hosts Special Engagements such as Amplify Arts (Amplify After Hours) for youth, maintains an interactive Calendar of upcoming dates, and offers a bookable Flex Space at the Community Resource Center.",
+    verifiedFacts: [
+      "Special Engagements — Amplify Arts (Amplify After Hours): Collaborative creative arts, music, and mental wellness programming hosted at DCVC for middle and high school youth.",
+      "Calendar: Lists specific dates, upcoming week gatherings, and recurring meeting times separately from Program descriptions and Signature Events.",
+      "Flex Space: Bookable community space at 2471 Portola Road, Suite 100 with live availability status, automated operating hours, and online time-slot reservation on the homepage."
+    ],
+    keywords: ["special engagements", "amplify arts", "amplify after hours", "calendar", "schedule", "flex space", "workspace", "book room", "slot", "availability"]
   },
 
   // 9. Professional Education & Workplace Training
@@ -347,7 +384,7 @@ export function detectBoundaryQueries(query) {
 
 // Pre-build index of all recognized DCVC domain vocabulary to detect out-of-domain / hallucination probes
 const RECOGNIZED_DCVC_VOCABULARY = new Set([
-  "dcvc", "diversity", "collective", "ventura", "county", "community", "resource", "center", "sanctuary",
+  "dcvc", "diversity", "collective", "ventura", "county", "community", "resource", "center", "center",
   "crc", "portola", "testing", "screenings", "screening", "rapid", "hiv", "sti", "std", "prep", "pep",
   "condoms", "rainbow", "umbrella", "ru", "youth", "teens", "teen", "children", "kids", "little", "unicorns",
   "trans", "transgender", "nonbinary", "non-binary", "circles", "support", "group", "groups", "parents",

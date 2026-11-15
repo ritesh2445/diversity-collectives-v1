@@ -132,22 +132,22 @@ export const programsList = [
     accent: "#D46578",
     accentName: "Dusty Coral",
     audience: "All sexually active individuals, LGBTQ+ community & allies",
-    schedule: "Screenings: 1st Monday of every month, 3:00 PM – 7:00 PM",
-    location: "Diversity Collective CRC, 2471 Portola Rd, Suite 100, Ventura",
-    summary: "Status-neutral sexual wellness care offering free confidential HIV & STI testing, PrEP/PEP linkage, free safer sex kits, and stigma-free education.",
-    description: "Diversity SHINES is our Sexual Health Information Network and Educational Support program, providing free sexual health and wellbeing services with a whole-person, status-neutral approach. A status neutral approach to care means that regardless of STI status, people have immediate access and support to stay healthy.",
+    schedule: "Free Screenings: 1st Monday of every month, 3:00 PM – 7:00 PM (Appointments preferred · Some walk-ins available)",
+    location: "Diversity Collective Community Resource Center, 2471 Portola Rd, Suite 100, Ventura",
+    summary: "Free confidential HIV & STI testing (syphilis, chlamydia, gonorrhea) with certified counselors, PrEP/PEP navigation, free safer sex kits, and MPOX vaccination coordination.",
+    description: "Diversity SHINES is our Sexual Health Information Network and Educational Support program, providing free sexual health and wellbeing services with a whole-person, status-neutral approach. A status neutral approach to care means that regardless of STI status, people have access and support to stay healthy. We offer FREE confidential HIV and STI screenings every 1st Monday of the month from 3:00 PM – 7:00 PM performed by certified HIV counselors. Our STI screenings include syphilis, chlamydia, and gonorrhea. Appointments preferred; some walk-in appointments are available.",
     amenities: [
-      "Free confidential HIV, syphilis, chlamydia & gonorrhea testing",
-      "Testing administered by state-certified HIV testing counselors",
-      "PrEP (Pre-Exposure Prophylaxis) & PEP (Post-Exposure) navigation",
-      "Free 'SHINE With Me' safer sex kits (mail order or CRC pickup)",
-      "MPOX vaccination coordination with Ventura County Public Health",
-      "Bilingual Spanish/English counseling and educational workshops"
+      "Free confidential HIV screenings performed by certified HIV counselors",
+      "Confidential STI screenings: syphilis, chlamydia, and gonorrhea",
+      "PrEP (Pre-Exposure Prophylaxis) & PEP (Post-Exposure) navigation & linkage",
+      "Free 'SHINE With Me' safer sex kits (pick up at the CRC or mailed to your door)",
+      "Free MPOX (Jynneos) vaccine coordination with Ventura County Public Health",
+      "Bilingual English/Spanish certified counselors & confidential results"
     ],
     contactEmail: "shines@diversitycollective.org",
     contactPhone: "(805) 644-5428",
-    ctaText: "Learn About HIV & STI Care",
-    ctaLink: "/programs/diversity-shines"
+    ctaText: "Book Screening Appointment",
+    ctaLink: "/appointments"
   },
   {
     slug: "pride-training",
@@ -255,6 +255,45 @@ export const communityGroups = [
     description: "LGBTQ+ welcoming recovery meeting providing fellowship, mutual support, and hope for individuals on the journey of recovery.",
     contact: "info@diversitycollective.org",
     link: "/events"
+  },
+  {
+    name: "Men's Collective",
+    frequency: "Weekly · Community Resource Center",
+    ages: "LGBTQ+ Men & Allies (18+)",
+    location: "DCVC Community Resource Center",
+    category: "Adult Peer Support",
+    description: "A weekly social, fellowship, and personal growth peer support group for gay, bisexual, trans, and queer men and allies in Ventura County.",
+    contact: "info@diversitycollective.org",
+    link: "/community"
+  }
+];
+
+export const specialEngagements = [
+  {
+    id: "amplify-arts",
+    slug: "amplify-arts",
+    title: "Amplify Arts (Amplify After Hours)",
+    host: "Hosted Partner Collective at DCVC",
+    schedule: "Scheduled Weekly Youth Creative Sessions",
+    audience: "Middle & High School Youth",
+    location: "DCVC Community Resource Center · 2471 Portola Rd, Suite 100, Ventura",
+    category: "Special Engagement · Hosted Youth Arts",
+    image: "/images/youth-umbrella.jpg",
+    description: "Collaborative creative arts, music, and mental wellness programming hosted at the Diversity Collective Community Resource Center—giving middle and high school youth an affirming space for self-expression, healing, and artistic community.",
+    link: "/programs"
+  },
+  {
+    id: "transverse-hosted",
+    slug: "transverse-peer-hosting",
+    title: "The Transverse Peer Gatherings",
+    host: "Hosted Community Partner",
+    schedule: "Bi-Weekly Sundays at 4:00 PM",
+    audience: "Transgender & Non-Binary Community",
+    location: "DCVC Community Resource Center",
+    category: "Special Engagement · Hosted Support",
+    image: "/images/community-gathering.jpg",
+    description: "Peer-led transgender and gender non-conforming community gatherings hosted inside the DCVC Community Resource Center.",
+    link: "/community"
   }
 ];
 
@@ -523,7 +562,7 @@ export const boardMembers = [
       "As a foundational architect of Diversity Collective Ventura County, Steve helped transform a grassroots coalition of local advocates into Ventura County's premier 501(c)(3) LGBTQ+ community resource hub.",
       "Across a decade of fiduciary leadership — including formative terms as Founding Treasurer and Board President — he spearheaded long-term facility stability so programs like Rainbow Umbrella youth groups and free rapid health clinics have a permanent, accessible home on Portola Road."
     ],
-    focusAreas: ["Co-Founder Legacy (2014)", "Sanctuary Property Stewardship", "Long-Term Endowment & Growth", "501(c)(3) Fiduciary Governance"],
+    focusAreas: ["Co-Founder Legacy (2014)", "Center Property Stewardship", "Long-Term Endowment & Growth", "501(c)(3) Fiduciary Governance"],
     photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=900&h=1100&q=85",
     image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=900&h=1100&q=85"
   },
@@ -588,14 +627,14 @@ export const boardMembers = [
     role: "Board Member",
     tenure: "Youth Advocacy & Grassroots Mobilization",
     city: "Ventura County, CA",
-    committee: "Youth Sanctuary, Peer Mentorship & Community Action",
+    committee: "Youth Center, Peer Mentorship & Community Action",
     quote: "When young queer people step into a room and see adults fighting fiercely for their joy, everything changes.",
     bio: "Dedicated community organizer and advocate bringing passionate civic perspective and grassroots support to Diversity Collective's programs and youth outreach.",
     extendedBio: [
       "Rooted in direct grassroots organizing across Ventura County, AJ amplifies the lived priorities of queer youth, mutual-aid organizers, and emerging neighborhood leaders inside board-level decision making.",
-      "Their leadership keeps Diversity Collective grounded in authentic sanctuary values—ensuring youth circles, rapid crisis aid, and civic rallies remain warm, fearless, and community-led."
+      "Their leadership keeps Diversity Collective grounded in authentic center values—ensuring youth circles, rapid crisis aid, and civic rallies remain warm, fearless, and community-led."
     ],
-    focusAreas: ["Youth Sanctuary Empowerment", "Grassroots Community Mobilization", "Peer Mentorship & Safe Harbor", "Intersectionality & Civic Action"],
+    focusAreas: ["Youth Center Empowerment", "Grassroots Community Mobilization", "Peer Mentorship & Safe Harbor", "Intersectionality & Civic Action"],
     photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=900&h=1100&q=85",
     image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=900&h=1100&q=85"
   }
@@ -669,32 +708,52 @@ export const sponsorsList = [
 
 export const annualSignatureEvents = [
   {
-    title: "Ventura County Pride Festival",
-    tagline: "The Premier LGBTQ+ Cultural Celebration on the Coast",
-    description: "Annual seaside festival celebrating community pride, local artists, performers, food, community resource vendors, and intersectional solidarity at Plaza Park in Ventura (July 25th). All proceeds sustain the Community Resource Center.",
-    link: "/events"
-  },
-  {
-    title: "Diversity Gala",
-    tagline: "Honoring Champions of Equity and Community Leadership",
-    description: "Our premier annual benefit evening honoring community advocates, corporate allies, and volunteers whose contributions transform lives in Ventura County. Highlights include the Vanguard Award (One Step A La Vez), Diversity Spotlight Award (Celia Daniels), and Community Ally Award (Guidestar).",
-    link: "/events"
-  },
-  {
-    title: "Pride Prom",
-    tagline: "An Unforgettable, Affirming Night for LGBTQ+ Youth",
-    description: "Hosted by Rainbow Umbrella for youth ages 13–23. Held on Saturday, May 30th at The Palomino in downtown Ventura. A safe, magical prom where everyone can dress authentically, dance with anyone, and celebrate without fear.",
-    link: "/events"
-  },
-  {
+    id: "aids-walk-ventura",
     title: "AIDS Walk Ventura",
     tagline: "Walking in Remembrance, Advocating for a Healthier Future",
-    description: "Commemorating loved ones lost to HIV/AIDS, combating healthcare stigmas, and raising dedicated funding for Diversity SHINES screening and navigation.",
+    schedule: "Annual Awareness & Fundraising Walk",
+    location: "Ventura, CA",
+    image: "/images/botanical-flyer.jpg",
+    description: "Annual awareness, remembrance, and fundraising walk supporting HIV/AIDS education, prevention, and Diversity SHINES free rapid testing and navigation across Ventura County.",
     link: "/events"
   },
   {
+    id: "pride-prom",
+    title: "Pride Prom",
+    tagline: "An Unforgettable, Affirming Night for LGBTQ+ Youth",
+    schedule: "Annual Youth Celebration (Ages 13–23)",
+    location: "Downtown Ventura (The Palomino & Partner Venues)",
+    image: "/images/youth-umbrella.jpg",
+    description: "Free, safe, and inclusive annual prom hosted by Rainbow Umbrella for LGBTQ+ youth and allies ages 13–23—where everyone can dress authentically, dance freely, and celebrate without fear.",
+    link: "/events"
+  },
+  {
+    id: "ventura-county-pride",
+    title: "Ventura County Pride",
+    tagline: "The Premier LGBTQ+ Cultural Celebration on the Coast",
+    schedule: "Annual Summer Festival (Plaza Park, Ventura)",
+    location: "Plaza Park, Downtown Ventura, CA",
+    image: "/images/community-gathering.jpg",
+    description: "Our signature annual Ventura County Pride festival featuring main stage entertainment, local artists, vendors, food, and a community resource village uniting LGBTQ+ residents and allies across all 10 county cities.",
+    link: "/events"
+  },
+  {
+    id: "diversity-gala",
+    title: "Diversity Gala",
+    tagline: "Honoring Champions of Equity and Community Leadership",
+    schedule: "Annual Benefit Evening",
+    location: "Ventura County, CA",
+    image: "/images/volunteers.jpg",
+    description: "Our annual benefit evening honoring community advocates, corporate allies, and volunteers whose contributions transform lives in Ventura County.",
+    link: "/events"
+  },
+  {
+    id: "world-aids-day",
     title: "World AIDS Day",
     tagline: "December 1st Global Remembrance & Stigma Reduction",
+    schedule: "December 1st Annually",
+    location: "Community Resource Center, Ventura",
+    image: "/images/shines-screening.jpg",
     description: "Observed on December 1st with candlelight vigils, remembrance quilts, and community education in collaboration with Ventura County Public Health and Diversity SHINES.",
     link: "/events"
   }
@@ -810,7 +869,7 @@ export const trainingCourses = [
     format: "Interactive Seminar",
     duration: "3 Hours",
     targetAudience: "K-12 Teachers, School Counselors, Coaches & Youth Mentors",
-    summary: "Research proves that having even one affirming adult reduces suicide risk in LGBTQ+ youth by over 40%. Equip your team to be that sanctuary.",
+    summary: "Research proves that having even one affirming adult reduces suicide risk in LGBTQ+ youth by over 40%. Equip your team to be that center.",
     learningObjectives: [
       "Creating supportive classroom and club spaces (e.g. GSAs).",
       "Navigating family dynamics and sensitive student disclosures with privacy and trust.",
@@ -884,7 +943,7 @@ export const newsArticles = [
     body: [
       "Wondering what laws protect you and your transgender, gender-diverse, or intersex friends and family in California, and what resources you can turn to if you face discrimination? Multiple California LGBTQ+, Civil Rights, and Health Care Advocates have authored an essential Community Fact Sheet.",
       "The resource is designed to help community members better understand their constitutional and state-level protections, combat misinformation, and advocate for themselves and others across workplace, school, housing, and healthcare settings.",
-      "While California remains a sanctuary state for transgender rights, knowing your exact administrative recourse and community reporting channels is critical. DCVC continues to provide direct navigation and referrals for local residents."
+      "While California remains a center state for transgender rights, knowing your exact administrative recourse and community reporting channels is critical. DCVC continues to provide direct navigation and referrals for local residents."
     ]
   },
   {
@@ -1038,10 +1097,10 @@ export const galleryPhotos = [
   {
     id: "gal-5",
     title: "Community Resource Center Flagship",
-    category: "Sanctuary & CRC",
+    category: "Center & CRC",
     year: "2026",
     image: "/images/crc-building.jpg",
-    description: "Our physical sanctuary at 2471 Portola Road, Suite 100 in Ventura, CA.",
+    description: "Our physical center at 2471 Portola Road, Suite 100 in Ventura, CA.",
     featured: true,
     quote: "A permanent front door for affirming care, education, and belonging."
   },
@@ -1057,7 +1116,7 @@ export const galleryPhotos = [
   },
   {
     id: "gal-7",
-    title: "Pacific Coastline Sanctuary Gathering",
+    title: "Pacific Coastline Center Gathering",
     category: "Festivals & Pride",
     year: "2025",
     image: "/images/ventura-coast.jpg",
@@ -1116,10 +1175,10 @@ export const memoryLaneMilestones = [
     title: "Permanent Headquarters on Portola Road",
     subtitle: "Opening 2471 Portola Road, Suite 100",
     description: "Secured and inaugurated DCVC's permanent Community Resource Center (CRC) in Ventura, featuring a dedicated lending library, technology lab, counseling suites, and community gathering lounge.",
-    stat: "2,500 Sq Ft Physical Sanctuary",
-    badge: "Physical Sanctuary",
+    stat: "2,500 Sq Ft Physical Center",
+    badge: "Physical Center",
     image: "/images/crc-building.jpg",
-    quote: "A physical sanctuary with a permanent front door transforms a movement into a lasting institution.",
+    quote: "A physical center with a permanent front door transforms a movement into a lasting institution.",
     details: "Even throughout the global pandemic, our CRC served as a lifeline, coordinating emergency food deliveries, virtual peer support, and harm-reduction kits."
   },
   {
@@ -1157,9 +1216,9 @@ export const memoryLaneMilestones = [
   },
   {
     year: "2026",
-    title: "The Next Decade of Sanctuary & Belonging",
-    subtitle: "Expanding Mobile Clinics & Digital Sanctuary",
-    description: "Launching the modernized digital sanctuary platform, multilingual health navigation, expanded trans healthcare advocacy, and mobile outreach vans reaching rural Ventura County agricultural communities.",
+    title: "The Next Decade of Center & Belonging",
+    subtitle: "Expanding Mobile Clinics & Digital Center",
+    description: "Launching the modernized digital center platform, multilingual health navigation, expanded trans healthcare advocacy, and mobile outreach vans reaching rural Ventura County agricultural communities.",
     stat: "10 Cities · 1 Countywide Safe Harbor",
     badge: "The Future of DCVC",
     image: "/images/volunteers.jpg",

@@ -12,15 +12,16 @@ import {
   AlertCircle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { orgInfo } from '../data/dcvcData';
+import { useLiveOrgInfo } from '../hooks/useCmsLive';
 import CardSpotlight from '../components/CardSpotlight';
 import { submitContact } from '../services/api';
 import TurnstileWidget from '../components/TurnstileWidget';
 import { usePageMeta } from '../utils/seo';
 
 export default function Contact() {
+  const orgInfo = useLiveOrgInfo();
   usePageMeta({
-    title: 'Contact & Sanctuary Directions',
+    title: 'Contact & Center Directions',
     description: 'Reach out to Diversity Collective Ventura County. Visit our physical Community Resource Center in Ventura, call our helpline, or send a confidential inquiry.',
     canonicalPath: '/contact'
   });
@@ -70,45 +71,45 @@ export default function Contact() {
   };
 
   return (
-    <div className="pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
+    <div className="w-full max-w-full overflow-x-clip pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
       
       {/* Header */}
-      <section className="container-clean pb-14 border-b border-slate-100 relative overflow-hidden">
+      <section className="container-clean pb-10 sm:pb-14 border-b border-slate-100 relative overflow-hidden">
         <div 
-          className="absolute -top-24 right-10 w-96 h-96 rounded-full bg-purple-200/25 blur-3xl pointer-events-none" 
+          className="absolute -top-24 -right-10 w-72 h-72 sm:w-96 sm:h-96 rounded-full bg-purple-200/25 blur-3xl pointer-events-none" 
           aria-hidden="true" 
         />
 
         <div className="max-w-3xl relative z-10 flex flex-col gap-4">
-          <span className="glass-pill text-xs font-bold text-[#5A1E65] bg-purple-50 border-purple-200/90 shadow-xs">
+          <span className="glass-pill text-xs font-bold text-[#5A1E65] bg-purple-50 border-purple-200/90 shadow-xs w-fit">
             LOCATION & CONTACT
           </span>
-          <h1 className="font-display text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-slate-950 leading-[1.05]">
+          <h1 className="font-display text-3xl sm:text-5xl md:text-7xl font-extrabold tracking-tight text-slate-950 leading-[1.05] break-words">
             Get in Touch & <br />
-            <span className="font-serif italic font-normal text-[#5A1E65]">Visit Our Sanctuary.</span>
+            <span className="font-serif italic font-normal text-[#5A1E65]">Visit Our Center.</span>
           </h1>
-          <p className="font-serif italic text-xl md:text-2xl text-slate-700 leading-relaxed pt-2">
+          <p className="font-serif italic text-lg sm:text-xl md:text-2xl text-slate-700 leading-relaxed pt-2 break-words">
             Whether you have questions about our youth peer groups, want to book an HIV/STI screening, or wish to connect with our team, we are here for you.
           </p>
         </div>
       </section>
 
       {/* Main Grid: Details + Interactive Form */}
-      <section className="container-clean py-16">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14">
+      <section className="container-clean py-12 sm:py-16">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14">
           
           {/* Left Column: Location & Contact Cards */}
           <div className="lg:col-span-5 space-y-6">
             
             {/* Physical Location Card */}
             <CardSpotlight
-              className="p-8 bg-white rounded-3xl border-2 border-purple-200 shadow-xl space-y-4"
+              className="p-5 sm:p-8 bg-white rounded-3xl border-2 border-purple-200 shadow-xl space-y-4"
               tilt={true}
               maxTilt={6}
               glare={true}
             >
               <span className="text-xs font-black tracking-widest text-[#5A1E65] bg-purple-50 px-3 py-1 rounded-full border border-purple-200 uppercase inline-block">
-                PHYSICAL SANCTUARY
+                PHYSICAL CENTER
               </span>
               <h2 className="font-display text-2xl font-black text-slate-950">
                 Community Resource Center
@@ -135,7 +136,7 @@ export default function Contact() {
             </CardSpotlight>
 
             {/* Direct Channels */}
-            <div className="p-8 bg-slate-50/80 rounded-3xl border-2 border-slate-200 shadow-sm space-y-4">
+            <div className="p-5 sm:p-8 bg-slate-50/80 rounded-3xl border-2 border-slate-200 shadow-sm space-y-4">
               <span className="text-xs font-black tracking-widest text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 uppercase inline-block">
                 DIRECT CHANNELS
               </span>
@@ -171,13 +172,13 @@ export default function Contact() {
             </div>
 
             {/* Immediate Crisis Notice */}
-            <div className="p-6 bg-rose-50/70 rounded-2xl border-2 border-rose-200 text-xs space-y-1.5 shadow-xs">
+            <div className="p-5 sm:p-6 bg-rose-50/70 rounded-2xl border-2 border-rose-200 text-xs space-y-1.5 shadow-xs">
               <span className="font-black uppercase tracking-wider text-rose-800 flex items-center gap-1.5 text-xs">
                 <LifeBuoy className="w-4 h-4 text-rose-600" />
                 <span>Immediate 24/7 Crisis Support</span>
               </span>
               <p className="text-slate-700 leading-relaxed font-medium">
-                DCVC is an advocacy and wellness sanctuary. If you or a loved one is in crisis, please dial <strong>988</strong> (Suicide & Crisis Lifeline) or call The Trevor Project at <a href="tel:18664887386" className="font-bold text-rose-700 underline">1-866-488-7386</a>.
+                DCVC is an advocacy and wellness center. If you or a loved one is in crisis, please dial <strong>988</strong> (Suicide & Crisis Lifeline) or call The Trevor Project at <a href="tel:18664887386" className="font-bold text-rose-700 underline">1-866-488-7386</a>.
               </p>
             </div>
 
@@ -186,7 +187,7 @@ export default function Contact() {
           {/* Right Column: Functional Message Form */}
           <div className="lg:col-span-7">
             <CardSpotlight
-              className="p-8 sm:p-12 bg-white rounded-3xl border-2 border-slate-200 shadow-2xl"
+              className="p-5 sm:p-8 md:p-12 bg-white rounded-3xl border-2 border-slate-200 shadow-2xl"
               tilt={true}
               maxTilt={4}
               glare={true}

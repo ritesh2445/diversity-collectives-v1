@@ -22,9 +22,12 @@ import {
 import TraditionalAccessibilityIcon from './icons/TraditionalAccessibilityIcon';
 import LanguageSelector from './LanguageSelector';
 import SmartSearchModal from './SmartSearchModal';
+import MiniCalendarPopover from './MiniCalendarPopover';
+import { useScrollLock } from '../utils/scrollLock';
 import { orgInfo } from '../data/dcvcData';
 import { a11yStore } from '../accessibility/a11yStore';
 import { translationService } from '../services/translationService';
+import AutoFitText from './ui/AutoFitText';
 import '../services/cmsStore';
 
 export default function Header() {
@@ -32,6 +35,7 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const [currentLang, setCurrentLang] = useState(() => translationService.getLanguage());
   const location = useLocation();
   const moreDropdownRef = useRef(null);
@@ -51,11 +55,12 @@ export default function Header() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Close mobile drawer, search modal, and dropdown upon route change
+  // Close mobile drawer, search modal, calendar, and dropdown upon route change
   useEffect(() => {
     setMobileMenuOpen(false);
     setMoreOpen(false);
     setSearchOpen(false);
+    setCalendarOpen(false);
   }, [location.pathname]);
 
   // Close "More" dropdown when clicking outside or pressing Escape
@@ -77,20 +82,8 @@ export default function Header() {
     };
   }, [moreOpen]);
 
-  // Lock body scrolling when mobile drawer is open
-  useEffect(() => {
-    if (mobileMenuOpen) {
-      document.body.style.overflow = 'hidden';
-      document.body.style.touchAction = 'none';
-    } else {
-      document.body.style.overflow = '';
-      document.body.style.touchAction = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
-      document.body.style.touchAction = '';
-    };
-  }, [mobileMenuOpen]);
+  // Bulletproof background scroll lock when mobile drawer is open
+  useScrollLock(mobileMenuOpen);
 
   // Global Alt + A hotkey (Accessibility) and Ctrl/Cmd + K hotkey (Site Search)
   useEffect(() => {
@@ -105,11 +98,14 @@ export default function Header() {
       }
     };
     const handleOpenSearch = () => setSearchOpen(true);
+    const handleOpenCalendar = () => setCalendarOpen(true);
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('openSiteSearch', handleOpenSearch);
+    window.addEventListener('openMiniCalendar', handleOpenCalendar);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('openSiteSearch', handleOpenSearch);
+      window.removeEventListener('openMiniCalendar', handleOpenCalendar);
     };
   }, []);
 
@@ -143,19 +139,19 @@ export default function Header() {
       {/* Primary Sticky Header Bar */}
       <header
         id="main-header"
-        className="sticky top-0 left-0 right-0 z-50 transition-all duration-200 bg-[#FAF5FF]/95 backdrop-blur-md border-b border-purple-200/70 shadow-xs"
+        className="sticky top-0 left-0 right-0 z-50 transition-all duration-200 bg-[#FAF5FF]/95 backdrop-blur-md border-b border-purple-200/70 shadow-xs w-full max-w-[100vw] overflow-x-clip"
       >
         {/* Pride Rainbow Accent Ribbon integrated at header top */}
         <div className="h-0.5 sm:h-1 pride-rainbow-bar w-full" aria-hidden="true" />
 
-        <div className={`w-full max-w-[1720px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 transition-all duration-200 ${scrolled ? 'py-1.5 sm:py-2.5' : 'py-2 sm:py-3'
+        <div className={`w-full max-w-full sm:max-w-[1720px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 transition-all duration-200 overflow-x-clip ${scrolled ? 'py-1.5 sm:py-2.5' : 'py-2 sm:py-3'
           }`}>
-          <div className="flex items-center justify-between gap-1.5 sm:gap-4 lg:gap-6">
+          <div className="flex items-center justify-between gap-1.5 sm:gap-4 lg:gap-6 w-full max-w-full min-w-0">
 
             {/* Logo & Brand Identity - Never truncated on mobile or desktop */}
             <Link
               to="/"
-              className="flex items-center gap-2 sm:gap-3 group focus:outline-none flex-shrink-0 min-w-0"
+              className="flex items-center gap-2 sm:gap-3 group focus:outline-none shrink min-w-0 max-w-[48vw] sm:max-w-none"
               aria-label="Diversity Collective Ventura County"
             >
               <div className="w-8 h-8 xs:w-9 xs:h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-xl overflow-hidden shadow-xs border border-purple-200 bg-white flex-shrink-0 flex items-center justify-center p-0.5 sm:p-1 group-hover:scale-105 group-hover:border-[#5A1E65] transition-all duration-200">
@@ -165,26 +161,26 @@ export default function Header() {
                   className="w-full h-full object-contain filter drop-shadow-xs"
                 />
               </div>
-              <div className="flex flex-col justify-center flex-shrink-0">
+              <div className="flex flex-col justify-center flex-shrink-0 min-w-0 max-w-[150px] sm:max-w-[190px] md:max-w-none">
                 {/* On mobile: compact stacked two lines matching mockup */}
-                <div className="flex flex-col sm:hidden leading-none">
-                  <span className="font-display font-black text-[13px] tracking-tight text-slate-950 group-hover:text-[#5A1E65] transition-colors">
+                <div className="flex flex-col md:hidden leading-none">
+                  <span className="font-display font-black text-[13px] tracking-tight text-slate-950 group-hover:text-[#5A1E65] transition-colors truncate">
                     diversity
                   </span>
-                  <span className="font-display font-black text-[13px] tracking-tight text-slate-950 group-hover:text-[#5A1E65] transition-colors mt-0.5">
+                  <span className="font-display font-black text-[13px] tracking-tight text-slate-950 group-hover:text-[#5A1E65] transition-colors mt-0.5 truncate">
                     collective
                   </span>
                 </div>
 
-                {/* On sm+: single line with subtitle */}
-                <span className="hidden sm:block font-display font-extrabold text-base md:text-xl tracking-tight leading-tight text-slate-950 group-hover:text-[#5A1E65] transition-colors whitespace-nowrap">
+                {/* On md+: single line with subtitle */}
+                <span className="hidden md:block font-display font-extrabold text-base md:text-xl tracking-tight leading-tight text-slate-950 group-hover:text-[#5A1E65] transition-colors truncate max-w-full">
                   Diversity Collective
                 </span>
-                <div className="hidden sm:flex items-center gap-1.5 mt-0.5">
-                  <span className="text-[10px] md:text-xs font-bold tracking-[0.14em] text-[#5A1E65] uppercase whitespace-nowrap">
+                <div className="hidden md:flex items-center gap-1.5 mt-0.5 min-w-0 max-w-full">
+                  <span className="text-[10px] md:text-xs font-bold tracking-[0.14em] text-[#5A1E65] uppercase truncate">
                     Ventura County
                   </span>
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-purple-100/70 text-[#5A1E65] border border-purple-300/80 leading-none whitespace-nowrap">
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-purple-100/70 text-[#5A1E65] border border-purple-300/80 leading-none shrink-0">
                     501(c)(3)
                   </span>
                 </div>
@@ -193,15 +189,18 @@ export default function Header() {
 
             {/* Desktop Center Navigation - Clean 5 Pillars + "More" Dropdown to Guarantee Zero Collision */}
             <nav id="main-navigation" className="hidden xl:flex items-center gap-1 xl:gap-1.5 2xl:gap-2 flex-shrink min-w-0 mr-2 lg:mr-4" aria-label="Main Navigation">
-              {/* Primary 5 Pillars */}
+              {/* Primary Pillars - Responsive: Community & Resources tuck into 'More' on xl (1280-1535px) to guarantee zero collision in long languages */}
               {primaryNavItems.map((item) => {
                 const isActive = location.pathname === item.to ||
                   (item.to !== '/' && location.pathname.startsWith(item.to));
+                const isExtraOnXl = item.to === '/community' || item.to === '/resources';
                 return (
                   <Link
                     key={item.to}
                     to={item.to}
-                    className={`nav-bar-btn px-2.5 2xl:px-3 py-1.5 2xl:py-2 text-xs 2xl:text-sm font-bold rounded-full transition-all whitespace-nowrap ${isActive
+                    className={`nav-bar-btn px-2.5 2xl:px-3 py-1.5 2xl:py-2 text-xs 2xl:text-sm font-bold rounded-full transition-all whitespace-nowrap ${
+                      isExtraOnXl ? 'hidden 2xl:inline-block' : 'inline-block'
+                    } ${isActive
                         ? 'nav-bar-btn-active shadow-md shadow-purple-500/20'
                         : ''
                       }`}
@@ -211,7 +210,7 @@ export default function Header() {
                 );
               })}
 
-              {/* "More" Dropdown on desktop (Directory, Training, News, Gallery) */}
+              {/* "More" Dropdown on desktop (Directory, Training, News, Gallery + Community/Resources on xl) */}
               <div className="relative" ref={moreDropdownRef}>
                 <button
                   type="button"
@@ -234,6 +233,32 @@ export default function Header() {
                     className="absolute left-0 mt-2 w-64 rounded-2xl bg-white/95 backdrop-blur-xl border border-purple-200 shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150 ring-4 ring-purple-500/10"
                   >
                     <div className="space-y-1">
+                      {/* Responsive xl-only items: Community & Resources */}
+                      {primaryNavItems.filter(p => p.to === '/community' || p.to === '/resources').map(item => {
+                        const ItemIcon = item.icon;
+                        const isActive = location.pathname === item.to ||
+                          (item.to !== '/' && location.pathname.startsWith(item.to));
+                        return (
+                          <Link
+                            key={item.to}
+                            to={item.to}
+                            onClick={() => setMoreOpen(false)}
+                            className={`nav-bar-btn xl:flex 2xl:hidden items-start gap-2.5 p-2 rounded-xl transition-all group ${isActive
+                                ? 'nav-bar-btn-active font-bold shadow-xs'
+                                : 'font-bold'
+                              }`}
+                          >
+                            <div className={`p-1.5 rounded-lg shrink-0 mt-0.5 ${isActive ? 'bg-white/20' : 'bg-purple-100/70 text-[#5A1E65] group-hover:bg-white/20'}`}>
+                              <ItemIcon className="w-3.5 h-3.5" />
+                            </div>
+                            <div className="flex flex-col min-w-0">
+                              <span className={`nav-title text-xs font-bold leading-tight ${isActive ? '!text-white text-white' : 'text-slate-900 group-hover:text-white'}`}>{item.label}</span>
+                              <span className={`nav-desc text-[10px] leading-tight mt-0.5 truncate ${isActive ? '!text-white/90 text-white/90' : 'text-slate-500 group-hover:text-white/90'}`}>{item.desc}</span>
+                            </div>
+                          </Link>
+                        );
+                      })}
+
                       {secondaryNavItems.map((item) => {
                         const ItemIcon = item.icon;
                         const isActive = location.pathname === item.to ||
@@ -252,8 +277,8 @@ export default function Header() {
                               <ItemIcon className="w-3.5 h-3.5" />
                             </div>
                             <div className="flex flex-col min-w-0">
-                              <span className="text-xs font-bold leading-tight">{item.label}</span>
-                              <span className={`text-[10px] leading-tight mt-0.5 truncate ${isActive ? 'opacity-90' : 'text-slate-500 group-hover:text-white/90'}`}>{item.desc}</span>
+                              <span className={`nav-title text-xs font-bold leading-tight ${isActive ? '!text-white text-white' : 'text-slate-900 group-hover:text-white'}`}>{item.label}</span>
+                              <span className={`nav-desc text-[10px] leading-tight mt-0.5 truncate ${isActive ? '!text-white/90 text-white/90' : 'text-slate-500 group-hover:text-white/90'}`}>{item.desc}</span>
                             </div>
                           </Link>
                         );
@@ -265,32 +290,40 @@ export default function Header() {
             </nav>
 
             {/* Right CTAs - Guaranteed zero cropping */}
-            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 min-w-fit">
-              {/* Smart Sitewide Search Trigger (Always visible in navbar) */}
+            <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 shrink min-w-0 max-w-[50vw] sm:max-w-none justify-end">
+              {/* Smart Sitewide Search Trigger (Desktop & Tablet) */}
               <button
                 type="button"
                 onClick={() => setSearchOpen(true)}
-                className="inline-flex items-center gap-1.5 h-7 sm:h-8 px-2 sm:px-2.5 rounded-full border border-purple-200/90 bg-white hover:bg-purple-50 hover:border-[#5A1E65] text-slate-800 hover:text-[#5A1E65] transition-all flex-shrink-0 cursor-pointer shadow-2xs"
-                title="Search Website (Ctrl/Cmd + K)"
+                className="hidden md:inline-flex items-center justify-center w-7 h-7 sm:w-auto sm:h-8 sm:px-2.5 rounded-full border border-purple-200/90 bg-white hover:bg-purple-50 hover:border-[#5A1E65] text-slate-800 hover:text-[#5A1E65] transition-all flex-shrink-0 cursor-pointer shadow-2xs"
+                title="Search Website"
                 aria-label="Search across Diversity Collective website"
               >
                 <Search className="w-3.5 h-3.5 text-[#5A1E65] flex-shrink-0" />
-                <span className="hidden md:inline text-xs font-bold">{translationService.t('nav_search', 'Search')}</span>
-                <kbd className="hidden 2xl:inline-block px-1.5 py-0.5 text-[9px] font-mono font-bold text-slate-500 bg-slate-100 rounded border border-slate-200 leading-none">
-                  ⌘K
-                </kbd>
+                <span className="hidden 2xl:inline text-xs font-bold ml-1.5">{translationService.t('nav_search', 'Search')}</span>
               </button>
 
-              {/* Language Selector Dropdown (Desktop & Tablet: hidden on mobile < sm, available in mobile drawer) */}
-              <div className="hidden sm:block">
+              {/* Quick Events Calendar Button (Desktop & Tablet) */}
+              <button
+                type="button"
+                onClick={() => setCalendarOpen(true)}
+                className="hidden md:inline-flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-purple-200/90 bg-white hover:bg-purple-50 hover:border-[#5A1E65] text-slate-800 hover:text-[#5A1E65] transition-all flex-shrink-0 cursor-pointer shadow-2xs"
+                title="Events Calendar"
+                aria-label="Open Events Calendar Quick View"
+              >
+                <Calendar className="w-3.5 h-3.5 text-[#5A1E65] flex-shrink-0" />
+              </button>
+
+              {/* Language Selector Dropdown (Desktop: hidden on mobile & small tablet, available in mobile drawer) */}
+              <div className="hidden lg:block">
                 <LanguageSelector variant="header" />
               </div>
 
-              {/* Accessibility Companion Launcher Button (Desktop & Tablet: hidden on mobile < sm, floating ReciteLauncher is present) */}
+              {/* Accessibility Companion Launcher Button (Desktop: hidden on mobile & small tablet, floating ReciteLauncher is present) */}
               <button
                 type="button"
                 onClick={() => a11yStore.toggleToolbar()}
-                className="hidden sm:flex w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-slate-300/90 bg-white hover:bg-purple-50 items-center justify-center text-slate-800 hover:text-[#5A1E65] transition-all flex-shrink-0 cursor-pointer shadow-2xs"
+                className="hidden lg:flex w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-slate-300/90 bg-white hover:bg-purple-50 items-center justify-center text-slate-800 hover:text-[#5A1E65] transition-all flex-shrink-0 cursor-pointer shadow-2xs"
                 title="Launch DCVC Accessibility Companion (Alt + A)"
                 aria-label="Launch Accessibility & Audio Tools"
               >
@@ -300,12 +333,12 @@ export default function Header() {
               {/* Quick Exit Shield Button (Always visible on mobile & desktop for crisis safety) */}
               <button
                 onClick={handleQuickExit}
-                className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-1 sm:py-1.5 text-[10px] sm:text-xs font-bold text-rose-700 bg-rose-50/95 hover:bg-rose-100 border border-rose-200/90 rounded-full transition-all shadow-2xs cursor-pointer flex-shrink-0 whitespace-nowrap"
+                className="inline-flex items-center justify-center w-7 h-7 sm:w-auto sm:h-8 sm:px-2.5 py-0 text-[10px] sm:text-xs font-bold text-rose-700 bg-rose-50/95 hover:bg-rose-100 border border-rose-200/90 rounded-full transition-all shadow-2xs cursor-pointer flex-shrink-0 whitespace-nowrap"
                 title="Quickly exit to Google for your privacy and safety"
+                aria-label="Quick Exit"
               >
                 <Shield className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-rose-600 flex-shrink-0" />
-                <span className="hidden min-[400px]:inline">{translationService.t('nav_quick_exit', 'Quick Exit')}</span>
-                <span className="min-[400px]:hidden">Exit</span>
+                <span className="hidden 2xl:inline ml-1">{translationService.t('nav_quick_exit', 'Quick Exit')}</span>
               </button>
 
               {/* Get Support (Large desktop screens 1600px+) */}
@@ -320,10 +353,10 @@ export default function Header() {
               {/* Official Donate Action - Warm Gold Pill (Never Cropped) */}
               <Link
                 to="/donate"
-                className="nav-donate-btn inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-4 py-1.5 sm:py-2 text-[11px] sm:text-xs font-extrabold tracking-wide hover:brightness-95 border border-amber-300/80 rounded-full shadow-xs hover:shadow-md transition-all flex-shrink-0 whitespace-nowrap z-10"
+                className="nav-donate-btn inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3.5 py-1 sm:py-1.5 text-[10px] sm:text-xs font-extrabold tracking-wide hover:brightness-95 border border-amber-300/80 rounded-full shadow-xs hover:shadow-md transition-all flex-shrink-0 min-w-0 max-w-[110px] md:max-w-none z-10"
               >
-                <Heart className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-current flex-shrink-0" />
-                <span className="font-extrabold">{translationService.t('nav_donate', 'Donate')}</span>
+                <Heart className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 fill-current flex-shrink-0" />
+                <span className="font-extrabold truncate">{translationService.t('nav_donate', 'Donate')}</span>
               </Link>
 
               {/* Mobile & Tablet Menu Toggle Button */}
@@ -332,10 +365,10 @@ export default function Header() {
                 onClick={() => setMobileMenuOpen(true)}
                 aria-expanded={mobileMenuOpen}
                 aria-controls="mobile-nav-drawer"
-                className="xl:hidden w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-slate-800 hover:text-slate-950 focus:outline-none rounded-lg hover:bg-purple-100/60 active:scale-95 transition-all flex-shrink-0 cursor-pointer"
+                className="xl:hidden w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center text-slate-800 hover:text-slate-950 focus:outline-none rounded-lg hover:bg-purple-100/60 active:scale-95 transition-all flex-shrink-0 cursor-pointer"
                 aria-label="Open Navigation Menu"
               >
-                <Menu className="w-5 h-5 text-slate-900" />
+                <Menu className="w-4 h-4 sm:w-5 sm:h-5 text-slate-900" />
               </button>
             </div>
 
@@ -406,6 +439,19 @@ export default function Header() {
                 <span>Search programs, events, board, resources...</span>
               </button>
 
+              {/* Mobile Quick Calendar Trigger */}
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setCalendarOpen(true);
+                }}
+                className="flex items-center gap-2.5 w-full py-2.5 px-3.5 rounded-xl bg-white border border-purple-200 hover:border-[#5A1E65] text-slate-700 text-xs font-semibold shadow-2xs cursor-pointer text-left"
+              >
+                <Calendar className="w-4 h-4 text-[#5A1E65] flex-shrink-0" />
+                <span>Events Calendar Quick View & Dates...</span>
+              </button>
+
               {/* Chat with Luna (AI Community Guide) Quick Action */}
               <button
                 type="button"
@@ -469,16 +515,16 @@ export default function Header() {
                         <ItemIcon className="w-4 h-4" />
                       </div>
                       <div>
-                        <span className="font-bold text-sm block">
+                        <span className={`nav-title font-bold text-sm block ${isActive ? '!text-white text-white' : 'text-slate-900 group-hover:text-white'}`}>
                           {item.label}
                         </span>
-                        <span className={`text-[11px] block ${isActive ? 'opacity-90' : 'text-slate-500 group-hover:text-white/90'
+                        <span className={`nav-desc text-[11px] block mt-0.5 ${isActive ? '!text-white/90 text-white/90 font-medium' : 'text-slate-500 group-hover:text-white/90'
                           }`}>
                           {item.desc}
                         </span>
                       </div>
                     </div>
-                    <ChevronRight className={`w-4 h-4 transition-transform group-hover:translate-x-0.5 ${isActive ? '' : 'text-slate-400 group-hover:text-white'
+                    <ChevronRight className={`w-4 h-4 transition-transform group-hover:translate-x-0.5 ${isActive ? '!text-white text-white' : 'text-slate-400 group-hover:text-white'
                       }`} />
                   </Link>
                 );
@@ -529,18 +575,22 @@ export default function Header() {
               <Link
                 to="/donate"
                 onClick={() => setMobileMenuOpen(false)}
-                className="btn-primary w-full py-3 text-center text-xs font-bold uppercase tracking-wider shadow-sm flex items-center justify-center gap-2"
+                className="btn-primary w-full py-3 px-4 text-center text-xs font-extrabold normal-case leading-snug shadow-sm flex items-center justify-center gap-2"
               >
-                <Heart className="w-4 h-4 fill-current" />
-                <span>Make a Tax-Deductible Donation</span>
+                <Heart className="w-4 h-4 fill-current shrink-0" />
+                <AutoFitText maxChars={24}>
+                  <span>{translationService.t('nav_donate_tax_deductible', 'Make a Tax-Deductible Donation')}</span>
+                </AutoFitText>
               </Link>
 
               <a
                 href={`tel:${orgInfo.phone.replace(/[^0-9]/g, '')}`}
-                className="w-full py-2.5 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-800 text-xs font-bold flex items-center justify-center gap-2 transition-colors"
+                className="w-full py-2.5 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-800 text-xs font-bold flex items-center justify-center gap-2 transition-colors text-center"
               >
-                <Phone className="w-3.5 h-3.5 text-[#5A1E65]" />
-                <span>Call Sanctuary: {orgInfo.phone}</span>
+                <Phone className="w-3.5 h-3.5 text-[#5A1E65] shrink-0" />
+                <AutoFitText maxChars={28}>
+                  <span>{translationService.t('nav_call_sanctuary', `Call: ${orgInfo.phone}`)}</span>
+                </AutoFitText>
               </a>
             </div>
 
@@ -550,6 +600,9 @@ export default function Header() {
 
       {/* Smart Sitewide Search & Spell-Check Modal */}
       <SmartSearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
+
+      {/* Responsive Minimized Calendar Modal / Quick View */}
+      <MiniCalendarPopover isOpen={calendarOpen} onClose={() => setCalendarOpen(false)} />
     </>
   );
 }

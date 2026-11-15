@@ -25,7 +25,7 @@ export default function ProgramDetail() {
   }
 
   return (
-    <div className="pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
+    <div className="w-full max-w-full overflow-x-clip pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
       
       {/* Top Breadcrumb Navigation */}
       <section className="container-clean pb-6">
@@ -129,7 +129,11 @@ export default function ProgramDetail() {
                 program.heroImage?.includes('logo');
               return (
                 <CardSpotlight
-                  className={`rounded-3xl shadow-2xl overflow-hidden aspect-[4/5] border-2 border-slate-200 group interactive-card-3d relative ${isContain ? 'bg-slate-50 flex items-center justify-center p-8' : ''}`}
+                  className={`rounded-3xl shadow-2xl overflow-hidden border-2 border-slate-200 group interactive-card-3d relative ${
+                    isContain 
+                      ? 'aspect-square max-w-[420px] mx-auto bg-white flex items-center justify-center p-4 sm:p-6' 
+                      : 'aspect-[4/5] bg-slate-900'
+                  }`}
                   tilt={true}
                   maxTilt={6}
                   glare={true}
@@ -138,14 +142,14 @@ export default function ProgramDetail() {
                     <img 
                       src={program.heroImage} 
                       alt="" 
-                      aria-hidden="true"
-                      className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-30 scale-125 pointer-events-none"
+                      aria-hidden="true" 
+                      className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-20 scale-125 pointer-events-none"
                     />
                   )}
                   <img 
                     src={program.heroImage} 
                     alt={program.title}
-                    className={`w-full h-full ${isContain ? 'object-contain relative z-10' : 'object-cover'} group-hover:scale-106 transition-transform duration-700 ease-out`}
+                    className={`w-full h-full ${isContain ? 'object-contain relative z-10 max-h-full max-w-full' : 'object-cover'} group-hover:scale-105 transition-transform duration-700 ease-out`}
                     onError={(e) => {
                       e.target.src = "/images/crc-building.jpg";
                     }}
@@ -207,7 +211,7 @@ export default function ProgramDetail() {
                 to="/appointments"
                 className="btn-primary py-3.5 px-6 text-xs sm:text-sm font-bold shadow-md hover:shadow-xl inline-flex items-center gap-2"
               >
-                <span>Book Free Appointment Online</span>
+                <span>Book HIV/STI Screening Slot</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <a 

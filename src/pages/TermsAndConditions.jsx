@@ -12,36 +12,36 @@ export default function TermsAndConditions() {
   });
 
   return (
-    <div className="pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
+    <div className="w-full max-w-full overflow-x-clip pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
       
       {/* Header */}
-      <section className="container-clean pb-14 border-b border-slate-100 relative overflow-hidden">
+      <section className="container-clean pb-10 sm:pb-14 border-b border-slate-100 relative overflow-hidden">
         <div 
-          className="absolute -top-24 right-10 w-96 h-96 rounded-full bg-purple-200/25 blur-3xl pointer-events-none" 
+          className="absolute -top-24 -right-10 w-72 h-72 sm:w-96 sm:h-96 rounded-full bg-purple-200/25 blur-3xl pointer-events-none" 
           aria-hidden="true" 
         />
 
         <div className="max-w-3xl relative z-10 flex flex-col gap-4">
-          <span className="glass-pill text-xs font-bold text-[#5A1E65] bg-purple-50 border-purple-200/90 shadow-xs">
+          <span className="glass-pill text-xs font-bold text-[#5A1E65] bg-purple-50 border-purple-200/90 shadow-xs w-fit">
             TERMS OF USE & COMMUNITY STANDARDS
           </span>
-          <h1 className="font-display text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-slate-950 leading-[1.05]">
+          <h1 className="font-display text-3xl sm:text-5xl md:text-7xl font-extrabold tracking-tight text-slate-950 leading-[1.05] break-words">
             Terms of Use & <br />
             <span className="font-serif italic font-normal text-[#5A1E65]">Community Pledge.</span>
           </h1>
-          <p className="font-serif italic text-xl md:text-2xl text-slate-700 leading-relaxed pt-2">
+          <p className="font-serif italic text-lg sm:text-xl md:text-2xl text-slate-700 leading-relaxed pt-2 break-words">
             Standards of dignity, mutual respect, safety, and equitable participation across all Diversity Collective digital and physical spaces.
           </p>
         </div>
       </section>
 
       {/* Main Content */}
-      <section className="container-clean py-14 max-w-4xl space-y-10 text-slate-700 leading-relaxed text-sm sm:text-base font-medium">
+      <section className="container-clean py-10 sm:py-14 max-w-4xl space-y-8 sm:space-y-10 text-slate-700 leading-relaxed text-sm sm:text-base font-medium break-words">
         
-        <div className="p-8 rounded-3xl bg-slate-50 border-2 border-slate-200 space-y-3">
+        <div className="p-5 sm:p-8 rounded-3xl bg-slate-50 border-2 border-slate-200 space-y-3 shadow-xs">
           <h2 className="font-display text-xl font-black text-slate-950">1. Acceptance of Terms</h2>
           <p className="text-xs sm:text-sm text-slate-600">
-            By accessing or using the Diversity Collective Ventura County website (diversitycollective.org), our online forms, or participating in our physical sanctuary programs, you agree to comply with these terms, our <Link to="/privacy" className="text-[#5A1E65] font-bold underline hover:text-purple-900">Privacy Policy</Link>, and our Community Code of Conduct.
+            By accessing or using the Diversity Collective Ventura County website (diversitycollective.org), our online forms, or participating in our physical center programs, you agree to comply with these terms, our <Link to="/privacy" className="text-[#5A1E65] font-bold underline hover:text-purple-900">Privacy Policy</Link>, and our Community Code of Conduct.
           </p>
         </div>
 
@@ -78,7 +78,7 @@ export default function TermsAndConditions() {
           </p>
         </div>
 
-        <div className="pt-6 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
+        <div className="pt-6 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 text-center sm:text-left">
           <span>Terms last revised: October 2026</span>
           <Link to="/contact" className="text-[#5A1E65] font-bold hover:underline">
             Contact Legal & Governance Team

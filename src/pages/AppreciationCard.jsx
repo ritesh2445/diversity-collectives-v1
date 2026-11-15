@@ -389,7 +389,7 @@ function VisionaryBenefactorArtwork() {
           fill="none"
         />
 
-        {/* Sovereign Crest Lantern (The Community Beacon of Sanctuary) */}
+        {/* Sovereign Crest Lantern (The Community Beacon of Center) */}
         <g transform="translate(270, 105)">
           {/* Radiating Light Beams */}
           {[-60, -40, -20, 0, 20, 40, 60].map((deg, i) => (
@@ -418,7 +418,7 @@ function VisionaryBenefactorArtwork() {
             stroke="url(#benefactor-gold-metallic)"
             strokeWidth="2"
           />
-          {/* Inner Eternal Flame of Sanctuary */}
+          {/* Inner Eternal Flame of Center */}
           <path
             d="M 0,-18 C 5,-12 6,-6 4,0 C 2,5 -2,5 -4,0 C -6,-6 -5,-12 0,-18 Z"
             fill="#F59E0B"
@@ -919,7 +919,7 @@ export default function AppreciationCard() {
 
   return (
     <div
-      className={`min-h-screen bg-slate-100/70 text-slate-900 py-8 sm:py-10 px-4 sm:px-6 lg:px-8 ${
+      className={`min-h-screen w-full bg-gradient-to-br from-[#FAF5FF] via-white to-[#FFFBEB] text-slate-900 py-6 sm:py-10 px-4 sm:px-6 lg:px-10 ${
         isPreview ? 'select-none' : 'selection:bg-purple-900 selection:text-white'
       }`}
       onContextMenu={(e) => { if (isPreview) e.preventDefault(); }}
@@ -937,11 +937,29 @@ export default function AppreciationCard() {
         `}</style>
       )}
 
+      {/* Full-Screen Top Navigation Strip */}
+      <div className="max-w-5xl mx-auto mb-5 flex flex-wrap items-center justify-between gap-3 print:hidden">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/95 hover:bg-white border border-purple-200 text-xs font-bold text-slate-800 hover:text-[#5A1E65] shadow-xs transition-all"
+        >
+          <ArrowRight className="w-3.5 h-3.5 rotate-180 text-[#5A1E65]" />
+          <span>Back to Diversity Collective</span>
+        </Link>
+        <Link
+          to="/donate"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#5A1E65] hover:bg-purple-900 text-white text-xs font-extrabold shadow-xs transition-all"
+        >
+          <Heart className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+          <span>Support DCVC via Zeffy</span>
+        </Link>
+      </div>
+
       {/* =================================================================== */}
-      {/* COMPACT PUBLIC SHOWCASE SWITCHER (No Login · Non-Editable · Read-Only) */}
+      {/* FULL-SCREEN TIER SWITCHER BAR (No Login Required · Non-Editable)    */}
       {/* =================================================================== */}
       {isPreview && (
-        <aside aria-label="Public Appreciation Card Tiers" className="max-w-xl mx-auto mb-6 bg-white/95 backdrop-blur-md p-4 rounded-3xl border border-purple-200 shadow-lg print:hidden space-y-3 dcvc-preview-protected">
+        <aside aria-label="Public Appreciation Card Tiers" className="max-w-4xl mx-auto mb-7 bg-white/95 backdrop-blur-md p-5 sm:p-6 rounded-3xl border border-purple-200 shadow-xl print:hidden space-y-4 dcvc-preview-protected">
           <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-2.5">
             <div className="flex items-center gap-2.5">
               <span className="w-8 h-8 rounded-xl bg-purple-100 text-[#5A1E65] flex items-center justify-center">
@@ -952,7 +970,7 @@ export default function AppreciationCard() {
                   Public Appreciation Card Preview
                 </h1>
                 <p className="text-[11px] text-slate-500">
-                  Read-only miniature sample · Official named cards unlock upon Zeffy confirmation
+                  Full-screen public sample · Official named cards unlock upon Zeffy confirmation
                 </p>
               </div>
             </div>
@@ -1039,13 +1057,9 @@ export default function AppreciationCard() {
       )}
 
       {/* =================================================================== */}
-      {/* CARD CONTAINER: Smaller Constrained Interface for Public Previews   */}
+      {/* FULL-SCREEN CARD CONTAINER (Restored Spacious Desktop Showcase)     */}
       {/* =================================================================== */}
-      <div className={`mx-auto transition-all duration-300 relative ${
-        isPreview
-          ? 'max-w-[440px] dcvc-preview-protected'
-          : 'max-w-4xl'
-      }`}>
+      <div className="mx-auto transition-all duration-300 relative max-w-4xl">
         {/* Capture / Screenshot Deterrent Shield */}
         {isPreview && captureShieldActive && (
           <div
@@ -1067,7 +1081,7 @@ export default function AppreciationCard() {
         {/* STATE 1: BESPOKE SEALED KEEPSAKE ENVELOPE (Unopened)                */}
         {/* =================================================================== */}
         {!isOpened ? (
-          <div className={`rounded-3xl border-2 ${currentTier.borderStyle} ${currentTier.envelopeBg || 'bg-white'} shadow-2xl ${isPreview ? 'p-5 sm:p-6' : 'p-7 sm:p-14'} text-center relative overflow-hidden transition-all duration-500`}>
+          <div className={`rounded-3xl border-2 ${currentTier.borderStyle} ${currentTier.envelopeBg || 'bg-white'} shadow-2xl p-7 sm:p-14 text-center relative overflow-hidden transition-all duration-500`}>
             
             {isPreview && (
               <div
@@ -1170,23 +1184,16 @@ export default function AppreciationCard() {
               ref={cardRef}
               onContextMenu={(e) => isPreview && e.preventDefault()}
               style={isPreview ? { WebkitUserSelect: 'none', WebkitTouchCallout: 'none', userSelect: 'none' } : undefined}
-              className={`relative rounded-3xl ${isPreview ? 'p-5 sm:p-6' : 'p-6 sm:p-12'} border-2 ${currentTier.borderStyle} ${currentTier.cardBackground} shadow-2xl overflow-hidden transition-all duration-700 ${isPreview ? 'select-none pointer-events-none' : ''}`}
+              className={`relative rounded-3xl p-6 sm:p-12 border-2 ${currentTier.borderStyle} ${currentTier.cardBackground} shadow-2xl overflow-hidden transition-all duration-700 ${isPreview ? 'select-none' : ''}`}
             >
-              {/* Dense Anti-Screenshot Watermark Mesh in Public Preview Mode */}
+              {/* Subtle Studio Preview Corner Watermark Badge in Public Preview Mode */}
               {isPreview && (
-                <div 
+                <div
                   aria-hidden="true"
-                  className="absolute inset-0 pointer-events-none z-40 grid grid-cols-2 gap-6 place-items-center overflow-hidden select-none opacity-80"
-                  style={{ userSelect: 'none' }}
+                  className="pointer-events-none select-none mb-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100/80 border border-amber-300 text-[10px] font-black uppercase tracking-wider text-amber-900 print:hidden"
                 >
-                  {[0, 1, 2, 3].map((wmIdx) => (
-                    <div
-                      key={wmIdx}
-                      className={`transform -rotate-25 ${isDark ? 'text-white/15 border-white/15' : 'text-slate-900/15 border-slate-900/15'} font-black text-[10px] sm:text-xs tracking-[0.2em] uppercase border-2 border-dashed py-2 px-3 rounded-xl text-center`}
-                    >
-                      SAMPLE PREVIEW · UNISSUED · ZEFFY VERIFIED ONLY
-                    </div>
-                  ))}
+                  <Shield className="w-3 h-3 text-amber-700" />
+                  <span>Sample Preview · Unissued</span>
                 </div>
               )}
 
@@ -1354,7 +1361,7 @@ export default function AppreciationCard() {
                   </span>
                   <p className={`text-xs ${
                     isDark ? 'text-slate-200 font-medium' : 'text-slate-600'
-                  }`}>Board of Directors, Staff, Volunteers & Community Sanctuary</p>
+                  }`}>Board of Directors, Staff, Volunteers & Community Center</p>
                 </div>
 
                 {/* Official 501(c)(3) Non-Profit Commemorative Seal */}

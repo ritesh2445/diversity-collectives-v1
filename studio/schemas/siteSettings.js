@@ -61,7 +61,7 @@ export default {
     },
     {
       name: 'address',
-      title: 'Sanctuary Address',
+      title: 'Center Address',
       description: 'Physical location of the Community Resource Center.',
       type: 'string',
       group: 'org',
@@ -161,7 +161,7 @@ export default {
           name: 'secondaryCtaText',
           title: 'Secondary Button Label',
           type: 'string',
-          initialValue: 'Visit Sanctuary'
+          initialValue: 'Visit Center'
         },
         {
           name: 'secondaryCtaLink',
@@ -187,7 +187,7 @@ export default {
           name: 'cardTitle',
           title: 'Spotlight Photo Title',
           type: 'string',
-          initialValue: 'Ventura County Community Sanctuary'
+          initialValue: 'Ventura County Community Resource Center'
         },
         {
           name: 'cardSubtitle',
@@ -208,8 +208,8 @@ export default {
           options: {
             list: [
               { title: 'Design 1: Flagship Aurora Ribbon (Default)', value: 'aurora' },
-              { title: 'Design 2: Civic Sanctuary & 3D Spotlight Pathfinder', value: 'spotlight' },
-              { title: 'Design 3: Sanctuary Navigator Portal', value: 'portal' },
+              { title: 'Design 2: Civic Center & 3D Spotlight Pathfinder', value: 'spotlight' },
+              { title: 'Design 3: Center Navigator Portal', value: 'portal' },
               { title: 'Design 4: Bento Editorial Grid', value: 'bento' },
               { title: 'Design 5: Community Story Mosaic', value: 'mosaic' },
               { title: 'Design 6: Modern Architectural Split', value: 'architectural' }
@@ -359,7 +359,7 @@ export default {
               type: 'string',
               options: {
                 list: [
-                  { title: 'Hero Sanctuary Banner (hero_banner)', value: 'hero_banner' },
+                  { title: 'Hero Center Banner (hero_banner)', value: 'hero_banner' },
                   { title: 'Impact Stats Band (impact_stats)', value: 'impact_stats' },
                   { title: 'Affirming Business Directory CTA (directory_cta)', value: 'directory_cta' },
                   { title: 'Core Programs Showcase (programs_section)', value: 'programs_section' },

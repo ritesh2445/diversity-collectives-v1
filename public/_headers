@@ -13,3 +13,7 @@
   X-Frame-Options: DENY
   Cache-Control: no-store, no-cache, must-revalidate, private
 
+/i18n/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  Content-Type: application/json; charset=utf-8
+
