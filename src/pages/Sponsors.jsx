@@ -73,14 +73,14 @@ export default function Sponsors() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 w-full">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 w-full items-stretch">
               {tierGroup.sponsors.filter(Boolean).map((sponsor) => (
                 <a
                   key={sponsor.shortName}
                   href={sponsor.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="sponsor-card p-6 sm:p-8 rounded-3xl bg-white border-2 border-slate-200 hover:border-[#5A1E65] shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between gap-6 group cursor-pointer overflow-hidden min-w-0 box-border"
+                  className="sponsor-card h-full p-6 sm:p-8 rounded-3xl bg-white border-2 border-slate-200 hover:border-[#5A1E65] shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between gap-6 group cursor-pointer overflow-hidden min-w-0 box-border"
                 >
                   <div className="h-28 flex items-center justify-center p-4 bg-slate-50/50 rounded-2xl border border-slate-100 shrink-0 w-full overflow-hidden">
                     <img 

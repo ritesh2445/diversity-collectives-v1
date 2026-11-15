@@ -226,14 +226,14 @@ export default function About() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto w-full items-stretch">
             {sponsors.map((sponsor) => (
               <a
                 key={sponsor.shortName}
                 href={sponsor.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="sponsor-card w-full bg-white p-5 sm:p-6 lg:p-7 rounded-2xl border-2 border-slate-200/80 hover:border-[#5A1E65] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl text-center shadow-md group cursor-pointer flex flex-col justify-between overflow-hidden min-w-0 box-border"
+                className="sponsor-card h-full w-full bg-white p-5 sm:p-6 lg:p-7 rounded-2xl border-2 border-slate-200/80 hover:border-[#5A1E65] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl text-center shadow-md group cursor-pointer flex flex-col justify-between overflow-hidden min-w-0 box-border"
               >
                 <div className="h-20 flex items-center justify-center mb-5 shrink-0 w-full overflow-hidden">
                   <img 

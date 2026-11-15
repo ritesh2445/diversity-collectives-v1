@@ -18,24 +18,27 @@ function scanAndFitButtons() {
   // Target all interactive CTAs, button pills, and navigation action badges across the entire site
   const targets = document.querySelectorAll(`
     button:not([data-no-autofit]),
-    a.btn-primary,
-    a.btn-secondary,
-    a.btn-vibrant-coral,
-    a.btn-dark,
-    .btn-primary,
-    .btn-secondary,
-    .btn-vibrant-coral,
-    .btn-dark,
-    .nav-bar-btn,
-    .nav-donate-btn,
-    .nav-support-btn,
+    a.btn-primary:not([data-no-autofit]),
+    a.btn-secondary:not([data-no-autofit]),
+    a.btn-vibrant-coral:not([data-no-autofit]),
+    a.btn-dark:not([data-no-autofit]),
+    .btn-primary:not([data-no-autofit]),
+    .btn-secondary:not([data-no-autofit]),
+    .btn-vibrant-coral:not([data-no-autofit]),
+    .btn-dark:not([data-no-autofit]),
+    .nav-bar-btn:not([data-no-autofit]),
+    .nav-donate-btn:not([data-no-autofit]),
+    .nav-support-btn:not([data-no-autofit]),
     [data-autofit],
-    [role="button"],
-    a[class*="rounded-"][class*="py-"],
-    button[class*="rounded-"]
+    [role="button"]:not([data-no-autofit]),
+    a[class*="rounded-"][class*="py-"]:not([data-no-autofit]),
+    button[class*="rounded-"]:not([data-no-autofit])
   `);
 
   targets.forEach((el) => {
+    // Strictly skip any element opted out of auto-fit or contained in an opted-out wrapper
+    if (el.hasAttribute('data-no-autofit') || el.closest('[data-no-autofit]')) return;
+
     // Skip tiny icon-only buttons (< 40px width and height with no visible text)
     const text = el.textContent ? el.textContent.trim() : '';
     if (!text || (text.length < 4 && el.clientWidth < 48)) return;

@@ -211,7 +211,7 @@ export default function Header() {
               })}
 
               {/* "More" Dropdown on desktop (Directory, Training, News, Gallery + Community/Resources on xl) */}
-              <div className="relative" ref={moreDropdownRef}>
+              <div className="relative" ref={moreDropdownRef} data-no-autofit="true">
                 <button
                   type="button"
                   data-no-autofit="true"
@@ -224,14 +224,15 @@ export default function Header() {
                       : ''
                     }`}
                 >
-                  <span>{translationService.t('nav_more', 'More')}</span>
+                  <span data-no-autofit="true">{translationService.t('nav_more', 'More')}</span>
                   <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-150 ${moreOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 {moreOpen && (
                   <div
+                    data-no-autofit="true"
                     onMouseLeave={() => setMoreOpen(false)}
-                    className="absolute left-0 mt-2 w-64 rounded-2xl bg-white/95 backdrop-blur-xl border border-purple-200 shadow-2xl p-2 z-50 animate-in fade-in duration-100 origin-top-left"
+                    className="absolute left-0 mt-2 w-72 sm:w-80 min-w-[18rem] sm:min-w-[20rem] max-w-[90vw] rounded-2xl bg-white/95 backdrop-blur-xl border border-purple-200 shadow-2xl p-2.5 z-50 animate-in fade-in duration-100 origin-top-left"
                   >
                     <div className="space-y-1">
                       {/* Responsive xl-only items: Community & Resources */}
@@ -253,9 +254,9 @@ export default function Header() {
                             <div className={`p-1.5 rounded-lg shrink-0 mt-0.5 ${isActive ? 'bg-white/20 text-white' : 'bg-purple-100/70 text-[#5A1E65] group-hover:bg-[#5A1E65] group-hover:text-white transition-colors'}`}>
                               <ItemIcon className="w-3.5 h-3.5" />
                             </div>
-                            <div className="flex flex-col min-w-0">
-                              <span className={`text-xs font-bold leading-tight ${isActive ? 'text-white' : 'text-slate-900 group-hover:text-[#5A1E65]'}`}>{item.label}</span>
-                              <span className={`text-[10px] leading-tight mt-0.5 truncate ${isActive ? 'text-white/80' : 'text-slate-500'}`}>{item.desc}</span>
+                            <div className="flex flex-col min-w-0 pr-1">
+                              <span className={`text-xs font-bold leading-snug break-words ${isActive ? 'text-white' : 'text-slate-900 group-hover:text-[#5A1E65]'}`}>{item.label}</span>
+                              <span className={`text-[11px] leading-snug mt-0.5 line-clamp-2 break-words ${isActive ? 'text-white/80' : 'text-slate-500'}`}>{item.desc}</span>
                             </div>
                           </Link>
                         );
@@ -279,9 +280,9 @@ export default function Header() {
                             <div className={`p-1.5 rounded-lg shrink-0 mt-0.5 ${isActive ? 'bg-white/20 text-white' : 'bg-purple-100/70 text-[#5A1E65] group-hover:bg-[#5A1E65] group-hover:text-white transition-colors'}`}>
                               <ItemIcon className="w-3.5 h-3.5" />
                             </div>
-                            <div className="flex flex-col min-w-0">
-                              <span className={`text-xs font-bold leading-tight ${isActive ? 'text-white' : 'text-slate-900 group-hover:text-[#5A1E65]'}`}>{item.label}</span>
-                              <span className={`text-[10px] leading-tight mt-0.5 truncate ${isActive ? 'text-white/80' : 'text-slate-500'}`}>{item.desc}</span>
+                            <div className="flex flex-col min-w-0 pr-1">
+                              <span className={`text-xs font-bold leading-snug break-words ${isActive ? 'text-white' : 'text-slate-900 group-hover:text-[#5A1E65]'}`}>{item.label}</span>
+                              <span className={`text-[11px] leading-snug mt-0.5 line-clamp-2 break-words ${isActive ? 'text-white/80' : 'text-slate-500'}`}>{item.desc}</span>
                             </div>
                           </Link>
                         );

@@ -2159,6 +2159,12 @@ html:not([lang="en"]) h1 {
 html.translated-ltr .card,
 html.translated-rtl .card,
 html:not([lang="en"]) .card,
+html.translated-ltr .sponsor-card,
+html.translated-rtl .sponsor-card,
+html:not([lang="en"]) .sponsor-card,
+html.translated-ltr .partner-card,
+html.translated-rtl .partner-card,
+html:not([lang="en"]) .partner-card,
 html.translated-ltr .interactive-card-3d,
 html.translated-rtl .interactive-card-3d,
 html:not([lang="en"]) .interactive-card-3d {

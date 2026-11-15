@@ -148,7 +148,7 @@ export default function LanguageSelector({ variant = 'header', className = '' })
       {isOpen && (
         <div
           role="listbox"
-          className={`absolute ${isUpward ? 'bottom-full mb-2' : 'top-full mt-2'} right-0 w-72 sm:w-80 rounded-2xl bg-white border border-purple-200/90 shadow-2xl z-50 p-2 animate-in fade-in zoom-in-95 duration-150 notranslate max-w-[90vw]`}
+          className={`absolute ${isUpward ? 'bottom-full mb-2' : 'top-full mt-2'} right-0 w-72 sm:w-80 rounded-2xl bg-white border border-purple-200/90 shadow-2xl z-50 p-2.5 animate-in fade-in duration-100 notranslate max-w-[90vw]`}
         >
           <div className="px-2 py-1.5 border-b border-slate-100 flex items-center justify-between mb-2">
             <span className="text-[10px] font-black uppercase tracking-wider text-[#5A1E65]">
