@@ -60,7 +60,6 @@ export default function AskDcvcChatbot() {
     return false;
   });
   const [showHidePrompt, setShowHidePrompt] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [mobileViewportStyle, setMobileViewportStyle] = useState({});
   const location = useLocation();
   const pressTimerRef = useRef(null);
@@ -116,13 +115,6 @@ export default function AskDcvcChatbot() {
       window.removeEventListener('resize', updateMobileViewport);
     };
   }, [isOpen]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsCollapsed(true);
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, []);
 
   const handlePressStart = () => {
     pressTimerRef.current = setTimeout(() => {
@@ -483,21 +475,12 @@ export default function AskDcvcChatbot() {
             aria-label="Open Luna Free AI Community Assistant (Alt + C). Long press to hide."
             title="Ask Luna (Alt + C) • Long-press to hide"
             id="ask-luna-launcher-button"
-            className={`inline-flex items-center p-2 rounded-full bg-gradient-to-r from-[#5A1E65] via-purple-900 to-[#43144A] text-white shadow-xl hover:shadow-2xl border-2 border-amber-300 hover:scale-105 active:scale-95 transition-all duration-700 ease-in-out cursor-pointer select-none focus:outline-none focus:ring-4 focus:ring-amber-300 ${
-              isCollapsed ? 'pr-2' : 'pr-2 md:pr-4'
-            }`}
+            className="flex items-center gap-2 p-2.5 sm:px-4 sm:py-3 rounded-full bg-gradient-to-r from-[#5A1E65] via-purple-900 to-[#43144A] text-white shadow-xl hover:shadow-2xl border-2 border-amber-300 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer select-none focus:outline-none focus:ring-4 focus:ring-amber-300"
           >
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center font-bold shadow-xs flex-shrink-0">
+            <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center font-bold shadow-xs flex-shrink-0">
               <Sparkles className="w-4 h-4 fill-current" />
             </div>
-            <div
-              className={`hidden md:flex flex-col text-left overflow-hidden whitespace-nowrap transition-all duration-700 ease-in-out ${
-                isCollapsed
-                  ? 'max-w-0 opacity-0 -translate-x-2 ml-0 pointer-events-none'
-                  : 'max-w-[140px] opacity-100 translate-x-0 ml-2.5'
-              }`}
-              aria-hidden={isCollapsed}
-            >
+            <div className="hidden sm:flex flex-col text-left">
               <span className="font-extrabold text-xs tracking-wide text-white leading-tight flex items-center gap-1.5 whitespace-nowrap">
                 <span>Ask Luna</span>
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />

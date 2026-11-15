@@ -155,14 +155,6 @@ html[dir="rtl"] section {
     padding-left: 1rem !important;
     padding-right: 1rem !important;
   }
-  #accessibility-launcher-button > div:not(:first-child),
-  #ask-luna-launcher-button > div:not(:first-child) {
-    display: none !important;
-  }
-  #accessibility-launcher-button,
-  #ask-luna-launcher-button {
-    padding-right: 0.5rem !important;
-  }
 }
 
 .overflow-x-clip {
