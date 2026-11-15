@@ -2202,6 +2202,25 @@ html:not([lang="en"]) .interactive-card-3d p {
   -webkit-font-smoothing: antialiased;
 }
 
+html[data-admin-preview="true"],
+html[data-admin-preview="true"] body {
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(90, 30, 101, 0.4) transparent !important;
+  overflow-y: auto !important;
+}
+
+html[data-admin-preview="true"]::-webkit-scrollbar,
+html[data-admin-preview="true"] body::-webkit-scrollbar {
+  display: block !important;
+  width: 7px !important;
+}
+
+html[data-admin-preview="true"]::-webkit-scrollbar-thumb,
+html[data-admin-preview="true"] body::-webkit-scrollbar-thumb {
+  background: rgba(90, 30, 101, 0.4) !important;
+  border-radius: 9999px !important;
+}
+
 
 
 

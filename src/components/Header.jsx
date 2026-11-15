@@ -214,23 +214,24 @@ export default function Header() {
               <div className="relative" ref={moreDropdownRef}>
                 <button
                   type="button"
+                  data-no-autofit="true"
                   onClick={() => setMoreOpen(!moreOpen)}
                   onMouseEnter={() => setMoreOpen(true)}
                   aria-expanded={moreOpen}
                   aria-haspopup="true"
-                  className={`nav-bar-btn px-2.5 py-1.5 text-xs font-bold rounded-full transition-all whitespace-nowrap inline-flex items-center gap-1 cursor-pointer ${isSecondaryActive || moreOpen
+                  className={`nav-bar-btn px-2.5 py-1.5 text-xs font-bold rounded-full transition-colors duration-150 whitespace-nowrap inline-flex items-center gap-1 cursor-pointer ${isSecondaryActive || moreOpen
                       ? 'nav-bar-btn-active shadow-md shadow-purple-500/20'
                       : ''
                     }`}
                 >
-                  <span>More</span>
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${moreOpen ? 'rotate-180' : ''}`} />
+                  <span>{translationService.t('nav_more', 'More')}</span>
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-150 ${moreOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 {moreOpen && (
                   <div
                     onMouseLeave={() => setMoreOpen(false)}
-                    className="absolute left-0 mt-2 w-64 rounded-2xl bg-white/95 backdrop-blur-xl border border-purple-200 shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150 ring-4 ring-purple-500/10"
+                    className="absolute left-0 mt-2 w-64 rounded-2xl bg-white/95 backdrop-blur-xl border border-purple-200 shadow-2xl p-2 z-50 animate-in fade-in duration-100 origin-top-left"
                   >
                     <div className="space-y-1">
                       {/* Responsive xl-only items: Community & Resources */}
@@ -242,18 +243,19 @@ export default function Header() {
                           <Link
                             key={item.to}
                             to={item.to}
+                            data-no-autofit="true"
                             onClick={() => setMoreOpen(false)}
-                            className={`nav-bar-btn xl:flex min-[1750px]:hidden items-start gap-2.5 p-2 rounded-xl transition-all group ${isActive
-                                ? 'nav-bar-btn-active font-bold shadow-xs'
-                                : 'font-bold'
+                            className={`w-full xl:flex min-[1750px]:hidden items-start gap-2.5 p-2 rounded-xl transition-colors duration-150 group cursor-pointer ${isActive
+                                ? 'bg-[#5A1E65] text-white font-bold shadow-xs'
+                                : 'text-slate-800 hover:bg-purple-50 hover:text-[#5A1E65]'
                               }`}
                           >
-                            <div className={`p-1.5 rounded-lg shrink-0 mt-0.5 ${isActive ? 'bg-white/20' : 'bg-purple-100/70 text-[#5A1E65] group-hover:bg-white/20'}`}>
+                            <div className={`p-1.5 rounded-lg shrink-0 mt-0.5 ${isActive ? 'bg-white/20 text-white' : 'bg-purple-100/70 text-[#5A1E65] group-hover:bg-[#5A1E65] group-hover:text-white transition-colors'}`}>
                               <ItemIcon className="w-3.5 h-3.5" />
                             </div>
                             <div className="flex flex-col min-w-0">
-                              <span className={`nav-title text-xs font-bold leading-tight ${isActive ? '!text-white text-white' : 'text-slate-900 group-hover:text-white'}`}>{item.label}</span>
-                              <span className={`nav-desc text-[10px] leading-tight mt-0.5 truncate ${isActive ? '!text-white/90 text-white/90' : 'text-slate-500 group-hover:text-white/90'}`}>{item.desc}</span>
+                              <span className={`text-xs font-bold leading-tight ${isActive ? 'text-white' : 'text-slate-900 group-hover:text-[#5A1E65]'}`}>{item.label}</span>
+                              <span className={`text-[10px] leading-tight mt-0.5 truncate ${isActive ? 'text-white/80' : 'text-slate-500'}`}>{item.desc}</span>
                             </div>
                           </Link>
                         );
@@ -267,18 +269,19 @@ export default function Header() {
                           <Link
                             key={item.to}
                             to={item.to}
+                            data-no-autofit="true"
                             onClick={() => setMoreOpen(false)}
-                            className={`nav-bar-btn flex items-start gap-2.5 p-2 rounded-xl transition-all group ${isActive
-                                ? 'nav-bar-btn-active font-bold shadow-xs'
-                                : 'font-bold'
+                            className={`w-full flex items-start gap-2.5 p-2 rounded-xl transition-colors duration-150 group cursor-pointer ${isActive
+                                ? 'bg-[#5A1E65] text-white font-bold shadow-xs'
+                                : 'text-slate-800 hover:bg-purple-50 hover:text-[#5A1E65]'
                               }`}
                           >
-                            <div className={`p-1.5 rounded-lg shrink-0 mt-0.5 ${isActive ? 'bg-white/20' : 'bg-purple-100/70 text-[#5A1E65] group-hover:bg-white/20'}`}>
+                            <div className={`p-1.5 rounded-lg shrink-0 mt-0.5 ${isActive ? 'bg-white/20 text-white' : 'bg-purple-100/70 text-[#5A1E65] group-hover:bg-[#5A1E65] group-hover:text-white transition-colors'}`}>
                               <ItemIcon className="w-3.5 h-3.5" />
                             </div>
                             <div className="flex flex-col min-w-0">
-                              <span className={`nav-title text-xs font-bold leading-tight ${isActive ? '!text-white text-white' : 'text-slate-900 group-hover:text-white'}`}>{item.label}</span>
-                              <span className={`nav-desc text-[10px] leading-tight mt-0.5 truncate ${isActive ? '!text-white/90 text-white/90' : 'text-slate-500 group-hover:text-white/90'}`}>{item.desc}</span>
+                              <span className={`text-xs font-bold leading-tight ${isActive ? 'text-white' : 'text-slate-900 group-hover:text-[#5A1E65]'}`}>{item.label}</span>
+                              <span className={`text-[10px] leading-tight mt-0.5 truncate ${isActive ? 'text-white/80' : 'text-slate-500'}`}>{item.desc}</span>
                             </div>
                           </Link>
                         );

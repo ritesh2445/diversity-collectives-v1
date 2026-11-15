@@ -525,11 +525,11 @@ export default function HeroShowcase({
     }
 
     return (
-      <div className="flex flex-col gap-3 w-full max-w-full md:max-w-md pt-1 relative z-30">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 w-full max-w-full md:max-w-2xl pt-1 relative z-30">
         <SafeNav
           previewMode={previewMode}
           to={primaryLink}
-          className="w-full max-w-full inline-flex items-center justify-center gap-2.5 text-sm sm:text-base font-extrabold !text-white text-white bg-gradient-to-r from-[#5A1E65] via-[#8B1A8F] via-[#C026D3] to-[#7C3AED] hover:from-[#4A0E4F] hover:to-[#6D28D9] active:scale-[0.99] py-3.5 sm:py-4 px-5 sm:px-7 rounded-full shadow-lg shadow-purple-900/30 hover:shadow-xl hover:shadow-purple-700/40 hover:scale-[1.01] transition-all text-center group btn-shimmer cursor-pointer"
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 text-sm sm:text-base font-extrabold !text-white text-white bg-gradient-to-r from-[#5A1E65] via-[#8B1A8F] via-[#C026D3] to-[#7C3AED] hover:from-[#4A0E4F] hover:to-[#6D28D9] active:scale-[0.99] py-3.5 sm:py-4 px-5 sm:px-7 rounded-full shadow-lg shadow-purple-900/30 hover:shadow-xl hover:shadow-purple-700/40 hover:scale-[1.01] transition-all text-center group btn-shimmer cursor-pointer"
         >
           <span className="!text-white text-white font-extrabold break-words max-w-full text-center">{merged.primaryCtaText}</span>
           <ArrowRight className="w-4 h-4 !text-white text-white group-hover:translate-x-1.5 transition-transform shrink-0" />
@@ -538,7 +538,7 @@ export default function HeroShowcase({
         <SafeNav
           previewMode={previewMode}
           to={secondaryLink}
-          className="w-full max-w-full inline-flex items-center justify-center gap-2.5 text-sm sm:text-base font-extrabold text-slate-800 bg-white/95 hover:bg-white active:scale-[0.99] py-3.5 sm:py-4 px-5 sm:px-7 rounded-full border-2 border-purple-200/90 hover:border-purple-400 shadow-xs hover:shadow-md hover:scale-[1.01] transition-all text-center group cursor-pointer"
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 text-sm sm:text-base font-extrabold text-slate-800 bg-white/95 hover:bg-white active:scale-[0.99] py-3.5 sm:py-4 px-5 sm:px-7 rounded-full border-2 border-purple-200/90 hover:border-purple-400 shadow-xs hover:shadow-md hover:scale-[1.01] transition-all text-center group cursor-pointer"
         >
           <div className="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
             <MapPin className="w-3.5 h-3.5 text-[#5A1E65]" />
@@ -551,7 +551,7 @@ export default function HeroShowcase({
           href={`mailto:${emailAddr}?subject=Community%20Inquiry%20-%20Diversity%20Collective`}
           aria-label="Send us an email"
           title="Send us an email"
-          className="w-full max-w-full inline-flex items-center justify-center gap-2.5 text-sm sm:text-base font-extrabold text-[#5A1E65] bg-white/95 hover:bg-purple-50 active:scale-[0.99] py-3.5 sm:py-4 px-5 sm:px-7 rounded-full border-2 border-purple-200/90 hover:border-[#5A1E65] shadow-xs hover:shadow-md hover:scale-[1.01] transition-all text-center group cursor-pointer"
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 text-sm sm:text-base font-extrabold text-[#5A1E65] bg-white/95 hover:bg-purple-50 active:scale-[0.99] py-3.5 sm:py-4 px-5 sm:px-7 rounded-full border-2 border-purple-200/90 hover:border-[#5A1E65] shadow-xs hover:shadow-md hover:scale-[1.01] transition-all text-center group cursor-pointer"
         >
           <Mail className="w-4 h-4 text-[#5A1E65] flex-shrink-0" />
           <span className="break-words max-w-full text-center">Send us an email</span>
@@ -575,7 +575,7 @@ export default function HeroShowcase({
           <div className="absolute -top-20 -right-20 w-[42rem] h-[42rem] rounded-full bg-gradient-to-bl from-amber-400/30 via-rose-400/25 to-purple-400/20 blur-3xl animate-aurora-drift-1" />
           <div className="absolute bottom-10 left-1/4 w-[36rem] h-[36rem] rounded-full bg-gradient-to-tr from-teal-400/20 via-sky-400/18 to-transparent blur-3xl animate-aurora-drift-2" />
 
-          <svg className="w-full h-full min-h-[500px] opacity-80" viewBox="0 0 1440 900" fill="none" preserveAspectRatio="none">
+          <svg className="w-full h-full min-h-[500px] opacity-40 sm:opacity-50 lg:opacity-80" viewBox="0 0 1440 900" fill="none" preserveAspectRatio="none">
             <defs>
               <linearGradient id={`${idPrefix}-aurora-stream-back`} x1="100%" y1="0%" x2="0%" y2="100%">
                 <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.55" />

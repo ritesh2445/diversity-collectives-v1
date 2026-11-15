@@ -190,9 +190,16 @@ function AppLayout() {
 
   const isAdminPreview = location.search.includes('admin_preview=1');
 
+  useEffect(() => {
+    if (isAdminPreview) {
+      document.documentElement.setAttribute('data-admin-preview', 'true');
+      return () => document.documentElement.removeAttribute('data-admin-preview');
+    }
+  }, [isAdminPreview]);
+
   if (isAdminPreview) {
     return (
-      <div className="bg-transparent text-slate-900 min-h-screen flex flex-col font-sans selection:bg-[#5A1E65] selection:text-white w-full max-w-full overflow-x-clip">
+      <div className="bg-transparent text-slate-900 min-h-screen flex flex-col font-sans selection:bg-[#5A1E65] selection:text-white w-full max-w-full overflow-x-clip" data-admin-preview="true">
         <Header />
         <main id="main-content" tabIndex="-1" className="editorial-main-content flex-grow focus:outline-none w-full max-w-full overflow-x-clip">
           <Routes>

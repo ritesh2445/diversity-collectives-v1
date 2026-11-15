@@ -11,7 +11,7 @@ export const VIEWPORT_CONFIGS = {
   },
   tablet: {
     targetW: 768,
-    targetH: 820,
+    targetH: 1024,
     icon: Tablet,
     label: '768px Tablet',
     maxWidth: '768px'
@@ -170,7 +170,7 @@ export default function DevicePreviewFrame({
                 src={frameSrc}
                 onLoad={onIframeLoad}
                 title={`${label} Live Preview`}
-                className="w-full h-full border-0 select-none bg-white"
+                className="w-full h-full border-0 bg-white"
                 style={{ width: `${targetW}px`, height: `${targetH}px` }}
               />
             </div>

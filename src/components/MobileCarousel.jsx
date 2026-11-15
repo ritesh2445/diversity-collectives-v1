@@ -61,7 +61,7 @@ export default function MobileCarousel({
     return () => container.removeEventListener('scroll', onScroll);
   }, [childCount]);
 
-  const colsClass = { 1: 'sm:grid-cols-1', 2: 'sm:grid-cols-2', 3: 'sm:grid-cols-3', 4: 'sm:grid-cols-4' }[String(cols)] || 'sm:grid-cols-3';
+  const colsClass = { 1: 'sm:grid-cols-1', 2: 'sm:grid-cols-2', 3: 'sm:grid-cols-2 lg:grid-cols-3', 4: 'sm:grid-cols-2 lg:grid-cols-4' }[String(cols)] || 'sm:grid-cols-2 lg:grid-cols-3';
 
   return (
     <div>
