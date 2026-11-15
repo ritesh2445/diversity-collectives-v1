@@ -356,7 +356,7 @@ export default function Donate() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
             
             {/* Left Column: Interactive Giving Builder & Integrated Form */}
-            <form onSubmit={handleSubmitDonation} className="lg:col-span-7 bg-white p-8 sm:p-12 rounded-3xl border-2 border-purple-200 shadow-2xl space-y-8">
+            <div className="lg:col-span-7 bg-white p-8 sm:p-12 rounded-3xl border-2 border-purple-200 shadow-2xl space-y-8">
               
               {/* Frequency Selector */}
               <div className="space-y-3">
@@ -473,277 +473,38 @@ export default function Donate() {
                 </p>
               </div>
 
-              {/* Donor Contact & Receipt Information */}
-              <div className="space-y-4 pt-2 border-t border-slate-100">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-black uppercase tracking-wider text-slate-500 block">
-                    04. DONOR CONTACT &amp; TAX RECEIPT DETAILS
+              {/* Official In-Page Zeffy 100% Zero-Fee Checkout (No External Redirection) */}
+              <div className="space-y-4 pt-4 border-t border-slate-100">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <span className="text-xs font-black uppercase tracking-wider text-slate-700 block">
+                    04. SECURE IN-PAGE CHECKOUT (POWERED STRICTLY BY ZEFFY)
                   </span>
                   <span className="text-[11px] text-emerald-700 font-bold flex items-center gap-1">
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>256-Bit SSL Encrypted</span>
+                    <span>100% Zero Platform &amp; Card Fees</span>
                   </span>
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Full Name <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="text"
-                        required={!isAnonymous}
-                        value={donorName}
-                        onChange={e => setDonorName(e.target.value)}
-                        placeholder="Jordan Vance"
-                        disabled={isAnonymous}
-                        className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none disabled:bg-slate-100 disabled:text-slate-400 font-medium"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Email Address <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="email"
-                        required
-                        value={donorEmail}
-                        onChange={e => setDonorEmail(e.target.value)}
-                        placeholder="jordan@example.org"
-                        className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none font-medium"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Phone Number (Optional)
-                    </label>
-                    <div className="relative">
-                      <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="tel"
-                        value={phone}
-                        onChange={e => setPhone(e.target.value)}
-                        placeholder="(805) 555-0199"
-                        className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none font-medium"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Mailing ZIP / Postal Code
-                    </label>
-                    <div className="relative">
-                      <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="text"
-                        value={zipCode}
-                        onChange={e => setZipCode(e.target.value)}
-                        placeholder="93003"
-                        className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none font-medium"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Anonymous Checkbox */}
-                <label className="flex items-center gap-2.5 pt-1 text-xs text-slate-700 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={isAnonymous}
-                    onChange={e => setIsAnonymous(e.target.checked)}
-                    className="w-4 h-4 text-[#5A1E65] rounded border-slate-300 focus:ring-purple-200"
-                  />
-                  <span>Keep my gift anonymous from public donor roll and community recognition</span>
-                </label>
-
-                {/* Dedication Checkbox */}
-                <div className="pt-1">
-                  <button
-                    type="button"
-                    onClick={() => setShowDedication(!showDedication)}
-                    className="text-xs font-bold text-[#5A1E65] hover:text-purple-950 flex items-center gap-1 cursor-pointer"
-                  >
-                    <span>{showDedication ? '— Remove Dedication' : '+ Dedicate this gift in honor or memory of someone'}</span>
-                  </button>
-
-                  {showDedication && (
-                    <div className="mt-3 p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3 animate-fadeIn">
-                      <div className="flex gap-4 text-xs font-bold">
-                        <label className="flex items-center gap-1.5 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="dedicationType"
-                            checked={dedicationType === 'honor'}
-                            onChange={() => setDedicationType('honor')}
-                          />
-                          <span>In Honor of</span>
-                        </label>
-                        <label className="flex items-center gap-1.5 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="dedicationType"
-                            checked={dedicationType === 'memory'}
-                            onChange={() => setDedicationType('memory')}
-                          />
-                          <span>In Memory of</span>
-                        </label>
-                      </div>
-                      <input
-                        type="text"
-                        value={honoreeName}
-                        onChange={e => setHonoreeName(e.target.value)}
-                        placeholder="Honoree's Full Name"
-                        className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs focus:border-[#5A1E65] outline-none"
-                      />
-                      <input
-                        type="text"
-                        value={dedicationNote}
-                        onChange={e => setDedicationNote(e.target.value)}
-                        placeholder="Optional personal message or note"
-                        className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs focus:border-[#5A1E65] outline-none"
-                      />
-                    </div>
-                  )}
-                </div>
-
-              </div>
-
-              {/* Integrated Secure Payment (No External Redirection!) */}
-              <div className="space-y-4 pt-2 border-t border-slate-100">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-black uppercase tracking-wider text-slate-500 block">
-                    05. INTEGRATED SECURE PAYMENT
-                  </span>
-                  <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500">
-                    <Lock className="w-3 h-3 text-slate-400" />
-                    <span>No External Redirect</span>
-                  </div>
-                </div>
-
-                {/* Payment Mode Selector: Direct Card vs Embedded Zeffy */}
-                <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl">
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMode('card')}
-                    className={`py-2 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                      paymentMode === 'card'
-                        ? 'bg-white text-slate-950 shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    <CreditCard className="w-3.5 h-3.5 text-purple-700" />
-                    <span>Credit / Debit Card</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMode('zeffy_embed')}
-                    className={`py-2 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                      paymentMode === 'zeffy_embed'
-                        ? 'bg-white text-slate-950 shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Zero-Fee Zeffy Embed</span>
-                  </button>
-                </div>
-
-                {/* Direct Card Inputs */}
-                {paymentMode === 'card' && (
-                  <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3.5 animate-fadeIn">
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">
-                        Cardholder Name
-                      </label>
-                      <input
-                        type="text"
-                        value={cardholderName}
-                        onChange={e => setCardholderName(e.target.value)}
-                        placeholder={donorName || "Name as printed on card"}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm bg-white focus:border-[#5A1E65] outline-none font-medium"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">
-                        Card Number
-                      </label>
-                      <div className="relative">
-                        <CreditCard className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                        <input
-                          type="text"
-                          required
-                          value={cardNumber}
-                          onChange={handleCardNumberChange}
-                          placeholder="4242 •••• •••• 4242"
-                          maxLength={19}
-                          className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm bg-white focus:border-[#5A1E65] outline-none font-mono font-medium"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">
-                          Expiration (MM/YY)
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={cardExpiry}
-                          onChange={handleCardExpiryChange}
-                          placeholder="MM/YY"
-                          maxLength={5}
-                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm bg-white focus:border-[#5A1E65] outline-none font-mono font-medium text-center"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">
-                          Security CVC
-                        </label>
-                        <input
-                          type="password"
-                          required
-                          value={cardCvc}
-                          onChange={e => setCardCvc(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                          placeholder="123"
-                          maxLength={4}
-                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm bg-white focus:border-[#5A1E65] outline-none font-mono font-medium text-center"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
 
                 {/* Embedded Zeffy Frame (Integrated In-Page, Zero Navigation Offsite) */}
-                {paymentMode === 'zeffy_embed' && (
-                  <div className="p-4 rounded-2xl bg-emerald-50/50 border border-emerald-200 space-y-3 animate-fadeIn">
-                    <div className="flex items-center gap-2 text-xs font-bold text-emerald-900">
-                      <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                      <span>Zero-Fee Embedded Checkout (Stays On-Page)</span>
-                    </div>
-                    <div className="w-full h-80 rounded-xl overflow-hidden border border-emerald-300 bg-white">
-                      <iframe
-                        title="Zeffy Zero-Fee Donation Embed"
-                        src={`https://www.zeffy.com/embed/donation-form/diversity-collective-general-fund?frequency=${frequency}&amount=${effectiveAmount}`}
-                        className="w-full h-full border-none"
-                        allow="payment"
-                      />
-                    </div>
-                  </div>
-                )}
+                <div className="w-full rounded-2xl overflow-hidden border-2 border-purple-200/90 shadow-xl bg-white relative">
+                  <iframe
+                    title="Zeffy Zero-Fee 100% Tax-Deductible Donation Checkout"
+                    src={`https://www.zeffy.com/embed/donation-form/diversity-collective-general-fund?frequency=${frequency}&amount=${effectiveAmount}`}
+                    className="w-full h-[760px] sm:h-[720px] border-none"
+                    allow="payment"
+                  />
+                </div>
 
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500 pt-1 px-1">
+                  <div className="flex items-center gap-1.5 font-medium">
+                    <Lock className="w-3.5 h-3.5 text-slate-400" />
+                    <span>256-Bit SSL Encrypted • Zero off-site redirect</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="w-4 h-4 text-purple-700" />
+                    <span className="font-semibold text-slate-700">Credit / Debit Card, Apple Pay &amp; Google Pay accepted</span>
+                  </div>
+                </div>
               </div>
 
               {/* Appreciation Card Unlock Spotlight */}
@@ -758,46 +519,16 @@ export default function Donate() {
                     </span>
                   </div>
                   <p className="text-xs text-slate-600 leading-relaxed">
-                    Your personalized digital DCVC Appreciation Card featuring your name is minted &amp; automatically emailed to you immediately upon contribution.
+                    Your personalized digital DCVC Appreciation Card featuring your name is minted &amp; automatically emailed to you immediately upon contribution via Zeffy.
                   </p>
                 </div>
               </div>
 
-              {/* Error Alert */}
-              {submitError && (
-                <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-800 flex items-start gap-2.5 animate-fadeIn">
-                  <span className="font-bold">Error:</span>
-                  <span>{submitError}</span>
-                </div>
-              )}
-
-              {/* Master Donation Call to Action (On-Page Process) */}
-              <div className="space-y-3 pt-2">
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-rose-600 via-[#5A1E65] to-purple-800 !text-white font-black text-sm sm:text-base tracking-wide flex items-center justify-center gap-2 shadow-xl hover:shadow-2xl hover:scale-101 transition-all cursor-pointer text-center disabled:opacity-50"
-                >
-                  {submitting ? (
-                    <>
-                      <RefreshCw className="w-5 h-5 animate-spin" />
-                      <span>Processing Your Donation Securely...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Heart className="w-5 h-5 fill-current text-rose-300 animate-bounce" />
-                      <span>Give ${effectiveAmount} {frequency === 'monthly' ? 'Monthly' : 'Now'} Securely</span>
-                    </>
-                  )}
-                </button>
-
-                <p className="text-[11px] text-center text-slate-400 flex items-center justify-center gap-1.5 font-medium">
-                  <Lock className="w-3.5 h-3.5 text-slate-400" />
-                  <span>256-bit bank grade encryption · Instant 501(c)(3) tax receipt emailed immediately</span>
-                </p>
-              </div>
-
-            </form>
+              <p className="text-[11px] text-center text-slate-400 flex items-center justify-center gap-1.5 font-medium pt-1">
+                <Lock className="w-3.5 h-3.5 text-slate-400" />
+                <span>100% Tax-Deductible 501(c)(3) Contribution · EIN: 46-5312131 · Instant Zeffy receipt emailed</span>
+              </p>
+            </div>
 
             {/* Right Column: Tax Status & Community Recognition Circles */}
             <div className="lg:col-span-5 space-y-6">
