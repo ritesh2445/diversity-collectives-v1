@@ -488,6 +488,7 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
   const [editingUserId, setEditingUserId] = useState(null);
   const [editingUserName, setEditingUserName] = useState('');
   const [editingUserEmail, setEditingUserEmail] = useState('');
+  const [dispatchingOtpId, setDispatchingOtpId] = useState(null);
 
   // Load user session on mount (supports both Bearer token and HttpOnly cookie session)
   useEffect(() => {
@@ -544,7 +545,12 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
       });
       const data = await res.json();
       if (data.success) {
-        setTeamStatus({ success: true, message: data.message || 'Admin access granted.' });
+        setTeamStatus({
+          success: true,
+          message: data.message || 'Admin access granted.',
+          otpCode: data.otpCode,
+          userEmail: newUserEmail.trim()
+        });
         setNewUserName('');
         setNewUserEmail('');
         setNewUserRole('editor');
@@ -557,6 +563,33 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
       setTeamStatus({ success: false, message: 'Network error granting admin access.' });
     } finally {
       setGrantLoading(false);
+    }
+  };
+
+  const handleDispatchUserOtp = async (member) => {
+    setTeamStatus(null);
+    setDispatchingOtpId(member.id);
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/users/${encodeURIComponent(member.id)}/dispatch-otp`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: buildAuthHeaders()
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTeamStatus({
+          success: true,
+          message: data.message || `Login OTP dispatched to ${member.email}.`,
+          otpCode: data.otpCode,
+          userEmail: member.email
+        });
+      } else {
+        setTeamStatus({ success: false, message: data.error || 'Failed to dispatch OTP code.' });
+      }
+    } catch {
+      setTeamStatus({ success: false, message: 'Network error dispatching OTP code.' });
+    } finally {
+      setDispatchingOtpId(null);
     }
   };
 
@@ -1718,9 +1751,16 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                     <p className="text-[11px] text-purple-800">
                       Enter the 6-digit code sent to <strong>{otpMaskedEmail}</strong>.
                     </p>
-                    {otpDevCode && (import.meta.env?.DEV || window?.location?.hostname === 'localhost' || window?.location?.hostname === '127.0.0.1') && (
-                      <div className="pt-1 flex items-center justify-between">
+                    {otpDevCode && (import.meta.env?.DEV || window?.location?.hostname === 'localhost' || window?.location?.hostname === '127.0.0.1' || window?.location?.hostname?.endsWith('.pages.dev')) && (
+                      <div className="pt-2 mt-1 border-t border-purple-200/60 flex items-center justify-between">
                         <span className="text-[11px] font-mono text-purple-700 bg-white/80 px-2 py-0.5 rounded border border-purple-200">Dev Code: <strong>{otpDevCode}</strong></span>
+                        <button
+                          type="button"
+                          onClick={() => setOtpCode(otpDevCode)}
+                          className="text-[11px] font-bold text-[#5A1E65] hover:underline cursor-pointer"
+                        >
+                          Auto-fill
+                        </button>
                       </div>
                     )}
                   </div>
@@ -3262,17 +3302,41 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                 </div>
 
                 {teamStatus && (
-                  <div className={`p-4 rounded-2xl text-xs flex items-center gap-3 ${
+                  <div className={`p-4 rounded-2xl text-xs space-y-2.5 ${
                     teamStatus.success
                       ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
                       : 'bg-rose-50 border border-rose-200 text-rose-800'
                   }`}>
-                    {teamStatus.success ? (
-                      <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
-                    ) : (
-                      <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                    <div className="flex items-center gap-3">
+                      {teamStatus.success ? (
+                        <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+                      ) : (
+                        <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                      )}
+                      <span className="font-semibold">{teamStatus.message}</span>
+                    </div>
+                    {teamStatus.otpCode && (
+                      <div className="pt-2 border-t border-emerald-200/80 flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] font-bold text-emerald-900 uppercase tracking-wider">One-Time Activation Passcode:</span>
+                          <span className="px-2.5 py-1 rounded-lg bg-white border border-emerald-300 font-mono text-sm font-extrabold text-[#5A1E65] tracking-widest shadow-xs">
+                            {teamStatus.otpCode}
+                          </span>
+                          <span className="text-[10px] text-emerald-700 font-medium">(Valid for 24 hours)</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(teamStatus.otpCode);
+                            alert(`One-Time Passcode ${teamStatus.otpCode} copied to clipboard!`);
+                          }}
+                          className="px-3 py-1 rounded-lg bg-[#5A1E65] text-white text-[11px] font-bold hover:bg-purple-900 cursor-pointer shadow-xs transition-all flex items-center gap-1.5"
+                        >
+                          <Copy className="w-3 h-3" />
+                          <span>Copy Passcode</span>
+                        </button>
+                      </div>
                     )}
-                    <span>{teamStatus.message}</span>
                   </div>
                 )}
 
@@ -3369,6 +3433,17 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
 
                               <button
                                 type="button"
+                                disabled={dispatchingOtpId === member.id || !member.isActive}
+                                onClick={() => handleDispatchUserOtp(member)}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-purple-200 bg-purple-50 hover:bg-purple-100 text-xs font-bold text-[#5A1E65] cursor-pointer disabled:opacity-50 transition-all"
+                                title={`Dispatch fresh login OTP to ${member.email}`}
+                              >
+                                <Key className={`w-3.5 h-3.5 ${dispatchingOtpId === member.id ? 'animate-spin' : ''}`} />
+                                <span>{dispatchingOtpId === member.id ? 'Dispatching...' : 'Dispatch OTP'}</span>
+                              </button>
+
+                              <button
+                                type="button"
                                 onClick={() => {
                                   setEditingUserId(member.id);
                                   setEditingUserName(member.name);
@@ -3420,7 +3495,7 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                     <h3 className="text-sm font-bold text-slate-900">Grant Admin Panel Access to Another Person</h3>
                   </div>
                   <p className="text-xs text-slate-500">
-                    Enter the person&apos;s verified email address (Gmail/work email) to allow them into DCVC Admin via <strong>Auth0 SSO</strong>. Leave password blank for secure passwordless SSO access.
+                    Enter the person&apos;s verified email address (work or personal) to allow them into DCVC Admin. An onboarding 6-digit OTP verification code will be dispatched automatically to their email upon granting access.
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-1">

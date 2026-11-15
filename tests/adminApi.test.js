@@ -27,7 +27,7 @@ import {
   verifyAuth0AccessToken,
   verifyGoogleToken
 } from '../worker/src/adminApi.js';
-import { templateAdminLoginOtp } from '../worker/src/emailTemplates.js';
+import { templateAdminLoginOtp, templateAdminUserInviteOtp } from '../worker/src/emailTemplates.js';
 
 describe('Admin Authentication & RBAC Engine', () => {
 
@@ -570,6 +570,23 @@ describe('Admin Authentication & RBAC Engine', () => {
       fetchImpl: mockGoogleFetch
     });
     assert.strictEqual(wrongAud, null);
+  });
+
+  it('25. formats branded HTML and plaintext onboarding invite email with OTP code for newly added staff', () => {
+    const inviteData = templateAdminUserInviteOtp({
+      name: 'Jordan Rivera',
+      email: 'jordan@diversitycollective.org',
+      role: 'editor',
+      otpCode: '592814',
+      panelUrl: 'https://diversitycollectivevc.org/admin'
+    });
+    assert.ok(inviteData.subject.includes('592814'));
+    assert.ok(inviteData.html.includes('592814'));
+    assert.ok(inviteData.html.includes('Jordan Rivera'));
+    assert.ok(inviteData.html.includes('jordan@diversitycollective.org'));
+    assert.ok(inviteData.html.includes('Editor'));
+    assert.ok(inviteData.text.includes('592814'));
+    assert.ok(inviteData.text.includes('https://diversitycollectivevc.org/admin'));
   });
 
 });

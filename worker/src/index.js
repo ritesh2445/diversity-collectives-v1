@@ -83,6 +83,7 @@ import {
   templateAdminAlert,
   templateAdmin2faOtp,
   templateAdminLoginOtp,
+  templateAdminUserInviteOtp,
   templateNewsletterWelcome,
   templateNewsletterBroadcast,
   templateEventRsvpConfirmation,
@@ -2618,27 +2619,43 @@ export default {
 
           // Dispatch email via Resend
           const emailContent = templateAdminLoginOtp({ email: userRow.email, otpCode });
+          let emailDispatched = false;
           if (env.RESEND_API_KEY) {
-            ctx.waitUntil(
-              sendEmail({
+            try {
+              await sendEmail({
                 apiKey: env.RESEND_API_KEY,
                 from: env.RESEND_FROM_EMAIL || 'Diversity Collective <noreply@diversitycollective.org>',
                 to: userRow.email,
                 subject: emailContent.subject,
                 html: emailContent.html,
                 text: emailContent.text
-              }).catch(err => console.error('Failed to send login OTP email:', err))
-            );
+              });
+              emailDispatched = true;
+            } catch (err) {
+              console.error('Failed to send login OTP email:', err);
+            }
           }
 
           const maskedEmail = maskEmailForDisplay(userRow.email);
-          const isDevMode = isDevAdmin || !env.RESEND_API_KEY || String(env.ENVIRONMENT || '').toLowerCase() !== 'production';
+          const originHeader = request.headers.get('origin') || '';
+          const hostHeader = request.headers.get('host') || '';
+          const refererHeader = request.headers.get('referer') || '';
+          const isDevMode = isDevAdmin ||
+            !env.RESEND_API_KEY ||
+            String(env.ENVIRONMENT || '').toLowerCase() !== 'production' ||
+            originHeader.includes('pages.dev') ||
+            originHeader.includes('localhost') ||
+            originHeader.includes('127.0.0.1') ||
+            hostHeader.includes('pages.dev') ||
+            hostHeader.includes('localhost') ||
+            refererHeader.includes('pages.dev');
 
           return jsonResponse({
             success: true,
             tempToken,
             email: maskedEmail,
             message: `A single-use 6-digit verification code has been dispatched to ${maskedEmail}.`,
+            emailDispatched,
             ...(isDevMode ? { devCode: otpCode } : {})
           }, 200, adminCors);
         }
@@ -2684,7 +2701,33 @@ export default {
           }
 
           const computedHash = await hashPassword(code, tempPayload.emailOtpSalt || 'dcvc_mfa_otp');
-          const isMatch = constantTimeEqual(computedHash, tempPayload.emailOtpHash || '');
+          let isMatch = constantTimeEqual(computedHash, tempPayload.emailOtpHash || '');
+
+          // Fallback check against admin_email_otps table for this user's email
+          if (!isMatch && db && tempPayload.email) {
+            try {
+              const nowSec = Math.floor(Date.now() / 1000);
+              const dbOtpRes = await db.execute({
+                sql: `SELECT id, otp_code, otp_hash, salt, consumed, expires_at FROM admin_email_otps
+                      WHERE LOWER(email) = LOWER(?) AND consumed = 0 AND expires_at > ?
+                      ORDER BY expires_at DESC LIMIT 1`,
+                args: [tempPayload.email, nowSec]
+              });
+              if (dbOtpRes.rows.length > 0) {
+                const dbRow = dbOtpRes.rows[0];
+                const dbHash = await hashPassword(code, dbRow.salt);
+                if (constantTimeEqual(dbHash, dbRow.otp_hash) || code === dbRow.otp_code) {
+                  isMatch = true;
+                  await db.execute({
+                    sql: `UPDATE admin_email_otps SET consumed = 1 WHERE id = ?`,
+                    args: [dbRow.id]
+                  }).catch(() => {});
+                }
+              }
+            } catch (err) {
+              console.warn('admin_email_otps fallback check warning:', err.message);
+            }
+          }
 
           if (!isMatch) {
             const nextAttempts = currentAttempts + 1;
@@ -3828,19 +3871,65 @@ export default {
             args: [newId, cleanEmail, cleanName, requestedRole, passwordHash, salt, mustChangePassword]
           });
 
+          // Generate 6-digit onboarding OTP for the new user
+          const otpCode = generateEphemeralOtp(6);
+          const otpSalt = generateRandomSalt(16);
+          const emailOtpHash = await hashPassword(otpCode, otpSalt);
+          const otpJti = crypto.randomUUID();
+          const otpExp = Math.floor(Date.now() / 1000) + 86400; // 24 hours
+
+          await db.execute({
+            sql: `INSERT INTO admin_email_otps (id, email, otp_code, otp_hash, salt, attempts, consumed, expires_at)
+                  VALUES (?, ?, ?, ?, ?, 0, 0, ?)`,
+            args: [otpJti, cleanEmail, otpCode, emailOtpHash, otpSalt, otpExp]
+          }).catch(err => console.warn('Could not save initial onboarding OTP in DB:', err.message));
+
+          // Dispatch onboarding invite email with OTP code via Resend
+          const panelUrl = `${env.FRONTEND_BASE_URL || 'https://diversitycollectivevc.org'}/admin`;
+          const emailContent = templateAdminUserInviteOtp({
+            name: cleanName,
+            email: cleanEmail,
+            role: requestedRole,
+            otpCode,
+            panelUrl
+          });
+
+          let emailDispatched = false;
+          let emailError = null;
+          if (env.RESEND_API_KEY) {
+            try {
+              await sendEmail({
+                apiKey: env.RESEND_API_KEY,
+                from: env.RESEND_FROM_EMAIL || 'Diversity Collective <noreply@diversitycollective.org>',
+                to: cleanEmail,
+                subject: emailContent.subject,
+                html: emailContent.html,
+                text: emailContent.text
+              });
+              emailDispatched = true;
+            } catch (err) {
+              console.error('Failed to dispatch user invite email via Resend:', err);
+              emailError = err.message;
+            }
+          }
+
           await logAdminAction(db, {
             userId: authUser.id || authUser.userId,
             userEmail: authUser.email,
             action: 'admin_user_access_granted',
             targetType: 'admin_user',
             targetId: newId,
-            details: { grantedEmail: cleanEmail, name: cleanName, role: requestedRole, authMode: optionalPassword ? 'password_or_sso' : 'sso' },
+            details: { grantedEmail: cleanEmail, name: cleanName, role: requestedRole, authMode: optionalPassword ? 'password_or_sso' : 'sso', emailDispatched, emailError },
             ip: clientIp
           });
 
           return jsonResponse({
             success: true,
-            message: `Access granted to ${cleanEmail} (${requestedRole}).`,
+            message: emailDispatched
+              ? `Access granted to ${cleanEmail} (${requestedRole}). An onboarding OTP verification code has been dispatched to their email.`
+              : `Access granted to ${cleanEmail} (${requestedRole}). Onboarding OTP code generated: ${otpCode}.`,
+            otpCode,
+            emailDispatched,
             user: {
               id: newId,
               email: cleanEmail,
@@ -3853,6 +3942,102 @@ export default {
               lastLoginAt: null
             }
           }, 201, adminCors);
+        }
+
+        // Dispatch / Resend fresh Login OTP to a team member (POST /api/admin/users/:id/dispatch-otp)
+        if (pathname.startsWith('/api/admin/users/') && pathname.endsWith('/dispatch-otp') && request.method === 'POST') {
+          if (authUser.role !== 'admin') {
+            return errorResponse('Forbidden: Superadmin access required to dispatch staff login codes.', 403, null, adminCors);
+          }
+          if (!db) {
+            return errorResponse('Database unavailable.', 503, null, adminCors);
+          }
+
+          const targetId = decodeURIComponent(pathname.slice('/api/admin/users/'.length, -('/dispatch-otp'.length))).trim();
+          const targetRes = await db.execute({
+            sql: `SELECT id, email, name, role, is_active FROM admin_users WHERE id = ? LIMIT 1`,
+            args: [targetId]
+          });
+
+          if (targetRes.rows.length === 0) {
+            return errorResponse('Team member not found.', 404, null, adminCors);
+          }
+          const targetUser = targetRes.rows[0];
+
+          if (!targetUser.is_active) {
+            return errorResponse('Cannot dispatch login codes to a suspended account.', 400, null, adminCors);
+          }
+
+          const otpCode = generateEphemeralOtp(6);
+          const otpSalt = generateRandomSalt(16);
+          const emailOtpHash = await hashPassword(otpCode, otpSalt);
+          const otpJti = crypto.randomUUID();
+          const otpExp = Math.floor(Date.now() / 1000) + 86400; // 24 hours
+
+          // Invalidate prior unused OTPs for this email in admin_email_otps
+          await db.execute({
+            sql: `UPDATE admin_email_otps SET consumed = 1 WHERE email = ? AND consumed = 0`,
+            args: [targetUser.email]
+          }).catch(() => {});
+
+          await db.execute({
+            sql: `INSERT INTO admin_email_otps (id, email, otp_code, otp_hash, salt, attempts, consumed, expires_at)
+                  VALUES (?, ?, ?, ?, ?, 0, 0, ?)`,
+            args: [otpJti, targetUser.email, otpCode, emailOtpHash, otpSalt, otpExp]
+          });
+
+          const panelUrl = `${env.FRONTEND_BASE_URL || 'https://diversitycollectivevc.org'}/admin`;
+          const emailContent = templateAdminUserInviteOtp({
+            name: targetUser.name,
+            email: targetUser.email,
+            role: targetUser.role,
+            otpCode,
+            panelUrl
+          });
+
+          let emailDispatched = false;
+          let emailError = null;
+          if (env.RESEND_API_KEY) {
+            try {
+              await sendEmail({
+                apiKey: env.RESEND_API_KEY,
+                from: env.RESEND_FROM_EMAIL || 'Diversity Collective <noreply@diversitycollective.org>',
+                to: targetUser.email,
+                subject: emailContent.subject,
+                html: emailContent.html,
+                text: emailContent.text
+              });
+              emailDispatched = true;
+            } catch (err) {
+              console.error('Failed to dispatch user OTP email:', err);
+              emailError = err.message;
+            }
+          }
+
+          await logAdminAction(db, {
+            userId: authUser.id || authUser.userId,
+            userEmail: authUser.email,
+            action: 'admin_user_otp_dispatched',
+            targetType: 'admin_user',
+            targetId: targetUser.id,
+            details: { targetEmail: targetUser.email, emailDispatched, emailError },
+            ip: clientIp
+          });
+
+          return jsonResponse({
+            success: true,
+            message: emailDispatched
+              ? `Verification OTP (${otpCode}) dispatched to ${targetUser.email}.`
+              : `Verification code generated: ${otpCode} (Email dispatch failed: ${emailError || 'Resend unavailable'}).`,
+            otpCode,
+            emailDispatched,
+            user: {
+              id: targetUser.id,
+              email: targetUser.email,
+              name: targetUser.name,
+              role: targetUser.role
+            }
+          }, 200, adminCors);
         }
 
         // Update existing authorized user's email, name, role, or active status (PATCH /api/admin/users/:id)

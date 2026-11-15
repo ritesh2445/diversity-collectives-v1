@@ -803,6 +803,62 @@ export function templateAdminLoginOtp({ email, otpCode }) {
   };
 }
 
+// 14c. Admin User Onboarding & Invitation OTP Code
+export function templateAdminUserInviteOtp({ name, email, role, otpCode, panelUrl }) {
+  const cleanName = name || email.split('@')[0];
+  const roleLabels = {
+    admin: 'Administrator (Full Access & Team Management)',
+    approver: 'Approver (Directory & Program Moderation)',
+    editor: 'Editor (Content & Media Management)',
+    read_only: 'Auditor (Read-Only Access)'
+  };
+  const roleDisplay = roleLabels[role] || (role ? role.toUpperCase() : 'Staff Member');
+  const targetUrl = panelUrl || `${DCVC_WEBSITE}/admin`;
+
+  const contentHtml = `
+    <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px 0; color: #1e293b;">
+      Hello <strong>${cleanName}</strong>,
+    </p>
+    <p style="font-size: 15px; line-height: 1.6; margin: 0 0 16px 0; color: #334155;">
+      You have been granted access to the <strong>Diversity Collective Ventura County Administrative Suite</strong> as <strong>${roleDisplay}</strong>.
+    </p>
+    <p style="font-size: 15px; line-height: 1.6; margin: 0 0 20px 0; color: #334155;">
+      Here is your single-use 6-digit one-time activation and sign-in passcode:
+    </p>
+
+    <div style="background-color: #f8fafc; border: 2px dashed ${DCVC_PURPLE}; border-radius: 12px; padding: 22px; text-align: center; margin: 24px 0;">
+      <span style="font-size: 40px; font-weight: 800; letter-spacing: 12px; color: ${DCVC_PURPLE}; font-family: monospace;">
+        ${otpCode}
+      </span>
+      <div style="font-size: 12px; color: #64748b; margin-top: 8px; font-weight: 600;">
+        Account: <code>${email}</code> · Valid for 24 Hours
+      </div>
+    </div>
+
+    <div style="text-align: center; margin: 28px 0 20px 0;">
+      <a href="${targetUrl}" style="display: inline-block; background: linear-gradient(135deg, ${DCVC_PURPLE} 0%, #7c3aed 100%); color: #ffffff; text-decoration: none; font-weight: 700; font-size: 14px; padding: 13px 28px; border-radius: 10px; box-shadow: 0 4px 12px rgba(90, 30, 101, 0.25);">
+        Open DCVC Admin Portal &rarr;
+      </a>
+    </div>
+
+    <div style="background-color: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 18px; margin: 20px 0; font-size: 13px; line-height: 1.6; color: #475569;">
+      <strong>How to sign in:</strong> Go to the Admin Portal, select the <em>Email + OTP</em> tab, enter your registered email address <code>${email}</code>, and enter this 6-digit passcode when prompted.
+    </div>
+  `;
+
+  const html = baseEmailWrapper({
+    title: 'Welcome to the DCVC Admin Team!',
+    headerSubtitle: 'Staff & Board Administrative Portal Access',
+    contentHtml
+  });
+
+  return {
+    subject: `Your DCVC Admin Access Code: ${otpCode}`,
+    html,
+    text: `Hello ${cleanName},\n\nYou have been granted ${roleDisplay} access to the DCVC Administrative Portal for account ${email}.\n\nYour 6-digit activation code is: ${otpCode}\n\nSign in at: ${targetUrl}\n\nThis single-use code is valid for 24 hours.`
+  };
+}
+
 /**
  * 15. Event RSVP Confirmation Email (to Attendee)
  */

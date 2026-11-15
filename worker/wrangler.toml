@@ -43,10 +43,10 @@ AI_MODEL = "@cf/meta/llama-3.1-8b-instruct-fp8"
 binding = "AI"
 
 # Static Frontend Assets (Single-Page Application full-stack hosting)
-[assets]
-directory = "../dist"
-not_found_handling = "single-page-application"
-binding = "ASSETS"
+# [assets]
+# directory = "../dist"
+# not_found_handling = "single-page-application"
+# binding = "ASSETS"
 
 # Secrets to be configured via: wrangler secret put <NAME>
 # - TURSO_DATABASE_URL
