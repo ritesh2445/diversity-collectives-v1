@@ -226,28 +226,30 @@ export default function About() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto perspective-1000">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto w-full">
             {sponsors.map((sponsor) => (
               <a
                 key={sponsor.shortName}
                 href={sponsor.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full bg-white p-6 sm:p-7 rounded-2xl border-2 border-slate-200/80 hover:border-[#5A1E65] transition-all text-center shadow-md hover:shadow-2xl interactive-card-3d group cursor-pointer flex flex-col justify-between overflow-hidden min-w-0"
+                className="sponsor-card w-full bg-white p-5 sm:p-6 lg:p-7 rounded-2xl border-2 border-slate-200/80 hover:border-[#5A1E65] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl text-center shadow-md group cursor-pointer flex flex-col justify-between overflow-hidden min-w-0 box-border"
               >
-                <div className="h-20 flex items-center justify-center mb-5 shrink-0">
+                <div className="h-20 flex items-center justify-center mb-5 shrink-0 w-full overflow-hidden">
                   <img 
                     src={sponsor.logo} 
                     alt={sponsor.name}
-                    className="max-h-full max-w-[80%] object-contain group-hover:scale-108 transition-transform duration-300"
+                    className="max-h-full max-w-[80%] object-contain group-hover:scale-105 transition-transform duration-300"
                   />
                 </div>
                 <div className="w-full min-w-0 flex flex-col items-center">
-                  <h3 className="font-display text-base font-black text-slate-900 group-hover:text-[#5A1E65] transition-colors flex items-center justify-center gap-1.5 flex-wrap leading-snug w-full text-center">
-                    <span className="break-words max-w-full text-center">{sponsor.name}</span>
-                    <ArrowUpRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#5A1E65] shrink-0 inline-block" />
+                  <h3 className="font-display text-sm sm:text-base font-black text-slate-900 group-hover:text-[#5A1E65] transition-colors leading-snug w-full text-center break-words [overflow-wrap:anywhere]">
+                    <span>{sponsor.name}</span>
+                    <ArrowUpRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#5A1E65] shrink-0 inline-block ml-1 align-baseline" />
                   </h3>
-                  <p className="text-xs text-slate-500 mt-1 font-medium break-words leading-relaxed text-center w-full">{sponsor.role}</p>
+                  <p className="text-xs text-slate-500 mt-1.5 font-medium break-words [overflow-wrap:anywhere] leading-relaxed text-center w-full">
+                    {sponsor.role}
+                  </p>
                 </div>
               </a>
             ))}

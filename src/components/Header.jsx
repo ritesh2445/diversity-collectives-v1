@@ -139,12 +139,12 @@ export default function Header() {
       {/* Primary Sticky Header Bar */}
       <header
         id="main-header"
-        className="sticky top-0 left-0 right-0 z-50 transition-all duration-200 bg-[#FAF5FF]/95 backdrop-blur-md border-b border-purple-200/70 shadow-xs w-full max-w-[100vw] overflow-x-clip"
+        className="sticky top-0 left-0 right-0 z-50 transition-all duration-200 bg-[#FAF5FF]/95 backdrop-blur-md border-b border-purple-200/70 shadow-xs w-full max-w-full overflow-hidden"
       >
         {/* Pride Rainbow Accent Ribbon integrated at header top */}
         <div className="h-0.5 sm:h-1 pride-rainbow-bar w-full" aria-hidden="true" />
 
-        <div className={`w-full max-w-full sm:max-w-[1720px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 transition-all duration-200 overflow-x-clip ${scrolled ? 'py-1.5 sm:py-2.5' : 'py-2 sm:py-3'
+        <div className={`w-full max-w-full sm:max-w-[1720px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 transition-all duration-200 overflow-hidden ${scrolled ? 'py-1.5 sm:py-2.5' : 'py-2 sm:py-3'
           }`}>
           <div className="flex items-center justify-between gap-1.5 sm:gap-4 lg:gap-6 w-full max-w-full min-w-0">
 
@@ -199,7 +199,7 @@ export default function Header() {
                     key={item.to}
                     to={item.to}
                     className={`nav-bar-btn px-2.5 2xl:px-3 py-1.5 2xl:py-2 text-xs 2xl:text-sm font-bold rounded-full transition-all whitespace-nowrap ${
-                      isExtraOnXl ? 'hidden 2xl:inline-block' : 'inline-block'
+                      isExtraOnXl ? 'hidden min-[1750px]:inline-block' : 'inline-block'
                     } ${isActive
                         ? 'nav-bar-btn-active shadow-md shadow-purple-500/20'
                         : ''
@@ -243,7 +243,7 @@ export default function Header() {
                             key={item.to}
                             to={item.to}
                             onClick={() => setMoreOpen(false)}
-                            className={`nav-bar-btn xl:flex 2xl:hidden items-start gap-2.5 p-2 rounded-xl transition-all group ${isActive
+                            className={`nav-bar-btn xl:flex min-[1750px]:hidden items-start gap-2.5 p-2 rounded-xl transition-all group ${isActive
                                 ? 'nav-bar-btn-active font-bold shadow-xs'
                                 : 'font-bold'
                               }`}
@@ -300,7 +300,7 @@ export default function Header() {
                 aria-label="Search across Diversity Collective website"
               >
                 <Search className="w-3.5 h-3.5 text-[#5A1E65] flex-shrink-0" />
-                <span className="hidden 2xl:inline text-xs font-bold ml-1.5">{translationService.t('nav_search', 'Search')}</span>
+                <span className="hidden min-[1800px]:inline text-xs font-bold ml-1.5">{translationService.t('nav_search', 'Search')}</span>
               </button>
 
               {/* Quick Events Calendar Button (Desktop & Tablet) */}
@@ -338,13 +338,13 @@ export default function Header() {
                 aria-label="Quick Exit"
               >
                 <Shield className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-rose-600 flex-shrink-0" />
-                <span className="hidden 2xl:inline ml-1">{translationService.t('nav_quick_exit', 'Quick Exit')}</span>
+                <span className="hidden min-[1800px]:inline ml-1">{translationService.t('nav_quick_exit', 'Quick Exit')}</span>
               </button>
 
-              {/* Get Support (Large desktop screens 1600px+) */}
+              {/* Get Support (Large desktop screens 1900px+; Programs is in main navigation) */}
               <Link
                 to="/programs"
-                className="nav-support-btn hidden 2xl:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold hover:text-[#5A1E65] border border-slate-200 hover:border-purple-300 rounded-full transition-colors shadow-2xs flex-shrink-0 whitespace-nowrap"
+                className="nav-support-btn hidden min-[1900px]:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold hover:text-[#5A1E65] border border-slate-200 hover:border-purple-300 rounded-full transition-colors shadow-2xs flex-shrink-0 whitespace-nowrap"
               >
                 <LifeBuoy className="w-3.5 h-3.5 text-[#5A1E65]" />
                 <span>{translationService.t('nav_get_support', 'Get Support')}</span>

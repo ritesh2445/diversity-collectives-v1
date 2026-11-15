@@ -80,9 +80,9 @@ export default function Sponsors() {
                   href={sponsor.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-6 sm:p-8 rounded-3xl bg-white border-2 border-slate-200 hover:border-[#5A1E65] shadow-sm hover:shadow-xl transition-all flex flex-col justify-between gap-6 group cursor-pointer overflow-hidden min-w-0"
+                  className="sponsor-card p-6 sm:p-8 rounded-3xl bg-white border-2 border-slate-200 hover:border-[#5A1E65] shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between gap-6 group cursor-pointer overflow-hidden min-w-0 box-border"
                 >
-                  <div className="h-28 flex items-center justify-center p-4 bg-slate-50/50 rounded-2xl border border-slate-100 shrink-0">
+                  <div className="h-28 flex items-center justify-center p-4 bg-slate-50/50 rounded-2xl border border-slate-100 shrink-0 w-full overflow-hidden">
                     <img 
                       src={sponsor.logo} 
                       alt={sponsor.name}
@@ -98,11 +98,11 @@ export default function Sponsors() {
                     <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
                       OFFICIAL PARTNER
                     </span>
-                    <h3 className="font-display text-lg font-black text-slate-900 group-hover:text-[#5A1E65] transition-colors flex items-center gap-1.5 flex-wrap leading-snug">
-                      <span className="break-words max-w-full">{sponsor.name}</span>
-                      <ArrowUpRight className="w-4 h-4 text-slate-400 group-hover:text-[#5A1E65] shrink-0 inline-block" />
+                    <h3 className="font-display text-base sm:text-lg font-black text-slate-900 group-hover:text-[#5A1E65] transition-colors leading-snug break-words [overflow-wrap:anywhere]">
+                      <span>{sponsor.name}</span>
+                      <ArrowUpRight className="w-4 h-4 text-slate-400 group-hover:text-[#5A1E65] shrink-0 inline-block ml-1 align-baseline" />
                     </h3>
-                    <p className="text-xs text-slate-600 font-medium break-words leading-relaxed">
+                    <p className="text-xs text-slate-600 font-medium break-words [overflow-wrap:anywhere] leading-relaxed">
                       {sponsor.role}
                     </p>
                   </div>
