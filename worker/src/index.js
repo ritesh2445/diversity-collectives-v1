@@ -3175,56 +3175,44 @@ export default {
             }, 200, adminCors);
           }
 
-          // Case B: User has not paired an authenticator app -> Dispatches 6-digit OTP code to registered admin email
-          const emailOtp = generateEphemeralOtp(6);
-          const otpSalt = generateRandomSalt(16);
-          const emailOtpHash = await hashPassword(emailOtp, otpSalt);
-
-          const tempToken = await generateTempToken({
-            jti: tempJti,
+          // Case B: User has not enabled TOTP 2FA -> Grant direct authenticated session!
+          const sessionToken = await generateAuthToken({
+            id: userRow.id,
             userId: userRow.id,
             email: userRow.email,
             name: userRow.name,
             role: userRow.role,
             tv: tokenVersion,
             mustChangePassword,
-            mfaType: 'email',
-            emailOtpSalt: otpSalt,
-            emailOtpHash
-          }, jwtSecret, 300);
+            authProvider: 'password'
+          }, jwtSecret);
 
           if (db) {
-            await db.execute({
-              sql: `INSERT OR REPLACE INTO admin_used_temp_tokens (jti, attempts, consumed, expires_at) VALUES (?, 0, 0, ?)`,
-              args: [tempJti, tempExp]
-            }).catch(() => { });
+            await logAdminAction(db, {
+              userId: userRow.id,
+              userEmail: userRow.email,
+              action: 'admin_login_password_success',
+              targetType: 'auth',
+              ip: clientIp
+            });
           }
-
-          // Dispatch verification code via Resend
-          const emailContent = templateAdmin2faOtp({ email: userRow.email, otpCode: emailOtp });
-          if (env.RESEND_API_KEY) {
-            ctx.waitUntil(
-              sendEmail({
-                apiKey: env.RESEND_API_KEY,
-                from: env.RESEND_FROM_EMAIL || 'Diversity Collective <noreply@diversitycollective.org>',
-                to: userRow.email,
-                subject: emailContent.subject,
-                html: emailContent.html,
-                text: emailContent.text
-              }).catch(err => console.error('Failed to send 2FA verification code email:', err))
-            );
-          }
-
-          const isDevMode = isDevAdmin || !env.RESEND_API_KEY || String(env.ENVIRONMENT || '').toLowerCase() !== 'production';
 
           return jsonResponse({
             success: true,
-            requires2fa: true,
-            mfaType: 'email',
-            tempToken,
-            email: maskedEmail,
-            message: `A single-use 6-digit verification code has been dispatched to ${maskedEmail}.`
-          }, 200, adminCors);
+            token: sessionToken,
+            user: {
+              id: userRow.id,
+              email: userRow.email,
+              name: userRow.name,
+              role: userRow.role,
+              mfaEnabled: false,
+              mustChangePassword,
+              authProvider: 'password'
+            }
+          }, 200, {
+            ...adminCors,
+            'Set-Cookie': buildSessionCookie(sessionToken, { crossOrigin })
+          });
         }
 
         // 15.2 Admin 2FA Code Verification (POST /api/admin/auth/2fa/verify)
