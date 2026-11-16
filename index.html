@@ -32,8 +32,23 @@
             s.colorTheme = 'yellow-on-black';
           }
 
+          // Pre-hydrate language and translation class to eliminate 1-second typography jump on reload
+          var userLang = s.currentLanguage || localStorage.getItem('dcvc_language');
+          if (!userLang && document.cookie) {
+            var m = document.cookie.match(/(?:^|;\s*)googtrans=\/en\/([a-zA-Z\-]+)/);
+            if (m && m[1]) userLang = m[1];
+          }
+          if (userLang && userLang !== 'en') {
+            root.setAttribute('lang', userLang);
+            root.classList.add('translated-ltr');
+            if (userLang === 'ar' || userLang === 'he' || userLang === 'fa' || userLang === 'ur') {
+              root.setAttribute('dir', 'rtl');
+              root.classList.add('translated-rtl');
+            }
+          }
+
           if (s.toolbarOpen) root.setAttribute('data-recite-toolbar-open', 'true');
-          if (s.fontSize) root.setAttribute('data-a11y-font-size', s.fontSize);
+          root.setAttribute('data-a11y-font-size', s.fontSize || '100');
           if (s.fontFamily) root.setAttribute('data-a11y-font-family', s.fontFamily);
           if (s.lineHeight) root.setAttribute('data-a11y-line-height', s.lineHeight);
           if (s.letterSpacing) root.setAttribute('data-a11y-letter-spacing', s.letterSpacing);

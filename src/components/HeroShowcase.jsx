@@ -621,6 +621,7 @@ export default function HeroShowcase({
             <div className="flex items-center justify-start w-full max-w-full min-w-0">
               <SafeNav
                 previewMode={previewMode}
+                data-no-autofit="true"
                 to="/programs/community-resource-center"
                 className={`hero-status-pill group inline-flex items-center gap-2.5 sm:gap-3.5 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full border-2 shadow-md transition-all cursor-pointer w-fit max-w-full ${
                   isMobile ? 'whitespace-normal max-w-[calc(100%-8px)]' : 'whitespace-nowrap'

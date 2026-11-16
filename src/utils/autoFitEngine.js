@@ -56,8 +56,15 @@ function scanAndFitButtons() {
     // Measure bounding box & scroll overflow
     const hasHorizontalOverflow = el.scrollWidth > el.clientWidth + 2;
 
-    // Remove any previously set inline styles if short text and no overflow
-    if (len <= 20 && !hasHorizontalOverflow) {
+    // On desktop / wide viewports (>= 768px), buttons and pills have ample layout room
+    // and should preserve their authored CSS typography without delayed shrinking jumps.
+    // Only scale down if there is ACTUAL horizontal overflow (text exceeding container bounds),
+    // or on narrow mobile screens (< 768px) with long strings.
+    const isNarrowViewport = typeof window !== 'undefined' && window.innerWidth < 768;
+    const shouldScale = hasHorizontalOverflow || (isNarrowViewport && len > 22);
+
+    // If no overflow on desktop, restore or keep natural authored styles without jump
+    if (!shouldScale) {
       if (el.dataset.autofitApplied) {
         el.style.fontSize = '';
         el.style.lineHeight = '';
