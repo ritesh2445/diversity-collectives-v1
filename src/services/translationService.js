@@ -40,6 +40,8 @@ export const SUPPORTED_LANGUAGES = [
   { code: 'bn', label: 'Bengali', nativeName: 'বাংলা', flag: '🇧🇩' },
 ];
 
+const DICT_VERSION = 'v4_20261116';
+
 // ---------------------------------------------------------------------------
 // Instant UI dictionary (nav/button labels for the 7 most common languages)
 // These are applied synchronously on language switch — zero network wait.
@@ -49,6 +51,15 @@ const UI_DICTIONARY = {
     nav_about: 'About', nav_programs: 'Programs', nav_directory: 'Directory',
     nav_training: 'Training', nav_community: 'Community', nav_events: 'Events',
     nav_resources: 'Resources', nav_news: 'News', nav_gallery: 'Gallery',
+    nav_desc_about: 'Mission, history & 10-year leadership',
+    nav_desc_programs: 'Free HIV/STI testing & youth groups',
+    nav_desc_community: 'Affirming peer circles & gatherings',
+    nav_desc_events: 'Pride prom, galas & workshops',
+    nav_desc_resources: 'Crisis lines & regional mutual aid',
+    nav_desc_directory: 'LGBTQ+ affirming business network',
+    nav_desc_training: 'P.R.I.D.E. cultural competency',
+    nav_desc_news: 'Stories, updates & advocacy',
+    nav_desc_gallery: 'Celebration & memories',
     nav_donate: 'Donate', nav_donate_tax_deductible: 'Donate (Tax-Deductible)', nav_call_sanctuary: 'Call: (805) 644-LGBT', nav_get_support: 'Get Support',
     nav_quick_exit: 'Quick Exit', nav_search: 'Search',
     lang_select: 'Language', lang_switch: 'Select Language',
@@ -82,6 +93,15 @@ const UI_DICTIONARY = {
     nav_about: 'Acerca de', nav_programs: 'Programas', nav_directory: 'Directorio',
     nav_training: 'Capacitación', nav_community: 'Comunidad', nav_events: 'Eventos',
     nav_resources: 'Recursos', nav_news: 'Noticias', nav_gallery: 'Galería',
+    nav_desc_about: 'Misión, historia y 10 años de liderazgo',
+    nav_desc_programs: 'Pruebas gratuitas de VIH/ITS y grupos juveniles',
+    nav_desc_community: 'Círculos de apoyo y reuniones entre pares',
+    nav_desc_events: 'Pride prom, galas y talleres',
+    nav_desc_resources: 'Líneas de crisis y ayuda mutua regional',
+    nav_desc_directory: 'Red de empresas que afirman a la comunidad LGBTQ+',
+    nav_desc_training: 'Competencia cultural P.R.I.D.E.',
+    nav_desc_news: 'Historias, actualizaciones y defensa',
+    nav_desc_gallery: 'Celebración y recuerdos',
     nav_donate: 'Donar', nav_donate_tax_deductible: 'Donación Deducible', nav_call_sanctuary: 'Llamar: (805) 644-LGBT', nav_get_support: 'Obtener Apoyo',
     nav_quick_exit: 'Salida Rápida', nav_search: 'Buscar',
     lang_select: 'Idioma', lang_switch: 'Seleccionar Idioma',
@@ -117,6 +137,15 @@ const UI_DICTIONARY = {
     nav_about: 'Tungkol', nav_programs: 'Mga Programa', nav_directory: 'Direktoryo',
     nav_training: 'Pagsasanay', nav_community: 'Komunidad', nav_events: 'Mga Kaganapan',
     nav_resources: 'Mga Mapagkukunan', nav_news: 'Balita', nav_gallery: 'Galerya',
+    nav_desc_about: 'Misyon, kasaysayan at 10-taong pamumuno',
+    nav_desc_programs: 'Libreng pagsusuri sa HIV/STI at mga grupong pangkabataan',
+    nav_desc_community: 'Mga sumusuportang grupo at pagtitipon ng kapwa',
+    nav_desc_events: 'Pride prom, mga gala at palihan',
+    nav_desc_resources: 'Mga linya ng krisis at tulong pampamayanan',
+    nav_desc_directory: 'Direktoryo ng mga negosyong pabor sa LGBTQ+',
+    nav_desc_training: 'Pagsasanay sa kakayahang pangkultura ng P.R.I.D.E.',
+    nav_desc_news: 'Mga kwento, balita at adbokasiya',
+    nav_desc_gallery: 'Pagdiriwang at mga alaala',
     nav_donate: 'Mag-donate', nav_get_support: 'Kumuha ng Suporta',
     nav_quick_exit: 'Mabilisang Pag-alis', nav_search: 'Hanapin',
     lang_select: 'Wika', lang_switch: 'Pumili ng Wika',
@@ -125,6 +154,11 @@ const UI_DICTIONARY = {
     popup_dismiss: 'I-dismiss',
     popup_view_details: 'Maging Tanyag ng Detalye',
     impact_explore: 'Pag-aralan',
+    impact_stat1: 'taon ng paglilingkod at pagtatanggol sa komunidad ng LGBTQ+ ng Ventura County.',
+    impact_stat2: 'libre, kumpidensyal na pagsusuri ng HIV at STI sa pamamagitan ng Diversity SHINES.',
+    impact_stat3: 'mga kabataang LGBTQ+ na binigyang kapangyarihan sa Rainbow Umbrella at Pride Prom.',
+    impact_stat4: '100% libre at kumpidensyal na pangangalaga—walang kailangang insurance o bayad.',
+    impact_stat5: 'mga lungsod ng Ventura County na pinagkaisa sa pamamagitan ng mga programa at tulong.',
     chatbot_welcome: "Kamusta! Ako si Luna, iyong libreng gabay sa komunidad. Tanungin ko tungkol sa libreng pagpapatupad ng pagsubok sa kalusugan, mga grupu ng kabataan, oras ng centro, mga kaganapan, o mga pagkakataong mag-volunteer.",
     chatbot_suggestions: 'Mungkahi na Tanong',
     chatbot_send: 'Ipadala',
@@ -140,6 +174,15 @@ const UI_DICTIONARY = {
     nav_about: 'Giới thiệu', nav_programs: 'Chương trình', nav_directory: 'Danh bạ',
     nav_training: 'Đào tạo', nav_community: 'Cộng đồng', nav_events: 'Sự kiện',
     nav_resources: 'Tài nguyên', nav_news: 'Tin tức', nav_gallery: 'Thư viện',
+    nav_desc_about: 'Sứ mệnh, lịch sử & 10 năm lãnh đạo',
+    nav_desc_programs: 'Xét nghiệm HIV/STI miễn phí & nhóm thanh thiếu niên',
+    nav_desc_community: 'Vòng kết nối bạn bè & các buổi gặp gỡ khẳng định',
+    nav_desc_events: 'Pride prom, dạ tiệc & hội thảo',
+    nav_desc_resources: 'Đường dây nóng khủng hoảng & tương trợ khu vực',
+    nav_desc_directory: 'Mạng lưới doanh nghiệp ủng hộ LGBTQ+',
+    nav_desc_training: 'Năng lực văn hóa P.R.I.D.E.',
+    nav_desc_news: 'Câu chuyện, cập nhật & vận động',
+    nav_desc_gallery: 'Lễ kỷ niệm & ký ức',
     nav_donate: 'Quyên góp', nav_get_support: 'Nhận hỗ trợ',
     nav_quick_exit: 'Thoát nhanh', nav_search: 'Tìm kiếm',
     lang_select: 'Ngôn ngữ', lang_switch: 'Chọn ngôn ngữ',
@@ -148,6 +191,11 @@ const UI_DICTIONARY = {
     popup_dismiss: 'Bỏ qua',
     popup_view_details: 'Xem chi tiết',
     impact_explore: 'Khám phá',
+    impact_stat1: 'năm phục vụ và vận động cho cộng đồng LGBTQ+ của Quận Ventura.',
+    impact_stat2: 'xét nghiệm HIV & STI miễn phí, bảo mật qua Diversity SHINES.',
+    impact_stat3: 'thanh thiếu niên LGBTQ+ được trao quyền qua Rainbow Umbrella & Pride Prom.',
+    impact_stat4: 'chăm sóc miễn phí và bảo mật 100%—không cần bảo hiểm hoặc lệ phí.',
+    impact_stat5: 'thành phố thuộc Quận Ventura đoàn kết qua các chương trình hỗ trợ.',
     chatbot_welcome: "Xin chào! Tôi là Luna, người hướng dẫn cộng đồng miễn phí của bạn. Hỏi tôi về kiểm tra sức khỏe miễn phí, nhóm thanh thiếu niên, giờ làm việc của trung tâm, sự kiện, hoặc cơ hội tình nguyện.",
     chatbot_suggestions: 'Câu Hỏi Đề Xuất',
     chatbot_send: 'Gửi',
@@ -163,6 +211,15 @@ const UI_DICTIONARY = {
     nav_about: '关于我们', nav_programs: '项目服务', nav_directory: '企业名录',
     nav_training: '文化培训', nav_community: '社区群体', nav_events: '活动日程',
     nav_resources: '社区资源', nav_news: '最新动态', nav_gallery: '历史画廊',
+    nav_desc_about: '使命、历史与 10 年领导历程',
+    nav_desc_programs: '免费 HIV/STI 检测与青年社团',
+    nav_desc_community: '肯定同伴圈与社区聚会',
+    nav_desc_events: 'Pride prom、庆典晚会与工作坊',
+    nav_desc_resources: '危机热线与地区互助',
+    nav_desc_directory: 'LGBTQ+ 友好企业网络',
+    nav_desc_training: 'P.R.I.D.E. 文化胜任力培训',
+    nav_desc_news: '故事、动态与权益倡导',
+    nav_desc_gallery: '庆祝与珍贵回忆',
     nav_donate: '立即捐助', nav_get_support: '获取支持',
     nav_quick_exit: '紧急退出', nav_search: '搜索',
     lang_select: '语言', lang_switch: '选择语言',
@@ -171,6 +228,11 @@ const UI_DICTIONARY = {
     popup_dismiss: '关闭',
     popup_view_details: '查看详情',
     impact_explore: '探索',
+    impact_stat1: '年为文图拉县 LGBTQ+ 群体提供服务与倡导。',
+    impact_stat2: '通过 Diversity SHINES 提供免费且保密的 HIV 和 STI 检测。',
+    impact_stat3: '通过彩虹伞同伴圈和 Pride Prom 赋能 LGBTQ+ 青年。',
+    impact_stat4: '100% 免费且保密的关怀——无需保险或任何费用。',
+    impact_stat5: '通过肯定性计划和互助凝聚文图拉县的各个城市。',
     chatbot_welcome: "你好！我是 Luna，你的免费社区向导。请向我咨询免费健康检测、青年团体、中心开放时间、活动或志愿者机会。",
     chatbot_suggestions: '建议问题',
     chatbot_send: '发送',
@@ -186,6 +248,15 @@ const UI_DICTIONARY = {
     nav_about: 'À propos', nav_programs: 'Programmes', nav_directory: 'Répertoire',
     nav_training: 'Formation', nav_community: 'Communauté', nav_events: 'Événements',
     nav_resources: 'Ressources', nav_news: 'Actualités', nav_gallery: 'Galerie',
+    nav_desc_about: 'Mission, histoire et 10 ans de leadership',
+    nav_desc_programs: 'Dépistage gratuit du VIH/IST et groupes de jeunes',
+    nav_desc_community: 'Cercles de pairs affirmatifs et rassemblements',
+    nav_desc_events: 'Pride prom, galas et ateliers',
+    nav_desc_resources: 'Lignes de crise et entraide régionale',
+    nav_desc_directory: 'Réseau d\'entreprises inclusives LGBTQ+',
+    nav_desc_training: 'Compétence culturelle P.R.I.D.E.',
+    nav_desc_news: 'Histoires, actualités et plaidoyer',
+    nav_desc_gallery: 'Célébration et souvenirs',
     nav_donate: 'Faire un don', nav_get_support: "Obtenir de l'aide",
     nav_quick_exit: 'Sortie rapide', nav_search: 'Rechercher',
     lang_select: 'Langue', lang_switch: 'Choisir la langue',
@@ -194,6 +265,11 @@ const UI_DICTIONARY = {
     popup_dismiss: 'Rejeter',
     popup_view_details: 'Voir les détails',
     impact_explore: 'Explorer',
+    impact_stat1: 'ans au service et à la défense de la communauté LGBTQ+ du comté de Ventura.',
+    impact_stat2: 'dépistages gratuits et confidentiels du VIH et des IST via Diversity SHINES.',
+    impact_stat3: 'jeunes LGBTQ+ autonomisés grâce aux cercles Rainbow Umbrella & Pride Prom.',
+    impact_stat4: 'soins 100% gratuits et confidentiels—sans assurance ni frais exigés.',
+    impact_stat5: 'villes du comté de Ventura unies par des programmes d\'affirmation et d\'entraide.',
     chatbot_welcome: "Bonjour ! Je suis Luna, votre guide communautaire gratuit. Demandez-moi des informations sur nos tests de santé gratuits, groupes de jeunes, horaires du centre, événements ou opportunités de bénévolat.",
     chatbot_suggestions: 'Questions Suggérées',
     chatbot_send: 'Envoyer',
@@ -209,6 +285,15 @@ const UI_DICTIONARY = {
     nav_about: 'Über uns', nav_programs: 'Programme', nav_directory: 'Verzeichnis',
     nav_training: 'Training', nav_community: 'Gemeinschaft', nav_events: 'Veranstaltungen',
     nav_resources: 'Ressourcen', nav_news: 'Nachrichten', nav_gallery: 'Galerie',
+    nav_desc_about: 'Mission, Geschichte und 10 Jahre Führung',
+    nav_desc_programs: 'Kostenlose HIV/STI-Tests und Jugendgruppen',
+    nav_desc_community: 'Bestärkende Peer-Zirkel und Treffen',
+    nav_desc_events: 'Pride Prom, Galas und Workshops',
+    nav_desc_resources: 'Krisen-Hotlines und regionale gegenseitige Hilfe',
+    nav_desc_directory: 'LGBTQ+-bejahendes Unternehmensnetzwerk',
+    nav_desc_training: 'P.R.I.D.E. Kulturkompetenz',
+    nav_desc_news: 'Geschichten, Neuigkeiten und Interessenvertretung',
+    nav_desc_gallery: 'Feier und Erinnerungen',
     nav_donate: 'Spenden', nav_get_support: 'Hilfe erhalten',
     nav_quick_exit: 'Schnell raus', nav_search: 'Suchen',
     lang_select: 'Sprache', lang_switch: 'Sprache wählen',
@@ -217,6 +302,11 @@ const UI_DICTIONARY = {
     popup_dismiss: 'Verwerfen',
     popup_view_details: 'Details ansehen',
     impact_explore: 'Entdecken',
+    impact_stat1: 'Jahre Dienst und Interessenvertretung für die LGBTQ+-Gemeinschaft von Ventura County.',
+    impact_stat2: 'kostenlose, vertrauliche HIV- und STI-Tests durch Diversity SHINES.',
+    impact_stat3: 'LGBTQ+-Jugendliche durch Rainbow Umbrella Peer-Circles & Pride Prom gestärkt.',
+    impact_stat4: '100% kostenlose und vertrauliche Betreuung—keine Versicherung oder Gebühren erforderlich.',
+    impact_stat5: 'Städte in Ventura County vereint durch bestätigende Programme und gegenseitige Hilfe.',
     chatbot_welcome: "Hallo! Ich bin Luna, Ihr kostenloser Community-Guide. Fragen Sie mich nach kostenlosen Gesundheitstests, Jugendgruppen, Zentrumsöffnungszeiten, Veranstaltungen oder Ehrenamtsmöglichkeiten.",
     chatbot_suggestions: 'Vorgeschlagene Fragen',
     chatbot_send: 'Senden',
@@ -318,6 +408,10 @@ class TranslationEngine {
 
     // WeakMap: text node → original English value (for instant revert)
     this._originals = new WeakMap();
+
+    // Cache untranslated phrases to avoid spamming translation requests
+    this._untranslatedSet = new Set();
+    this._translateDebounce = null;
 
     // Run ID: increment on every language switch to cancel stale async ops
     this._runId = 0;
@@ -426,6 +520,8 @@ class TranslationEngine {
   t(key, fallback = '') {
     const dict = UI_DICTIONARY[this.currentLanguage] || {};
     if (dict[key]) return dict[key];
+    const cached = this._dictCache[this.currentLanguage] || {};
+    if (cached[key]) return cached[key];
     const enDict = UI_DICTIONARY.en || {};
     if (enDict[key]) return enDict[key];
     return fallback || key;
@@ -472,31 +568,42 @@ class TranslationEngine {
   }
 
   // -------------------------------------------------------------------------
-  // Load dictionary: memory → localStorage → network fetch
+  // Load dictionary: memory → localStorage (versioned) → network fetch
   // -------------------------------------------------------------------------
 
   async _loadDict(lang) {
     // 1. Memory cache
     if (this._dictCache[lang]) return this._dictCache[lang];
 
-    // 2. localStorage cache (persisted across sessions)
+    // 2. localStorage cache (persisted across sessions with versioning)
     try {
-      const stored = localStorage.getItem(`dcvc_i18n_${lang}`);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 10) {
-          return parsed;
+      const storedVer = localStorage.getItem('dcvc_i18n_ver');
+      if (storedVer !== DICT_VERSION) {
+        Object.keys(localStorage)
+          .filter((k) => k.startsWith('dcvc_i18n_'))
+          .forEach((k) => localStorage.removeItem(k));
+        localStorage.setItem('dcvc_i18n_ver', DICT_VERSION);
+      } else {
+        const stored = localStorage.getItem(`dcvc_i18n_${lang}`);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 10) {
+            return parsed;
+          }
         }
       }
     } catch { /* ignore */ }
 
-    // 3. Static JSON file from CDN (pre-translated by scripts/pretranslate-site.mjs)
+    // 3. Static JSON file with cache-busting query
     try {
-      const res = await fetch(`/i18n/${lang}.json`, { cache: 'force-cache' });
+      const res = await fetch(`/i18n/${lang}.json?v=${DICT_VERSION}`, { cache: 'default' });
       if (res.ok) {
         const dict = await res.json();
         // Persist to localStorage for instant load next time
-        try { localStorage.setItem(`dcvc_i18n_${lang}`, JSON.stringify(dict)); } catch { /* ignore */ }
+        try {
+          localStorage.setItem(`dcvc_i18n_${lang}`, JSON.stringify(dict));
+          localStorage.setItem('dcvc_i18n_ver', DICT_VERSION);
+        } catch { /* ignore */ }
         return dict;
       }
     } catch { /* ignore */ }
@@ -514,6 +621,7 @@ class TranslationEngine {
     if (this._applyingNow) return;
 
     this._applyingNow = true;
+    const missing = [];
     try {
       const nodes = collectTextNodes(root);
       for (const node of nodes) {
@@ -538,11 +646,64 @@ class TranslationEngine {
           const leading = node.nodeValue.match(/^\s*/)?.[0] ?? '';
           const trailing = node.nodeValue.match(/\s*$/)?.[0] ?? '';
           node.nodeValue = leading + translated + trailing;
+        } else if (
+          !translated &&
+          this.currentLanguage !== 'en' &&
+          trimmed.length >= 3 &&
+          trimmed.length <= 300 &&
+          /[a-zA-Z]{2,}/.test(trimmed) &&
+          !this._untranslatedSet.has(trimmed)
+        ) {
+          this._untranslatedSet.add(trimmed);
+          missing.push(trimmed);
         }
       }
     } finally {
       this._applyingNow = false;
     }
+
+    if (missing.length > 0 && this.currentLanguage !== 'en') {
+      this._scheduleMissingTranslations(this.currentLanguage, missing, runId);
+    }
+  }
+
+  _scheduleMissingTranslations(lang, phrases, runId) {
+    if (lang === 'en' || !Array.isArray(phrases) || phrases.length === 0) return;
+    clearTimeout(this._translateDebounce);
+    this._translateDebounce = setTimeout(async () => {
+      if (runId !== this._runId) return;
+      try {
+        const batch = phrases.slice(0, 30);
+        const res = await fetch('https://dcvc-api.diversity-collective-vc.workers.dev/api/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ texts: batch, targetLang: lang })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && Array.isArray(data.translations)) {
+            const dict = this._dictCache[lang] || {};
+            let added = false;
+            batch.forEach((orig, idx) => {
+              const tr = data.translations[idx];
+              if (tr && tr.trim() && tr !== orig) {
+                dict[orig] = tr.trim();
+                added = true;
+              }
+            });
+            if (added) {
+              this._dictCache[lang] = dict;
+              try {
+                localStorage.setItem(`dcvc_i18n_${lang}`, JSON.stringify(dict));
+              } catch { /* ignore */ }
+              this._applyDictToDOM(dict, document.body, runId);
+            }
+          }
+        }
+      } catch {
+        // Silently continue without disrupting UI
+      }
+    }, 300);
   }
 
   // -------------------------------------------------------------------------

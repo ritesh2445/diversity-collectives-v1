@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { resolveHeroTheme } from '../services/heroThemeStore';
 import { DEFAULT_PAGE_BLOCKS } from '../data/siteDefaults';
+import { translationService } from '../services/translationService';
 import CardSpotlight from './CardSpotlight';
 
 const DEFAULT_HERO_PROPS =
@@ -53,6 +54,16 @@ const HERO_HIGHLIGHT_REGEX = new RegExp(
 export function renderHighlightedHeroSubtext(text, { dark = false } = {}) {
   const safeText =
     typeof text === 'string' && text.trim() ? text : DEFAULT_HERO_PROPS.description;
+
+  const currentLang = translationService.getLanguage?.() || 'en';
+  if (currentLang !== 'en') {
+    return (
+      <span className={dark ? 'font-medium text-purple-100' : 'font-medium text-slate-800'}>
+        {translationService.t(safeText, safeText)}
+      </span>
+    );
+  }
+
   return safeText.split(HERO_HIGHLIGHT_REGEX).map((part, idx) => {
     const match = HERO_SUBTEXT_HIGHLIGHTS.find(
       (h) => h.phrase.toLowerCase() === part.toLowerCase()

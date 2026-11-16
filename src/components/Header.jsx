@@ -114,18 +114,18 @@ export default function Header() {
   };
 
   const primaryNavItems = [
-    { label: translationService.t('nav_about', 'About'), to: "/about", icon: Info, desc: "Mission, history & 10-year leadership" },
-    { label: translationService.t('nav_programs', 'Programs'), to: "/programs", icon: Sparkles, desc: "Free HIV/STI testing & youth groups" },
-    { label: translationService.t('nav_community', 'Community'), to: "/community", icon: Users, desc: "Affirming peer circles & gatherings" },
-    { label: translationService.t('nav_events', 'Events'), to: "/events", icon: Calendar, desc: "Pride prom, galas & workshops" },
-    { label: translationService.t('nav_resources', 'Resources'), to: "/resources", icon: Compass, desc: "Crisis lines & regional mutual aid" }
+    { label: translationService.t('nav_about', 'About'), to: "/about", icon: Info, desc: translationService.t('nav_desc_about', "Mission, history & 10-year leadership") },
+    { label: translationService.t('nav_programs', 'Programs'), to: "/programs", icon: Sparkles, desc: translationService.t('nav_desc_programs', "Free HIV/STI testing & youth groups") },
+    { label: translationService.t('nav_community', 'Community'), to: "/community", icon: Users, desc: translationService.t('nav_desc_community', "Affirming peer circles & gatherings") },
+    { label: translationService.t('nav_events', 'Events'), to: "/events", icon: Calendar, desc: translationService.t('nav_desc_events', "Pride prom, galas & workshops") },
+    { label: translationService.t('nav_resources', 'Resources'), to: "/resources", icon: Compass, desc: translationService.t('nav_desc_resources', "Crisis lines & regional mutual aid") }
   ];
 
   const secondaryNavItems = [
-    { label: translationService.t('nav_directory', 'Directory'), to: "/directory", icon: Compass, desc: "LGBTQ+ affirming business network" },
-    { label: translationService.t('nav_training', 'Training'), to: "/training", icon: Sparkles, desc: "P.R.I.D.E. cultural competency" },
-    { label: translationService.t('nav_news', 'News'), to: "/news", icon: Info, desc: "Stories, updates & advocacy" },
-    { label: translationService.t('nav_gallery', 'Gallery'), to: "/gallery", icon: Sparkles, desc: "Celebration & memories" }
+    { label: translationService.t('nav_directory', 'Directory'), to: "/directory", icon: Compass, desc: translationService.t('nav_desc_directory', "LGBTQ+ affirming business network") },
+    { label: translationService.t('nav_training', 'Training'), to: "/training", icon: Sparkles, desc: translationService.t('nav_desc_training', "P.R.I.D.E. cultural competency") },
+    { label: translationService.t('nav_news', 'News'), to: "/news", icon: Info, desc: translationService.t('nav_desc_news', "Stories, updates & advocacy") },
+    { label: translationService.t('nav_gallery', 'Gallery'), to: "/gallery", icon: Sparkles, desc: translationService.t('nav_desc_gallery', "Celebration & memories") }
   ];
 
   const allNavItems = [...primaryNavItems, ...secondaryNavItems];

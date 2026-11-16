@@ -20,30 +20,45 @@ export default function ImpactAutoPopups({ props = {}, style = {} }) {
     });
   }, []);
 
+  const DEFAULT_STAT_LABELS = {
+    stat1: 'years serving and advocating for Ventura County’s LGBTQ+ community.',
+    stat2: 'free, confidential HIV & STI screenings delivered through Diversity SHINES.',
+    stat3: 'LGBTQ+ youth empowered through Rainbow Umbrella peer circles & Pride Prom.',
+    stat4: 'free and confidential care—no insurance or fees ever required.',
+    stat5: 'Ventura County cities united through affirming programs and mutual aid.'
+  };
+
+  const getStatSentence = (customLabel, key, defaultText) => {
+    if (!customLabel || customLabel.trim() === defaultText.trim()) {
+      return translationService.t(key, defaultText);
+    }
+    return translationService.t(customLabel, customLabel);
+  };
+
   const items = [
     {
       num: props.stat1Number || '10+',
-      sentence: props.stat1Label || translationService.t('impact_stat1', 'years serving and advocating for Ventura County’s LGBTQ+ community.'),
+      sentence: getStatSentence(props.stat1Label, 'impact_stat1', DEFAULT_STAT_LABELS.stat1),
       link: '/about'
     },
     {
       num: props.stat2Number || '5,000+',
-      sentence: props.stat2Label || translationService.t('impact_stat2', 'free, confidential HIV & STI screenings delivered through Diversity SHINES.'),
+      sentence: getStatSentence(props.stat2Label, 'impact_stat2', DEFAULT_STAT_LABELS.stat2),
       link: '/appointments'
     },
     {
       num: props.stat3Number || '1,200+',
-      sentence: props.stat3Label || translationService.t('impact_stat3', 'LGBTQ+ youth empowered through Rainbow Umbrella peer circles & Pride Prom.'),
+      sentence: getStatSentence(props.stat3Label, 'impact_stat3', DEFAULT_STAT_LABELS.stat3),
       link: '/programs/rainbow-umbrella'
     },
     {
       num: props.stat4Number || '100%',
-      sentence: props.stat4Label || translationService.t('impact_stat4', 'free and confidential care—no insurance or fees ever required.'),
+      sentence: getStatSentence(props.stat4Label, 'impact_stat4', DEFAULT_STAT_LABELS.stat4),
       link: '/donate'
     },
     {
       num: props.stat5Number || '10',
-      sentence: props.stat5Label || translationService.t('impact_stat5', 'Ventura County cities united through affirming programs and mutual aid.'),
+      sentence: getStatSentence(props.stat5Label, 'impact_stat5', DEFAULT_STAT_LABELS.stat5),
       link: '/community'
     }
   ].filter((x) => x.num || x.sentence);
