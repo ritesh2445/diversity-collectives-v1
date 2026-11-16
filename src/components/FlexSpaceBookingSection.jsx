@@ -7,6 +7,7 @@ import {
   getSlotAvailability,
   bookTimeSlot
 } from '../services/siteFeaturesStore';
+import { submitInquiry } from '../services/api';
 
 function getTodayIso() {
   const d = new Date();
@@ -60,6 +61,15 @@ export default function FlexSpaceBookingSection({ props = {}, style = {} }) {
       return;
     }
 
+    submitInquiry({
+      type: 'flex_space',
+      name: formValues.name || 'Flex Space Visitor',
+      email: formValues.email || 'info@diversitycollective.org',
+      phone: formValues.phone || '',
+      subject: `Community Flex Space Booking: ${selectedDate} (${selectedSlot})`,
+      message: `Reserved slot: ${selectedDate} @ ${selectedSlot}\nPurpose: ${formValues.purpose || 'Community session'}\nDetails: ${JSON.stringify(formValues, null, 2)}`
+    }).catch(() => {});
+
     setStatusMsg({
       ok: true,
       text: `Flex Space reserved for ${selectedDate} (${selectedSlot}). Confirmation logged with DCVC!`
@@ -82,10 +92,10 @@ export default function FlexSpaceBookingSection({ props = {}, style = {} }) {
               {props.eyebrow || 'FLEX SPACE · SLOT BOOKING'}
             </span>
             <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-black text-slate-950 leading-tight">
-              {props.headline || flexCfg.title || 'Community Flex Space at 2471 Portola Rd'}
+              {flexCfg?.title || props.headline || 'Community Flex Space at 2471 Portola Rd'}
             </h2>
             <p className="text-slate-700 text-sm sm:text-base font-medium leading-relaxed">
-              {props.description || flexCfg.description}
+              {flexCfg?.description || props.description}
             </p>
 
             {/* Live Availability Badge */}

@@ -502,6 +502,7 @@ import {
   upgradeOrNormalizePageLayout
 } from '../../data/siteDefaults.js';
 import { publishAdminSitePatch, resetAdminSiteState } from '../../services/liveSync.js';
+import { getSiteFeatures } from '../../services/siteFeaturesStore.js';
 
 export { normalizePageLayoutBlocks, upgradeOrNormalizePageLayout };
 export const DEFAULT_PAGE_BLOCKS = CANONICAL_DEFAULT_PAGE_BLOCKS;
@@ -540,7 +541,10 @@ export async function savePageLayout(blocks, heroTheme = null) {
   recordLocalAuditLog('save_drag_and_drop_layout', 'layout', 'homepage');
 
   try {
-    const patch = { layoutBlocks: normalized };
+    const patch = {
+      layoutBlocks: normalized,
+      siteFeatures: getSiteFeatures()
+    };
     if (heroTheme) {
       patch.heroTheme = heroTheme;
     }

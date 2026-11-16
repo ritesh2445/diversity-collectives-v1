@@ -7,6 +7,8 @@
  *  4. Dynamic Form Builder schemas for all site forms
  */
 
+import { publishAdminSitePatch } from './liveSync.js';
+
 const FEATURES_STORAGE_KEY = 'dcvc_site_features_v1';
 const FEATURES_EVENT = 'dcvc-site-features-updated';
 const CHANNEL_NAME = 'dcvc_live_sync';
@@ -247,6 +249,15 @@ export function saveSiteFeatures(updater) {
     }
   }
   notifyFeaturesUpdated(next);
+
+  try {
+    if (typeof window !== 'undefined' && typeof fetch !== 'undefined') {
+      publishAdminSitePatch({ siteFeatures: next }).catch(() => {});
+    }
+  } catch {
+    // Non-blocking
+  }
+
   return next;
 }
 

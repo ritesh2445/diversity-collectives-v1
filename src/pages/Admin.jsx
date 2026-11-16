@@ -489,6 +489,14 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
   const [appearanceSubTab, setAppearanceSubTab] = useState('theme'); // 'theme' | 'cards'
   const [inboxSubTab, setInboxSubTab] = useState('directory'); // 'directory' | 'inquiries' | 'newsletter'
 
+  useEffect(() => {
+    const handleNav = (e) => {
+      if (e.detail?.tab) setActiveTab(e.detail.tab);
+    };
+    window.addEventListener('dcvc_navigate_admin_tab', handleNav);
+    return () => window.removeEventListener('dcvc_navigate_admin_tab', handleNav);
+  }, []);
+
   // Cooldown timer for email OTP resend
   useEffect(() => {
     if (resendCooldown > 0) {

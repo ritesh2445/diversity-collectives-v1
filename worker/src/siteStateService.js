@@ -239,6 +239,13 @@ export function sanitizeSiteStatePatch(patch, existingState = {}) {
     next.siteStatus = cleanStatus;
   }
 
+  if (Object.prototype.hasOwnProperty.call(patch, 'siteFeatures')) {
+    const cleanFeatures = sanitizeGenericValue(patch.siteFeatures, '', 1);
+    if (cleanFeatures && typeof cleanFeatures === 'object') {
+      next.siteFeatures = cleanFeatures;
+    }
+  }
+
   const serialized = JSON.stringify(next);
   if (serialized.length > MAX_STATE_BYTES) {
     throw new Error('Site state payload exceeds maximum allowed size.');

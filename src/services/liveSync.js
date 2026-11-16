@@ -14,7 +14,8 @@ export const STORAGE_KEYS = {
   SITE_THEME: 'dcvc_site_theme_settings',
   CMS_DATA: 'dcvc_live_cms_data',
   STATE_META: 'dcvc_site_state_meta',
-  SITE_STATUS: 'dcvc_site_status'
+  SITE_STATUS: 'dcvc_site_status',
+  FEATURES: 'dcvc_site_features_v1'
 };
 
 export const SYNC_EVENTS = {
@@ -23,7 +24,8 @@ export const SYNC_EVENTS = {
   THEME_CHANGED: 'dcvc-site-theme-updated',
   CMS_CHANGED: 'dcvc-cms-updated',
   STATUS_CHANGED: 'dcvc-live-sync-status',
-  SITE_STATUS_CHANGED: 'dcvc-site-status-changed'
+  SITE_STATUS_CHANGED: 'dcvc-site-status-changed',
+  FEATURES_CHANGED: 'dcvc-features-updated'
 };
 
 const CHANNEL_NAME = 'dcvc_live_sync';
@@ -153,6 +155,19 @@ export function applySiteStatePayload(state, { broadcast = false } = {}) {
       localStorage.setItem(STORAGE_KEYS.SITE_STATUS, JSON.stringify(state.siteStatus));
     }
     notifyWindowEvent(SYNC_EVENTS.SITE_STATUS_CHANGED, state.siteStatus);
+  }
+
+  if (state.siteFeatures && typeof state.siteFeatures === 'object') {
+    if (typeof localStorage !== 'undefined') {
+      try {
+        const existing = JSON.parse(localStorage.getItem(STORAGE_KEYS.FEATURES) || '{}') || {};
+        const merged = { ...existing, ...state.siteFeatures };
+        localStorage.setItem(STORAGE_KEYS.FEATURES, JSON.stringify(merged));
+      } catch {
+        localStorage.setItem(STORAGE_KEYS.FEATURES, JSON.stringify(state.siteFeatures));
+      }
+    }
+    notifyWindowEvent(SYNC_EVENTS.FEATURES_CHANGED, state.siteFeatures);
   }
 
   if (broadcast) {

@@ -47,10 +47,21 @@ export default function SiteFeaturesStudio({ initialSubTab = 'forms' }) {
   const [newFieldLabel, setNewFieldLabel] = useState('');
   const [newFieldType, setNewFieldType] = useState('text');
   const [newSlotText, setNewSlotText] = useState('');
+  const [newFlexSlotText, setNewFlexSlotText] = useState('');
+  const [newFlexFieldLabel, setNewFlexFieldLabel] = useState('');
+  const [newFlexFieldType, setNewFlexFieldType] = useState('text');
   const [savedBanner, setSavedBanner] = useState('');
 
   useEffect(() => {
     return subscribeToSiteFeatures((next) => setFeatures(next));
+  }, []);
+
+  useEffect(() => {
+    const handleNav = (e) => {
+      if (e.detail?.subTab) setSubTab(e.detail.subTab);
+    };
+    window.addEventListener('dcvc_navigate_admin_tab', handleNav);
+    return () => window.removeEventListener('dcvc_navigate_admin_tab', handleNav);
   }, []);
 
   const flashSaved = (msg) => {
@@ -65,6 +76,7 @@ export default function SiteFeaturesStudio({ initialSubTab = 'forms' }) {
   };
 
   const activeSchema = features.formSchemas?.[selectedFormId] || DEFAULT_FORM_SCHEMAS[selectedFormId];
+  const flexSchema = features.formSchemas?.flex_space || DEFAULT_FORM_SCHEMAS.flex_space;
   const flexStatus = computeFlexSpaceStatus(features.flexSpace);
 
   const updateSchema = (patch) => {
@@ -78,6 +90,54 @@ export default function SiteFeaturesStudio({ initialSubTab = 'forms' }) {
         }
       }
     }));
+  };
+
+  const updateFlexSchema = (patch, msg = 'Community Flex Form updated!') => {
+    updateFeatures((prev) => ({
+      ...prev,
+      formSchemas: {
+        ...prev.formSchemas,
+        flex_space: {
+          ...flexSchema,
+          ...patch
+        }
+      }
+    }), msg);
+  };
+
+  const handleAddFlexField = () => {
+    const label = newFlexFieldLabel.trim();
+    if (!label) return;
+    const id = label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || `field_${Date.now()}`;
+    const newField = {
+      id: `${id}_${Date.now().toString(36).slice(-4)}`,
+      label,
+      type: newFlexFieldType,
+      required: false,
+      placeholder: `Enter ${label.toLowerCase()}`,
+      ...(newFlexFieldType === 'select' ? { options: ['Option 1', 'Option 2'] } : {})
+    };
+    updateFlexSchema({ fields: [...(flexSchema.fields || []), newField] }, `Added field "${label}" to Flex form`);
+    setNewFlexFieldLabel('');
+  };
+
+  const moveFlexField = (idx, dir) => {
+    const list = [...(flexSchema.fields || [])];
+    const target = idx + dir;
+    if (target < 0 || target >= list.length) return;
+    [list[idx], list[target]] = [list[target], list[idx]];
+    updateFlexSchema({ fields: list });
+  };
+
+  const updateFlexField = (idx, patch) => {
+    const list = [...(flexSchema.fields || [])];
+    list[idx] = { ...list[idx], ...patch };
+    updateFlexSchema({ fields: list });
+  };
+
+  const deleteFlexField = (idx) => {
+    const list = (flexSchema.fields || []).filter((_, i) => i !== idx);
+    updateFlexSchema({ fields: list }, 'Removed field from Flex form');
   };
 
   const handleAddField = () => {
@@ -211,6 +271,26 @@ export default function SiteFeaturesStudio({ initialSubTab = 'forms' }) {
             </div>
           </div>
 
+          {selectedFormId === 'flex_space' && (
+            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="space-y-0.5">
+                <span className="font-extrabold text-[#5A1E65] flex items-center gap-1.5">
+                  <CalendarClock className="w-4 h-4" /> Community Flex Space Form & Slots
+                </span>
+                <p className="text-slate-600">
+                  You are editing the Community Flex Space reservation form fields. You can also customize its section copy, bookable time slots, and live hours in the dedicated Flex Space studio.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSubTab('flex')}
+                className="px-3 py-1.5 rounded-xl bg-[#5A1E65] text-white font-bold text-xs hover:bg-purple-900 transition-colors cursor-pointer"
+              >
+                Open Flex Space & Timings Studio →
+              </button>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">Form Title</label>
@@ -336,114 +416,466 @@ export default function SiteFeaturesStudio({ initialSubTab = 'forms' }) {
         </div>
       )}
 
-      {/* 2. FLEX SPACE AVAILABILITY & AUTOMATED TIMINGS */}
+      {/* 2. FLEX SPACE AVAILABILITY, FORM & TIMINGS */}
       {subTab === 'flex' && (
-        <div className="bg-white rounded-3xl border border-slate-200 p-6 space-y-6 shadow-xs">
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4">
+        <div className="space-y-6">
+          {/* Header Banner */}
+          <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs flex flex-wrap items-center justify-between gap-4">
             <div>
-              <h3 className="font-display text-xl font-black text-slate-950">Flex Space Availability & Automated Timings</h3>
-              <p className="text-xs text-slate-600 font-medium">
-                Control live space status, automated weekday hours, and inspect reserved Flex Space time slots.
+              <h3 className="font-display text-xl font-black text-slate-950">
+                Community Flex Space & Booking Form Studio
+              </h3>
+              <p className="text-xs text-slate-600 font-medium mt-0.5">
+                Customize section copy, booking form fields, bookable time windows, and real-time open/closed availability.
               </p>
             </div>
-            <span className={`px-3 py-1.5 rounded-full text-xs font-black border ${
-              flexStatus.isAvailable ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : 'bg-amber-50 text-amber-800 border-amber-300'
-            }`}>
+            <span
+              className={`px-3.5 py-1.5 rounded-full text-xs font-black border ${
+                flexStatus.isAvailable
+                  ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                  : 'bg-amber-50 text-amber-800 border-amber-300'
+              }`}
+            >
               Live Status: {flexStatus.label}
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Availability Mode</label>
-              <select
-                value={features.flexSpace.manualStatus || 'auto'}
-                onChange={(e) => updateFeatures((p) => ({
-                  ...p,
-                  flexSpace: { ...p.flexSpace, manualStatus: e.target.value }
-                }))}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-bold text-slate-900 bg-white"
-              >
-                <option value="auto">Automated Schedule (Follows Timings)</option>
-                <option value="available">Override: Available Now</option>
-                <option value="occupied">Override: Currently Occupied</option>
-                <option value="closed">Override: Closed</option>
-              </select>
+          {/* Card 1: Public Section Copy */}
+          <div className="bg-white rounded-3xl border border-slate-200 p-6 space-y-4 shadow-xs">
+            <div className="border-b border-slate-100 pb-3">
+              <h4 className="font-display text-base font-black text-slate-950 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-[#5A1E65]" />
+                Public Section Headline & Description
+              </h4>
+              <p className="text-xs text-slate-500">
+                Text displayed on the left side of the homepage Community Flex Space section.
+              </p>
             </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Auto Open Time</label>
-              <input
-                type="time"
-                value={features.flexSpace.autoHours?.openTime || '13:00'}
-                onChange={(e) => updateFeatures((p) => ({
-                  ...p,
-                  flexSpace: { ...p.flexSpace, autoHours: { ...p.flexSpace.autoHours, openTime: e.target.value } }
-                }))}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Auto Close Time</label>
-              <input
-                type="time"
-                value={features.flexSpace.autoHours?.closeTime || '17:00'}
-                onChange={(e) => updateFeatures((p) => ({
-                  ...p,
-                  flexSpace: { ...p.flexSpace, autoHours: { ...p.flexSpace.autoHours, closeTime: e.target.value } }
-                }))}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900"
-              />
+
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Section Headline
+                </label>
+                <input
+                  type="text"
+                  value={features.flexSpace.title || ''}
+                  onChange={(e) =>
+                    updateFeatures((p) => ({
+                      ...p,
+                      flexSpace: { ...p.flexSpace, title: e.target.value }
+                    }))
+                  }
+                  placeholder="Community Flex Space at 2471 Portola Rd"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-bold text-slate-900 bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Section Description
+                </label>
+                <textarea
+                  rows={2}
+                  value={features.flexSpace.description || ''}
+                  onChange={(e) =>
+                    updateFeatures((p) => ({
+                      ...p,
+                      flexSpace: { ...p.flexSpace, description: e.target.value }
+                    }))
+                  }
+                  placeholder="Need a quiet, affirming space for peer support, telehealth, study, or community organizing? Check real-time availability and reserve a Flex Space time slot."
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 bg-white"
+                />
+              </div>
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-2">Automated Operating Days</label>
-            <div className="flex flex-wrap gap-2">
-              {WEEKDAY_LABELS.map(({ day, label }) => {
-                const active = (features.flexSpace.autoHours?.days || []).includes(day);
-                return (
+          {/* Card 2: Bookable Time Slots */}
+          <div className="bg-white rounded-3xl border border-slate-200 p-6 space-y-4 shadow-xs">
+            <div className="border-b border-slate-100 pb-3">
+              <h4 className="font-display text-base font-black text-slate-950 flex items-center gap-2">
+                <CalendarClock className="w-4 h-4 text-[#5A1E65]" />
+                Bookable Time Windows (Slots)
+              </h4>
+              <p className="text-xs text-slate-500">
+                Time slots visitors can select on the interactive booking calendar.
+              </p>
+            </div>
+
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newFlexSlotText}
+                onChange={(e) => setNewFlexSlotText(e.target.value)}
+                placeholder="e.g., 10:00 AM – 11:00 AM or 5:00 PM – 6:00 PM"
+                className="flex-1 px-3.5 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 bg-white"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (!newFlexSlotText.trim()) return;
+                  updateFeatures((p) => ({
+                    ...p,
+                    flexSpace: {
+                      ...p.flexSpace,
+                      slots: [...(p.flexSpace.slots || []), newFlexSlotText.trim()]
+                    }
+                  }), `Added Flex slot "${newFlexSlotText.trim()}"`);
+                  setNewFlexSlotText('');
+                }}
+                className="px-4 py-2 rounded-xl bg-[#5A1E65] text-white text-xs font-bold hover:bg-purple-900 cursor-pointer transition-colors"
+              >
+                Add Slot
+              </button>
+            </div>
+
+            <div className="flex flex-wrap gap-2 pt-1">
+              {(features.flexSpace.slots || []).map((slot) => (
+                <span
+                  key={slot}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-50 border border-purple-200 text-xs font-bold text-[#5A1E65]"
+                >
+                  {slot}
                   <button
-                    key={day}
                     type="button"
-                    onClick={() => {
-                      const prevDays = features.flexSpace.autoHours?.days || [];
-                      const nextDays = active ? prevDays.filter((d) => d !== day) : [...prevDays, day].sort();
+                    onClick={() =>
                       updateFeatures((p) => ({
                         ...p,
-                        flexSpace: { ...p.flexSpace, autoHours: { ...p.flexSpace.autoHours, days: nextDays } }
-                      }));
-                    }}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold border cursor-pointer ${
-                      active ? 'bg-[#5A1E65] text-white border-[#5A1E65]' : 'bg-slate-50 text-slate-700 border-slate-200'
-                    }`}
+                        flexSpace: {
+                          ...p.flexSpace,
+                          slots: p.flexSpace.slots.filter((s) => s !== slot)
+                        }
+                      }), `Removed Flex slot "${slot}"`)
+                    }
+                    className="text-rose-600 hover:text-rose-800 cursor-pointer font-black text-sm"
+                    title={`Remove ${slot}`}
                   >
-                    {label}
+                    ×
                   </button>
-                );
-              })}
+                </span>
+              ))}
             </div>
           </div>
 
-          <div className="space-y-2">
+          {/* Card 3: Community Flex Form Builder */}
+          <div className="bg-white rounded-3xl border border-slate-200 p-6 space-y-5 shadow-xs">
+            <div className="border-b border-slate-100 pb-3">
+              <h4 className="font-display text-base font-black text-slate-950 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-[#5A1E65]" />
+                Community Flex Form Fields & Labels
+              </h4>
+              <p className="text-xs text-slate-500">
+                Customize the reservation form title, submission button, and interactive input fields.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Form Heading Title
+                </label>
+                <input
+                  type="text"
+                  value={flexSchema.title || ''}
+                  onChange={(e) => updateFlexSchema({ title: e.target.value })}
+                  placeholder="Reserve a Flex Space Slot"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold text-slate-900 bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Submit Button Label
+                </label>
+                <input
+                  type="text"
+                  value={flexSchema.submitLabel || ''}
+                  onChange={(e) => updateFlexSchema({ submitLabel: e.target.value })}
+                  placeholder="Book Flex Space Slot"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold text-slate-900 bg-white"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <h5 className="text-xs font-black uppercase tracking-wider text-slate-600">
+                Form Input Fields ({flexSchema.fields?.length || 0})
+              </h5>
+
+              {(flexSchema.fields || []).map((field, idx) => (
+                <div
+                  key={field.id}
+                  className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3"
+                >
+                  <div className="flex flex-wrap items-center gap-2 justify-between">
+                    <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+                      <input
+                        type="text"
+                        value={field.label}
+                        onChange={(e) => updateFlexField(idx, { label: e.target.value })}
+                        className="flex-1 px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-bold text-slate-900"
+                        placeholder="Field Label"
+                      />
+                      <select
+                        value={field.type}
+                        onChange={(e) => updateFlexField(idx, { type: e.target.value })}
+                        className="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-semibold text-slate-800"
+                      >
+                        <option value="text">Text</option>
+                        <option value="email">Email</option>
+                        <option value="tel">Phone</option>
+                        <option value="number">Number</option>
+                        <option value="url">URL</option>
+                        <option value="textarea">Long Text</option>
+                        <option value="select">Dropdown</option>
+                      </select>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <label className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(field.required)}
+                          onChange={(e) => updateFlexField(idx, { required: e.target.checked })}
+                          className="accent-[#5A1E65]"
+                        />
+                        Required
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => moveFlexField(idx, -1)}
+                        className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-purple-50 cursor-pointer"
+                        title="Move Up"
+                      >
+                        <ArrowUp className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveFlexField(idx, 1)}
+                        className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-purple-50 cursor-pointer"
+                        title="Move Down"
+                      >
+                        <ArrowDown className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => deleteFlexField(idx)}
+                        className="p-1.5 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 cursor-pointer"
+                        title="Delete Field"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {field.type === 'select' ? (
+                    <input
+                      type="text"
+                      value={(field.options || []).join(', ')}
+                      onChange={(e) =>
+                        updateFlexField(idx, {
+                          options: e.target.value.split(',').map((s) => s.trim()).filter(Boolean)
+                        })
+                      }
+                      className="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs text-slate-800"
+                      placeholder="Comma-separated dropdown options..."
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      value={field.placeholder || ''}
+                      onChange={(e) => updateFlexField(idx, { placeholder: e.target.value })}
+                      className="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs text-slate-800"
+                      placeholder="Placeholder hint text..."
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Add New Field to Flex Form */}
+            <div className="p-4 rounded-2xl bg-purple-50/70 border border-purple-200 flex flex-wrap items-center gap-3">
+              <input
+                type="text"
+                value={newFlexFieldLabel}
+                onChange={(e) => setNewFlexFieldLabel(e.target.value)}
+                placeholder="New field label (e.g., Equipment Needed, Organization Website)..."
+                className="flex-1 min-w-[200px] px-3.5 py-2 rounded-xl border border-purple-200 bg-white text-xs font-semibold text-slate-900"
+              />
+              <select
+                value={newFlexFieldType}
+                onChange={(e) => setNewFlexFieldType(e.target.value)}
+                className="px-3 py-2 rounded-xl border border-purple-200 bg-white text-xs font-bold text-slate-800"
+              >
+                <option value="text">Text</option>
+                <option value="email">Email</option>
+                <option value="tel">Phone</option>
+                <option value="number">Number</option>
+                <option value="url">URL</option>
+                <option value="textarea">Long Text</option>
+                <option value="select">Dropdown</option>
+              </select>
+              <button
+                type="button"
+                onClick={handleAddFlexField}
+                className="px-4 py-2 rounded-xl bg-[#5A1E65] text-white text-xs font-extrabold flex items-center gap-1.5 cursor-pointer hover:bg-purple-900 transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Field to Flex Form</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Card 4: Live Availability Mode & Hours */}
+          <div className="bg-white rounded-3xl border border-slate-200 p-6 space-y-5 shadow-xs">
+            <div className="border-b border-slate-100 pb-3">
+              <h4 className="font-display text-base font-black text-slate-950 flex items-center gap-2">
+                <CalendarClock className="w-4 h-4 text-[#5A1E65]" />
+                Live Availability Mode & Operating Hours
+              </h4>
+              <p className="text-xs text-slate-500">
+                Automated opening hours or manual override for holidays and special closures.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Availability Mode
+                </label>
+                <select
+                  value={features.flexSpace.manualStatus || 'auto'}
+                  onChange={(e) =>
+                    updateFeatures((p) => ({
+                      ...p,
+                      flexSpace: { ...p.flexSpace, manualStatus: e.target.value }
+                    }))
+                  }
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-bold text-slate-900 bg-white"
+                >
+                  <option value="auto">Automated Schedule (Follows Timings)</option>
+                  <option value="available">Override: Available Now</option>
+                  <option value="occupied">Override: Currently Occupied</option>
+                  <option value="closed">Override: Closed</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Auto Open Time
+                </label>
+                <input
+                  type="time"
+                  value={features.flexSpace.autoHours?.openTime || '13:00'}
+                  onChange={(e) =>
+                    updateFeatures((p) => ({
+                      ...p,
+                      flexSpace: {
+                        ...p.flexSpace,
+                        autoHours: { ...p.flexSpace.autoHours, openTime: e.target.value }
+                      }
+                    }))
+                  }
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Auto Close Time
+                </label>
+                <input
+                  type="time"
+                  value={features.flexSpace.autoHours?.closeTime || '17:00'}
+                  onChange={(e) =>
+                    updateFeatures((p) => ({
+                      ...p,
+                      flexSpace: {
+                        ...p.flexSpace,
+                        autoHours: { ...p.flexSpace.autoHours, closeTime: e.target.value }
+                      }
+                    }))
+                  }
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-2">
+                Automated Operating Days
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {WEEKDAY_LABELS.map(({ day, label }) => {
+                  const active = (features.flexSpace.autoHours?.days || []).includes(day);
+                  return (
+                    <button
+                      key={day}
+                      type="button"
+                      onClick={() => {
+                        const prevDays = features.flexSpace.autoHours?.days || [];
+                        const nextDays = active
+                          ? prevDays.filter((d) => d !== day)
+                          : [...prevDays, day].sort();
+                        updateFeatures((p) => ({
+                          ...p,
+                          flexSpace: {
+                            ...p.flexSpace,
+                            autoHours: { ...p.flexSpace.autoHours, days: nextDays }
+                          }
+                        }));
+                      }}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold border cursor-pointer ${
+                        active
+                          ? 'bg-[#5A1E65] text-white border-[#5A1E65]'
+                          : 'bg-slate-50 text-slate-700 border-slate-200'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Card 5: Booked Reservations */}
+          <div className="bg-white rounded-3xl border border-slate-200 p-6 space-y-3 shadow-xs">
             <h4 className="text-xs font-black uppercase tracking-wider text-slate-600">
               Booked Flex Space Slots ({features.flexSpace.bookings?.length || 0})
             </h4>
+
             {(features.flexSpace.bookings || []).length === 0 ? (
-              <p className="text-xs text-slate-500">No Flex Space reservations recorded yet.</p>
+              <p className="text-xs text-slate-500 py-3 text-center bg-slate-50 rounded-xl">
+                No Flex Space reservations recorded yet.
+              </p>
             ) : (
               <div className="space-y-2">
                 {features.flexSpace.bookings.map((b) => (
-                  <div key={b.id} className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
+                  <div
+                    key={b.id}
+                    className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs"
+                  >
                     <div>
-                      <span className="font-black text-slate-900">{b.date} · {b.slot}</span>
-                      <span className="text-slate-600 ml-2">— {b.name} ({b.email || b.phone}) · {b.purpose}</span>
+                      <span className="font-black text-slate-900">
+                        {b.date} · {b.slot}
+                      </span>
+                      <span className="text-slate-600 ml-2">
+                        — {b.name} ({b.email || b.phone}) · {b.purpose}
+                      </span>
                     </div>
                     <button
                       type="button"
-                      onClick={() => updateFeatures((p) => ({
-                        ...p,
-                        flexSpace: { ...p.flexSpace, bookings: p.flexSpace.bookings.filter((x) => x.id !== b.id) }
-                      }))}
+                      onClick={() =>
+                        updateFeatures((p) => ({
+                          ...p,
+                          flexSpace: {
+                            ...p.flexSpace,
+                            bookings: p.flexSpace.bookings.filter((x) => x.id !== b.id)
+                          }
+                        }), `Released slot ${b.date} (${b.slot})`)
+                      }
                       className="text-rose-700 font-bold hover:underline cursor-pointer"
                     >
                       Release Slot

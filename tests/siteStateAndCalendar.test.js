@@ -136,3 +136,27 @@ test('heroThemeStore aligns default flagship aurora design with Admin picker the
   assert.ok(HERO_THEMES.some((t) => t.id === 'portal'));
 });
 
+test('sanitizeSiteStatePatch accepts and sanitizes siteFeatures (flexSpace & formSchemas)', () => {
+  const patch = {
+    siteFeatures: {
+      flexSpace: {
+        title: 'Community Flex Space Test',
+        slots: ['1:00 PM – 2:00 PM', '2:00 PM – 3:00 PM']
+      },
+      formSchemas: {
+        flex_space: {
+          title: 'Custom Flex Booking Title',
+          submitLabel: 'Reserve Now',
+          fields: [
+            { id: 'name', label: 'Organization Name', type: 'text', required: true }
+          ]
+        }
+      }
+    }
+  };
+  const res = sanitizeSiteStatePatch(patch, {});
+  assert.equal(res.siteFeatures.flexSpace.title, 'Community Flex Space Test');
+  assert.equal(res.siteFeatures.formSchemas.flex_space.title, 'Custom Flex Booking Title');
+  assert.equal(res.siteFeatures.formSchemas.flex_space.fields[0].label, 'Organization Name');
+});
+

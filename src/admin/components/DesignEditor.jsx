@@ -1084,6 +1084,32 @@ export default function DesignEditor({ onPublishSuccess }) {
                     />
                   </div>
                 )}
+                {selectedBlock?.type === 'flex_space' && (
+                  <div className="p-3.5 rounded-2xl bg-purple-50/80 border border-purple-200 space-y-2.5">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-[#5A1E65]" />
+                      <span className="text-xs font-bold text-[#5A1E65]">
+                        Community Flex Booking Form & Slots
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 leading-relaxed">
+                      Customize reservation form fields (Name, Email, Purpose, etc.), operating hours, and bookable time windows in the dedicated Forms & Slots Studio.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        window.dispatchEvent(
+                          new CustomEvent('dcvc_navigate_admin_tab', {
+                            detail: { tab: 'features', subTab: 'flex' }
+                          })
+                        );
+                      }}
+                      className="w-full py-2 px-3 rounded-xl bg-[#5A1E65] hover:bg-purple-900 text-white text-xs font-extrabold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                    >
+                      <span>Edit Flex Form Fields, Slots & Timings →</span>
+                    </button>
+                  </div>
+                )}
                 <p className="text-[11px] text-slate-500 pt-1">
                   Click any section on the live preview to inspect and edit its contents, or switch to Theme & Sections above.
                 </p>
