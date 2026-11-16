@@ -7,7 +7,7 @@ import { translationService } from '../services/translationService';
  * Section #1: Auto-sliding quick pop-ups displaying complete impact highlight sentences.
  * Clickable and redirectable to corresponding program, testing, or donation resources for all devices!
  * Strictly height-constrained (52px on mobile / 48px on desktop) so height never shifts.
- * Mobile: Automated left-to-right rolling strip so users can read full sentences.
+ * Mobile: Automated right-to-left rolling strip so users can read full sentences.
  * Desktop: Centered clickable rotating impact highlights.
  * Fully reactive to live language changes (synchronously re-renders in < 1ms).
  */
@@ -68,19 +68,19 @@ export default function ImpactAutoPopups({ props = {}, style = {} }) {
       className="bg-gradient-to-r from-[#3B0F44] via-[#5A1E65] to-indigo-900 text-white border-b border-purple-400/25 h-[52px] sm:h-[48px] min-h-[52px] sm:min-h-[48px] max-h-[52px] sm:max-h-[48px] px-0 sm:px-6 relative overflow-hidden flex items-center justify-center"
     >
       <style>{`
-        @keyframes impactRollLtr {
+        @keyframes impactRollRtl {
           0% {
-            transform: translate3d(-50%, 0, 0);
+            transform: translate3d(0%, 0, 0);
           }
           100% {
-            transform: translate3d(0%, 0, 0);
+            transform: translate3d(-50%, 0, 0);
           }
         }
         .impact-roll-track {
           display: flex;
           align-items: center;
           width: max-content;
-          animation: impactRollLtr 30s linear infinite;
+          animation: impactRollRtl 30s linear infinite;
           will-change: transform;
         }
         .impact-roll-wrap:hover .impact-roll-track,
@@ -120,7 +120,7 @@ export default function ImpactAutoPopups({ props = {}, style = {} }) {
         </Link>
       </div>
 
-      {/* MOBILE VIEW (< sm): Clickable automated left-to-right rolling strip so users can read full sentences */}
+      {/* MOBILE VIEW (< sm): Clickable automated right-to-left rolling strip so users can read full sentences */}
       <div className="sm:hidden impact-roll-wrap w-full h-full relative overflow-hidden flex items-center">
         {/* Soft edge gradient fades */}
         <div
