@@ -25,8 +25,8 @@ export const DCVC_IMAGE_LIBRARY = [
 export function getGitHubStorageConfig() {
   if (typeof localStorage === 'undefined') {
     return {
-      owner: 'diversity-collective',
-      repo: 'diversity-collectives-v1',
+      owner: '',
+      repo: '',
       branch: 'main',
       token: '',
       cdnProvider: 'jsdelivr'
@@ -43,8 +43,8 @@ export function getGitHubStorageConfig() {
   }
 
   return {
-    owner: 'diversity-collective',
-    repo: 'diversity-collectives-v1',
+    owner: '',
+    repo: '',
     branch: 'main',
     token: '',
     cdnProvider: 'jsdelivr' // 'jsdelivr' | 'github_raw' | 'relative'

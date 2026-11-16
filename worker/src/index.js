@@ -1365,11 +1365,15 @@ export default {
           offset
         });
 
+        const cdnBase = (env.GITHUB_OWNER && env.GITHUB_REPO)
+          ? `https://cdn.jsdelivr.net/gh/${env.GITHUB_OWNER}/${env.GITHUB_REPO}@${env.GITHUB_BRANCH || 'main'}`
+          : '';
+
         return jsonResponse({
           success: true,
           photos,
           count: photos.length,
-          cdnBase: `https://cdn.jsdelivr.net/gh/${env.GITHUB_OWNER || 'ritesh2445'}/${env.GITHUB_REPO || 'diversity-collectives-v1'}@${env.GITHUB_BRANCH || 'main'}`
+          cdnBase
         }, 200, cors);
       }
 
@@ -4335,8 +4339,8 @@ export default {
             .replace(/-+/g, '-');
           const gitPath = `public/gallery/${categorySlug}/${cleanFileName}`;
 
-          const ghOwner = env.GITHUB_OWNER || 'ritesh2445';
-          const ghRepo = env.GITHUB_REPO || 'diversity-collectives-v1';
+          const ghOwner = env.GITHUB_OWNER || '';
+          const ghRepo = env.GITHUB_REPO || '';
           const ghBranch = env.GITHUB_BRANCH || 'main';
 
           let githubSha = null;
@@ -4427,8 +4431,8 @@ export default {
           if (delRes.photo?.github_path && delRes.photo?.github_sha && env.GITHUB_TOKEN) {
             await deleteFromGitHub({
               githubToken: env.GITHUB_TOKEN,
-              owner: env.GITHUB_OWNER || 'ritesh2445',
-              repo: env.GITHUB_REPO || 'diversity-collectives-v1',
+              owner: env.GITHUB_OWNER || '',
+              repo: env.GITHUB_REPO || '',
               branch: env.GITHUB_BRANCH || 'main',
               path: delRes.photo.github_path,
               sha: delRes.photo.github_sha,

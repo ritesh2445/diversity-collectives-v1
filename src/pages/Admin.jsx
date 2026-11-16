@@ -797,7 +797,7 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
       if (data.success && data.photo) {
         setGalleryActionStatus({
           success: true,
-          message: data.message || `Photo "${uploadTitle}" committed to GitHub and live on jsDelivr CDN!`
+          message: data.message || `Photo "${uploadTitle}" uploaded and live on CDN!`
         });
         setShowUploadModal(false);
         setUploadTitle('');
@@ -2943,7 +2943,7 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                   <div>
                     <h2 className="text-xl font-bold text-slate-900">Community Gallery Studio</h2>
                     <p className="text-xs text-slate-500">
-                      GitHub repository storage · jsDelivr global multi-CDN edge delivery.
+                      Cloud media storage · Multi-CDN edge delivery.
                     </p>
                   </div>
                 </div>
@@ -2979,8 +2979,8 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
                   <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Storage Backend</span>
-                  <span className="text-sm font-extrabold text-slate-900 block mt-1">GitHub Git Contents</span>
-                  <span className="text-xs text-slate-500 font-mono">ritesh2445/diversity-collectives-v1</span>
+                  <span className="text-sm font-extrabold text-slate-900 block mt-1">Cloud Media Storage</span>
+                  <span className="text-xs text-slate-500">Secure Edge Assets</span>
                 </div>
                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
                   <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Edge Delivery CDN</span>
@@ -3097,7 +3097,7 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                         <UploadCloud className="w-5 h-5" />
                       </div>
                       <h3 className="font-display text-lg font-black text-slate-950">
-                        Upload to GitHub & CDN
+                        Upload to Media CDN
                       </h3>
                     </div>
                     <button
@@ -3239,12 +3239,12 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                         {isUploadingToGit ? (
                           <>
                             <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                            <span>Uploading to GitHub & CDN...</span>
+                            <span>Uploading to Media CDN...</span>
                           </>
                         ) : (
                           <>
                             <UploadCloud className="w-3.5 h-3.5" />
-                            <span>Publish to jsDelivr CDN</span>
+                            <span>Publish to Media CDN</span>
                           </>
                         )}
                       </button>

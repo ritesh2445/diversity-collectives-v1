@@ -92,8 +92,8 @@ export default function AdminApp() {
 
   // GitHub storage & CDN state
   const [ghConfig, setGhConfig] = useState(getGitHubStorageConfig);
-  const [ghOwner, setGhOwner] = useState(getGitHubStorageConfig().owner || 'diversity-collective');
-  const [ghRepo, setGhRepo] = useState(getGitHubStorageConfig().repo || 'diversity-collectives-v1');
+  const [ghOwner, setGhOwner] = useState(getGitHubStorageConfig().owner || '');
+  const [ghRepo, setGhRepo] = useState(getGitHubStorageConfig().repo || '');
   const [ghBranch, setGhBranch] = useState(getGitHubStorageConfig().branch || 'main');
   const [ghToken, setGhToken] = useState(getGitHubStorageConfig().token || '');
   const [ghCdn, setGhCdn] = useState(getGitHubStorageConfig().cdnProvider || 'jsdelivr');
@@ -888,13 +888,13 @@ export default function AdminApp() {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h4 className="text-sm font-bold text-white">GitHub Repository & CDN Media Storage</h4>
+                    <h4 className="text-sm font-bold text-white">Media Asset Storage & Edge CDN</h4>
                     <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-mono border border-emerald-500/30">
-                      {ghConfig.token ? 'GitHub Commits Active' : 'Offline Optimization Active'}
+                      {ghConfig.token ? 'Storage Connected' : 'Local Optimization Active'}
                     </span>
                   </div>
                   <p className="text-xs text-slate-300 mt-0.5">
-                    Target Repo: <code className="text-amber-300">{ghConfig.owner}/{ghConfig.repo}</code> · Branch: <code className="text-amber-300">{ghConfig.branch}</code> · CDN: <code className="text-purple-300">{ghConfig.cdnProvider}</code>
+                    Storage Backend: <span className="text-amber-300 font-medium">Cloud Media Storage</span> · CDN: <code className="text-purple-300">Edge CDN</code>
                   </p>
                 </div>
               </div>
@@ -904,7 +904,7 @@ export default function AdminApp() {
                 onClick={() => { setActiveTab('settings'); setSettingsSubTab('github'); }}
                 className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-colors border border-white/20 whitespace-nowrap cursor-pointer"
               >
-                Configure GitHub Token & CDN
+                Configure Media Storage & CDN
               </button>
             </div>
           </div>
@@ -2325,7 +2325,7 @@ export default function AdminApp() {
                 }`}
               >
                 <ExternalLink className="w-3.5 h-3.5" />
-                <span>GitHub Storage & CDN</span>
+                <span>Media Storage & CDN</span>
               </button>
               <button
                 type="button"
@@ -2388,10 +2388,10 @@ export default function AdminApp() {
                     </span>
                   </div>
                   <h3 className="font-display text-xl font-bold text-slate-950 mt-1">
-                    GitHub Direct Storage & Global CDN Configuration
+                    Media Asset Storage & Global CDN Configuration
                   </h3>
                   <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
-                    Uploaded photographs are automatically compressed into optimized WebP/JPEG formats in your browser (max 1600px) and stored directly into your GitHub repository under <code>public/images/</code>. Images are distributed globally via high-speed CDN edges with zero layout collisions.
+                    Uploaded photographs are automatically compressed into optimized WebP/JPEG formats in your browser (max 1600px) and securely delivered via high-speed global CDN edges with zero layout collisions.
                   </p>
                 </div>
 
@@ -2407,25 +2407,25 @@ export default function AdminApp() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">GitHub Organization / Owner</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Storage Organization / Owner</label>
                     <input
                       type="text"
                       required
                       value={ghOwner}
                       onChange={(e) => setGhOwner(e.target.value)}
-                      placeholder="diversity-collective"
+                      placeholder="organization-or-user"
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-mono"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Repository Name</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Storage Repository / Bucket</label>
                     <input
                       type="text"
                       required
                       value={ghRepo}
                       onChange={(e) => setGhRepo(e.target.value)}
-                      placeholder="diversity-collectives-v1"
+                      placeholder="media-assets"
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-mono"
                     />
                   </div>
@@ -2483,7 +2483,7 @@ export default function AdminApp() {
                     disabled={ghTesting}
                     className="px-6 py-2.5 rounded-xl bg-[#5A1E65] hover:bg-[#43144A] text-white text-xs font-extrabold shadow-md cursor-pointer transition-colors disabled:opacity-50"
                   >
-                    {ghTesting ? 'Testing Connection...' : 'Save & Verify GitHub Storage'}
+                    {ghTesting ? 'Testing Connection...' : 'Save & Verify Media Storage'}
                   </button>
                 </div>
               </form>
