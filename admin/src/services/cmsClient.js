@@ -398,12 +398,26 @@ export function getLiveCmsData() {
   }
 }
 
-export function saveLiveCmsData(data) {
+export function saveLiveCmsData(data, { publish = true } = {}) {
   if (typeof localStorage === 'undefined') return data;
   const payload = { ...data, lastUpdated: new Date().toISOString() };
   localStorage.setItem(CMS_STORAGE_KEY, JSON.stringify(payload));
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('dcvc-cms-updated', { detail: payload }));
+  }
+  if (publish) {
+    try {
+      const apiBase = import.meta.env?.VITE_API_URL || '/api';
+      const token = sessionStorage.getItem('dcvc_admin_token') || localStorage.getItem('dcvc_admin_token');
+      fetch(`${apiBase}/admin/site-state`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ cmsData: payload })
+      }).catch(() => {});
+    } catch {}
   }
   return payload;
 }

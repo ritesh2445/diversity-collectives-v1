@@ -501,6 +501,7 @@ import {
   normalizePageLayoutBlocks,
   upgradeOrNormalizePageLayout
 } from '../../data/siteDefaults.js';
+import { publishAdminSitePatch, resetAdminSiteState } from '../../services/liveSync.js';
 
 export { normalizePageLayoutBlocks, upgradeOrNormalizePageLayout };
 export const DEFAULT_PAGE_BLOCKS = CANONICAL_DEFAULT_PAGE_BLOCKS;
@@ -521,23 +522,47 @@ export function getSavedPageLayout() {
   return DEFAULT_PAGE_BLOCKS;
 }
 
-export function savePageLayout(blocks) {
-  localStorage.setItem('dcvc_admin_custom_layout', JSON.stringify(blocks));
+export async function savePageLayout(blocks, heroTheme = null) {
+  const normalized = upgradeOrNormalizePageLayout(blocks);
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem('dcvc_admin_custom_layout', JSON.stringify(normalized));
+    if (heroTheme) {
+      localStorage.setItem('dcvc_active_hero_theme', heroTheme);
+    }
+  }
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new Event('dcvc_layout_updated'));
+    if (heroTheme) {
+      window.dispatchEvent(new CustomEvent('dcvc_hero_theme_updated', { detail: { theme: heroTheme, themeId: heroTheme } }));
+      window.dispatchEvent(new CustomEvent('dcvc-hero-theme-changed', { detail: { themeId: heroTheme } }));
+    }
   }
   recordLocalAuditLog('save_drag_and_drop_layout', 'layout', 'homepage');
-  return { success: true, timestamp: new Date().toISOString() };
+
+  try {
+    const patch = { layoutBlocks: normalized };
+    if (heroTheme) {
+      patch.heroTheme = heroTheme;
+    }
+    const syncRes = await publishAdminSitePatch(patch);
+    return syncRes || { success: true, syncedToServer: false, localSaved: true };
+  } catch (err) {
+    return { success: false, syncedToServer: false, localSaved: true, error: err?.message || 'Cloud sync failed' };
+  }
 }
 
 export async function resetPageLayoutAndHero() {
   localStorage.removeItem('dcvc_admin_custom_layout');
   localStorage.removeItem('dcvc_admin_hero_theme');
+  localStorage.setItem('dcvc_active_hero_theme', 'aurora');
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new Event('dcvc_layout_updated'));
-    window.dispatchEvent(new CustomEvent('dcvc_hero_theme_updated', { detail: { theme: 'aurora' } }));
+    window.dispatchEvent(new CustomEvent('dcvc_hero_theme_updated', { detail: { theme: 'aurora', themeId: 'aurora' } }));
+    window.dispatchEvent(new CustomEvent('dcvc-hero-theme-changed', { detail: { themeId: 'aurora' } }));
   }
   recordLocalAuditLog('reset_page_layout_and_hero', 'layout', 'homepage');
+  await resetAdminSiteState('layout').catch(() => {});
+  await publishAdminSitePatch({ heroTheme: 'aurora', layoutBlocks: DEFAULT_PAGE_BLOCKS }).catch(() => {});
   return DEFAULT_PAGE_BLOCKS;
 }
 
@@ -826,7 +851,7 @@ export function getActiveHeroTheme() {
   return 'aurora';
 }
 
-export function setActiveHeroTheme(themeId) {
+export async function setActiveHeroTheme(themeId, { publish = true } = {}) {
   if (typeof window === 'undefined') return;
   try {
     const normalizedId = themeId === 'default' ? 'spotlight' : themeId;
@@ -837,6 +862,12 @@ export function setActiveHeroTheme(themeId) {
       window.dispatchEvent(new CustomEvent('dcvc-hero-theme-changed', { 
         detail: { themeId: normalizedId, theme } 
       }));
+      window.dispatchEvent(new CustomEvent('dcvc_hero_theme_updated', { 
+        detail: { theme: normalizedId, themeId: normalizedId } 
+      }));
+      if (publish) {
+        await publishAdminSitePatch({ heroTheme: normalizedId }).catch(() => {});
+      }
     }
   } catch (err) {
     console.error('Error saving hero theme:', err);
@@ -1195,18 +1226,7 @@ export function setActiveSiteStatus(statusId, actorEmail = 'admin@diversitycolle
         window.dispatchEvent(new CustomEvent('dcvc-site-status-changed', { detail: active }));
       }
     } catch { }
-    try {
-      const apiBase = import.meta.env?.VITE_API_URL || '/api';
-      const token = localStorage.getItem('dcvc_admin_token');
-      fetch(`${apiBase}/admin/site-state`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify({ siteStatus: active })
-      }).catch(() => { });
-    } catch { }
+    publishAdminSitePatch({ siteStatus: active }).catch(() => { });
     recordLocalAuditLog('activate_site_status_' + statusId, 'site_status', statusId);
     window.dispatchEvent(new CustomEvent('dcvc-site-status-activated', { detail: { statusId } }));
   }

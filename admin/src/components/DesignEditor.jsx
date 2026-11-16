@@ -271,10 +271,14 @@ export default function DesignEditor({ onPublishSuccess }) {
     }
   };
 
-  const handleSave = () => {
-    savePageLayout(blocks);
-    setSaveStatus('Layout successfully published to live preview store!');
-    if (onPublishSuccess) onPublishSuccess();
+  const handleSave = async () => {
+    const res = await savePageLayout(blocks);
+    if (res?.syncedToServer) {
+      setSaveStatus(`Layout successfully published live to website (v${res.version})!`);
+    } else {
+      setSaveStatus('Layout successfully published to live preview store!');
+    }
+    if (onPublishSuccess) onPublishSuccess(res);
     setTimeout(() => setSaveStatus(''), 4000);
   };
 

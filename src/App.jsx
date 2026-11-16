@@ -135,6 +135,16 @@ function AppLayout() {
     return () => window.removeEventListener('dcvc-site-status-changed', handleStatusChange);
   }, []);
 
+
+  const isAdminPreview = location.search.includes('admin_preview=1');
+
+  useEffect(() => {
+    if (isAdminPreview) {
+      document.documentElement.setAttribute('data-admin-preview', 'true');
+      return () => document.documentElement.removeAttribute('data-admin-preview');
+    }
+  }, [isAdminPreview]);
+
   // If site is in non-live status, show full-screen overlay instead of normal content (except for admin route)
   if (!isAdminRoute && siteStatus && siteStatus.type !== 'live') {
     return (
@@ -188,14 +198,6 @@ function AppLayout() {
     );
   }
 
-  const isAdminPreview = location.search.includes('admin_preview=1');
-
-  useEffect(() => {
-    if (isAdminPreview) {
-      document.documentElement.setAttribute('data-admin-preview', 'true');
-      return () => document.documentElement.removeAttribute('data-admin-preview');
-    }
-  }, [isAdminPreview]);
 
   if (isAdminPreview) {
     return (

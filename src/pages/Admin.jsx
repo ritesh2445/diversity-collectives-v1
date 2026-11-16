@@ -177,14 +177,27 @@ export default function Admin() {
   const envAudience = String(import.meta.env?.VITE_AUTH0_AUDIENCE || '').trim();
   const hasEnvAuth0 = Boolean(envDomain && envClientId);
 
-  const [auth0Config, setAuth0Config] = useState({
-    enabled: hasEnvAuth0,
-    domain: envDomain,
-    clientId: envClientId,
-    audience: envAudience,
-    enforceSso: false
+  const [auth0Config, setAuth0Config] = useState(() => {
+    let cached = null;
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('dcvc_auth0_config');
+        if (stored) cached = JSON.parse(stored);
+      } catch {}
+    }
+    const domain = envDomain || cached?.domain || '';
+    const clientId = envClientId || cached?.clientId || '';
+    const audience = envAudience || cached?.audience || '';
+    const enabled = Boolean(hasEnvAuth0 || (cached?.enabled && domain && clientId));
+    return {
+      enabled,
+      domain,
+      clientId,
+      audience,
+      enforceSso: Boolean(cached?.enforceSso)
+    };
   });
-  const [providersChecked, setProvidersChecked] = useState(hasEnvAuth0);
+  const [providersChecked, setProvidersChecked] = useState(() => hasEnvAuth0 || Boolean(auth0Config.domain && auth0Config.clientId));
 
   const hasAuth0CallbackParams = typeof window !== 'undefined' &&
     /(?:^|[?&])(?:code|error)=/.test(window.location.search) &&
@@ -197,13 +210,19 @@ export default function Admin() {
       .then((data) => {
         if (!active || !data?.auth0) return;
         if (data.auth0.enabled || hasEnvAuth0) {
-          setAuth0Config((prev) => ({
-            enabled: Boolean(data.auth0.enabled || prev.enabled),
-            domain: prev.domain || data.auth0.domain || '',
-            clientId: prev.clientId || data.auth0.clientId || '',
-            audience: prev.audience || data.auth0.audience || '',
+          const merged = {
+            enabled: Boolean(data.auth0.enabled || hasEnvAuth0),
+            domain: data.auth0.domain || envDomain || '',
+            clientId: data.auth0.clientId || envClientId || '',
+            audience: data.auth0.audience || envAudience || '',
             enforceSso: Boolean(data.auth0.enforceSso)
-          }));
+          };
+          setAuth0Config(merged);
+          try {
+            if (typeof localStorage !== 'undefined') {
+              localStorage.setItem('dcvc_auth0_config', JSON.stringify(merged));
+            }
+          } catch {}
         }
       })
       .catch(() => {})
@@ -211,15 +230,15 @@ export default function Admin() {
         if (active) setProvidersChecked(true);
       });
     return () => { active = false; };
-  }, [hasEnvAuth0]);
+  }, [hasEnvAuth0, envDomain, envClientId, envAudience]);
 
-  if (!providersChecked && hasAuth0CallbackParams) {
+  if (!providersChecked && !auth0Config.domain) {
     return (
       <div className="admin-workspace dcvc-admin-cool min-h-screen bg-[#E9EFF6] flex items-center justify-center p-6">
         <div className="flex flex-col items-center gap-3 text-[#5A1E65]">
           <RefreshCw className="w-7 h-7 animate-spin" />
           <span className="text-xs font-bold uppercase tracking-widest text-slate-600">
-            Completing Auth0 Secure Sign-In...
+            {hasAuth0CallbackParams ? 'Completing Auth0 Secure Sign-In...' : 'Loading DCVC Admin Suite...'}
           </span>
         </div>
       </div>
@@ -254,15 +273,39 @@ export default function Admin() {
 
 function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
 
-  // Auth State (Strictly Session-Scoped; No Long-Lived Token in LocalStorage)
+  // Auth State (Available across sibling tabs & restored on refresh)
   const [token, setToken] = useState(() => {
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('dcvc_admin_token'); // Purge legacy persistent storage
-      return sessionStorage.getItem('dcvc_admin_token') || '';
+      return sessionStorage.getItem('dcvc_admin_token') || localStorage.getItem('dcvc_admin_token') || '';
     }
     return '';
   });
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = sessionStorage.getItem('dcvc_admin_user') || localStorage.getItem('dcvc_admin_user');
+        return stored ? JSON.parse(stored) : null;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  });
+  const [isVerifyingSession, setIsVerifyingSession] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const storedToken = sessionStorage.getItem('dcvc_admin_token') || localStorage.getItem('dcvc_admin_token');
+      const storedUser = sessionStorage.getItem('dcvc_admin_user') || localStorage.getItem('dcvc_admin_user');
+      return Boolean(storedToken && !storedUser);
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    if (isVerifyingSession) {
+      const timer = setTimeout(() => setIsVerifyingSession(false), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [isVerifyingSession]);
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [showLoginPassword, setShowLoginPassword] = useState(false);
@@ -342,10 +385,7 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
       const data = await res.json();
 
       if (data.success && data.token) {
-        sessionStorage.setItem('dcvc_admin_token', data.token);
-        localStorage.removeItem('dcvc_admin_token');
-        setToken(data.token);
-        setUser(data.user);
+        setClientSession(data.token, data.user);
         setPending2fa(null);
       } else {
         setAuthError(data.error || 'Auth0 sign-in could not be authorized for DCVC Admin.');
@@ -851,15 +891,40 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
     ...extra
   });
 
+  const setClientSession = (authToken, authUser) => {
+    if (typeof window !== 'undefined') {
+      if (authToken) {
+        sessionStorage.setItem('dcvc_admin_token', authToken);
+        localStorage.setItem('dcvc_admin_token', authToken);
+      }
+      if (authUser) {
+        sessionStorage.setItem('dcvc_admin_user', JSON.stringify(authUser));
+        localStorage.setItem('dcvc_admin_user', JSON.stringify(authUser));
+      }
+    }
+    if (authToken) setToken(authToken);
+    if (authUser) setUser(authUser);
+  };
+
   const clearClientSession = () => {
-    sessionStorage.removeItem('dcvc_admin_token');
-    localStorage.removeItem('dcvc_admin_token');
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('dcvc_admin_token');
+      localStorage.removeItem('dcvc_admin_token');
+      sessionStorage.removeItem('dcvc_admin_user');
+      localStorage.removeItem('dcvc_admin_user');
+    }
     setToken('');
     setUser(null);
     setPending2fa(null);
   };
 
   const fetchCurrentUser = async () => {
+    const currentToken = token || (typeof window !== 'undefined' ? (sessionStorage.getItem('dcvc_admin_token') || localStorage.getItem('dcvc_admin_token')) : '');
+    if (!currentToken) {
+      setIsVerifyingSession(false);
+      return;
+    }
+
     try {
       const res = await fetch(`${API_BASE_URL}/admin/auth/me`, {
         credentials: 'include',
@@ -868,14 +933,19 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
       if (res.ok) {
         const data = await res.json();
         setUser(data.user);
+        if (typeof localStorage !== 'undefined' && data.user) {
+          localStorage.setItem('dcvc_admin_user', JSON.stringify(data.user));
+        }
         if (data.user?.mustChangePassword) {
           setActiveTab('security');
         }
-      } else {
+      } else if (res.status === 401 || res.status === 403) {
         clearClientSession();
       }
     } catch {
-      if (token) clearClientSession();
+      // Retain session on network errors if token is present
+    } finally {
+      setIsVerifyingSession(false);
     }
   };
 
@@ -931,10 +1001,7 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
       });
       const data = await res.json();
       if (data.success && data.token) {
-        sessionStorage.setItem('dcvc_admin_token', data.token);
-        localStorage.removeItem('dcvc_admin_token');
-        setToken(data.token);
-        setUser(data.user);
+        setClientSession(data.token, data.user);
         setOtpSent(false);
         setOtpCode('');
       } else {
@@ -974,10 +1041,7 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
       });
       const data = await res.json();
       if (data.success && data.token) {
-        sessionStorage.setItem('dcvc_admin_token', data.token);
-        localStorage.removeItem('dcvc_admin_token');
-        setToken(data.token);
-        setUser(data.user);
+        setClientSession(data.token, data.user);
       } else {
         setAuthError(data.error || 'Google authentication could not be completed.');
       }
@@ -990,9 +1054,7 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
         authProvider: 'google'
       };
       const mockToken = 'mock_google_admin_token_' + Date.now();
-      sessionStorage.setItem('dcvc_admin_token', mockToken);
-      setToken(mockToken);
-      setUser(mockUser);
+      setClientSession(mockToken, mockUser);
     } finally {
       setGoogleLoading(false);
     }
@@ -1034,10 +1096,7 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
       }
 
       if (data.success && data.token) {
-        sessionStorage.setItem('dcvc_admin_token', data.token);
-        localStorage.removeItem('dcvc_admin_token');
-        setToken(data.token);
-        setUser(data.user);
+        setClientSession(data.token, data.user);
         setPending2fa(null);
       } else {
         setAuthError(data.error || 'Invalid credentials. Please verify your email and password.');
@@ -1052,10 +1111,7 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
           role: 'admin'
         };
         const mockToken = 'mock_dev_admin_token_' + Date.now();
-        sessionStorage.setItem('dcvc_admin_token', mockToken);
-        localStorage.removeItem('dcvc_admin_token');
-        setToken(mockToken);
-        setUser(mockUser);
+        setClientSession(mockToken, mockUser);
         setPending2fa(null);
         setAuthError('');
         return;
@@ -1089,10 +1145,7 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
       const data = await res.json();
 
       if (data.success && data.token) {
-        sessionStorage.setItem('dcvc_admin_token', data.token);
-        localStorage.removeItem('dcvc_admin_token');
-        setToken(data.token);
-        setUser(data.user);
+        setClientSession(data.token, data.user);
         setPending2fa(null);
         setTwoFactorCode('');
         setTwoFactorSuccessMsg('');
@@ -1257,8 +1310,7 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
       const data = await res.json();
       if (data.success) {
         if (data.token) {
-          sessionStorage.setItem('dcvc_admin_token', data.token);
-          setToken(data.token);
+          setClientSession(data.token, null);
         }
         setUser(prev => ({ ...prev, mustChangePassword: false }));
         setCurrentPwd('');
@@ -1513,6 +1565,23 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
   // VIEW: Login Screen & 2FA Challenge Screen
   // =========================================================================
   if (!user) {
+    const isVerifyingAuth = isVerifyingSession ||
+      Boolean(token && !user) ||
+      Boolean(auth0.enabled && (auth0.isLoading || auth0Exchanging || (auth0.isAuthenticated && !user && !displayedAuthError)));
+
+    if (isVerifyingAuth) {
+      return (
+        <div className="admin-workspace dcvc-admin-cool min-h-screen bg-[#E9EFF6] flex items-center justify-center p-6">
+          <div className="flex flex-col items-center gap-3 text-[#5A1E65]">
+            <RefreshCw className="w-7 h-7 animate-spin" />
+            <span className="text-xs font-bold uppercase tracking-widest text-slate-600">
+              {auth0Exchanging ? 'Authorizing DCVC Session...' : 'Verifying Administrative Session...'}
+            </span>
+          </div>
+        </div>
+      );
+    }
+
     // 2FA Challenge Screen
     if (pending2fa) {
       return (
