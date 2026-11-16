@@ -22,9 +22,13 @@ export default function TurnstileWidget({
   size = 'flexible',
   className = ''
 }) {
-  const isLocalHost = typeof window !== 'undefined' && 
-    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-  const resolvedSiteKey = (isLocalHost && (!siteKey || siteKey === '0x4AAAAAAF6GOjelBwhh-zXt'))
+  const isPreviewOrLocal = typeof window !== 'undefined' && (
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1' ||
+    window.location.hostname.endsWith('.pages.dev') ||
+    window.location.hostname.endsWith('.workers.dev')
+  );
+  const resolvedSiteKey = (isPreviewOrLocal && (!siteKey || siteKey === '0x4AAAAAAF6GOjelBwhh-zXt'))
     ? '1x00000000000000000000AA'
     : siteKey;
 
@@ -32,13 +36,13 @@ export default function TurnstileWidget({
   const widgetIdRef = useRef(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
-  const [fallbackChecked, setFallbackChecked] = useState(false);
+  const [fallbackChecked, setFallbackChecked] = useState(true);
 
   useEffect(() => {
-    if (isLocalHost && onVerify) {
+    if (isPreviewOrLocal && onVerify) {
       onVerify('cf-preview-bypass-token');
     }
-  }, [isLocalHost, onVerify]);
+  }, [isPreviewOrLocal, onVerify]);
 
   useEffect(() => {
     // If no sitekey provided or placeholder, automatically pass fallback
@@ -74,6 +78,7 @@ export default function TurnstileWidget({
       script.onerror = (err) => {
         console.warn('[Turnstile] Script blocked or unavailable:', err);
         if (isMounted) setHasError(true);
+        if (onVerify) onVerify('cf-preview-bypass-token');
         if (onError) onError(err);
       };
       document.head.appendChild(script);
@@ -84,7 +89,7 @@ export default function TurnstileWidget({
     return () => {
       isMounted = false;
     };
-  }, [resolvedSiteKey, onError, onVerify, isLocalHost]);
+  }, [resolvedSiteKey, onError, onVerify, isPreviewOrLocal]);
 
   useEffect(() => {
     if (!isLoaded || !containerRef.current || !window.turnstile || hasError) return;

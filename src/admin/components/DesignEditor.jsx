@@ -839,8 +839,104 @@ export default function DesignEditor({ onPublishSuccess }) {
               </div>
             )}
 
+            {selectedBlock?.type === 'impact_popups' && (
+              <div className="space-y-4">
+                <div className="p-3 bg-purple-50 rounded-xl border border-purple-200">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Sparkles className="w-4 h-4 text-[#5A1E65]" />
+                    <span className="text-xs font-bold text-[#5A1E65]">Rotating Impact Highlights Bar</span>
+                  </div>
+                  <p className="text-[11px] text-slate-600">
+                    Live rotating milestones displayed directly beneath the hero header. Each milestone highlights a number and complete community achievement sentence.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Popup Rotation Speed</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={1500}
+                      max={12000}
+                      step={200}
+                      value={selectedBlock.props?.intervalMs || 3800}
+                      onChange={(e) => updateSelectedBlockProps('intervalMs', Number(e.target.value) || 3800)}
+                      className="w-28 px-3 py-2 rounded-xl border border-slate-300 text-xs font-bold text-slate-900 bg-white"
+                    />
+                    <span className="text-xs text-slate-500 font-medium">ms ({((selectedBlock.props?.intervalMs || 3800) / 1000).toFixed(1)}s per slide)</span>
+                  </div>
+                  <div className="flex gap-1.5 mt-1.5">
+                    {[
+                      { ms: 2800, label: 'Fast (2.8s)' },
+                      { ms: 3800, label: 'Default (3.8s)' },
+                      { ms: 5000, label: 'Gentle (5.0s)' }
+                    ].map((spd) => (
+                      <button
+                        key={spd.ms}
+                        type="button"
+                        onClick={() => updateSelectedBlockProps('intervalMs', spd.ms)}
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-colors cursor-pointer ${
+                          (selectedBlock.props?.intervalMs || 3800) === spd.ms
+                            ? 'bg-[#5A1E65] text-white border-[#5A1E65]'
+                            : 'bg-white text-slate-600 border-slate-200 hover:border-purple-300'
+                        }`}
+                      >
+                        {spd.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-3 pt-1">
+                  <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider block">
+                    Impact Milestones (1 – 5)
+                  </span>
+
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <div key={n} className="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black text-[#5A1E65] bg-purple-100 px-2 py-0.5 rounded-full uppercase">
+                          Impact Milestone #{n}
+                        </span>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-600 mb-0.5">Number / Metric Badge</label>
+                        <input
+                          type="text"
+                          value={selectedBlock.props?.[`stat${n}Number`] || ''}
+                          onChange={(e) => updateSelectedBlockProps(`stat${n}Number`, e.target.value)}
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-bold text-slate-900 bg-white"
+                          placeholder="e.g. 10+, 5,000+, 1,200+, 100%"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-600 mb-0.5">Impact Highlight Sentence</label>
+                        <textarea
+                          rows={2}
+                          value={selectedBlock.props?.[`stat${n}Label`] || ''}
+                          onChange={(e) => updateSelectedBlockProps(`stat${n}Label`, e.target.value)}
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs text-slate-900 bg-white leading-relaxed resize-none"
+                          placeholder="e.g. years serving and advocating for Ventura County's LGBTQ+ community."
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {selectedBlock?.type === 'impact_stats' && (
-              <div className="space-y-3">
+              <div className="space-y-3.5">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Eyebrow Tag</label>
+                  <input
+                    type="text"
+                    value={selectedBlock.props?.eyebrow || ''}
+                    onChange={(e) => updateSelectedBlockProps('eyebrow', e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 bg-white"
+                    placeholder="e.g. 10-YEAR TRACK RECORD"
+                  />
+                </div>
                 <div>
                   <label className="block text-[11px] font-bold text-slate-700 mb-1">Section Headline</label>
                   <input
@@ -848,33 +944,68 @@ export default function DesignEditor({ onPublishSuccess }) {
                     value={selectedBlock.props?.headline || ''}
                     onChange={(e) => updateSelectedBlockProps('headline', e.target.value)}
                     className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 bg-white"
+                    placeholder="e.g. Trusted community support across Ventura County."
                   />
                 </div>
-                {[1, 2, 3, 4].map((n) => (
-                  <div key={n} className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
-                    <span className="text-[10px] font-black text-slate-500 uppercase">Milestone #{n}</span>
-                    <div className="grid grid-cols-2 gap-2">
-                      <input
-                        type="text"
-                        value={selectedBlock.props?.[`stat${n}Number`] || ''}
-                        onChange={(e) => updateSelectedBlockProps(`stat${n}Number`, e.target.value)}
-                        className="px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-bold text-slate-900 bg-white"
-                        placeholder="Number"
-                      />
-                      <input
-                        type="text"
-                        value={selectedBlock.props?.[`stat${n}Label`] || ''}
-                        onChange={(e) => updateSelectedBlockProps(`stat${n}Label`, e.target.value)}
-                        className="px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs text-slate-900 bg-white"
-                        placeholder="Title"
-                      />
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Section Description</label>
+                  <textarea
+                    rows={2}
+                    value={selectedBlock.props?.description || ''}
+                    onChange={(e) => updateSelectedBlockProps('description', e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 bg-white resize-none"
+                    placeholder="e.g. Since 2014, we have provided barrier-free, non-judgmental services..."
+                  />
+                </div>
+
+                <div className="space-y-2.5 pt-1">
+                  <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider block">
+                    Detailed Milestone Cards (1 – 4)
+                  </span>
+                  {[1, 2, 3, 4].map((n) => (
+                    <div key={n} className="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                      <span className="text-[10px] font-black text-[#5A1E65] bg-purple-100 px-2 py-0.5 rounded-full uppercase">
+                        Card #{n}
+                      </span>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-600 mb-0.5">Stat Number</label>
+                          <input
+                            type="text"
+                            value={selectedBlock.props?.[`stat${n}Number`] || ''}
+                            onChange={(e) => updateSelectedBlockProps(`stat${n}Number`, e.target.value)}
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-bold text-slate-900 bg-white"
+                            placeholder="e.g. 10+"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-600 mb-0.5">Metric Title</label>
+                          <input
+                            type="text"
+                            value={selectedBlock.props?.[`stat${n}Label`] || ''}
+                            onChange={(e) => updateSelectedBlockProps(`stat${n}Label`, e.target.value)}
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs text-slate-900 bg-white"
+                            placeholder="e.g. Years of Service"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-600 mb-0.5">Metric Subtitle / Impact Narrative</label>
+                        <textarea
+                          rows={2}
+                          value={selectedBlock.props?.[`stat${n}Sub`] || ''}
+                          onChange={(e) => updateSelectedBlockProps(`stat${n}Sub`, e.target.value)}
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs text-slate-900 bg-white resize-none"
+                          placeholder="e.g. Defending rights and providing safe harbor in Ventura County since 2014."
+                        />
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             )}
 
-            {selectedBlock?.type !== 'hero_banner' && selectedBlock?.type !== 'impact_stats' && (
+            {selectedBlock?.type !== 'hero_banner' && selectedBlock?.type !== 'impact_stats' && selectedBlock?.type !== 'impact_popups' && (
               <div className="space-y-3">
                 {selectedBlock?.props?.eyebrow !== undefined && (
                   <div>

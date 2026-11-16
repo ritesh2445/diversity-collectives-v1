@@ -53,13 +53,9 @@ export default function Programs() {
     return unsubscribe;
   }, []);
 
-  // Default Sort by Age Progression: Youngest to Eldest / All Ages
+  // Preserve custom CardOrderManager arrangement / CMS store order
   const sortedAndFilteredPrograms = useMemo(() => {
-    const list = [...programs].sort((a, b) => {
-      const rankA = a.ageRank || AGE_GROUP_ORDER[a.slug] || 99;
-      const rankB = b.ageRank || AGE_GROUP_ORDER[b.slug] || 99;
-      return rankA - rankB;
-    });
+    const list = [...programs];
 
     if (selectedAgeFilter === 'All Age Groups') return list;
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 import { 
@@ -357,27 +357,38 @@ export default function Home() {
     return match ? mapGroupToCard(match, fallbackImg, bucket) : null;
   };
 
-  // Exact requested Home Programs order (1-9):
-  // 1. Queer Adulting 2. Little Unicorns 3. Rainbow Umbrella 4. PFLAG
-  // 5. Narcotics Anonymous 6. Trans Peer Group by Transverse
-  // 7. Toastmasters 8. Men's Collective 9. Silver Collective
-  const orderedAllPrograms = [
-    findGroup('Queer Adulting', '/images/community-gathering.jpg', 'adults'),
-    (() => {
-      const lu = findProg('little-unicorns');
-      return lu ? { ...lu, programGroup: 'youth', ctaLink: `/programs/${lu.slug}` } : findGroup('Little Unicorns', '/images/little-unicorns.png', 'youth');
-    })(),
-    (() => {
-      const ru = findProg('rainbow-umbrella');
-      return ru ? { ...ru, programGroup: 'youth', ctaLink: `/programs/${ru.slug}` } : findGroup('Rainbow Umbrella', '/images/youth-umbrella.jpg', 'youth');
-    })(),
-    findGroup('PFLAG', '/images/volunteers.jpg', 'youth'),
-    findGroup('Narcotics Anonymous', '/images/crc-building.jpg', 'recovery'),
-    findGroup('Transverse', '/images/hero-community.jpg', 'adults'),
-    findGroup('Toastmasters', '/images/community-gathering.jpg', 'recovery'),
-    findGroup("Men's Collective", '/images/volunteers.jpg', 'adults'),
-    findGroup('Silver Collective', '/images/community-gathering.jpg', 'adults')
-  ].filter(Boolean);
+  // Exact requested Home Programs with CardOrderManager / cmsPrograms reactive order sync
+  const orderedAllPrograms = useMemo(() => {
+    const rawList = [
+      findGroup('Queer Adulting', '/images/community-gathering.jpg', 'adults'),
+      (() => {
+        const lu = findProg('little-unicorns');
+        return lu ? { ...lu, programGroup: 'youth', ctaLink: `/programs/${lu.slug}` } : findGroup('Little Unicorns', '/images/little-unicorns.png', 'youth');
+      })(),
+      (() => {
+        const ru = findProg('rainbow-umbrella');
+        return ru ? { ...ru, programGroup: 'youth', ctaLink: `/programs/${ru.slug}` } : findGroup('Rainbow Umbrella', '/images/youth-umbrella.jpg', 'youth');
+      })(),
+      findGroup('PFLAG', '/images/volunteers.jpg', 'youth'),
+      findGroup('Narcotics Anonymous', '/images/crc-building.jpg', 'recovery'),
+      findGroup('Transverse', '/images/hero-community.jpg', 'adults'),
+      findGroup('Toastmasters', '/images/community-gathering.jpg', 'recovery'),
+      findGroup("Men's Collective", '/images/volunteers.jpg', 'adults'),
+      findGroup('Silver Collective', '/images/community-gathering.jpg', 'adults')
+    ].filter(Boolean);
+
+    const cmsOrderMap = new Map();
+    (cmsPrograms || []).forEach((p, idx) => {
+      if (p.slug) cmsOrderMap.set(p.slug, idx);
+    });
+
+    return rawList.sort((a, b) => {
+      const idxA = cmsOrderMap.has(a.slug) ? cmsOrderMap.get(a.slug) : 99;
+      const idxB = cmsOrderMap.has(b.slug) ? cmsOrderMap.get(b.slug) : 99;
+      if (idxA !== 99 && idxB !== 99) return idxA - idxB;
+      return 0;
+    });
+  }, [cmsPrograms, allSourcePrograms, communityGroups]);
 
   const filteredPrograms = orderedAllPrograms.filter((program) => {
     if (selectedCategory === 'all') return true;

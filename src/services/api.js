@@ -42,10 +42,12 @@ export async function submitContact(data) {
     if (res.ok) {
       const json = await res.json();
       return { success: true, message: json.message || 'Thank you! Your message has been received by our Community Resource Center team.', data: json };
+    } else {
+      const errJson = await res.json().catch(() => ({}));
+      return { success: false, message: errJson.error || errJson.details || 'Message submission could not be processed.' };
     }
   } catch (err) {
-    // If backend endpoint is offline or not yet deployed in Phase 1, return explicit structured response
-    console.warn('[API Client] Backend offline or unconfigured. Operating in Phase 1 repository mode.', err);
+    console.warn('[API Client] Backend offline or unconfigured. Operating in fallback mode.', err);
   }
 
   // Graceful client confirmation during Phase 1 repository development
@@ -75,7 +77,10 @@ export async function submitInquiry(data) {
 
     if (res.ok) {
       const json = await res.json();
-      return { success: true, message: json.message || 'Submission successfully received.' };
+      return { success: true, message: json.message || 'Submission successfully received.', data: json };
+    } else {
+      const errJson = await res.json().catch(() => ({}));
+      return { success: false, message: errJson.error || errJson.details || 'Inquiry submission could not be processed.' };
     }
   } catch (err) {
     console.warn('[API Client] Backend offline, saving client fallback confirmation:', err);
@@ -123,9 +128,12 @@ export async function submitVolunteer(data) {
     if (res.ok) {
       const json = await res.json();
       return { success: true, message: json.message || 'Volunteer application received!', data: json };
+    } else {
+      const errJson = await res.json().catch(() => ({}));
+      return { success: false, message: errJson.error || errJson.details || 'Volunteer application could not be processed.' };
     }
   } catch (err) {
-    console.warn('[API Client] Volunteer endpoint offline. Operating in Phase 1 repository mode.', err);
+    console.warn('[API Client] Volunteer endpoint offline. Operating in fallback mode.', err);
   }
 
   return {
@@ -176,9 +184,12 @@ export async function submitBusiness(data) {
     if (res.ok) {
       const json = await res.json();
       return { success: true, message: json.message || 'Business listing submitted for moderation review.', data: json };
+    } else {
+      const errJson = await res.json().catch(() => ({}));
+      return { success: false, message: errJson.error || errJson.details || 'Business listing submission could not be processed.' };
     }
   } catch (err) {
-    console.warn('[API Client] Directory submit endpoint offline. Operating in Phase 1 repository mode.', err);
+    console.warn('[API Client] Directory submit endpoint offline. Operating in fallback mode.', err);
   }
 
   return {
@@ -223,9 +234,12 @@ export async function submitTrainingBooking(data) {
     if (res.ok) {
       const json = await res.json();
       return { success: true, message: json.message || 'Training booking inquiry received!', data: json };
+    } else {
+      const errJson = await res.json().catch(() => ({}));
+      return { success: false, message: errJson.error || errJson.details || 'Training inquiry could not be processed.' };
     }
   } catch (err) {
-    console.warn('[API Client] Training endpoint offline. Operating in Phase 1 repository mode.', err);
+    console.warn('[API Client] Training endpoint offline. Operating in fallback mode.', err);
   }
 
   return {
@@ -255,9 +269,12 @@ export async function submitAccessibilityFeedback(data) {
     if (res.ok) {
       const json = await res.json();
       return { success: true, message: json.message || 'Feedback received!', data: json };
+    } else {
+      const errJson = await res.json().catch(() => ({}));
+      return { success: false, message: errJson.error || errJson.details || 'Feedback submission could not be processed.' };
     }
   } catch (err) {
-    console.warn('[API Client] Accessibility feedback endpoint offline. Operating in Phase 1 repository mode.', err);
+    console.warn('[API Client] Accessibility feedback endpoint offline. Operating in fallback mode.', err);
   }
 
   return {
@@ -285,9 +302,12 @@ export async function subscribeNewsletter(email, turnstileToken) {
     if (res.ok) {
       const json = await res.json();
       return { success: true, message: json.message || 'Subscribed successfully!', data: json };
+    } else {
+      const errJson = await res.json().catch(() => ({}));
+      return { success: false, message: errJson.error || errJson.details || 'Subscription could not be processed.' };
     }
   } catch (err) {
-    console.warn('[API Client] Newsletter endpoint offline. Operating in Phase 1 repository mode.', err);
+    console.warn('[API Client] Newsletter endpoint offline. Operating in fallback mode.', err);
   }
 
   return {

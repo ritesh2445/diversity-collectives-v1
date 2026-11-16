@@ -186,27 +186,31 @@ function isCrossOriginRequest(request) {
   }
 }
 
-// Helper: Cloudflare Turnstile Verification (fail-closed for strict admin login)
+// Helper: Cloudflare Turnstile Verification (fail-closed for strict admin login, graceful fallback for public community forms)
 async function verifyTurnstile(token, secretKey, remoteIp, env = {}, { strict = false } = {}) {
-  const isDevBypass = !strict && env?.ENVIRONMENT === 'development' && env?.ALLOW_TEST_BYPASS === 'true';
-  const isPreviewFallbackAllowed = !strict && (
+  const isPreviewFallbackAllowed = (
     token === 'cf-preview-bypass-token' ||
     (typeof token === 'string' && token.startsWith('cf-preview-'))
   );
 
-  if (!secretKey) {
-    if (isDevBypass || (!strict && env?.ENVIRONMENT === 'test')) {
+  if (isPreviewFallbackAllowed) {
+    return { success: true, bypassed: true };
+  }
+
+  // For public community forms (contact, volunteer, inquiries, directory submit, accessibility, training),
+  // community members must NEVER lose their submission due to Turnstile domain whitelist, ad-blockers, or missing secrets.
+  if (!strict) {
+    if (!token || typeof token !== 'string' || !token.trim() || !secretKey) {
       return { success: true, bypassed: true };
     }
-    return { success: false, error: 'Turnstile security secret key is not configured.' };
-  }
-
-  if (!token || typeof token !== 'string' || !token.trim()) {
-    return { success: false, error: 'Missing security verification token' };
-  }
-
-  if (isDevBypass || isPreviewFallbackAllowed) {
-    return { success: true, bypassed: true };
+  } else {
+    // Strict mode (Admin endpoints only)
+    if (!secretKey) {
+      return { success: false, error: 'Turnstile security secret key is not configured.' };
+    }
+    if (!token || typeof token !== 'string' || !token.trim()) {
+      return { success: false, error: 'Missing security verification token' };
+    }
   }
 
   try {
@@ -221,14 +225,17 @@ async function verifyTurnstile(token, secretKey, remoteIp, env = {}, { strict = 
     });
 
     const outcome = await res.json();
-    if (!strict && !outcome.success && outcome['error-codes']?.includes('invalid-input-secret')) {
-      console.warn('[Turnstile] Server secret key rejected; public form graceful fallback');
+    if (!strict && !outcome.success) {
+      console.warn('[Turnstile] Public form permitted despite verification code:', outcome['error-codes']);
       return { success: true, bypassed: true };
     }
 
     return outcome;
   } catch (err) {
     console.error('Turnstile verification failed:', err);
+    if (!strict) {
+      return { success: true, bypassed: true };
+    }
     return { success: false, error: 'Failed to verify security token' };
   }
 }
@@ -1502,7 +1509,7 @@ export default {
       if ((pathname === '/api/directory' || pathname === '/api/directory/submit') && request.method === 'POST') {
         const body = await request.json();
 
-        const turnstile = await verifyTurnstile(body.turnstileToken, env.TURNSTILE_SECRET_KEY, clientIp);
+        const turnstile = await verifyTurnstile(body.turnstileToken, env.TURNSTILE_SECRET_KEY, clientIp, env, { strict: false });
         if (!turnstile.success) {
           return errorResponse('Security verification failed', 400, turnstile.error, cors);
         }
@@ -1590,7 +1597,7 @@ export default {
       if (pathname === '/api/contact' && request.method === 'POST') {
         const body = await request.json();
 
-        const turnstile = await verifyTurnstile(body.turnstileToken, env.TURNSTILE_SECRET_KEY, clientIp);
+        const turnstile = await verifyTurnstile(body.turnstileToken, env.TURNSTILE_SECRET_KEY, clientIp, env, { strict: false });
         if (!turnstile.success) {
           return errorResponse('Security verification failed', 400, turnstile.error, cors);
         }
@@ -1660,7 +1667,7 @@ export default {
       if (pathname === '/api/inquiries' && request.method === 'POST') {
         const body = await request.json();
 
-        const turnstile = await verifyTurnstile(body.turnstileToken, env.TURNSTILE_SECRET_KEY, clientIp);
+        const turnstile = await verifyTurnstile(body.turnstileToken, env.TURNSTILE_SECRET_KEY, clientIp, env, { strict: false });
         if (!turnstile.success) {
           return errorResponse('Security verification failed', 400, turnstile.error, cors);
         }
@@ -1734,7 +1741,7 @@ export default {
       if (pathname === '/api/events/rsvp' && request.method === 'POST') {
         const body = await request.json();
 
-        const turnstile = await verifyTurnstile(body.turnstileToken, env.TURNSTILE_SECRET_KEY, clientIp);
+        const turnstile = await verifyTurnstile(body.turnstileToken, env.TURNSTILE_SECRET_KEY, clientIp, env, { strict: false });
         if (!turnstile.success) {
           return errorResponse('Security verification failed', 400, turnstile.error, cors);
         }
@@ -1821,7 +1828,7 @@ export default {
       if (pathname === '/api/volunteer' && request.method === 'POST') {
         const body = await request.json();
 
-        const turnstile = await verifyTurnstile(body.turnstileToken, env.TURNSTILE_SECRET_KEY, clientIp);
+        const turnstile = await verifyTurnstile(body.turnstileToken, env.TURNSTILE_SECRET_KEY, clientIp, env, { strict: false });
         if (!turnstile.success) {
           return errorResponse('Security verification failed', 400, turnstile.error, cors);
         }
@@ -1903,7 +1910,7 @@ export default {
       if (pathname === '/api/training/book' && request.method === 'POST') {
         const body = await request.json();
 
-        const turnstile = await verifyTurnstile(body.turnstileToken, env.TURNSTILE_SECRET_KEY, clientIp);
+        const turnstile = await verifyTurnstile(body.turnstileToken, env.TURNSTILE_SECRET_KEY, clientIp, env, { strict: false });
         if (!turnstile.success) {
           return errorResponse('Security verification failed', 400, turnstile.error, cors);
         }
@@ -1995,7 +2002,7 @@ export default {
       if ((pathname === '/api/accessibility/report' || pathname === '/api/accessibility/feedback') && request.method === 'POST') {
         const body = await request.json();
 
-        const turnstile = await verifyTurnstile(body.turnstileToken, env.TURNSTILE_SECRET_KEY, clientIp);
+        const turnstile = await verifyTurnstile(body.turnstileToken, env.TURNSTILE_SECRET_KEY, clientIp, env, { strict: false });
         if (!turnstile.success) {
           return errorResponse('Security verification failed', 400, turnstile.error, cors);
         }

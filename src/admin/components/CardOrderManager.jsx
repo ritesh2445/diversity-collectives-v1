@@ -91,7 +91,8 @@ export default function CardOrderManager() {
 
   const handleSaveOrder = async () => {
     if (collection === 'programs') {
-      cmsStore.savePrograms(items);
+      const indexed = items.map((p, idx) => ({ ...p, order: idx + 1, ageRank: idx + 1 }));
+      cmsStore.savePrograms(indexed);
     } else if (collection === 'events') {
       cmsStore.saveEvents(items);
     } else if (collection === 'resources') {
