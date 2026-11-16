@@ -92,7 +92,7 @@ export const INITIAL_CMS_DATA = {
     email: orgInfo.email || "info@diversitycollective.org",
     address: orgInfo.address?.full || "2471 Portola Road, Suite 100, Ventura, CA 93003",
     googleMapsUrl: orgInfo.address?.googleMapsUrl || "",
-    hours: orgInfo.hours || "1:00 PM – 5:00 PM Weekdays (Drop-ins & Testing)",
+    hours: orgInfo.hours || "1:00 PM – 5:00 PM Weekdays (Drop-ins & Supplies; HIV/STI Screenings 1st Mon 3–7 PM)",
     emergencyCrisisNotice: "24/7 LGBTQ+ Suicide & Crisis Lifeline: Dial 988 or text 'START' to 678-678 (Trevor Project).",
     bannerAlertActive: true,
     bannerAlertText: "Center Open Today · Mon–Fri 1:00 PM – 5:00 PM · HIV/STI Screenings 1st Mon 3–7 PM",

@@ -1190,7 +1190,7 @@ export const memoryLaneMilestones = [
     badge: "Clinical Wellness",
     image: "/images/shines-screening.jpg",
     quote: "Access to healthcare is a human right. We removed every barrier — zero cost, zero ID required, 100% affirming.",
-    details: "Operates 5 days a week at the CRC with walk-in testing hours, mobile testing vans at community fairs, and free barrier contraceptives."
+    details: "Launched status-neutral sexual health screenings, mobile community testing vans at community fairs, and free barrier contraceptive access across the county."
   },
   {
     year: "2023",

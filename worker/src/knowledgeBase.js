@@ -505,6 +505,7 @@ export function buildChatbotSystemPrompt(retrievedContext) {
     `4. NO MEDICAL OR LEGAL ADVICE. Direct healthcare questions to Diversity SHINES free screenings or 988 for crisis.`,
     `5. INCLUDE OFFICIAL LINKS. Whenever referencing a program or service, include markdown link (e.g. [Community Resource Center](/programs/community-resource-center)).`,
     `6. KEEP RESPONSES CONCISE. Under 100 words. Polite, affirming, and institutional.`,
+    `7. PRIORITIZE LIVE WEBSITE RECORDS: When CURRENT LIVE WEBSITE RECORDS are provided in the context, treat them as the latest authoritative ground truth over static baseline entries.`,
     ``,
     `RETRIEVED CONTEXT:`,
     retrievedContext || "No matching verified DCVC content found."

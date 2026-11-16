@@ -85,11 +85,12 @@ function handleSpecialBoundaries(boundaries) {
       answer: `Ask DCVC cannot provide medical diagnoses, treatment plans, or clinical evaluations. ` +
               `However, Diversity Collective provides **free, confidential rapid HIV and STI screenings** (results in 15–20 minutes) ` +
               `and PrEP/PEP healthcare navigation through our **Diversity SHINES** clinic at our Community Resource Center ` +
-              `(2471 Portola Road, Suite 100, Ventura) Monday–Friday from 1:00 PM to 5:00 PM. No insurance or payment is required. ` +
+              `(2471 Portola Road, Suite 100, Ventura) on the **1st Monday of every month from 3:00 PM to 7:00 PM PT**. Walk-ins are welcome or reserve at [Book Appointment](/appointments). ` +
+              `Free safer sex supplies and harm reduction kits are available for drop-in pickup Monday–Friday from 1:00 PM to 5:00 PM. No insurance or payment is required. ` +
               `For urgent medical symptoms, please visit an urgent care center or call 911.`,
       citations: [
         { title: "Diversity SHINES Free Testing", url: "/programs/diversity-shines" },
-        { title: "Contact Clinic", url: "/contact" }
+        { title: "Book Appointment", url: "/appointments" }
       ],
       boundaryTriggered: "medical"
     };
@@ -238,7 +239,7 @@ export function synthesizeVerifiedAnswer(bestMatch, query) {
       };
     }
     return {
-      answer: `The Community Resource Center is open for drop-in visits, computer lab access, and rapid testing **Monday through Friday from 1:00 PM to 5:00 PM PT**. It is closed on weekends and major holidays. Learn more at [Community Resource Center](/programs/community-resource-center).`,
+      answer: `The Community Resource Center is open for drop-in visits, computer lab access, safer sex supplies, and library lending **Monday through Friday from 1:00 PM to 5:00 PM PT**. (Free rapid HIV/STI screening clinics are held on the **1st Monday of every month from 3:00 PM to 7:00 PM PT**). The center is closed on weekends and major holidays. Learn more at [Community Resource Center](/programs/community-resource-center).`,
       citations
     };
   }
@@ -415,10 +416,10 @@ export async function processChatRequest(userMessage, env = {}, clientIp = '', o
     try {
       const kbContext = searchResult.matches?.length ? buildRetrievedContext(searchResult.matches) : '';
       const liveContextText = validSiteContext.length
-        ? `\n\nLIVE WEBSITE & SANITY RECORDS:\n${validSiteContext.map((c, idx) => `${idx + 1}. [${c.type || 'Page'}] ${c.title} (${c.url})${c.subtitle ? ` — ${c.subtitle}` : ''}: ${c.snippet || ''}`).join('\n')}`
+        ? `CURRENT LIVE WEBSITE & CMS RECORDS (HIGHEST PRIORITY):\n${validSiteContext.map((c, idx) => `${idx + 1}. [${c.type || 'Page'}] ${c.title} (${c.url})${c.subtitle ? ` — ${c.subtitle}` : ''}: ${c.snippet || ''}`).join('\n')}`
         : '';
-      const combinedContext = `${kbContext}${liveContextText}`.trim();
-      const systemPrompt = `${buildChatbotSystemPrompt(combinedContext)}\nRespond warmly as Luna, DCVC's helpful community guide. If casual or misspelled, be understanding and answer clearly from the context above using markdown links [Title](/route).`;
+      const combinedContext = [liveContextText, kbContext ? `STATIC BASELINE CONTEXT:\n${kbContext}` : ''].filter(Boolean).join('\n\n').trim();
+      const systemPrompt = `${buildChatbotSystemPrompt(combinedContext)}\nRespond warmly as Luna, DCVC's helpful community guide. Always prioritize CURRENT LIVE WEBSITE & CMS RECORDS as the latest ground truth over static baseline data. If casual or misspelled, be understanding and answer clearly from the context above using markdown links [Title](/route).`;
       const model = env.AI_MODEL || '@cf/meta/llama-3.1-8b-instruct-fp8';
 
       const sanitizedHistory = Array.isArray(history)
