@@ -100,7 +100,8 @@ export default function ImpactAutoPopups({ props = {}, style = {} }) {
       <div className="hidden sm:flex container-clean items-center justify-center w-full h-full overflow-hidden">
         <Link
           to={current.link}
-          className="group inline-flex items-center justify-center gap-2 sm:gap-3 px-3 py-1.5 w-full max-w-full overflow-hidden text-center hover:opacity-95 transition-opacity cursor-pointer"
+          data-no-autofit="true"
+          className="group inline-flex items-center justify-center gap-2 sm:gap-3 px-3 py-1.5 w-full max-w-full overflow-hidden text-center hover:opacity-95 transition-all duration-300 cursor-pointer"
           title={`Click to explore: ${current.sentence}`}
           aria-label={`Impact highlight: ${current.num} ${current.sentence}. Click to explore.`}
         >
