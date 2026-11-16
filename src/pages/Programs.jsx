@@ -206,7 +206,7 @@ export default function Programs() {
                           e.target.src = "/images/crc-building.jpg";
                         }}
                       />
-                      <div className={`absolute inset-0 ${isContain ? 'bg-gradient-to-t from-slate-950/20 via-transparent to-transparent' : 'bg-gradient-to-t from-slate-950/70 via-transparent to-transparent'} z-10`} />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10" />
 
                       {/* Header Badges */}
                       <div
@@ -214,11 +214,6 @@ export default function Programs() {
                         style={{ color: prog.accent || '#5A1E65' }}
                       >
                         PROGRAM {prog.chapter || `0${index + 1}`}
-                      </div>
-
-                      <div className="absolute bottom-3 left-3 right-3 text-white text-[11px] flex items-center justify-between translate-z-10 z-20">
-                        <span className="font-bold drop-shadow-md truncate max-w-[55%]">{prog.audience}</span>
-                        <span className="bg-slate-900/80 backdrop-blur-md px-2 py-0.5 rounded-full text-[10px] font-bold border border-white/20 shrink-0">100% Free Care</span>
                       </div>
                     </div>
 
@@ -341,18 +336,13 @@ export default function Programs() {
                             e.target.src = "/images/crc-building.jpg";
                           }}
                         />
-                        <div className={`absolute inset-0 ${isContain ? 'bg-gradient-to-t from-slate-950/20 via-transparent to-transparent' : 'bg-gradient-to-t from-slate-950/70 via-transparent to-transparent'} z-10`} />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10" />
 
                         <div
                           className="absolute top-4 left-4 px-3.5 py-1.5 bg-white/95 backdrop-blur-md rounded-full text-xs font-black tracking-wider uppercase shadow-md border border-slate-200 z-20"
                           style={{ color: prog.accent || '#5A1E65' }}
                         >
                           PROGRAM {prog.chapter || `0${index + 1}`}
-                        </div>
-
-                        <div className="absolute bottom-4 left-4 right-4 text-white text-xs flex items-center justify-between translate-z-10 z-20">
-                          <span className="font-bold drop-shadow-md">{prog.audience}</span>
-                          <span className="bg-slate-900/70 backdrop-blur-md px-2.5 py-1 rounded-full text-[11px] font-bold border border-white/20">100% Free Care</span>
                         </div>
                       </div>
                     </CardSpotlight>
