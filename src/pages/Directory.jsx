@@ -57,10 +57,35 @@ export default function Directory() {
   const pageSize = 6;
 
   useEffect(() => {
+    let isMounted = true;
     const handleSync = () => setBusinessesList(getLiveBusinesses());
     window.addEventListener('storage', handleSync);
     window.addEventListener('dcvc-directory-updated', handleSync);
+
+    // Fetch approved businesses live from cloud API on mount
+    const fetchCloudDirectory = async () => {
+      try {
+        const apiBase = typeof window !== 'undefined' && window.location.origin.includes('localhost')
+          ? 'http://localhost:8787'
+          : 'https://dcvc-api.diversity-collective-vc.workers.dev';
+        const res = await fetch(`${apiBase}/api/directory?limit=100`);
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.businesses) && data.businesses.length > 0 && isMounted) {
+            setBusinessesList(data.businesses);
+            try {
+              localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data.businesses));
+            } catch (_) {}
+          }
+        }
+      } catch (err) {
+        console.warn('[Directory] Cloud fetch fallback to local:', err);
+      }
+    };
+    fetchCloudDirectory();
+
     return () => {
+      isMounted = false;
       window.removeEventListener('storage', handleSync);
       window.removeEventListener('dcvc-directory-updated', handleSync);
     };
@@ -106,10 +131,11 @@ export default function Directory() {
         (biz.name && biz.name.toLowerCase().includes(q)) ||
         (biz.category && biz.category.toLowerCase().includes(q)) ||
         (biz.ownerName && biz.ownerName.toLowerCase().includes(q)) ||
+        (biz.owner_name && biz.owner_name.toLowerCase().includes(q)) ||
         (biz.owner && biz.owner.toLowerCase().includes(q)) ||
         (biz.description && biz.description.toLowerCase().includes(q)) ||
         (biz.city && biz.city.toLowerCase().includes(q)) ||
-        (biz.tags && biz.tags.some(t => t.toLowerCase().includes(q)));
+        (Array.isArray(biz.tags) && biz.tags.some(t => t.toLowerCase().includes(q)));
 
       const matchesCat = selectedCategory === 'All' || biz.category === selectedCategory;
       const matchesCity = selectedCity === 'All' || biz.city === selectedCity;
@@ -344,13 +370,13 @@ export default function Directory() {
                   {/* Photo Thumbnail */}
                   <div className="h-44 rounded-2xl overflow-hidden bg-slate-100 border border-slate-100 relative">
                     <img
-                      src={biz.image || "/images/community-gathering.jpg"}
+                      src={biz.image || biz.cover_url || "/images/community-gathering.jpg"}
                       alt={biz.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       onError={(e) => { e.target.src = "/images/community-gathering.jpg"; }}
                     />
                     <div className="absolute top-3 right-3 flex items-center gap-1.5">
-                      {biz.isLGBTQOwned && (
+                      {(biz.isLGBTQOwned || biz.is_verified) && (
                         <span className="glass-pill text-[10px] font-black uppercase tracking-wider text-purple-900 bg-white/95 border-purple-200 shadow-xs">
                           🌈 LGBTQ+ Owned
                         </span>
@@ -371,12 +397,12 @@ export default function Directory() {
                     </h3>
 
                     {/* Owner / Launch Details */}
-                    {(biz.ownerName || biz.owner || biz.dateLaunched) && (
+                    {(biz.ownerName || biz.owner || biz.owner_name || biz.dateLaunched) && (
                       <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500 font-medium mt-1">
-                        {(biz.ownerName || biz.owner) && (
+                        {(biz.ownerName || biz.owner || biz.owner_name) && (
                           <span className="inline-flex items-center gap-1 text-slate-700 font-bold">
                             <User className="w-3 h-3 text-[#5A1E65]" />
-                            <span>{biz.ownerName || biz.owner}</span>
+                            <span>{biz.ownerName || biz.owner || biz.owner_name}</span>
                           </span>
                         )}
                         {biz.dateLaunched && (
@@ -394,7 +420,7 @@ export default function Directory() {
                   </div>
 
                   {/* Tags */}
-                  {biz.tags && (
+                  {Array.isArray(biz.tags) && biz.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 pt-1">
                       {biz.tags.map((tag) => (
                         <span

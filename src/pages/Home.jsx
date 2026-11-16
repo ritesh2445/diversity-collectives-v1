@@ -47,7 +47,8 @@ import {
 import HeroShowcase from '../components/HeroShowcase';
 import MobileCarousel from '../components/MobileCarousel.jsx';
 import { DEFAULT_PAGE_BLOCKS, upgradeOrNormalizePageLayout } from '../data/siteDefaults';
-import { parseEventDate } from '../utils/eventDates';
+import { parseEventDate, getLocalizedMonthAbbr } from '../utils/eventDates';
+import { translationService } from '../services/translationService';
 
 export default function Home() {
   usePageMeta({
@@ -55,6 +56,12 @@ export default function Home() {
     description: 'Diversity Collective Ventura County is a 501(c)(3) nonprofit providing advocacy, visibility, safety, and wellness for the LGBTQ+ community throughout Ventura County.',
     canonicalPath: '/'
   });
+
+  const [currentLang, setCurrentLang] = useState(() => translationService.getLanguage?.() || 'en');
+
+  useEffect(() => {
+    return translationService.subscribe((lang) => setCurrentLang(lang));
+  }, []);
 
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedDonationTier, setSelectedDonationTier] = useState(50);
@@ -1345,11 +1352,18 @@ export default function Home() {
                     <div className="flex items-center justify-between gap-2">
                       {(() => {
                         const parsed = parseEventDate(evt);
-                        const badgeMonth = evt.month || parsed?.monthAbbr || 'EVT';
+                        const badgeMonth = parsed
+                          ? getLocalizedMonthAbbr(parsed.monthIndex, currentLang)
+                          : (evt.month || 'EVT');
                         const badgeDay = evt.day || parsed?.dayStr || '—';
                         return (
                           <div className={`flex flex-col items-center justify-center min-w-[70px] p-2.5 rounded-2xl bg-gradient-to-b ${dateGradients[idx % dateGradients.length]} shadow-md`}>
-                            <span className="text-[10px] font-black uppercase tracking-wider text-amber-200">{badgeMonth}</span>
+                            <span
+                              className="text-[10px] font-black uppercase tracking-wider text-amber-200 notranslate"
+                              translate="no"
+                            >
+                              {badgeMonth}
+                            </span>
                             <span className="font-display text-2xl font-black leading-none pt-0.5">{badgeDay}</span>
                           </div>
                         );

@@ -1,19 +1,20 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, MapPin, ArrowRight } from 'lucide-react';
-import { parseEventDate } from '../utils/eventDates';
-
-const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const MONTH_NAMES = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December'
-];
+import { parseEventDate, getLocalizedMonthName, getLocalizedMonthAbbr, getLocalizedWeekdays } from '../utils/eventDates';
+import { translationService } from '../services/translationService';
 
 /**
  * Section #7: Dedicated Interactive Calendar Section on Homepage
  * Distinct from Programs and Signature Events — displays scheduled dates cleanly.
  */
 export default function HomeCalendarSection({ events = [], props = {}, style = {} }) {
+  const [currentLang, setCurrentLang] = useState(() => translationService.getLanguage?.() || 'en');
+
+  useEffect(() => {
+    return translationService.subscribe((lang) => setCurrentLang(lang));
+  }, []);
+
   const now = new Date();
   const [viewYear, setViewYear] = useState(now.getFullYear());
   const [viewMonth, setViewMonth] = useState(now.getMonth());
@@ -112,8 +113,11 @@ export default function HomeCalendarSection({ events = [], props = {}, style = {
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <h3 className="font-display text-base sm:text-xl font-black tracking-tight text-white">
-                {MONTH_NAMES[viewMonth]} {viewYear}
+              <h3
+                className="font-display text-base sm:text-xl font-black tracking-tight text-white notranslate"
+                translate="no"
+              >
+                {getLocalizedMonthName(viewMonth, currentLang)} {viewYear}
               </h3>
               <button
                 type="button"
@@ -125,8 +129,11 @@ export default function HomeCalendarSection({ events = [], props = {}, style = {
               </button>
             </div>
 
-            <div className="grid grid-cols-7 gap-1 text-center text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-purple-900 mb-2">
-              {WEEKDAYS.map((w) => <div key={w} className="py-0.5 sm:py-1">{w}</div>)}
+            <div
+              className="grid grid-cols-7 gap-1 text-center text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-purple-900 mb-2 notranslate"
+              translate="no"
+            >
+              {getLocalizedWeekdays(currentLang, 3).map((w, idx) => <div key={idx} className="py-0.5 sm:py-1">{w}</div>)}
             </div>
 
             <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
@@ -179,8 +186,11 @@ export default function HomeCalendarSection({ events = [], props = {}, style = {
                 <span className="text-[11px] font-black uppercase tracking-wider text-[#5A1E65]">
                   Selected Date
                 </span>
-                <h4 className="font-display text-lg font-black text-slate-950">
-                  {MONTH_NAMES[viewMonth]} {selectedDay}, {viewYear}
+                <h4
+                  className="font-display text-lg font-black text-slate-950 notranslate"
+                  translate="no"
+                >
+                  {getLocalizedMonthName(viewMonth, currentLang)} {selectedDay}, {viewYear}
                 </h4>
               </div>
               <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-purple-50 text-[#5A1E65] border border-purple-200">
@@ -225,8 +235,11 @@ export default function HomeCalendarSection({ events = [], props = {}, style = {
                         className="w-full text-left px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 hover:border-purple-300 flex items-center justify-between cursor-pointer"
                       >
                         <span className="font-bold text-slate-900 truncate">{evt.title}</span>
-                        <span className="text-[11px] font-black text-[#5A1E65] shrink-0 ml-2">
-                          {MONTH_NAMES[viewMonth].slice(0, 3)} {day}
+                        <span
+                          className="text-[11px] font-black text-[#5A1E65] shrink-0 ml-2 notranslate"
+                          translate="no"
+                        >
+                          {getLocalizedMonthAbbr(viewMonth, currentLang)} {day}
                         </span>
                       </button>
                     ))}

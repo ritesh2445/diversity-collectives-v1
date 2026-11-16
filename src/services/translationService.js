@@ -88,6 +88,11 @@ const UI_DICTIONARY = {
     impact_stat4: 'free and confidential care—no insurance or fees ever required.',
     impact_stat5: 'Ventura County cities united through affirming programs and mutual aid.',
     impact_explore: 'Explore',
+    cal_scheduled_month: 'Scheduled This Month',
+    cal_no_events: 'No events scheduled on this date.',
+    cal_open_full: 'Open Full Events Calendar',
+    cal_show_all: 'Show All',
+    cal_events: 'Events',
   },
   es: {
     nav_about: 'Acerca de', nav_programs: 'Programas', nav_directory: 'Directorio',
@@ -132,6 +137,11 @@ const UI_DICTIONARY = {
     chatbot_q_rainbow: '¿Qué es Rainbow Umbrella?',
     chatbot_q_training: '¿Ofrecen capacitaciones?',
     chatbot_q_donate: '¿Cómo puedo donar?',
+    cal_scheduled_month: 'Programado para este mes',
+    cal_no_events: 'No hay eventos programados para esta fecha.',
+    cal_open_full: 'Abrir el calendario completo de eventos',
+    cal_show_all: 'Mostrar todo',
+    cal_events: 'Eventos',
   },
   tl: {
     nav_about: 'Tungkol', nav_programs: 'Mga Programa', nav_directory: 'Direktoryo',

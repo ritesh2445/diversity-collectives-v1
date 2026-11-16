@@ -4464,38 +4464,154 @@ export default {
           }, 200, cors);
         }
 
-        // 15.3 Directory Moderation List (GET /api/admin/directory)
+        // 15.3 Directory Moderation & Management List (GET /api/admin/directory)
         if (pathname === '/api/admin/directory' && request.method === 'GET') {
-          const status = url.searchParams.get('status') || 'pending';
+          const status = url.searchParams.get('status') || 'all';
           const db = getDb(env);
 
           if (!db) {
             return jsonResponse({
               success: true,
-              businesses: [
-                {
-                  id: 'biz-pending-1',
-                  slug: 'harbor-books-ventura',
-                  name: 'Harbor Books & Community Corner',
-                  category: 'Retail & Gifts',
-                  city: 'Ventura',
-                  status: 'pending',
-                  owner_name: 'Jordan Rivera',
-                  owner_email: 'jordan@harborbooks.example',
-                  affirming_pledge_signed_at: '2026-03-01T12:00:00Z',
-                  created_at: new Date().toISOString()
-                }
-              ]
+              businesses: []
             }, 200, cors);
           }
 
           const query = status === 'all'
-            ? `SELECT * FROM businesses ORDER BY created_at DESC LIMIT 100`
-            : `SELECT * FROM businesses WHERE status = ? ORDER BY created_at DESC LIMIT 100`;
+            ? `SELECT * FROM businesses ORDER BY is_featured DESC, created_at DESC LIMIT 250`
+            : `SELECT * FROM businesses WHERE status = ? ORDER BY is_featured DESC, created_at DESC LIMIT 250`;
           const args = status === 'all' ? [] : [status];
 
           const res = await db.execute({ sql: query, args });
           return jsonResponse({ success: true, businesses: res.rows }, 200, cors);
+        }
+
+        // 15.3B Pre-Populate / Seed Full Business Directory (POST /api/admin/directory/seed)
+        if (pathname === '/api/admin/directory/seed' && request.method === 'POST') {
+          if (!requireRole(authUser.role, ['admin', 'approver', 'editor'])) {
+            return errorResponse('Forbidden: Approver or Admin role required', 403, null, cors);
+          }
+
+          const body = await request.json().catch(() => ({}));
+          const seedItems = Array.isArray(body.businesses) ? body.businesses : [];
+          const db = getDb(env);
+          let seededCount = 0;
+
+          if (db && seedItems.length > 0) {
+            for (const item of seedItems) {
+              const id = item.id || `biz-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+              const slug = item.slug || (item.name || 'business').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+              try {
+                await db.execute({
+                  sql: `INSERT OR REPLACE INTO businesses (
+                    id, slug, name, category, description, address, city, zip, phone, email, website,
+                    cover_url, is_featured, is_verified, status, affirming_pledge_signed_at, owner_name, owner_email, admin_notes
+                  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'approved', datetime('now'), ?, ?, ?)`,
+                  args: [
+                    id,
+                    slug,
+                    item.name,
+                    item.category || 'Professional Services',
+                    item.description || '',
+                    item.address || '',
+                    item.city || 'Ventura',
+                    item.zip || '',
+                    item.phone || '',
+                    item.email || '',
+                    item.website || '',
+                    item.image || item.cover_url || null,
+                    item.isFeatured ? 1 : (item.id === 'biz-1' || item.id === 'biz-2' || item.id === 'biz-4' ? 1 : 0),
+                    1,
+                    item.ownerName || 'Verified Community Partner',
+                    item.ownerEmail || item.email || '',
+                    item.adminNotes || 'Seeded authentic Ventura County affirming business'
+                  ]
+                });
+                seededCount++;
+              } catch (err) {
+                console.warn('Directory seed row error:', err.message);
+              }
+            }
+
+            await logAdminAction(db, {
+              userId: authUser.id,
+              userEmail: authUser.email,
+              action: 'seed_directory',
+              targetType: 'business',
+              targetId: 'bulk',
+              details: { seededCount },
+              ip: clientIp
+            });
+          }
+
+          return jsonResponse({
+            success: true,
+            message: `Successfully pre-populated ${seededCount} businesses into the affirming directory!`,
+            seededCount
+          }, 200, cors);
+        }
+
+        // 15.3C Add Single Business to Directory (POST /api/admin/directory)
+        if (pathname === '/api/admin/directory' && request.method === 'POST') {
+          if (!requireRole(authUser.role, ['admin', 'approver', 'editor'])) {
+            return errorResponse('Forbidden: Approver or Admin role required', 403, null, cors);
+          }
+
+          const body = await request.json().catch(() => ({}));
+          const name = (body.name || body.businessName || '').trim();
+          const category = (body.category || 'Professional Services').trim();
+          const city = (body.city || 'Ventura').trim();
+
+          if (!name) {
+            return errorResponse('Business name is required.', 400, null, cors);
+          }
+
+          const id = body.id || crypto.randomUUID();
+          const slug = body.slug || (name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'biz') + '-' + id.substring(0, 6);
+          const db = getDb(env);
+
+          if (db) {
+            await db.execute({
+              sql: `INSERT INTO businesses (
+                id, slug, name, category, description, address, city, zip, phone, email, website,
+                is_featured, is_verified, status, affirming_pledge_signed_at, owner_name, owner_email, admin_notes
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), ?, ?, ?)`,
+              args: [
+                id,
+                slug,
+                name,
+                category,
+                body.description || '',
+                body.address || '',
+                city,
+                body.zip || '',
+                body.phone || '',
+                body.email || body.contactEmail || '',
+                body.website || '',
+                body.isFeatured ? 1 : 0,
+                1,
+                body.status || 'approved',
+                body.ownerName || 'DCVC Staff Added',
+                body.ownerEmail || authUser.email || '',
+                body.adminNotes || ''
+              ]
+            });
+
+            await logAdminAction(db, {
+              userId: authUser.id,
+              userEmail: authUser.email,
+              action: 'create_business',
+              targetType: 'business',
+              targetId: id,
+              details: { name, category, city },
+              ip: clientIp
+            });
+          }
+
+          return jsonResponse({
+            success: true,
+            message: `Business "${name}" successfully added to the directory.`,
+            id
+          }, 201, cors);
         }
 
         // 15.4 Moderate Directory Listing (POST /api/admin/directory/:id/moderate)
@@ -4592,8 +4708,8 @@ export default {
 
         // 15.6 Delete Business Listing (DELETE /api/admin/directory/:id)
         if (pathname.startsWith('/api/admin/directory/') && request.method === 'DELETE') {
-          if (!requireRole(authUser.role, ['admin'])) {
-            return errorResponse('Forbidden: Superadmin role required to delete records', 403, null, cors);
+          if (!requireRole(authUser.role, ['admin', 'approver', 'editor'])) {
+            return errorResponse('Forbidden: Admin or Editor role required to delete records', 403, null, cors);
           }
 
           const bizId = pathname.replace('/api/admin/directory/', '');

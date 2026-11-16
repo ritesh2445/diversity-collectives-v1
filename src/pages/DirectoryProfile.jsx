@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -10,21 +10,72 @@ import {
   ShieldCheck, 
   CheckCircle2,
   Calendar,
-  Share2
+  Share2,
+  RefreshCw
 } from 'lucide-react';
 import { businessDirectorySeed } from '../data/dcvcData';
 import { usePageMeta } from '../utils/seo';
 
+const LOCAL_STORAGE_KEY = 'dcvc_live_directory_businesses';
+
+function getStoredBusinesses() {
+  if (typeof window === 'undefined') return businessDirectorySeed;
+  try {
+    const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (_) {}
+  return businessDirectorySeed;
+}
+
 export default function DirectoryProfile() {
   const { slug } = useParams();
-  const business = businessDirectorySeed.find(b => b.slug === slug);
+  const [business, setBusiness] = useState(() => {
+    const list = getStoredBusinesses();
+    return list.find(b => b.slug === slug || b.id === slug) || null;
+  });
+  const [loading, setLoading] = useState(!business);
+
+  useEffect(() => {
+    if (!business) {
+      let isMounted = true;
+      const apiBase = typeof window !== 'undefined' && window.location.origin.includes('localhost')
+        ? 'http://localhost:8787'
+        : 'https://dcvc-api.diversity-collective-vc.workers.dev';
+      fetch(`${apiBase}/api/directory/${slug}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (isMounted && data?.business) {
+            setBusiness(data.business);
+          }
+        })
+        .catch(() => {})
+        .finally(() => {
+          if (isMounted) setLoading(false);
+        });
+      return () => { isMounted = false; };
+    }
+  }, [slug, business]);
 
   usePageMeta({
     title: business ? `${business.name} — Affirming Business Directory` : 'Business Profile',
     description: business ? business.description : 'LGBTQ+ Affirming Business Profile in Ventura County.',
-    canonicalPath: business ? `/directory/${business.slug}` : '/directory',
-    ogImage: business?.image
+    canonicalPath: business ? `/directory/${business.slug || slug}` : '/directory',
+    ogImage: business?.image || business?.cover_url
   });
+
+  if (loading) {
+    return (
+      <div className="pt-20 pb-20 flex justify-center items-center min-h-[50vh]">
+        <div className="flex flex-col items-center gap-3 text-purple-900">
+          <RefreshCw className="w-8 h-8 animate-spin text-[#5A1E65]" />
+          <span className="text-xs font-bold text-slate-500">Loading business profile...</span>
+        </div>
+      </div>
+    );
+  }
 
   if (!business) {
     return <Navigate to="/directory" replace />;
@@ -58,7 +109,7 @@ export default function DirectoryProfile() {
                   <MapPin className="w-3.5 h-3.5 text-amber-500" />
                   <span>{business.city}, CA</span>
                 </span>
-                {business.isLGBTQOwned && (
+                {(business.isLGBTQOwned || business.is_verified) && (
                   <span className="text-xs font-bold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
                     🌈 LGBTQ+ Owned Enterprise
                   </span>
@@ -73,7 +124,7 @@ export default function DirectoryProfile() {
             {/* Profile Hero Photo */}
             <div className="rounded-3xl overflow-hidden aspect-[16/9] shadow-xl border-2 border-slate-200">
               <img
-                src={business.image || "/images/community-gathering.jpg"}
+                src={business.image || business.cover_url || "/images/community-gathering.jpg"}
                 alt={business.name}
                 className="w-full h-full object-cover"
                 onError={(e) => { e.target.src = "/images/community-gathering.jpg"; }}

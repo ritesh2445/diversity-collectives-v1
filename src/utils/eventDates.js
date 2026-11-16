@@ -11,6 +11,55 @@ export const MONTH_FULL = [
   'July', 'August', 'September', 'October', 'November', 'December'
 ];
 
+/**
+ * Returns localized full month name (e.g. "October", "Octubre", "Octobre", "Oktober")
+ * with first letter capitalized.
+ */
+export function getLocalizedMonthName(monthIndex, lang = 'en') {
+  try {
+    const d = new Date(2026, monthIndex, 1);
+    const name = d.toLocaleDateString(lang || 'en', { month: 'long' });
+    return name.charAt(0).toUpperCase() + name.slice(1);
+  } catch {
+    return MONTH_FULL[monthIndex] || '';
+  }
+}
+
+/**
+ * Returns localized abbreviated month name (e.g. "OCT", "OCT", "OKT")
+ */
+export function getLocalizedMonthAbbr(monthIndex, lang = 'en') {
+  try {
+    const d = new Date(2026, monthIndex, 1);
+    const abbr = d.toLocaleDateString(lang || 'en', { month: 'short' });
+    return abbr.replace(/\.$/, '').toUpperCase();
+  } catch {
+    return MONTH_ABBRS[monthIndex] || '';
+  }
+}
+
+/**
+ * Returns localized 7-day weekday abbreviations (Sunday to Saturday)
+ * e.g. ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá'] for Spanish,
+ * ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'] for English.
+ */
+export function getLocalizedWeekdays(lang = 'en', length = 2) {
+  try {
+    const days = [];
+    // 2026-10-04 is a Sunday
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(2026, 9, 4 + i);
+      const name = d.toLocaleDateString(lang || 'en', { weekday: 'short' });
+      const cleaned = name.replace(/\.$/, '');
+      const formatted = cleaned.length > length ? cleaned.slice(0, length) : cleaned;
+      days.push(formatted.charAt(0).toUpperCase() + formatted.slice(1));
+    }
+    return days;
+  } catch {
+    return ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+  }
+}
+
 const MONTH_NAME_LOOKUP = (() => {
   const map = new Map();
   MONTH_ABBRS.forEach((abbr, idx) => map.set(abbr.toLowerCase(), idx));

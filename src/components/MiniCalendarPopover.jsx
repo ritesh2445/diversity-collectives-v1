@@ -3,7 +3,8 @@ import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, ArrowRight, X, Clock, MapPin } from 'lucide-react';
 import { cmsStore } from '../services/cmsStore';
-import { parseEventDate, findBestCalendarMonth, MONTH_FULL } from '../utils/eventDates';
+import { parseEventDate, findBestCalendarMonth, getLocalizedMonthName, getLocalizedMonthAbbr, getLocalizedWeekdays } from '../utils/eventDates';
+import { translationService } from '../services/translationService';
 import { useScrollLock } from '../utils/scrollLock';
 
 /**
@@ -13,6 +14,12 @@ import { useScrollLock } from '../utils/scrollLock';
  */
 export default function MiniCalendarPopover({ isOpen, onClose }) {
   useScrollLock(isOpen);
+
+  const [currentLang, setCurrentLang] = useState(() => translationService.getLanguage?.() || 'en');
+
+  useEffect(() => {
+    return translationService.subscribe((lang) => setCurrentLang(lang));
+  }, []);
 
   const [events, setEvents] = useState(() => cmsStore.getEvents() || []);
   const [cursorDate, setCursorDate] = useState(() => findBestCalendarMonth(cmsStore.getEvents() || []));
@@ -100,8 +107,11 @@ export default function MiniCalendarPopover({ isOpen, onClose }) {
             <span className="w-8 h-8 rounded-xl bg-purple-100 text-[#5A1E65] flex items-center justify-center shrink-0 shadow-2xs">
               <CalendarIcon className="w-4 h-4" />
             </span>
-            <span className="font-display font-black text-sm sm:text-base text-slate-950 truncate">
-              {MONTH_FULL[monthIndex]} {year}
+            <span
+              className="font-display font-black text-sm sm:text-base text-slate-950 truncate notranslate"
+              translate="no"
+            >
+              {getLocalizedMonthName(monthIndex, currentLang)} {year}
             </span>
           </div>
 
@@ -134,8 +144,13 @@ export default function MiniCalendarPopover({ isOpen, onClose }) {
         </div>
 
         {/* 7-Day Header */}
-        <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-extrabold text-slate-400 uppercase mb-1">
-          <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+        <div
+          className="grid grid-cols-7 gap-1 text-center text-[10px] font-extrabold text-slate-400 uppercase mb-1 notranslate"
+          translate="no"
+        >
+          {getLocalizedWeekdays(currentLang).map((dayName, idx) => (
+            <span key={idx}>{dayName}</span>
+          ))}
         </div>
 
         {/* Calendar Day Grid */}
@@ -178,7 +193,9 @@ export default function MiniCalendarPopover({ isOpen, onClose }) {
         <div className="border-t border-slate-100 pt-2.5 space-y-1.5">
           <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-wider text-slate-400">
             <span>
-              {selectedDay ? `${MONTH_FULL[monthIndex].slice(0, 3)} ${selectedDay} Events` : 'Scheduled This Month'}
+              {selectedDay
+                ? `${getLocalizedMonthName(monthIndex, currentLang)} ${selectedDay}`
+                : translationService.t('cal_scheduled_month', 'Scheduled This Month')}
             </span>
             {selectedDay && (
               <button
@@ -186,14 +203,14 @@ export default function MiniCalendarPopover({ isOpen, onClose }) {
                 onClick={() => setSelectedDay(null)}
                 className="text-[#5A1E65] hover:underline cursor-pointer font-bold"
               >
-                Show All
+                {translationService.t('cal_show_all', 'Show All')}
               </button>
             )}
           </div>
 
           {previewEvents.length === 0 ? (
             <p className="text-xs text-slate-500 py-2 text-center bg-slate-50 rounded-xl">
-              No events scheduled on this date.
+              {translationService.t('cal_no_events', 'No events scheduled on this date.')}
             </p>
           ) : (
             <div className="space-y-1.5 max-h-32 sm:max-h-36 overflow-y-auto pr-0.5">
@@ -209,7 +226,7 @@ export default function MiniCalendarPopover({ isOpen, onClose }) {
                     <p className="text-xs font-bold text-slate-900 group-hover:text-[#5A1E65] truncate">{ev.title}</p>
                     <p className="text-[10px] text-slate-500 flex items-center gap-1.5 mt-0.5 truncate">
                       <Clock className="w-3 h-3 text-[#5A1E65] shrink-0" />
-                      <span>{p ? `${p.monthAbbr} ${p.dayStr}` : ev.date} · {ev.time}</span>
+                      <span>{p ? `${getLocalizedMonthAbbr(p.monthIndex, currentLang)} ${p.dayStr}` : ev.date} · {ev.time}</span>
                     </p>
                   </Link>
                 );
@@ -222,7 +239,9 @@ export default function MiniCalendarPopover({ isOpen, onClose }) {
             onClick={onClose}
             className="mt-2 w-full inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-[#5A1E65] hover:bg-purple-900 text-white text-xs font-bold transition-colors shadow-2xs cursor-pointer text-center"
           >
-            <span className="truncate max-w-[85%]">Open Full Events Calendar</span>
+            <span className="truncate max-w-[85%]">
+              {translationService.t('cal_open_full', 'Open Full Events Calendar')}
+            </span>
             <ArrowRight className="w-3.5 h-3.5 shrink-0" />
           </Link>
         </div>

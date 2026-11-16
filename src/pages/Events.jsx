@@ -22,13 +22,13 @@ import CardSpotlight from '../components/CardSpotlight';
 import MobileCarousel from '../components/MobileCarousel.jsx';
 import { usePageMeta } from '../utils/seo';
 import {
-  MONTH_ABBRS,
-  MONTH_FULL,
   parseEventDate,
-  findBestCalendarMonth
+  findBestCalendarMonth,
+  getLocalizedMonthName,
+  getLocalizedMonthAbbr,
+  getLocalizedWeekdays
 } from '../utils/eventDates';
-
-const MONTH_NAMES = MONTH_FULL;
+import { translationService } from '../services/translationService';
 
 export default function Events() {
   usePageMeta({
@@ -36,6 +36,12 @@ export default function Events() {
     description: 'Explore upcoming LGBTQ+ youth circles, health screening clinics, social mixers, and Pride celebrations across Ventura County.',
     canonicalPath: '/events'
   });
+
+  const [currentLang, setCurrentLang] = useState(() => translationService.getLanguage?.() || 'en');
+
+  useEffect(() => {
+    return translationService.subscribe((lang) => setCurrentLang(lang));
+  }, []);
 
   const [events, setEvents] = useState(() => cmsStore.getEvents());
   const [searchQuery, setSearchQuery] = useState('');
@@ -93,7 +99,6 @@ export default function Events() {
         key,
         year: parsed.year,
         monthIndex: parsed.monthIndex,
-        label: `${MONTH_ABBRS[parsed.monthIndex]} ${parsed.year}`,
         count: 0
       };
       existing.count += 1;
@@ -293,8 +298,11 @@ export default function Events() {
                   <CalendarIcon className="w-5 h-5" />
                 </div>
                 <div>
-                  <h2 className="font-display text-2xl sm:text-3xl font-black text-slate-950">
-                    {MONTH_NAMES[calendarMonth]} {calendarYear}
+                  <h2
+                    className="font-display text-2xl sm:text-3xl font-black text-slate-950 notranslate"
+                    translate="no"
+                  >
+                    {getLocalizedMonthName(calendarMonth, currentLang)} {calendarYear}
                   </h2>
                   <p className="text-xs text-slate-500 font-medium">
                     Click any highlighted date to view events scheduled on that day
@@ -338,13 +346,14 @@ export default function Events() {
                         setCurrentCalendarDate(new Date(bucket.year, bucket.monthIndex, 1));
                         setSelectedDateFilter(null);
                       }}
-                      className={`px-3 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer border ${
+                      className={`px-3 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer border notranslate ${
                         isActiveMonth
                           ? 'bg-[#5A1E65] text-white border-[#5A1E65] shadow-xs'
                           : 'bg-purple-50/70 text-[#5A1E65] border-purple-200 hover:bg-purple-100'
                       }`}
+                      translate="no"
                     >
-                      {bucket.label} ({bucket.count})
+                      {getLocalizedMonthAbbr(bucket.monthIndex, currentLang)} {bucket.year} ({bucket.count})
                     </button>
                   );
                 })}
@@ -352,14 +361,13 @@ export default function Events() {
             )}
 
             {/* Days of the Week */}
-            <div className="grid grid-cols-7 gap-2 text-center text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-              <span>Sun</span>
-              <span>Mon</span>
-              <span>Tue</span>
-              <span>Wed</span>
-              <span>Thu</span>
-              <span>Fri</span>
-              <span>Sat</span>
+            <div
+              className="grid grid-cols-7 gap-2 text-center text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 notranslate"
+              translate="no"
+            >
+              {getLocalizedWeekdays(currentLang, 3).map((w, idx) => (
+                <span key={idx}>{w}</span>
+              ))}
             </div>
 
             {/* Month Days Grid */}
@@ -508,13 +516,20 @@ export default function Events() {
                     {/* Large Typographic Date Badge */}
                     {(() => {
                       const parsedDate = parseEventDate(evt);
-                      const badgeMonth = parsedDate?.monthAbbr || evt.month || 'TBD';
+                      const badgeMonth = parsedDate
+                        ? getLocalizedMonthAbbr(parsedDate.monthIndex, currentLang)
+                        : (evt.month || 'TBD');
                       const badgeDay = parsedDate?.dayStr || evt.day || '—';
                       const badgeYear = parsedDate?.yearStr || evt.year || '2026';
                       return (
                         <div className="md:col-span-2 flex md:justify-center">
                           <div className={`flex flex-col items-center justify-center min-w-[80px] p-4 rounded-2xl bg-gradient-to-b ${dateGradients[idx % dateGradients.length]} shadow-md`}>
-                            <span className="text-[10px] font-black uppercase tracking-wider text-amber-200">{badgeMonth}</span>
+                            <span
+                              className="text-[10px] font-black uppercase tracking-wider text-amber-200 notranslate"
+                              translate="no"
+                            >
+                              {badgeMonth}
+                            </span>
                             <span className="font-display text-2xl sm:text-3xl font-black">{badgeDay}</span>
                             <span className="text-[10px] font-mono text-white/70 mt-0.5">{badgeYear}</span>
                           </div>
