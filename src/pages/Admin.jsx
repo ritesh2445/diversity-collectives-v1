@@ -555,6 +555,7 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserRole, setNewUserRole] = useState('editor');
   const [newUserPassword, setNewUserPassword] = useState('');
+  const [showNewUserPassword, setShowNewUserPassword] = useState(false);
   const [grantLoading, setGrantLoading] = useState(false);
   const [editingUserId, setEditingUserId] = useState(null);
   const [editingUserName, setEditingUserName] = useState('');
@@ -3703,7 +3704,29 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                 )}
 
                 {/* Grant Access to New Person Form */}
-                <form onSubmit={handleGrantAccess} className="pt-5 border-t border-slate-100 space-y-4">
+                <form
+                  onSubmit={handleGrantAccess}
+                  autoComplete="off"
+                  className="pt-5 border-t border-slate-100 space-y-4"
+                >
+                  {/* Invisible decoy inputs to capture aggressive browser credential autofill */}
+                  <input
+                    type="text"
+                    name="fake_admin_username_prevent_autofill"
+                    tabIndex={-1}
+                    aria-hidden="true"
+                    autoComplete="off"
+                    style={{ position: 'absolute', opacity: 0, height: 0, width: 0, zIndex: -1, pointerEvents: 'none' }}
+                  />
+                  <input
+                    type="password"
+                    name="fake_admin_password_prevent_autofill"
+                    tabIndex={-1}
+                    aria-hidden="true"
+                    autoComplete="new-password"
+                    style={{ position: 'absolute', opacity: 0, height: 0, width: 0, zIndex: -1, pointerEvents: 'none' }}
+                  />
+
                   <div className="flex items-center gap-2">
                     <Plus className="w-4 h-4 text-[#5A1E65]" />
                     <h3 className="text-sm font-bold text-slate-900">Grant Admin Panel Access to Another Person</h3>
@@ -3713,10 +3736,13 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700 block">Full Name</label>
+                      <label htmlFor="new-team-name" className="text-xs font-bold text-slate-700 block">Full Name</label>
                       <input
+                        id="new-team-name"
+                        name="new_team_member_name"
                         type="text"
                         required
+                        autoComplete="off"
                         value={newUserName}
                         onChange={(e) => setNewUserName(e.target.value)}
                         placeholder="e.g. Jordan Rivera"
@@ -3724,10 +3750,19 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700 block">Authorized Email (Auth0 SSO)</label>
+                      <label htmlFor="new-team-email" className="text-xs font-bold text-slate-700 block">Authorized Email (Auth0 SSO)</label>
                       <input
+                        id="new-team-email"
+                        name="new_team_member_email"
                         type="email"
                         required
+                        autoComplete="off"
+                        autoCorrect="off"
+                        autoCapitalize="none"
+                        spellCheck="false"
+                        readOnly
+                        onFocus={(e) => { e.currentTarget.readOnly = false; }}
+                        onClick={(e) => { e.currentTarget.readOnly = false; }}
                         value={newUserEmail}
                         onChange={(e) => setNewUserEmail(e.target.value)}
                         placeholder="jordan@example.org"
@@ -3735,8 +3770,10 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700 block">Permission Role</label>
+                      <label htmlFor="new-team-role" className="text-xs font-bold text-slate-700 block">Permission Role</label>
                       <select
+                        id="new-team-role"
+                        name="new_team_member_role"
                         value={newUserRole}
                         onChange={(e) => setNewUserRole(e.target.value)}
                         className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-[#5A1E65] text-xs font-bold bg-white outline-none"
@@ -3748,14 +3785,41 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                       </select>
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700 block">Optional Local Password (leave blank for SSO-only)</label>
-                      <input
-                        type="password"
-                        value={newUserPassword}
-                        onChange={(e) => setNewUserPassword(e.target.value)}
-                        placeholder="Leave blank for Auth0 SSO (Recommended)"
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-[#5A1E65] text-xs font-medium outline-none"
-                      />
+                      <div className="flex items-center justify-between">
+                        <label htmlFor="new-team-password" className="text-xs font-bold text-slate-700 block">Optional Local Password (leave blank for SSO-only)</label>
+                        {newUserPassword && (
+                          <button
+                            type="button"
+                            onClick={() => setNewUserPassword('')}
+                            className="text-[10px] text-purple-700 font-bold hover:underline cursor-pointer"
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
+                      <div className="relative">
+                        <input
+                          id="new-team-password"
+                          name="new_team_member_password"
+                          type={showNewUserPassword ? "text" : "password"}
+                          autoComplete="new-password"
+                          readOnly
+                          onFocus={(e) => { e.currentTarget.readOnly = false; }}
+                          onClick={(e) => { e.currentTarget.readOnly = false; }}
+                          value={newUserPassword}
+                          onChange={(e) => setNewUserPassword(e.target.value)}
+                          placeholder="Leave blank for Auth0 SSO (Recommended)"
+                          className="w-full pl-3.5 pr-10 py-2.5 rounded-xl border border-slate-300 focus:border-[#5A1E65] text-xs font-medium outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowNewUserPassword(!showNewUserPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                          aria-label={showNewUserPassword ? "Hide password" : "Show password"}
+                        >
+                          {showNewUserPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
                     </div>
                   </div>
                   <div>
