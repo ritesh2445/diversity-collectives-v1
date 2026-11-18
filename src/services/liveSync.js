@@ -100,6 +100,27 @@ export function broadcastPatch(patch) {
   }
 }
 
+function mergeLiveSyncPrograms(incoming = [], existing = [], deleted = []) {
+  const deletedSet = new Set(deleted || []);
+  const result = [];
+  const seenKeys = new Set();
+  for (const p of incoming) {
+    const key = p.slug || p.id;
+    if (key && !deletedSet.has(key) && !seenKeys.has(key)) {
+      seenKeys.add(key);
+      result.push(p);
+    }
+  }
+  for (const p of existing) {
+    const key = p.slug || p.id;
+    if (key && !deletedSet.has(key) && !seenKeys.has(key)) {
+      seenKeys.add(key);
+      result.push(p);
+    }
+  }
+  return result;
+}
+
 export function applySiteStatePayload(state, { broadcast = false } = {}) {
   if (!state || typeof state !== 'object') return;
 
@@ -136,9 +157,16 @@ export function applySiteStatePayload(state, { broadcast = false } = {}) {
         existing = {};
       }
     }
+    const incomingPrograms = Array.isArray(state.cmsData.programs) ? state.cmsData.programs : (existing.programs || []);
+    const existingPrograms = Array.isArray(existing.programs) ? existing.programs : [];
+    const deletedSlugs = Array.from(new Set([...(state.cmsData.deletedPrograms || []), ...(existing.deletedPrograms || [])]));
+    const mergedPrograms = mergeLiveSyncPrograms(incomingPrograms, existingPrograms, deletedSlugs);
+
     const mergedCms = {
       ...existing,
       ...state.cmsData,
+      programs: mergedPrograms,
+      deletedPrograms: deletedSlugs,
       settings: { ...(existing.settings || {}), ...(state.cmsData.settings || {}) }
     };
     if (Array.isArray(mergedCms.events)) {

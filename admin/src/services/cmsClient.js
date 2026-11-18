@@ -3,30 +3,33 @@ export function mergeProgramsWithDefaults(savedPrograms = [], defaultPrograms = 
   const seed = Array.isArray(defaultPrograms) && defaultPrograms.length > 0 ? defaultPrograms : programsList;
   const deletedSet = new Set(Array.isArray(deletedSlugs) ? deletedSlugs : []);
   
-  const map = new Map();
-  // 1. Pre-populate all standard default programs that haven't been explicitly deleted
+  if (!Array.isArray(savedPrograms) || savedPrograms.length === 0) {
+    return seed.filter(p => !deletedSet.has(p.slug) && !deletedSet.has(p.id));
+  }
+
+  const result = [];
+  const seenKeys = new Set();
+
+  // 1. First, preserve all saved programs (including new additions and edits) in their exact saved order
+  for (const prog of savedPrograms) {
+    const key = prog.slug || prog.id;
+    if (key && !deletedSet.has(key) && !seenKeys.has(key)) {
+      seenKeys.add(key);
+      const seedMatch = seed.find(s => (s.slug && s.slug === key) || (s.id && s.id === key));
+      result.push({ ...(seedMatch || {}), ...prog });
+    }
+  }
+
+  // 2. Append any missing seed programs that have not been explicitly deleted
   for (const prog of seed) {
     const key = prog.slug || prog.id;
-    if (key && !deletedSet.has(key)) {
-      map.set(key, { ...prog });
+    if (key && !deletedSet.has(key) && !seenKeys.has(key)) {
+      seenKeys.add(key);
+      result.push({ ...prog });
     }
   }
 
-  // 2. Overlay / append custom and edited programs
-  if (Array.isArray(savedPrograms)) {
-    for (const prog of savedPrograms) {
-      const key = prog.slug || prog.id;
-      if (key && !deletedSet.has(key)) {
-        if (map.has(key)) {
-          map.set(key, { ...map.get(key), ...prog });
-        } else {
-          map.set(key, { ...prog });
-        }
-      }
-    }
-  }
-
-  return Array.from(map.values());
+  return result;
 }
 
 /**
@@ -416,7 +419,8 @@ export function getLiveCmsData() {
       ...DEFAULT_CMS_SEED,
       ...parsed,
       settings: { ...DEFAULT_CMS_SEED.settings, ...(parsed.settings || {}) },
-      programs: parsed.programs || DEFAULT_CMS_SEED.programs,
+      programs: mergeProgramsWithDefaults(parsed.programs, DEFAULT_CMS_SEED.programs, parsed.deletedPrograms || []),
+      deletedPrograms: parsed.deletedPrograms || [],
       events: parsed.events || DEFAULT_CMS_SEED.events,
       news: parsed.news || DEFAULT_CMS_SEED.news,
       resources: parsed.resources || DEFAULT_CMS_SEED.resources,
