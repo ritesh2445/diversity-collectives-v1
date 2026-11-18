@@ -1629,17 +1629,17 @@ export async function updateVoicemailStatus(id, status, notes) {
     const json = await res.json().catch(() => ({}));
     if (json.success) {
       const current = getStoredVoicemails();
-      const updated = current.map(v => v.id === id ? { ...v, status, admin_notes: notes !== undefined ? notes : v.admin_notes } : v);
+      const updated = current.map(v => v.id === id ? { ...v, status: status !== undefined ? status : v.status, admin_notes: notes !== undefined ? notes : v.admin_notes } : v);
       saveStoredVoicemails(updated);
-      recordLocalAuditLog(`update_voicemail_status_${status}`, 'voicemail', id);
+      recordLocalAuditLog(`update_voicemail_status_${status || 'notes'}`, 'voicemail', id);
       return json;
     }
   } catch {}
 
   const current = getStoredVoicemails();
-  const updated = current.map(v => v.id === id ? { ...v, status, admin_notes: notes !== undefined ? notes : v.admin_notes } : v);
+  const updated = current.map(v => v.id === id ? { ...v, status: status !== undefined ? status : v.status, admin_notes: notes !== undefined ? notes : v.admin_notes } : v);
   saveStoredVoicemails(updated);
-  recordLocalAuditLog(`update_voicemail_status_${status}`, 'voicemail', id);
+  recordLocalAuditLog(`update_voicemail_status_${status || 'notes'}`, 'voicemail', id);
   return { success: true, message: `Status updated to ${status}.` };
 }
 

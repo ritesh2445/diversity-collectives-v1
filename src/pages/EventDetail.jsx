@@ -22,6 +22,7 @@ import { cmsStore } from '../services/cmsStore';
 import { submitEventRsvp } from '../services/api';
 import TurnstileWidget from '../components/TurnstileWidget';
 import CardSpotlight from '../components/CardSpotlight';
+import AutoSlideImage from '../components/AutoSlideImage.jsx';
 import { getGoogleCalendarUrl, downloadIcsFile } from '../utils/calendar';
 import { usePageMeta } from '../utils/seo';
 
@@ -149,15 +150,17 @@ export default function EventDetail() {
             </div>
 
             {/* Image Banner */}
-            {event.image && (
+            {(event.image || (Array.isArray(event.images) && event.images.length > 0)) && (
               <div className="rounded-3xl overflow-hidden aspect-[16/9] shadow-xl border-2 border-slate-200">
-                <img
-                  src={event.image}
+                <AutoSlideImage
+                  images={Array.isArray(event.images) && event.images.length > 0 ? event.images : [event.image || '/images/community-gathering.jpg']}
                   alt={event.title}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.src = "/images/community-gathering.jpg";
-                  }}
+                  aspectRatio="aspect-[16/9]"
+                  className="w-full h-full"
+                  imageFit="cover"
+                  fallbackSrc="/images/community-gathering.jpg"
+                  showDots={true}
+                  showArrows={true}
                 />
               </div>
             )}

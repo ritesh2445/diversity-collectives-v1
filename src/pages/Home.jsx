@@ -35,6 +35,7 @@ import {
 import { cmsStore } from '../services/cmsStore';
 import AnimatedCounter from '../components/AnimatedCounter';
 import CardSpotlight from '../components/CardSpotlight';
+import AutoSlideImage from '../components/AutoSlideImage.jsx';
 import NewsletterSignup from '../components/NewsletterSignup';
 import ImpactAutoPopups from '../components/ImpactAutoPopups';
 import HomeCalendarSection from '../components/HomeCalendarSection';
@@ -339,19 +340,28 @@ export default function Home() {
 
   const allSourcePrograms = cmsPrograms || programsList;
   const findProg = (slugPart) => allSourcePrograms.find((p) => p.slug?.includes(slugPart));
-  const mapGroupToCard = (item, fallbackImg, bucket) => ({
-    slug: item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
-    title: item.name,
-    audience: item.ages,
-    tagline: item.category,
-    summary: item.description,
-    schedule: item.frequency,
-    location: item.location,
-    heroImage: fallbackImg,
-    programGroup: bucket,
-    ctaLink: item.externalLink || item.link || '/community',
-    isExternal: Boolean(item.externalLink)
-  });
+  const mapGroupToCard = (item, fallbackImg, bucket) => {
+    const matchedProg = allSourcePrograms.find(
+      (p) => (p.slug && item.name && p.slug.includes(item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'))) ||
+             (p.title && item.name && p.title.toLowerCase().trim() === item.name.toLowerCase().trim())
+    );
+    const heroImg = matchedProg?.heroImage || fallbackImg;
+    const images = matchedProg?.images?.length ? matchedProg.images : [heroImg];
+    return {
+      slug: item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+      title: item.name,
+      audience: item.ages,
+      tagline: item.category,
+      summary: item.description,
+      schedule: item.frequency,
+      location: item.location,
+      heroImage: heroImg,
+      images,
+      programGroup: bucket,
+      ctaLink: item.externalLink || item.link || '/community',
+      isExternal: Boolean(item.externalLink)
+    };
+  };
   const findGroup = (needle, fallbackImg, bucket) => {
     const match = communityGroups.find((g) => g.name.toLowerCase().includes(needle.toLowerCase()));
     return match ? mapGroupToCard(match, fallbackImg, bucket) : null;
@@ -378,6 +388,8 @@ export default function Home() {
       else if (slug.includes('community-resource-center')) group = 'adults';
       else group = inferProgramGroup(p);
     }
+    const heroImg = p.heroImage || '/images/crc-building.jpg';
+    const images = Array.isArray(p.images) && p.images.length > 0 ? p.images : [heroImg];
     return {
       ...p,
       slug,
@@ -387,7 +399,8 @@ export default function Home() {
       summary: p.summary || p.description || '',
       schedule: p.schedule || 'See program details',
       location: p.location || 'DCVC Community Resource Center',
-      heroImage: p.heroImage || '/images/crc-building.jpg',
+      heroImage: heroImg,
+      images,
       imageFit: p.imageFit || (slug === 'little-unicorns' || slug === 'community-resource-center' ? 'contain' : 'cover'),
       programGroup: group,
       ctaLink: p.ctaLink || `/programs/${slug}`,
@@ -697,33 +710,19 @@ export default function Home() {
                   glare={true}
                 >
                   <div className="flex flex-col flex-1">
-                    {(() => {
-                      const isContain = program.imageFit === 'contain' || 
-                        program.heroImage?.includes('crc-building') || 
-                        program.heroImage?.includes('unicorns') || 
-                        program.heroImage?.includes('logo');
-                      return (
-                        <div className="w-full aspect-[16/10] overflow-hidden bg-slate-50 relative group flex items-center justify-center shrink-0">
-                          {isContain && (
-                            <img 
-                              src={program.heroImage} 
-                              alt="" 
-                              aria-hidden="true"
-                              className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-30 scale-125 pointer-events-none"
-                            />
-                          )}
-                          <img 
-                            src={program.heroImage} 
-                            alt={program.title}
-                            className={`w-full h-full ${isContain ? 'object-contain p-6 relative z-10' : 'object-cover'} group-hover:scale-[1.02] transition-transform duration-500 ease-out`}
-                            onError={(e) => {
-                              e.target.src = "/images/crc-building.jpg";
-                            }}
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10" />
-                        </div>
-                      );
-                    })()}
+                    <div className="w-full aspect-[16/10] overflow-hidden bg-slate-50 relative shrink-0">
+                      <AutoSlideImage
+                        images={program.images?.length ? program.images : [program.heroImage || '/images/crc-building.jpg']}
+                        alt={program.title}
+                        aspectRatio="aspect-[16/10]"
+                        className="w-full h-full"
+                        imageFit={program.imageFit || 'cover'}
+                        fallbackSrc="/images/crc-building.jpg"
+                        showDots={true}
+                        showArrows={true}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none" />
+                    </div>
 
                     <div className="p-6 md:p-8 flex flex-col gap-2.5 flex-1">
                       <div className="h-6 flex items-center">

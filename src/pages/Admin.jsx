@@ -66,6 +66,7 @@ import CardOrderManager from '../admin/components/CardOrderManager.jsx';
 import AdminQuickSearch from '../admin/components/AdminQuickSearch.jsx';
 import SiteStatusManager from '../admin/components/SiteStatusManager.jsx';
 import DonationSettingsStudio from '../admin/components/DonationSettingsStudio.jsx';
+import VoicemailItemRow from '../components/VoicemailItemRow.jsx';
 import { getSiteStateMeta, SYNC_EVENTS } from '../services/liveSync.js';
 
 const API_BASE_URL = typeof window !== 'undefined' && window.location.origin
@@ -1903,6 +1904,7 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
   };
 
   const handleVoicemailNotesChange = async (id, notes) => {
+    const now = new Date().toISOString();
     try {
       await fetch(`${API_BASE_URL}/admin/voicemails/${id}`, {
         method: 'PATCH',
@@ -1913,7 +1915,7 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
     } catch {}
 
     setVoicemails((prev) => {
-      const updated = prev.map((v) => (v.id === id ? { ...v, admin_notes: notes } : v));
+      const updated = prev.map((v) => (v.id === id ? { ...v, admin_notes: notes, notes_updated_at: now } : v));
       try {
         localStorage.setItem('dcvc_admin_voicemails', JSON.stringify(updated));
       } catch {}
@@ -4787,7 +4789,8 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                   { id: 'all', label: 'All Messages', count: voicemails.length },
                   { id: 'new', label: 'New', count: voicemails.filter(v => v.status === 'new').length, badge: voicemails.filter(v => v.status === 'new').length > 0 },
                   { id: 'reviewed', label: 'Reviewed', count: voicemails.filter(v => v.status === 'reviewed').length },
-                  { id: 'responded', label: 'Responded', count: voicemails.filter(v => v.status === 'responded').length }
+                  { id: 'responded', label: 'Responded', count: voicemails.filter(v => v.status === 'responded').length },
+                  { id: 'archived', label: 'Archived', count: voicemails.filter(v => v.status === 'archived').length }
                 ].map(tab => (
                   <button
                     key={tab.id}
@@ -4820,7 +4823,7 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                   type="text"
                   value={voicemailSearch}
                   onChange={(e) => setVoicemailSearch(e.target.value)}
-                  placeholder="Search by caller, email, subject..."
+                  placeholder="Search by caller, email, subject, notes..."
                   className="w-full pl-9 pr-7 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-400/40 bg-slate-50/50"
                 />
                 {voicemailSearch && (
@@ -4859,109 +4862,16 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
 
               return (
                 <div className="space-y-4">
-                  {filtered.map(v => {
-                    const audioSrc = v.audio_data ? `data:${v.audio_mime_type || 'audio/webm'};base64,${v.audio_data}` : `${API_BASE_URL}/admin/voicemails/${v.id}/audio`;
-                    const durationFmt = v.duration_seconds ? `${Math.floor(v.duration_seconds / 60)}:${String(v.duration_seconds % 60).padStart(2, '0')}` : '0:00';
-
-                    return (
-                      <div key={v.id} className="p-5 rounded-2xl border border-slate-200 bg-white shadow-xs hover:border-purple-200 transition-all space-y-3">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-extrabold text-sm text-slate-900">{v.name || 'Anonymous Caller'}</span>
-                            <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${
-                              v.status === 'new' ? 'bg-amber-100 text-amber-900 border border-amber-300 animate-pulse' :
-                              v.status === 'reviewed' ? 'bg-sky-100 text-sky-800 border border-sky-200' :
-                              'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                            }`}>
-                              {v.status || 'new'}
-                            </span>
-                            <span className="text-xs text-slate-400 flex items-center gap-1 font-mono">
-                              <Clock className="w-3 h-3" />
-                              {v.created_at ? new Date(v.created_at).toLocaleString() : 'Recently'}
-                            </span>
-                            <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-purple-50 text-purple-900 border border-purple-200">
-                              Duration: {durationFmt}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-semibold text-slate-500">Status:</span>
-                            <select
-                              value={v.status || 'new'}
-                              onChange={(e) => handleVoicemailStatusChange(v.id, e.target.value)}
-                              className="text-xs font-bold px-2.5 py-1 rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-400"
-                            >
-                              <option value="new">New</option>
-                              <option value="reviewed">Reviewed</option>
-                              <option value="responded">Responded</option>
-                            </select>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteVoicemail(v.id)}
-                              className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 border border-rose-200 transition-colors cursor-pointer"
-                              title="Delete voicemail"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Caller Info & Subject */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                          <div>
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Contact Email</span>
-                            <a href={`mailto:${v.email}`} className="text-xs font-bold text-purple-800 hover:underline">
-                              {v.email || '—'}
-                            </a>
-                          </div>
-                          <div>
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Subject / Topic</span>
-                            <span className="text-xs font-semibold text-slate-800">
-                              {v.subject || 'General Inquiry'}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Audio Player and Download */}
-                        <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                          <div className="flex-1 w-full flex items-center gap-3">
-                            <Volume2 className="w-4 h-4 text-purple-700 shrink-0" />
-                            <audio
-                              controls
-                              preload="none"
-                              src={audioSrc}
-                              className="w-full h-9 rounded-lg"
-                            >
-                              Your browser does not support the audio element.
-                            </audio>
-                          </div>
-                          <a
-                            href={audioSrc}
-                            download={`voicemail_${v.id}.webm`}
-                            className="px-3 py-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center gap-1.5 shrink-0 transition-colors shadow-2xs"
-                            title="Download audio recording"
-                          >
-                            <Download className="w-3.5 h-3.5 text-slate-600" />
-                            <span>Download Audio</span>
-                          </a>
-                        </div>
-
-                        {/* Staff Notes */}
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                            Staff Follow-up Notes
-                          </label>
-                          <input
-                            type="text"
-                            defaultValue={v.admin_notes || ''}
-                            onBlur={(e) => handleVoicemailNotesChange(v.id, e.target.value)}
-                            placeholder="Add internal staff notes on response or resolution..."
-                            className="w-full px-3 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-400 text-xs bg-slate-50/50"
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
+                  {filtered.map(v => (
+                    <VoicemailItemRow
+                      key={v.id}
+                      voicemail={v}
+                      apiBaseUrl={API_BASE_URL}
+                      onStatusChange={handleVoicemailStatusChange}
+                      onNotesChange={handleVoicemailNotesChange}
+                      onDelete={handleDeleteVoicemail}
+                    />
+                  ))}
                 </div>
               );
             })()}

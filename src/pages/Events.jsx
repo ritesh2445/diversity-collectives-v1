@@ -19,6 +19,7 @@ import {
 import { cmsStore } from '../services/cmsStore';
 import { annualSignatureEvents } from '../data/dcvcData';
 import CardSpotlight from '../components/CardSpotlight';
+import AutoSlideImage from '../components/AutoSlideImage.jsx';
 import MobileCarousel from '../components/MobileCarousel.jsx';
 import { usePageMeta } from '../utils/seo';
 import {
@@ -577,8 +578,22 @@ export default function Events() {
                       </div>
                     </div>
 
-                    {/* Actions: 100% In-App */}
+                    {/* Actions & Flyer Showcase */}
                     <div className="md:col-span-3 flex flex-col md:items-end gap-2.5 relative z-20">
+                      {(evt.image || (Array.isArray(evt.images) && evt.images.length > 0)) && (
+                        <div className="w-full aspect-[16/10] rounded-2xl overflow-hidden border border-purple-200/80 shadow-xs mb-1">
+                          <AutoSlideImage
+                            images={Array.isArray(evt.images) && evt.images.length > 0 ? evt.images : [evt.image || '/images/community-gathering.jpg']}
+                            alt={evt.title}
+                            aspectRatio="aspect-[16/10]"
+                            className="w-full h-full"
+                            imageFit="cover"
+                            fallbackSrc="/images/community-gathering.jpg"
+                            showDots={true}
+                            showArrows={false}
+                          />
+                        </div>
+                      )}
                       <Link
                         to={`/events/${evt.slug}`}
                         className="btn-primary py-3 px-6 text-xs font-bold w-full md:w-auto text-center shadow-md hover:shadow-xl inline-flex items-center justify-center gap-1.5 cursor-pointer"

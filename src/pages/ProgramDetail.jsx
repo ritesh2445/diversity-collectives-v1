@@ -17,6 +17,7 @@ import { cmsStore } from '../services/cmsStore';
 import { useLiveOrgInfo } from '../hooks/useCmsLive';
 import SendVoicemailButton from '../components/SendVoicemailButton';
 import CardSpotlight from '../components/CardSpotlight';
+import AutoSlideImage from '../components/AutoSlideImage.jsx';
 
 export default function ProgramDetail() {
   const liveOrg = useLiveOrgInfo();
@@ -163,28 +164,21 @@ export default function ProgramDetail() {
                 <CardSpotlight
                   className={`rounded-3xl shadow-2xl overflow-hidden border-2 border-slate-200 group interactive-card-3d relative ${
                     isContain 
-                      ? 'aspect-square max-w-[420px] mx-auto bg-white flex items-center justify-center p-4 sm:p-6' 
+                      ? 'aspect-square max-w-[420px] mx-auto bg-white flex items-center justify-center' 
                       : 'aspect-[4/5] bg-slate-900'
                   }`}
                   tilt={true}
                   maxTilt={6}
                   glare={true}
                 >
-                  {isContain && (
-                    <img 
-                      src={program.heroImage} 
-                      alt="" 
-                      aria-hidden="true" 
-                      className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-20 scale-125 pointer-events-none"
-                    />
-                  )}
-                  <img 
-                    src={program.heroImage} 
+                  <AutoSlideImage
+                    images={Array.isArray(program.images) && program.images.length > 0 ? program.images : [program.heroImage || '/images/crc-building.jpg']}
                     alt={program.title}
-                    className={`w-full h-full ${isContain ? 'object-contain relative z-10 max-h-full max-w-full' : 'object-cover'} group-hover:scale-105 transition-transform duration-700 ease-out`}
-                    onError={(e) => {
-                      e.target.src = "/images/crc-building.jpg";
-                    }}
+                    className="w-full h-full"
+                    imageFit={program.imageFit || (isContain ? 'contain' : 'cover')}
+                    fallbackSrc="/images/crc-building.jpg"
+                    showDots={true}
+                    showArrows={true}
                   />
                 </CardSpotlight>
               );

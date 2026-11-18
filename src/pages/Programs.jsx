@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { cmsStore } from '../services/cmsStore';
 import CardSpotlight from '../components/CardSpotlight';
+import AutoSlideImage from '../components/AutoSlideImage.jsx';
 import MobileCarousel from '../components/MobileCarousel';
 import { usePageMeta } from '../utils/seo';
 
@@ -182,31 +183,22 @@ export default function Programs() {
                 >
                   <div className="flex flex-col flex-1">
                     {/* Uniform 16:10 Aspect Ratio Image Header */}
-                    <div className="w-full aspect-[16/10] bg-slate-100 relative overflow-hidden flex items-center justify-center shrink-0">
-                      {isContain && (
-                        <>
-                          <img
-                            src={prog.heroImage}
-                            alt=""
-                            aria-hidden="true"
-                            className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-40 scale-125 pointer-events-none"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-br from-purple-50/70 via-white/80 to-amber-50/70 backdrop-blur-xs" />
-                        </>
-                      )}
-                      <img
-                        src={prog.heroImage}
+                    <div className="w-full aspect-[16/10] bg-slate-100 relative overflow-hidden shrink-0">
+                      <AutoSlideImage
+                        images={Array.isArray(prog.images) && prog.images.length > 0 ? prog.images : [prog.heroImage || '/images/crc-building.jpg']}
                         alt={prog.title}
-                        className={`w-full h-full ${isContain ? 'object-contain max-h-[82%] max-w-[82%] relative z-10 p-3' : 'object-cover'} group-hover:scale-105 transition-transform duration-500 ease-out`}
-                        onError={(e) => {
-                          e.target.src = "/images/crc-building.jpg";
-                        }}
+                        aspectRatio="aspect-[16/10]"
+                        className="w-full h-full"
+                        imageFit={prog.imageFit || 'cover'}
+                        fallbackSrc="/images/crc-building.jpg"
+                        showDots={true}
+                        showArrows={true}
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none" />
 
                       {/* Header Badges */}
                       <div
-                        className="absolute top-3.5 left-3.5 px-3 py-1 bg-white/95 backdrop-blur-md rounded-full text-[11px] font-black tracking-wider uppercase shadow-md border border-slate-200 z-20"
+                        className="absolute top-3.5 left-3.5 px-3 py-1 bg-white/95 backdrop-blur-md rounded-full text-[11px] font-black tracking-wider uppercase shadow-md border border-slate-200 z-20 pointer-events-none"
                         style={{ color: prog.accent || '#5A1E65' }}
                       >
                         PROGRAM {prog.chapter || `0${index + 1}`}
@@ -312,30 +304,21 @@ export default function Programs() {
                       maxTilt={7}
                       glare={true}
                     >
-                      <div className="w-full h-full min-h-[340px] aspect-[16/10] bg-slate-100 relative overflow-hidden flex items-center justify-center">
-                        {isContain && (
-                          <>
-                            <img
-                              src={prog.heroImage}
-                              alt=""
-                              aria-hidden="true"
-                              className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-40 scale-125 pointer-events-none"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-br from-purple-50/70 via-white/80 to-amber-50/70 backdrop-blur-xs" />
-                          </>
-                        )}
-                        <img
-                          src={prog.heroImage}
+                      <div className="w-full h-full min-h-[340px] aspect-[16/10] bg-slate-100 relative overflow-hidden">
+                        <AutoSlideImage
+                          images={Array.isArray(prog.images) && prog.images.length > 0 ? prog.images : [prog.heroImage || '/images/crc-building.jpg']}
                           alt={prog.title}
-                          className={`w-full h-full ${isContain ? 'object-contain max-h-[82%] max-w-[82%] relative z-10 p-4' : 'object-cover'} group-hover:scale-105 transition-transform duration-500 ease-out`}
-                          onError={(e) => {
-                            e.target.src = "/images/crc-building.jpg";
-                          }}
+                          aspectRatio="aspect-[16/10]"
+                          className="w-full h-full"
+                          imageFit={prog.imageFit || 'cover'}
+                          fallbackSrc="/images/crc-building.jpg"
+                          showDots={true}
+                          showArrows={true}
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none" />
 
                         <div
-                          className="absolute top-4 left-4 px-3.5 py-1.5 bg-white/95 backdrop-blur-md rounded-full text-xs font-black tracking-wider uppercase shadow-md border border-slate-200 z-20"
+                          className="absolute top-4 left-4 px-3.5 py-1.5 bg-white/95 backdrop-blur-md rounded-full text-xs font-black tracking-wider uppercase shadow-md border border-slate-200 z-20 pointer-events-none"
                           style={{ color: prog.accent || '#5A1E65' }}
                         >
                           PROGRAM {prog.chapter || `0${index + 1}`}

@@ -5307,30 +5307,38 @@ export default {
           const { status, admin_notes } = body;
           const db = getDb(env);
 
-          if (db && status) {
+          if (db && (status !== undefined || admin_notes !== undefined)) {
+            const updates = [];
+            const args = [];
             const now = new Date().toISOString();
-            let extraClause = '';
-            const args = [status];
-            if (status === 'reviewed') {
-              extraClause = ', reviewed_at = ?';
-              args.push(now);
-            } else if (status === 'responded') {
-              extraClause = ', responded_at = ?';
-              args.push(now);
+
+            if (status !== undefined) {
+              updates.push('status = ?');
+              args.push(status);
+              if (status === 'reviewed') {
+                updates.push('reviewed_at = ?');
+                args.push(now);
+              } else if (status === 'responded') {
+                updates.push('responded_at = ?');
+                args.push(now);
+              }
             }
+
             if (admin_notes !== undefined) {
-              extraClause += ', admin_notes = ?';
+              updates.push('admin_notes = ?');
               args.push(admin_notes);
             }
-            args.push(id);
 
-            try {
-              await db.execute({
-                sql: `UPDATE voicemails SET status = ?${extraClause} WHERE id = ?`,
-                args
-              });
-            } catch (err) {
-              console.warn('[Voicemail] Update error:', err.message);
+            if (updates.length > 0) {
+              args.push(id);
+              try {
+                await db.execute({
+                  sql: `UPDATE voicemails SET ${updates.join(', ')} WHERE id = ?`,
+                  args
+                });
+              } catch (err) {
+                console.warn('[Voicemail] Update error:', err.message);
+              }
             }
           }
 

@@ -35,6 +35,8 @@ import {
   Radio
 } from 'lucide-react';
 import ImagePicker from './ImagePicker.jsx';
+import MultiImagePicker from './MultiImagePicker.jsx';
+import AutoSlideImage from '../../components/AutoSlideImage.jsx';
 import PictureFolderManager from './PictureFolderManager.jsx';
 import StyleCustomizer from './StyleCustomizer.jsx';
 import NewsWritingPad from './NewsWritingPad.jsx';
@@ -378,6 +380,7 @@ export default function CmsStudio() {
         slug: '',
         chapter: chapterStr,
         heroImage: '/images/crc-building.jpg',
+        images: ['/images/crc-building.jpg'],
         imageFit: 'contain',
         accent: '#5A1E65',
         fontSize: 'base',
@@ -404,6 +407,7 @@ export default function CmsStudio() {
         category: 'Community Celebration',
         description: '',
         image: '/images/community-gathering.jpg',
+        images: ['/images/community-gathering.jpg'],
         fontSize: 'base',
         fontColor: '#0F172A',
         rsvpUrl: '/events',
@@ -420,6 +424,7 @@ export default function CmsStudio() {
         author: 'Diversity Collective Team',
         readTime: '3 min read',
         image: '/images/community-gathering.jpg',
+        images: ['/images/community-gathering.jpg'],
         fontSize: 'base',
         fontColor: '#0F172A',
         excerpt: '',
@@ -518,8 +523,13 @@ export default function CmsStudio() {
         ...item
       });
     } else if (type === 'news') {
+      const newsImages = Array.isArray(item.images) && item.images.length > 0
+        ? item.images
+        : (item.image ? [item.image] : ['/images/community-gathering.jpg']);
       setFormData({
         ...item,
+        images: newsImages,
+        image: item.image || newsImages[0],
         originalId: item.id || item.slug,
         originalSlug: item.slug,
         body: item.body || item.content || '',
@@ -533,14 +543,24 @@ export default function CmsStudio() {
       });
     } else if (type === 'event') {
       const parsed = parseEventDate(item);
+      const eventImages = Array.isArray(item.images) && item.images.length > 0
+        ? item.images
+        : (item.image ? [item.image] : ['/images/community-gathering.jpg']);
       setFormData({
         ...item,
+        images: eventImages,
+        image: item.image || eventImages[0],
         isoDate: parsed?.isoDate || item.isoDate || '',
         date: item.date || parsed?.displayDate || ''
       });
     } else if (type === 'program') {
+      const progImages = Array.isArray(item.images) && item.images.length > 0
+        ? item.images
+        : (item.heroImage ? [item.heroImage] : ['/images/crc-building.jpg']);
       setFormData({
         ...item,
+        images: progImages,
+        heroImage: item.heroImage || progImages[0],
         originalId: item.id || item.slug,
         originalSlug: item.slug
       });
@@ -562,8 +582,11 @@ export default function CmsStudio() {
       const cleanTitle = (formData.title || '').trim();
       const fallbackSlug = cleanTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
       const progSlug = (formData.slug || '').trim() || fallbackSlug || `program-${Date.now()}`;
+      const heroImg = formData.images?.[0] || formData.heroImage || '/images/crc-building.jpg';
       const payload = {
         ...formData,
+        heroImage: heroImg,
+        images: Array.isArray(formData.images) && formData.images.length > 0 ? formData.images : [heroImg],
         slug: progSlug,
         originalId: editingItem?.id || editingItem?.slug,
         originalSlug: editingItem?.slug
@@ -571,15 +594,24 @@ export default function CmsStudio() {
       saveCmsProgram(payload);
       showToast(`Program "${formData.title}" published live.`);
     } else if (modalType === 'event') {
-      const normalizedEvent = normalizeCmsEvent(formData);
+      const eventImg = formData.images?.[0] || formData.image || '/images/community-gathering.jpg';
+      const eventPayload = {
+        ...formData,
+        image: eventImg,
+        images: Array.isArray(formData.images) && formData.images.length > 0 ? formData.images : [eventImg]
+      };
+      const normalizedEvent = normalizeCmsEvent(eventPayload);
       saveCmsEvent(normalizedEvent);
       showToast(`Event "${normalizedEvent.title}" saved & synced to website Calendar.`);
     } else if (modalType === 'news') {
       const formattedTags = typeof formData.tags === 'string'
         ? formData.tags.split(',').map(t => t.trim()).filter(Boolean)
         : formData.tags;
+      const articleImg = formData.images?.[0] || formData.image || '/images/community-gathering.jpg';
       saveCmsArticle({
         ...formData,
+        image: articleImg,
+        images: Array.isArray(formData.images) && formData.images.length > 0 ? formData.images : [articleImg],
         originalId: editingItem?.id || editingItem?.slug,
         originalSlug: editingItem?.slug,
         tags: formattedTags
@@ -821,33 +853,14 @@ export default function CmsStudio() {
                     </span>
                   </div>
 
-                  {(() => {
-                    const isContain = prog.imageFit === 'contain' || 
-                      prog.heroImage?.includes('crc-building') || 
-                      prog.heroImage?.includes('unicorns') || 
-                      prog.heroImage?.includes('logo');
-                    return (
-                      <div className="aspect-[16/9] rounded-2xl overflow-hidden bg-slate-900 relative flex items-center justify-center p-3">
-                        {isContain && (
-                          <img
-                            src={prog.heroImage}
-                            alt=""
-                            aria-hidden="true"
-                            className="absolute inset-0 w-full h-full object-cover blur-xl opacity-30 scale-125 pointer-events-none"
-                          />
-                        )}
-                        <img
-                          src={prog.heroImage}
-                          alt={prog.title}
-                          className={`w-full h-full ${isContain ? 'object-contain relative z-10' : 'object-cover'}`}
-                          onError={(e) => {
-                            e.currentTarget.onerror = null;
-                            e.currentTarget.src = '/images/crc-building.jpg';
-                          }}
-                        />
-                      </div>
-                    );
-                  })()}
+                  <AutoSlideImage
+                    images={Array.isArray(prog.images) && prog.images.length > 0 ? prog.images : [prog.heroImage || '/images/crc-building.jpg']}
+                    alt={prog.title}
+                    aspectRatio="aspect-[16/9]"
+                    className="rounded-2xl shadow-xs"
+                    imageFit={prog.imageFit || 'cover'}
+                    fallbackSrc="/images/crc-building.jpg"
+                  />
 
                   <div>
                     {prog.audience && (
@@ -2101,10 +2114,13 @@ export default function CmsStudio() {
                     </div>
                   </div>
 
-                  <ImagePicker
-                    value={formData.heroImage}
-                    onChange={(url) => setFormData({ ...formData, heroImage: url })}
-                    label="Program Header / Center Picture"
+                  <MultiImagePicker
+                    images={formData.images || (formData.heroImage ? [formData.heroImage] : [])}
+                    primaryImage={formData.heroImage}
+                    onChange={(newImages) => setFormData({ ...formData, images: newImages, heroImage: newImages[0] || formData.heroImage })}
+                    onPrimaryChange={(url) => setFormData({ ...formData, heroImage: url })}
+                    label="Program Pictures & Slideshow"
+                    helpText="Upload or choose multiple photos for this program. They will automatically slide on website cards and detail pages."
                     aspectRatio="aspect-[16/9]"
                   />
 
@@ -2387,10 +2403,13 @@ export default function CmsStudio() {
                     />
                   </div>
 
-                  <ImagePicker
-                    value={formData.image || '/images/community-gathering.jpg'}
-                    onChange={(url) => setFormData({ ...formData, image: url })}
-                    label="Event Cover Picture"
+                  <MultiImagePicker
+                    images={formData.images || (formData.image ? [formData.image] : [])}
+                    primaryImage={formData.image || '/images/community-gathering.jpg'}
+                    onChange={(newImages) => setFormData({ ...formData, images: newImages, image: newImages[0] || formData.image })}
+                    onPrimaryChange={(url) => setFormData({ ...formData, image: url })}
+                    label="Event Photos & Rotating Flyers"
+                    helpText="Upload or choose multiple flyers or event photos. They will automatically slide on event cards and calendar views."
                     aspectRatio="aspect-[16/9]"
                   />
 
@@ -2471,10 +2490,13 @@ export default function CmsStudio() {
                     </div>
                   </div>
 
-                  <ImagePicker
-                    value={formData.image || '/images/community-gathering.jpg'}
-                    onChange={(url) => setFormData({ ...formData, image: url })}
-                    label="Article Feature Picture"
+                  <MultiImagePicker
+                    images={formData.images || (formData.image ? [formData.image] : [])}
+                    primaryImage={formData.image || '/images/community-gathering.jpg'}
+                    onChange={(newImages) => setFormData({ ...formData, images: newImages, image: newImages[0] || formData.image })}
+                    onPrimaryChange={(url) => setFormData({ ...formData, image: url })}
+                    label="Article Feature & Gallery Photos"
+                    helpText="Upload or choose multiple article photos. They will automatically slide on article cards."
                     aspectRatio="aspect-[16/9]"
                   />
 
@@ -2727,10 +2749,13 @@ export default function CmsStudio() {
                     </div>
                   </div>
 
-                  <ImagePicker
-                    value={formData.image || '/images/community-gathering.jpg'}
-                    onChange={(url) => setFormData({ ...formData, image: url })}
-                    label="3D Carousel Spotlight Picture"
+                  <MultiImagePicker
+                    images={formData.images || (formData.image ? [formData.image] : [])}
+                    primaryImage={formData.image || '/images/community-gathering.jpg'}
+                    onChange={(newImages) => setFormData({ ...formData, images: newImages, image: newImages[0] || formData.image })}
+                    onPrimaryChange={(url) => setFormData({ ...formData, image: url })}
+                    label="3D Carousel Spotlight Pictures"
+                    helpText="Upload or choose multiple images for this spotlight. They will automatically slide on cards."
                     aspectRatio="aspect-[16/9]"
                   />
 
