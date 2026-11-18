@@ -16,6 +16,7 @@ import { useLiveOrgInfo } from '../hooks/useCmsLive';
 import CardSpotlight from '../components/CardSpotlight';
 import { submitContact } from '../services/api';
 import TurnstileWidget from '../components/TurnstileWidget';
+import VoicemailRecorder from '../components/VoicemailRecorder';
 import { usePageMeta } from '../utils/seo';
 
 export default function Contact() {
@@ -141,15 +142,8 @@ export default function Contact() {
                 DIRECT CHANNELS
               </span>
               <div className="space-y-4 text-sm">
-                <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-200/80">
-                  <Phone className="w-5 h-5 text-[#5A1E65] flex-shrink-0" />
-                  <div>
-                    <span className="text-[11px] text-slate-400 block font-bold uppercase">Telephone & Helpline</span>
-                    <a href={`tel:${orgInfo.phoneRaw}`} className="font-bold text-slate-900 hover:text-[#5A1E65] text-sm">
-                      {orgInfo.phone}
-                    </a>
-                  </div>
-                </div>
+                {/* Public Voicemail Interface: Replaces phone number */}
+                <VoicemailRecorder />
 
                 <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-200/80">
                   <Mail className="w-5 h-5 text-[#5A1E65] flex-shrink-0" />

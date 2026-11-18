@@ -1,3 +1,34 @@
+
+export function mergeProgramsWithDefaults(savedPrograms = [], defaultPrograms = programsList, deletedSlugs = []) {
+  const seed = Array.isArray(defaultPrograms) && defaultPrograms.length > 0 ? defaultPrograms : programsList;
+  const deletedSet = new Set(Array.isArray(deletedSlugs) ? deletedSlugs : []);
+  
+  const map = new Map();
+  // 1. Pre-populate all standard default programs that haven't been explicitly deleted
+  for (const prog of seed) {
+    const key = prog.slug || prog.id;
+    if (key && !deletedSet.has(key)) {
+      map.set(key, { ...prog });
+    }
+  }
+
+  // 2. Overlay / append custom and edited programs
+  if (Array.isArray(savedPrograms)) {
+    for (const prog of savedPrograms) {
+      const key = prog.slug || prog.id;
+      if (key && !deletedSet.has(key)) {
+        if (map.has(key)) {
+          map.set(key, { ...map.get(key), ...prog });
+        } else {
+          map.set(key, { ...prog });
+        }
+      }
+    }
+  }
+
+  return Array.from(map.values());
+}
+
 /**
  * DCVC Centralized Content Management System (CMS) Reactive Store
  * Provides complete reactive CRUD operations, local persistence, multi-tab sync,
@@ -89,6 +120,7 @@ export const INITIAL_CMS_DATA = {
     caCorpNumber: orgInfo.caCorpNumber || "C3666108",
     phone: orgInfo.phone || "(805) 644-LGBT (5428)",
     phoneRaw: orgInfo.phoneRaw || "+18056445428",
+    voicemailOnly: Boolean(orgInfo.voicemailOnly || false),
     email: orgInfo.email || "info@diversitycollective.org",
     address: orgInfo.address?.full || "2471 Portola Road, Suite 100, Ventura, CA 93003",
     googleMapsUrl: orgInfo.address?.googleMapsUrl || "",
@@ -588,7 +620,8 @@ class CmsStoreEngine {
         ...INITIAL_CMS_DATA,
         ...parsed,
         settings: { ...INITIAL_CMS_DATA.settings, ...(parsed.settings || {}) },
-        programs: parsed.programs || INITIAL_CMS_DATA.programs,
+        programs: mergeProgramsWithDefaults(parsed.programs, INITIAL_CMS_DATA.programs, parsed.deletedPrograms || []),
+        deletedPrograms: parsed.deletedPrograms || [],
         events: normalizeCmsEventList(parsed.events || INITIAL_CMS_DATA.events),
         sponsors: parsed.sponsors || INITIAL_CMS_DATA.sponsors,
         trainings: parsed.trainings || INITIAL_CMS_DATA.trainings,
@@ -695,11 +728,11 @@ class CmsStoreEngine {
   // Programs CRUD
   // --------------------------------------------------------------------------
   getPrograms() {
-    return this.data.programs;
+    return mergeProgramsWithDefaults(this.data.programs, INITIAL_CMS_DATA.programs, this.data.deletedPrograms || []);
   }
 
   saveProgram(program) {
-    const existing = [...this.data.programs];
+    const existing = mergeProgramsWithDefaults(this.data.programs, INITIAL_CMS_DATA.programs, this.data.deletedPrograms || []);
     const index = existing.findIndex(p => p.slug === program.slug || p.id === program.id);
     if (index >= 0) {
       existing[index] = { ...existing[index], ...program };
@@ -711,7 +744,8 @@ class CmsStoreEngine {
       };
       existing.unshift(newProgram);
     }
-    this.saveData({ ...this.data, programs: existing });
+    const deleted = (this.data.deletedPrograms || []).filter(s => s !== program.slug && s !== program.id);
+    this.saveData({ ...this.data, programs: existing, deletedPrograms: deleted });
     return existing;
   }
 
@@ -722,8 +756,9 @@ class CmsStoreEngine {
   }
 
   deleteProgram(slugOrId) {
-    const existing = this.data.programs.filter(p => p.slug !== slugOrId && p.id !== slugOrId);
-    this.saveData({ ...this.data, programs: existing });
+    const existing = (this.data.programs || []).filter(p => p.slug !== slugOrId && p.id !== slugOrId);
+    const deleted = [...(this.data.deletedPrograms || []), slugOrId];
+    this.saveData({ ...this.data, programs: existing, deletedPrograms: deleted });
     return existing;
   }
 

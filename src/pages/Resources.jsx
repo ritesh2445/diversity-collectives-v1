@@ -14,10 +14,13 @@ import {
 } from 'lucide-react';
 import { resourcesDirectory, orgInfo } from '../data/dcvcData';
 import { cmsStore } from '../services/cmsStore';
+import { useLiveOrgInfo } from '../hooks/useCmsLive';
+import SendVoicemailButton from '../components/SendVoicemailButton';
 import CardSpotlight from '../components/CardSpotlight';
 import MobileCarousel from '../components/MobileCarousel';
 
 export default function Resources() {
+  const liveOrg = useLiveOrgInfo();
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [dirGroups, setDirGroups] = useState(() => cmsStore.getResources() || resourcesDirectory);
@@ -183,13 +186,21 @@ export default function Resources() {
 
                       <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
                         {item.phone ? (
-                          <a
-                            href={`tel:${item.phone.replace(/[^0-9+]/g, '')}`}
-                            className="inline-flex items-center gap-1.5 font-bold text-[#5A1E65] hover:underline bg-purple-50/80 px-3 py-1.5 rounded-full border border-purple-200"
-                          >
-                            <Phone className="w-3.5 h-3.5" />
-                            <span>{item.phone}</span>
-                          </a>
+                          (item.voicemailOnly || liveOrg.voicemailOnly) ? (
+                            <SendVoicemailButton
+                              label="Send Voice Message"
+                              subject={`Resource Inquiry: ${item.name}`}
+                              compact
+                            />
+                          ) : (
+                            <a
+                              href={`tel:${item.phone.replace(/[^0-9+]/g, '')}`}
+                              className="inline-flex items-center gap-1.5 font-bold text-[#5A1E65] hover:underline bg-purple-50/80 px-3 py-1.5 rounded-full border border-purple-200"
+                            >
+                              <Phone className="w-3.5 h-3.5" />
+                              <span>{item.phone}</span>
+                            </a>
+                          )
                         ) : (
                           <span className="text-slate-400 italic font-medium">Verified Online Portal</span>
                         )}

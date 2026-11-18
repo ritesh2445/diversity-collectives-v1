@@ -407,7 +407,30 @@ export const SCHEMA_STATEMENTS = [
     version INTEGER NOT NULL DEFAULT 1,
     updated_by TEXT,
     updated_at TEXT DEFAULT (datetime('now'))
-  )`
+  )`,
+
+  // 18. Voicemail Messages (MediaRecorder Audio via Cloudflare R2 / Turso)
+  `CREATE TABLE IF NOT EXISTS voicemails (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    subject TEXT,
+    duration_seconds INTEGER DEFAULT 0,
+    r2_key TEXT NOT NULL,
+    audio_mime_type TEXT DEFAULT 'audio/webm',
+    file_size_bytes INTEGER DEFAULT 0,
+    audio_data TEXT,
+    status TEXT DEFAULT 'new' CHECK(status IN ('new', 'reviewed', 'responded')),
+    admin_notes TEXT,
+    ip_hash TEXT,
+    user_agent TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    reviewed_at TEXT,
+    responded_at TEXT
+  )`,
+
+  `CREATE INDEX IF NOT EXISTS idx_voicemails_status_date ON voicemails (status, created_at DESC)`,
+  `CREATE INDEX IF NOT EXISTS idx_voicemails_created_at ON voicemails (created_at DESC)`
 ];
 
 export const INITIAL_SEEDS = [

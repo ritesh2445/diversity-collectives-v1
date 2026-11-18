@@ -71,6 +71,12 @@ export default function CmsStudio() {
   const [showResetModal, setShowResetModal] = useState(false);
   const [cancelModalEvent, setCancelModalEvent] = useState(null);
   const [cancelNoticeText, setCancelNoticeText] = useState('');
+  const [showImportEventsModal, setShowImportEventsModal] = useState(false);
+  const [importEventsRawText, setImportEventsRawText] = useState('');
+  const [importEventsMode, setImportEventsMode] = useState('file'); // 'file' | 'paste'
+  const [importEventsMergeMode, setImportEventsMergeMode] = useState('append'); // 'append' | 'replace'
+  const [importEventsParsed, setImportEventsParsed] = useState([]);
+  const [importEventsError, setImportEventsError] = useState('');
 
   // Reload data
   const refreshData = () => {
@@ -85,6 +91,213 @@ export default function CmsStudio() {
   // --------------------------------------------------------------------------
   // Reset, Export & Import
   // --------------------------------------------------------------------------
+  const downloadSampleEventsCsv = () => {
+    const csvSample = `title,date,time,location,address,category,description,rsvpUrl,contactEmail,featured
+"Oceanside Pride Sunset Gala","August 15, 2026","5:00 PM – 9:00 PM","Ventura Promenade","Ventura Beach Boardwalk, Ventura, CA","Community Celebration","Annual sunset gala celebrating community resilience and LGBTQ+ pride.","https://diversitycollectivevc.org/events","events@diversitycollective.org",true
+"Youth Creative Arts & Open Mic","September 12, 2026","4:00 PM – 6:30 PM","Community Resource Center","2471 Portola Road, Suite 100, Ventura, CA","Youth","An affirming creative space for LGBTQ+ youth and allies to share poetry, art, and music.","/events","youth@diversitycollective.org",false
+"Trans & Nonbinary Wellness Circle","October 10, 2026","6:00 PM – 7:30 PM","Community Resource Center","2471 Portola Road, Suite 100, Ventura, CA","Health & Wellness","Monthly peer support, wellbeing resources, and guided discussion for trans and nonbinary community members.","/events","info@diversitycollective.org",false`;
+
+    const blob = new Blob([csvSample], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'dcvc_events_import_template.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const parseImportedEventsText = (rawText) => {
+    if (!rawText || !rawText.trim()) return [];
+    const trimmed = rawText.trim();
+
+    // JSON format
+    if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        const list = Array.isArray(parsed) ? parsed : (parsed.events || [parsed]);
+        return list.map(evt => formatImportedEvent(evt)).filter(Boolean);
+      } catch (err) {
+        throw new Error('Invalid JSON format: ' + err.message);
+      }
+    }
+
+    // CSV format parsing with quotes and multiline support
+    const lines = [];
+    let curLine = [];
+    let curVal = '';
+    let insideQuote = false;
+
+    for (let i = 0; i < trimmed.length; i++) {
+      const char = trimmed[i];
+      const next = trimmed[i + 1];
+
+      if (char === '"') {
+        if (insideQuote && next === '"') {
+          curVal += '"';
+          i++;
+        } else {
+          insideQuote = !insideQuote;
+        }
+      } else if (char === ',' && !insideQuote) {
+        curLine.push(curVal.trim());
+        curVal = '';
+      } else if ((char === '\r' || char === '\n') && !insideQuote) {
+        if (char === '\r' && next === '\n') i++;
+        curLine.push(curVal.trim());
+        if (curLine.some(c => c.length > 0)) lines.push(curLine);
+        curLine = [];
+        curVal = '';
+      } else {
+        curVal += char;
+      }
+    }
+    if (curVal.length > 0 || curLine.length > 0) {
+      curLine.push(curVal.trim());
+      if (curLine.some(c => c.length > 0)) lines.push(curLine);
+    }
+
+    if (lines.length < 2) {
+      throw new Error('CSV must contain a header row and at least one event row.');
+    }
+
+    const rawHeaders = lines[0].map(h => h.toLowerCase().replace(/[^a-z0-9]/g, ''));
+    const headerMap = {};
+    rawHeaders.forEach((h, idx) => {
+      if (h.includes('title') || h.includes('name') || h.includes('event')) headerMap.title = idx;
+      else if (h.includes('date') || h.includes('day')) headerMap.date = idx;
+      else if (h.includes('time') || h.includes('hour')) headerMap.time = idx;
+      else if (h.includes('address')) headerMap.address = idx;
+      else if (h.includes('loc') || h.includes('venue')) headerMap.location = idx;
+      else if (h.includes('cat') || h.includes('type')) headerMap.category = idx;
+      else if (h.includes('desc') || h.includes('detail') || h.includes('about')) headerMap.description = idx;
+      else if (h.includes('rsvp') || h.includes('link') || h.includes('reg') || h.includes('url')) headerMap.rsvpUrl = idx;
+      else if (h.includes('email') || h.includes('contact')) headerMap.contactEmail = idx;
+      else if (h.includes('feat') || h.includes('highlight')) headerMap.featured = idx;
+    });
+
+    const events = [];
+    for (let i = 1; i < lines.length; i++) {
+      const row = lines[i];
+      const getCol = (key) => headerMap[key] !== undefined ? row[headerMap[key]] : '';
+      
+      const title = getCol('title') || row[0];
+      if (!title) continue;
+
+      const date = getCol('date') || 'August 15, 2026';
+      const time = getCol('time') || '11:00 AM – 7:00 PM';
+      const location = getCol('location') || 'Community Resource Center';
+      const address = getCol('address') || (location.includes('Portola') ? location : '2471 Portola Road, Suite 100, Ventura, CA');
+      const category = getCol('category') || 'Community Celebration';
+      const description = getCol('description') || 'Join us for this community gathering.';
+      const rsvpUrl = getCol('rsvpUrl') || '/events';
+      const contactEmail = getCol('contactEmail') || 'info@diversitycollective.org';
+      const featuredRaw = String(getCol('featured')).toLowerCase();
+      const featured = featuredRaw === 'true' || featuredRaw === '1' || featuredRaw === 'yes';
+
+      events.push(formatImportedEvent({
+        title,
+        date,
+        time,
+        location,
+        address,
+        category,
+        description,
+        rsvpUrl,
+        contactEmail,
+        featured
+      }));
+    }
+
+    return events;
+  };
+
+  const formatImportedEvent = (raw) => {
+    const slug = (raw.title || 'event')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+    const id = raw.id || `evt-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    
+    return {
+      id,
+      slug,
+      title: raw.title || 'Community Event',
+      date: raw.date || raw.displayDate || 'August 15, 2026',
+      isoDate: raw.isoDate || (raw.date && /^\d{4}-\d{2}-\d{2}$/.test(raw.date) ? raw.date : '2026-08-15'),
+      time: raw.time || '11:00 AM – 7:00 PM',
+      location: raw.location || 'Community Resource Center',
+      address: raw.address || '2471 Portola Road, Suite 100, Ventura, CA',
+      category: raw.category || 'Community Celebration',
+      description: raw.description || '',
+      image: '/images/community-gathering.jpg', // Images can be added by editing event
+      rsvpUrl: raw.rsvpUrl || raw.registrationUrl || '/events',
+      contactEmail: raw.contactEmail || 'info@diversitycollective.org',
+      featured: Boolean(raw.featured),
+      isCancelled: false,
+      cancellationNotice: ''
+    };
+  };
+
+  const handleEventsFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportEventsError('');
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = event.target.result;
+        setImportEventsRawText(text);
+        const parsed = parseImportedEventsText(text);
+        setImportEventsParsed(parsed);
+      } catch (err) {
+        setImportEventsError(err.message);
+        setImportEventsParsed([]);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  const handleEventsRawTextChange = (text) => {
+    setImportEventsRawText(text);
+    setImportEventsError('');
+    if (!text.trim()) {
+      setImportEventsParsed([]);
+      return;
+    }
+    try {
+      const parsed = parseImportedEventsText(text);
+      setImportEventsParsed(parsed);
+    } catch (err) {
+      setImportEventsError(err.message);
+      setImportEventsParsed([]);
+    }
+  };
+
+  const handleExecuteEventsImport = () => {
+    if (!importEventsParsed.length) return;
+
+    const existing = cmsData.events || [];
+    let merged;
+    if (importEventsMergeMode === 'replace') {
+      merged = importEventsParsed;
+    } else {
+      const existingSlugs = new Set(existing.map(e => e.slug || e.id));
+      const newOnly = importEventsParsed.filter(e => !existingSlugs.has(e.slug));
+      merged = [...existing, ...newOnly];
+    }
+
+    saveLiveCmsData({ events: merged });
+    refreshData();
+    setShowImportEventsModal(false);
+    showToast(`Successfully imported ${importEventsParsed.length} event(s) into calendar.`);
+    setImportEventsParsed([]);
+    setImportEventsRawText('');
+    setImportEventsError('');
+  };
+
   const handleResetDefaults = () => {
     resetCmsToDefault();
     refreshData();

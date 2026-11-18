@@ -329,78 +329,133 @@ export async function resolveBusinessCorrection(correctionId, status = 'resolved
 }
 
 // ----------------------------------------------------------------------------
-// 3. Operational Inquiries
+// 3. Operational Inquiries & Form Submissions
 // ----------------------------------------------------------------------------
+const DEFAULT_INQUIRIES_MOCK = {
+  contact: [
+    {
+      id: 'inq-c-1',
+      name: 'Morgan Blake',
+      email: 'morgan.b@example.org',
+      phone: '(805) 555-8821',
+      subject: 'Question on youth peer support schedules',
+      message: 'Hi DCVC, does Rainbow Umbrella meet every Friday in Ventura? Are parents welcome to attend with youth?',
+      status: 'unread',
+      created_at: new Date(Date.now() - 3600000 * 5).toISOString(),
+      notes: 'Replied via phone on 11/17.'
+    },
+    {
+      id: 'inq-c-2',
+      name: 'Casey Miller',
+      email: 'casey.m@example.org',
+      phone: '(805) 555-9912',
+      subject: 'Affirming business directory badge verification',
+      message: 'We submitted our cafe last week. We would love to display the DCVC Affirming Business sticker in our window.',
+      status: 'in_progress',
+      created_at: new Date(Date.now() - 3600000 * 24).toISOString(),
+      notes: 'Directory sticker mailed.'
+    }
+  ],
+  appointment: [
+    {
+      id: 'inq-apt-1',
+      name: 'Jordan Rivera',
+      email: 'jordan.r@example.org',
+      phone: '(805) 555-4419',
+      subject: 'Diversity SHINES HIV/STI Screening Appointment',
+      message: 'Requesting confidential screening appointment for Thursday 4:00 PM. First-time client.',
+      status: 'in_progress',
+      created_at: new Date(Date.now() - 3600000 * 12).toISOString(),
+      notes: 'Counselor assigned.'
+    }
+  ],
+  resource: [
+    {
+      id: 'inq-res-1',
+      name: 'Elena Vance',
+      email: 'elena.vance@example.org',
+      phone: '(805) 555-6671',
+      subject: 'Transgender Name and Gender Marker Legal Clinic',
+      message: 'Seeking documentation support and guidance for California court petition paperwork.',
+      status: 'unread',
+      created_at: new Date(Date.now() - 3600000 * 18).toISOString(),
+      notes: 'Packets ready at front desk.'
+    }
+  ],
+  volunteer: [
+    {
+      id: 'inq-v-1',
+      full_name: 'Alex Harper',
+      name: 'Alex Harper',
+      email: 'alex.h@example.org',
+      phone: '(805) 555-3341',
+      city: 'Oxnard',
+      roles_of_interest: '["Pride Festival", "Youth Peer Circle Support", "Library Lending"]',
+      availability: 'Weekends and Friday evenings',
+      skills_experience: 'Event coordination, CPR certified, bilingual in English and Spanish',
+      status: 'unread',
+      created_at: new Date(Date.now() - 3600000 * 8).toISOString(),
+      notes: 'Background check clearance pending.'
+    }
+  ],
+  training: [
+    {
+      id: 'inq-t-1',
+      organization_name: 'Ventura Community Healthcare Clinic',
+      contact_name: 'Dr. Rebecca Martinez',
+      name: 'Dr. Rebecca Martinez',
+      email: 'rmartinez@vchc.example.org',
+      phone: '(805) 555-7762',
+      course_title: 'LGBTQ+ Clinical Competency for Medical Providers',
+      estimated_attendees: '45 clinical staff members',
+      preferred_format: 'in-person',
+      preferred_date: '2026-12-05',
+      goals_and_notes: 'Provide CME-accredited affirming care training for medical residents.',
+      status: 'unread',
+      created_at: new Date(Date.now() - 3600000 * 14).toISOString(),
+      notes: 'Formal proposal sent.'
+    }
+  ],
+  accessibility: [
+    {
+      id: 'inq-a-1',
+      contact_name: 'Taylor Reed',
+      name: 'Taylor Reed',
+      email: 'taylor.r@example.org',
+      barrier_description: 'Screen reader announced the festival flyer image as "botanical-flyer.jpg" without descriptive alt text on the news page.',
+      page_url: '/news/botanical-diversity-gala',
+      assistive_tech: 'NVDA on Windows 11',
+      status: 'unread',
+      created_at: new Date(Date.now() - 3600000 * 30).toISOString(),
+      remediation_notes: 'Alt text added to flyer asset in CMS.'
+    }
+  ]
+};
+
+function getLocalInquiries(type) {
+  try {
+    const raw = localStorage.getItem(`dcvc_admin_inquiries_${type}`);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return DEFAULT_INQUIRIES_MOCK[type] || [];
+}
+
+function saveLocalInquiries(type, list) {
+  try {
+    localStorage.setItem(`dcvc_admin_inquiries_${type}`, JSON.stringify(list));
+  } catch {}
+}
+
 export async function getInquiries(type = 'contact') {
   try {
     const res = await fetchWithAuth(`/admin/inquiries?type=${type}`);
     const data = await res.json();
-    return data.inquiries || [];
-  } catch {
-    const mockData = {
-      contact: [
-        {
-          id: 'inq-c-1',
-          name: 'Morgan Blake',
-          email: 'morgan.b@example.org',
-          phone: '(805) 555-8821',
-          subject: 'Question on youth peer support schedules',
-          message: 'Hi DCVC, does Rainbow Umbrella meet every Friday in Ventura? Are parents welcome to attend with youth?',
-          status: 'unread',
-          created_at: new Date(Date.now() - 3600000 * 5).toISOString()
-        },
-        {
-          id: 'inq-c-2',
-          name: 'Casey Miller',
-          email: 'casey.m@example.org',
-          phone: '(805) 555-9912',
-          subject: 'Affirming business directory badge verification',
-          message: 'We submitted our cafe last week. We would love to display the DCVC Affirming Business sticker in our window.',
-          status: 'in_progress',
-          created_at: new Date(Date.now() - 3600000 * 24).toISOString()
-        }
-      ],
-      volunteer: [
-        {
-          id: 'inq-v-1',
-          full_name: 'Alex Harper',
-          email: 'alex.h@example.org',
-          phone: '(805) 555-3341',
-          city: 'Oxnard',
-          roles_of_interest: '["Pride Festival", "Youth Peer Circle Support", "Library Lending"]',
-          availability: 'Weekends and Friday evenings',
-          skills: 'Event coordination, CPR certified, bilingual in English and Spanish',
-          status: 'unread',
-          created_at: new Date(Date.now() - 3600000 * 8).toISOString()
-        }
-      ],
-      training: [
-        {
-          id: 'inq-t-1',
-          organization_name: 'Ventura Community Healthcare Clinic',
-          contact_name: 'Dr. Rebecca Martinez',
-          email: 'rmartinez@vchc.example.org',
-          phone: '(805) 555-7762',
-          course_title: 'LGBTQ+ Clinical Competency for Medical Providers',
-          estimated_attendees: '45 clinical staff members',
-          status: 'unread',
-          created_at: new Date(Date.now() - 3600000 * 14).toISOString()
-        }
-      ],
-      accessibility: [
-        {
-          id: 'inq-a-1',
-          name: 'Taylor Reed',
-          email: 'taylor.r@example.org',
-          barrier_description: 'Screen reader announced the festival flyer image as "botanical-flyer.jpg" without descriptive alt text on the news page.',
-          page_url: '/news/botanical-diversity-gala',
-          status: 'unread',
-          created_at: new Date(Date.now() - 3600000 * 30).toISOString()
-        }
-      ]
-    };
-    return mockData[type] || [];
-  }
+    if (data.inquiries && Array.isArray(data.inquiries) && data.inquiries.length > 0) {
+      saveLocalInquiries(type, data.inquiries);
+      return data.inquiries;
+    }
+  } catch {}
+  return getLocalInquiries(type);
 }
 
 export async function updateInquiryStatus(type, inquiryId, status) {
@@ -409,11 +464,66 @@ export async function updateInquiryStatus(type, inquiryId, status) {
       method: 'PATCH',
       body: JSON.stringify({ status })
     });
-    return await res.json();
-  } catch {
-    recordLocalAuditLog(`update_${type}_status_${status}`, type, inquiryId);
-    return { success: true, message: `Status updated to ${status}.` };
-  }
+    const json = await res.json().catch(() => ({}));
+    if (json.success) {
+      const current = getLocalInquiries(type);
+      const updated = current.map(item => item.id === inquiryId ? { ...item, status } : item);
+      saveLocalInquiries(type, updated);
+      recordLocalAuditLog(`update_${type}_status_${status}`, type, inquiryId);
+      return json;
+    }
+  } catch {}
+
+  const current = getLocalInquiries(type);
+  const updated = current.map(item => item.id === inquiryId ? { ...item, status } : item);
+  saveLocalInquiries(type, updated);
+  recordLocalAuditLog(`update_${type}_status_${status}`, type, inquiryId);
+  return { success: true, message: `Status updated to ${status}.` };
+}
+
+export async function updateInquiry(type, inquiryId, updatedData) {
+  try {
+    const res = await fetchWithAuth(`/admin/inquiries/${type}/${inquiryId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updatedData)
+    });
+    const json = await res.json().catch(() => ({}));
+    if (json.success) {
+      const current = getLocalInquiries(type);
+      const updated = current.map(item => item.id === inquiryId ? { ...item, ...updatedData } : item);
+      saveLocalInquiries(type, updated);
+      recordLocalAuditLog(`edit_${type}_entry`, type, inquiryId);
+      return json;
+    }
+  } catch {}
+
+  const current = getLocalInquiries(type);
+  const updated = current.map(item => item.id === inquiryId ? { ...item, ...updatedData } : item);
+  saveLocalInquiries(type, updated);
+  recordLocalAuditLog(`edit_${type}_entry`, type, inquiryId);
+  return { success: true, message: `Entry updated successfully.` };
+}
+
+export async function deleteInquiry(type, inquiryId) {
+  try {
+    const res = await fetchWithAuth(`/admin/inquiries/${type}/${inquiryId}`, {
+      method: 'DELETE'
+    });
+    const json = await res.json().catch(() => ({}));
+    if (json.success) {
+      const current = getLocalInquiries(type);
+      const updated = current.filter(item => item.id !== inquiryId);
+      saveLocalInquiries(type, updated);
+      recordLocalAuditLog(`delete_${type}_entry`, type, inquiryId);
+      return json;
+    }
+  } catch {}
+
+  const current = getLocalInquiries(type);
+  const updated = current.filter(item => item.id !== inquiryId);
+  saveLocalInquiries(type, updated);
+  recordLocalAuditLog(`delete_${type}_entry`, type, inquiryId);
+  return { success: true, message: `Entry successfully deleted.` };
 }
 
 // ----------------------------------------------------------------------------
@@ -1430,6 +1540,134 @@ export async function toggleSubscriberStatus(email, id, isActive) {
   } catch (err) {
     return { success: false, error: err.message };
   }
+}
+
+// ----------------------------------------------------------------------------
+// Voicemail System Administrative Methods
+// ----------------------------------------------------------------------------
+const DEFAULT_VOICEMAILS_MOCK = [
+  {
+    id: 'vm_98234a1b0cde4f71',
+    name: 'Carlos Ramirez',
+    email: 'carlos.r@example.org',
+    subject: 'Question on youth peer support and family resources',
+    duration_seconds: 48,
+    r2_key: 'voicemails/2026/11/vm_98234a1b0cde4f71.webm',
+    audio_mime_type: 'audio/webm',
+    file_size_bytes: 384000,
+    status: 'new',
+    admin_notes: '',
+    created_at: new Date(Date.now() - 3600000 * 3).toISOString()
+  },
+  {
+    id: 'vm_17a42b9d88fe0192',
+    name: 'Samantha Lee',
+    email: 'samantha.l@example.com',
+    subject: 'Volunteer orientation for upcoming coastal Pride festival',
+    duration_seconds: 75,
+    r2_key: 'voicemails/2026/11/vm_17a42b9d88fe0192.webm',
+    audio_mime_type: 'audio/webm',
+    file_size_bytes: 612000,
+    status: 'reviewed',
+    admin_notes: 'Volunteer coordinator sent orientation packet.',
+    created_at: new Date(Date.now() - 3600000 * 18).toISOString(),
+    reviewed_at: new Date(Date.now() - 3600000 * 10).toISOString()
+  },
+  {
+    id: 'vm_3c88df19a2b4e503',
+    name: 'Marcus Bell',
+    email: 'mbell@wellnesscorp.example.org',
+    subject: 'P.R.I.D.E. Clinical Competency training for healthcare staff',
+    duration_seconds: 112,
+    r2_key: 'voicemails/2026/11/vm_3c88df19a2b4e503.webm',
+    audio_mime_type: 'audio/webm',
+    file_size_bytes: 914000,
+    status: 'responded',
+    admin_notes: 'Spoke with Marcus; proposal emailed for December 2026.',
+    created_at: new Date(Date.now() - 3600000 * 36).toISOString(),
+    reviewed_at: new Date(Date.now() - 3600000 * 24).toISOString(),
+    responded_at: new Date(Date.now() - 3600000 * 20).toISOString()
+  }
+];
+
+function getStoredVoicemails() {
+  try {
+    const raw = localStorage.getItem('dcvc_admin_voicemails');
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return DEFAULT_VOICEMAILS_MOCK;
+}
+
+function saveStoredVoicemails(list) {
+  try {
+    localStorage.setItem('dcvc_admin_voicemails', JSON.stringify(list));
+  } catch {}
+}
+
+export async function getVoicemails(statusFilter = 'all') {
+  try {
+    const res = await fetchWithAuth(`/admin/voicemails?status=${statusFilter}`);
+    const data = await res.json();
+    if (data.voicemails && Array.isArray(data.voicemails) && data.voicemails.length > 0) {
+      saveStoredVoicemails(data.voicemails);
+      return data.voicemails;
+    }
+  } catch {}
+
+  const local = getStoredVoicemails();
+  if (statusFilter && statusFilter !== 'all') {
+    return local.filter(v => v.status === statusFilter);
+  }
+  return local;
+}
+
+export async function updateVoicemailStatus(id, status, notes) {
+  try {
+    const res = await fetchWithAuth(`/admin/voicemails/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status, admin_notes: notes })
+    });
+    const json = await res.json().catch(() => ({}));
+    if (json.success) {
+      const current = getStoredVoicemails();
+      const updated = current.map(v => v.id === id ? { ...v, status, admin_notes: notes !== undefined ? notes : v.admin_notes } : v);
+      saveStoredVoicemails(updated);
+      recordLocalAuditLog(`update_voicemail_status_${status}`, 'voicemail', id);
+      return json;
+    }
+  } catch {}
+
+  const current = getStoredVoicemails();
+  const updated = current.map(v => v.id === id ? { ...v, status, admin_notes: notes !== undefined ? notes : v.admin_notes } : v);
+  saveStoredVoicemails(updated);
+  recordLocalAuditLog(`update_voicemail_status_${status}`, 'voicemail', id);
+  return { success: true, message: `Status updated to ${status}.` };
+}
+
+export async function deleteVoicemail(id) {
+  try {
+    const res = await fetchWithAuth(`/admin/voicemails/${id}`, {
+      method: 'DELETE'
+    });
+    const json = await res.json().catch(() => ({}));
+    if (json.success) {
+      const current = getStoredVoicemails();
+      const updated = current.filter(v => v.id !== id);
+      saveStoredVoicemails(updated);
+      recordLocalAuditLog(`delete_voicemail`, 'voicemail', id);
+      return json;
+    }
+  } catch {}
+
+  const current = getStoredVoicemails();
+  const updated = current.filter(v => v.id !== id);
+  saveStoredVoicemails(updated);
+  recordLocalAuditLog(`delete_voicemail`, 'voicemail', id);
+  return { success: true, message: `Voicemail deleted.` };
+}
+
+export function getVoicemailAudioUrl(id) {
+  return `${getApiBaseUrl()}/admin/voicemails/${id}/audio`;
 }
 
 // Re-export all extended administrative capabilities

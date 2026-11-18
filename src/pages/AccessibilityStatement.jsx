@@ -12,6 +12,7 @@ import {
   Volume2 
 } from 'lucide-react';
 import { useLiveOrgInfo } from '../hooks/useCmsLive';
+import SendVoicemailButton from '../components/SendVoicemailButton';
 
 export default function AccessibilityStatement() {
   const orgInfo = useLiveOrgInfo();

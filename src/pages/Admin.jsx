@@ -48,7 +48,11 @@ import {
   MapPin,
   Phone,
   Globe,
-  Filter
+  Filter,
+  Mic,
+  Volume2,
+  Play,
+  Pause
 } from 'lucide-react';
 import { businessDirectorySeed } from '../data/dcvcData';
 import { usePageMeta } from '../utils/seo';
@@ -620,6 +624,14 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
 
   const [inquiries, setInquiries] = useState([]);
   const [inquiryType, setInquiryType] = useState('contact');
+  const [selectedInquiryView, setSelectedInquiryView] = useState(null);
+  const [editingInquiry, setEditingInquiry] = useState(null);
+
+  // Voicemail Inbox State
+  const [voicemails, setVoicemails] = useState([]);
+  const [voicemailStatusFilter, setVoicemailStatusFilter] = useState('all');
+  const [voicemailSearch, setVoicemailSearch] = useState('');
+  const [playingVoicemailId, setPlayingVoicemailId] = useState(null);
 
   // Gallery Studio (GitHub + jsDelivr Multi-CDN) State
   const [galleryPhotos, setGalleryPhotos] = useState([]);
@@ -665,6 +677,7 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
         if (inboxSubTab === 'newsletter') fetchSubscriberStats();
         if (inboxSubTab === 'directory') fetchDirectoryBusinesses();
         if (inboxSubTab === 'inquiries') fetchInquiries(inquiryType);
+        if (inboxSubTab === 'voicemail') fetchVoicemails();
       }
       if (activeTab === 'gallery') fetchAdminGallery();
       if (activeTab === 'security' && user.role === 'admin') fetchTeamUsers();
@@ -1573,6 +1586,107 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
 
   const fetchPendingBusinesses = fetchDirectoryBusinesses;
 
+  const INQUIRY_CATEGORY_SEED = {
+    contact: [
+      {
+        id: 'inq-c-1',
+        name: 'Morgan Blake',
+        email: 'morgan.b@example.org',
+        phone: '(805) 555-8821',
+        subject: 'Question on youth peer support schedules',
+        message: 'Hi DCVC, does Rainbow Umbrella meet every Friday in Ventura? Are parents welcome to attend with youth?',
+        status: 'unread',
+        created_at: new Date(Date.now() - 3600000 * 5).toISOString(),
+        notes: 'Replied via phone on 11/17.'
+      },
+      {
+        id: 'inq-c-2',
+        name: 'Casey Miller',
+        email: 'casey.m@example.org',
+        phone: '(805) 555-9912',
+        subject: 'Affirming business directory badge verification',
+        message: 'We submitted our cafe last week. We would love to display the DCVC Affirming Business sticker in our window.',
+        status: 'in_progress',
+        created_at: new Date(Date.now() - 3600000 * 24).toISOString(),
+        notes: 'Directory sticker mailed.'
+      }
+    ],
+    appointment: [
+      {
+        id: 'inq-apt-1',
+        name: 'Jordan Rivera',
+        email: 'jordan.r@example.org',
+        phone: '(805) 555-4419',
+        subject: 'Diversity SHINES HIV/STI Screening Appointment',
+        message: 'Requesting confidential screening appointment for Thursday 4:00 PM. First-time client.',
+        status: 'in_progress',
+        created_at: new Date(Date.now() - 3600000 * 12).toISOString(),
+        notes: 'Counselor assigned.'
+      }
+    ],
+    resource: [
+      {
+        id: 'inq-res-1',
+        name: 'Elena Vance',
+        email: 'elena.vance@example.org',
+        phone: '(805) 555-6671',
+        subject: 'Transgender Name and Gender Marker Legal Clinic',
+        message: 'Seeking documentation support and guidance for California court petition paperwork.',
+        status: 'unread',
+        created_at: new Date(Date.now() - 3600000 * 18).toISOString(),
+        notes: 'Packets ready at front desk.'
+      }
+    ],
+    volunteer: [
+      {
+        id: 'inq-v-1',
+        full_name: 'Alex Harper',
+        name: 'Alex Harper',
+        email: 'alex.h@example.org',
+        phone: '(805) 555-3341',
+        city: 'Oxnard',
+        roles_of_interest: '["Pride Festival", "Youth Peer Circle Support", "Library Lending"]',
+        availability: 'Weekends and Friday evenings',
+        skills_experience: 'Event coordination, CPR certified, bilingual in English and Spanish',
+        status: 'unread',
+        created_at: new Date(Date.now() - 3600000 * 8).toISOString(),
+        notes: 'Background check clearance pending.'
+      }
+    ],
+    training: [
+      {
+        id: 'inq-t-1',
+        organization_name: 'Ventura Community Healthcare Clinic',
+        contact_name: 'Dr. Rebecca Martinez',
+        name: 'Dr. Rebecca Martinez',
+        email: 'rmartinez@vchc.example.org',
+        phone: '(805) 555-7762',
+        course_title: 'LGBTQ+ Clinical Competency for Medical Providers',
+        estimated_attendees: '45 clinical staff members',
+        preferred_format: 'in-person',
+        preferred_date: '2026-12-05',
+        goals_and_notes: 'Provide CME-accredited affirming care training for medical residents.',
+        status: 'unread',
+        created_at: new Date(Date.now() - 3600000 * 14).toISOString(),
+        notes: 'Formal proposal sent.'
+      }
+    ],
+    accessibility: [
+      {
+        id: 'inq-a-1',
+        contact_name: 'Taylor Reed',
+        name: 'Taylor Reed',
+        email: 'taylor.r@example.org',
+        barrier_description: 'Screen reader announced the festival flyer image as "botanical-flyer.jpg" without descriptive alt text on the news page.',
+        page_url: '/news/botanical-diversity-gala',
+        assistive_tech: 'NVDA on Windows 11',
+        status: 'unread',
+        created_at: new Date(Date.now() - 3600000 * 30).toISOString(),
+        remediation_notes: 'Alt text added to flyer asset in CMS.'
+      }
+    ]
+  };
+
   const fetchInquiries = async (type) => {
     try {
       const res = await fetch(`${API_BASE_URL}/admin/inquiries?type=${type}`, {
@@ -1581,11 +1695,345 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
       });
       if (res.ok) {
         const data = await res.json();
-        setInquiries(data.inquiries || []);
+        if (data.inquiries && Array.isArray(data.inquiries) && data.inquiries.length > 0) {
+          setInquiries(data.inquiries);
+          try {
+            localStorage.setItem(`dcvc_admin_inquiries_${type}`, JSON.stringify(data.inquiries));
+          } catch {}
+          return;
+        }
       }
     } catch (err) {
       console.warn('Could not load inquiries:', err);
     }
+
+    try {
+      const local = localStorage.getItem(`dcvc_admin_inquiries_${type}`);
+      if (local) {
+        setInquiries(JSON.parse(local));
+        return;
+      }
+    } catch {}
+
+    const seed = INQUIRY_CATEGORY_SEED[type] || [];
+    setInquiries(seed);
+    try {
+      localStorage.setItem(`dcvc_admin_inquiries_${type}`, JSON.stringify(seed));
+    } catch {}
+  };
+
+  const handleInquiryStatusChange = async (inqId, newStatus) => {
+    try {
+      await fetch(`${API_BASE_URL}/admin/inquiries/${inquiryType}/${inqId}`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: buildAuthHeaders(),
+        body: JSON.stringify({ status: newStatus })
+      });
+    } catch {}
+
+    setInquiries(prev => {
+      const updated = prev.map(item => item.id === inqId ? { ...item, status: newStatus } : item);
+      try {
+        localStorage.setItem(`dcvc_admin_inquiries_${inquiryType}`, JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
+    if (selectedInquiryView && selectedInquiryView.id === inqId) {
+      setSelectedInquiryView(prev => ({ ...prev, status: newStatus }));
+    }
+  };
+
+  const handleDeleteInquiry = async (inqId) => {
+    if (!window.confirm('Are you sure you want to delete this form submission? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      await fetch(`${API_BASE_URL}/admin/inquiries/${inquiryType}/${inqId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: buildAuthHeaders()
+      });
+    } catch {}
+
+    setInquiries(prev => {
+      const updated = prev.filter(item => item.id !== inqId);
+      try {
+        localStorage.setItem(`dcvc_admin_inquiries_${inquiryType}`, JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
+    if (selectedInquiryView && selectedInquiryView.id === inqId) {
+      setSelectedInquiryView(null);
+    }
+  };
+
+  const handleSaveInquiryEdit = async (e) => {
+    e?.preventDefault();
+    if (!editingInquiry) return;
+
+    try {
+      await fetch(`${API_BASE_URL}/admin/inquiries/${inquiryType}/${editingInquiry.id}`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: buildAuthHeaders(),
+        body: JSON.stringify(editingInquiry)
+      });
+    } catch {}
+
+    setInquiries(prev => {
+      const updated = prev.map(item => item.id === editingInquiry.id ? { ...item, ...editingInquiry } : item);
+      try {
+        localStorage.setItem(`dcvc_admin_inquiries_${inquiryType}`, JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
+    if (selectedInquiryView && selectedInquiryView.id === editingInquiry.id) {
+      setSelectedInquiryView({ ...selectedInquiryView, ...editingInquiry });
+    }
+
+    setEditingInquiry(null);
+  };
+
+  const DEFAULT_VOICEMAILS_SEED = [
+    {
+      id: 'vm_98234a1b0cde4f71',
+      name: 'Carlos Ramirez',
+      email: 'carlos.r@example.org',
+      subject: 'Question on youth peer support and family resources',
+      duration_seconds: 48,
+      r2_key: 'voicemails/2026/11/vm_98234a1b0cde4f71.webm',
+      audio_mime_type: 'audio/webm',
+      file_size_bytes: 384000,
+      status: 'new',
+      admin_notes: '',
+      created_at: new Date(Date.now() - 3600000 * 3).toISOString()
+    },
+    {
+      id: 'vm_17a42b9d88fe0192',
+      name: 'Samantha Lee',
+      email: 'samantha.l@example.com',
+      subject: 'Volunteer orientation for upcoming coastal Pride festival',
+      duration_seconds: 75,
+      r2_key: 'voicemails/2026/11/vm_17a42b9d88fe0192.webm',
+      audio_mime_type: 'audio/webm',
+      file_size_bytes: 612000,
+      status: 'reviewed',
+      admin_notes: 'Volunteer coordinator sent orientation packet.',
+      created_at: new Date(Date.now() - 3600000 * 18).toISOString(),
+      reviewed_at: new Date(Date.now() - 3600000 * 10).toISOString()
+    },
+    {
+      id: 'vm_3c88df19a2b4e503',
+      name: 'Marcus Bell',
+      email: 'mbell@wellnesscorp.example.org',
+      subject: 'P.R.I.D.E. Clinical Competency training for healthcare staff',
+      duration_seconds: 112,
+      r2_key: 'voicemails/2026/11/vm_3c88df19a2b4e503.webm',
+      audio_mime_type: 'audio/webm',
+      file_size_bytes: 914000,
+      status: 'responded',
+      admin_notes: 'Spoke with Marcus; proposal emailed for December 2026.',
+      created_at: new Date(Date.now() - 3600000 * 36).toISOString(),
+      reviewed_at: new Date(Date.now() - 3600000 * 24).toISOString(),
+      responded_at: new Date(Date.now() - 3600000 * 20).toISOString()
+    }
+  ];
+
+  const fetchVoicemails = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/voicemails`, {
+        credentials: 'include',
+        headers: buildAuthHeaders()
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.voicemails && Array.isArray(data.voicemails) && data.voicemails.length > 0) {
+          setVoicemails(data.voicemails);
+          try {
+            localStorage.setItem('dcvc_admin_voicemails', JSON.stringify(data.voicemails));
+          } catch {}
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn('Could not load voicemails from API:', err);
+    }
+
+    try {
+      const local = localStorage.getItem('dcvc_admin_voicemails');
+      if (local) {
+        setVoicemails(JSON.parse(local));
+        return;
+      }
+    } catch {}
+
+    setVoicemails(DEFAULT_VOICEMAILS_SEED);
+    try {
+      localStorage.setItem('dcvc_admin_voicemails', JSON.stringify(DEFAULT_VOICEMAILS_SEED));
+    } catch {}
+  };
+
+  const handleVoicemailStatusChange = async (id, newStatus) => {
+    try {
+      await fetch(`${API_BASE_URL}/admin/voicemails/${id}`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: buildAuthHeaders(),
+        body: JSON.stringify({ status: newStatus })
+      });
+    } catch {}
+
+    setVoicemails((prev) => {
+      const updated = prev.map((v) => (v.id === id ? { ...v, status: newStatus } : v));
+      try {
+        localStorage.setItem('dcvc_admin_voicemails', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  };
+
+  const handleVoicemailNotesChange = async (id, notes) => {
+    try {
+      await fetch(`${API_BASE_URL}/admin/voicemails/${id}`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: buildAuthHeaders(),
+        body: JSON.stringify({ admin_notes: notes })
+      });
+    } catch {}
+
+    setVoicemails((prev) => {
+      const updated = prev.map((v) => (v.id === id ? { ...v, admin_notes: notes } : v));
+      try {
+        localStorage.setItem('dcvc_admin_voicemails', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  };
+
+  const handleDeleteVoicemail = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this voicemail and its recording? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      await fetch(`${API_BASE_URL}/admin/voicemails/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: buildAuthHeaders()
+      });
+    } catch {}
+
+    setVoicemails((prev) => {
+      const updated = prev.filter((v) => v.id !== id);
+      try {
+        localStorage.setItem('dcvc_admin_voicemails', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  };
+
+  const exportVoicemailsToCsv = () => {
+    if (!voicemails || voicemails.length === 0) {
+      alert('No voicemails available to export.');
+      return;
+    }
+
+    const headers = ['ID', 'Caller Name', 'Email', 'Subject', 'Duration (seconds)', 'Status', 'Staff Notes', 'Date Received'];
+    const escapeCell = (val) => {
+      if (val === null || val === undefined) return '""';
+      const str = String(val).replace(/"/g, '""');
+      return '"' + str + '"';
+    };
+
+    const rows = voicemails.map((v) => [
+      v.id || '',
+      v.name || '',
+      v.email || '',
+      v.subject || '',
+      v.duration_seconds || 0,
+      v.status || 'new',
+      v.admin_notes || '',
+      v.created_at || ''
+    ]);
+
+    const csvContent = [
+      headers.map(escapeCell).join(','),
+      ...rows.map((row) => row.map(escapeCell).join(','))
+    ].join('\r\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `dcvc_voicemails_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const exportInquiriesToCsv = (items, categoryName = 'form_submissions') => {
+    if (!items || items.length === 0) {
+      alert('No form submissions available to export in this category.');
+      return;
+    }
+
+    const headers = [
+      'ID',
+      'Category',
+      'Name',
+      'Email',
+      'Phone',
+      'Subject / Topic / Barrier',
+      'Message / Details / Goals',
+      'Organization / City',
+      'Format / Roles / Assistive Tech',
+      'Status',
+      'Internal Notes',
+      'Created Date'
+    ];
+
+    const escapeCell = (val) => {
+      if (val === null || val === undefined) return '""';
+      const str = String(val).replace(/"/g, '""');
+      return `"${str}"`;
+    };
+
+    const rows = items.map((inq) => [
+      inq.id || '',
+      categoryName,
+      inq.name || inq.full_name || inq.contact_name || '',
+      inq.email || inq.contact_email || '',
+      inq.phone || '',
+      inq.subject || inq.course_title || inq.barrier_description || '',
+      inq.message || inq.skills_experience || inq.goals_and_notes || '',
+      inq.organization_name || inq.city || '',
+      inq.preferred_format || inq.roles_of_interest || inq.assistive_tech || inq.page_url || '',
+      inq.status || 'unread',
+      inq.notes || inq.remediation_notes || '',
+      inq.created_at || ''
+    ]);
+
+    const csvContent = [
+      headers.map(escapeCell).join(','),
+      ...rows.map(row => row.map(escapeCell).join(','))
+    ].join('\r\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `dcvc_${categoryName}_submissions_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const applyPreset = (preset) => {
@@ -2627,6 +3075,25 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                 <span>Form Submissions</span>
               </button>
               <button
+                onClick={() => {
+                  setInboxSubTab('voicemail');
+                  fetchVoicemails();
+                }}
+                className={`px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-2 transition-all cursor-pointer ${
+                  inboxSubTab === 'voicemail'
+                    ? 'bg-[#5A1E65] text-white shadow-xs'
+                    : 'text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                <Mic className="w-3.5 h-3.5" />
+                <span>Voicemail Inbox</span>
+                {voicemails.filter(v => v.status === 'new').length > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-amber-400 text-slate-950 font-black animate-pulse">
+                    {voicemails.filter(v => v.status === 'new').length} New
+                  </span>
+                )}
+              </button>
+              <button
                 onClick={() => setInboxSubTab('newsletter')}
                 className={`px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-2 transition-all cursor-pointer ${
                   inboxSubTab === 'newsletter'
@@ -3599,6 +4066,15 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                           placeholder="(805) 555-0123"
                           className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-400/40"
                         />
+                        <label className="flex items-center gap-1.5 mt-1.5 cursor-pointer text-[11px] font-semibold text-slate-600">
+                          <input
+                            type="checkbox"
+                            checked={Boolean(bizFormData.voicemailOnly)}
+                            onChange={(e) => setBizFormData({ ...bizFormData, voicemailOnly: e.target.checked })}
+                            className="rounded text-[#5A1E65] focus:ring-purple-400"
+                          />
+                          <span>Toggle voicemails only (show Send Voicemail button)</span>
+                        </label>
                       </div>
 
                       <div>
@@ -3731,32 +4207,48 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
           </div>
         )}
 
-        {/* OPERATIONAL INQUIRIES */}
+        {/* OPERATIONAL INQUIRIES & FORM SUBMISSIONS */}
         {inboxSubTab === 'inquiries' && (
           <div className="bg-white rounded-3xl border border-slate-200 shadow-xs p-6 sm:p-8 space-y-6">
-            <div className="border-b border-slate-100 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="border-b border-slate-100 pb-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div>
-                <h2 className="font-display text-lg font-black text-slate-950">
-                  Operational Inquiries & Form Submissions
+                <h2 className="font-display text-lg font-black text-slate-950 flex items-center gap-2">
+                  <span>Operational Inquiries & Form Submissions</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-900 uppercase">
+                    {inquiries.length} {inquiryType} {inquiries.length === 1 ? 'entry' : 'entries'}
+                  </span>
                 </h2>
-                <p className="text-xs text-slate-500">
-                  Inbound contact requests, volunteer applications, and training inquiries stored in Turso.
+                <p className="text-xs text-slate-500 mt-0.5">
+                  View complete form details, change status, edit, delete, or export submission data in CSV format.
                 </p>
               </div>
 
-              {/* Inquiries Category Switcher */}
-              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl flex-wrap">
-                {['contact', 'appointment', 'resource', 'volunteer', 'training', 'accessibility'].map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setInquiryType(t)}
-                    className={`py-1.5 px-3 rounded-lg text-xs font-bold capitalize transition-all cursor-pointer ${
-                      inquiryType === t ? 'bg-white text-purple-950 shadow-xs' : 'text-slate-500 hover:text-slate-900'
-                    }`}
-                  >
-                    {t}
-                  </button>
-                ))}
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Inquiries Category Switcher */}
+                <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl flex-wrap">
+                  {['contact', 'appointment', 'resource', 'volunteer', 'training', 'accessibility'].map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => setInquiryType(t)}
+                      className={`py-1.5 px-3 rounded-lg text-xs font-bold capitalize transition-all cursor-pointer ${
+                        inquiryType === t ? 'bg-white text-purple-950 shadow-xs' : 'text-slate-500 hover:text-slate-900'
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+
+                {/* CSV Export Button */}
+                <button
+                  type="button"
+                  onClick={() => exportInquiriesToCsv(inquiries, inquiryType)}
+                  className="px-3.5 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                  title="Export all current form submissions to CSV file"
+                >
+                  <Download className="w-3.5 h-3.5 text-purple-700" />
+                  <span>Export CSV</span>
+                </button>
               </div>
             </div>
 
@@ -3768,40 +4260,690 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                     <th className="py-3 px-4">Subject / Details</th>
                     <th className="py-3 px-4">Status</th>
                     <th className="py-3 px-4">Timestamp</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
                   {inquiries.length > 0 ? (
                     inquiries.map((inq) => (
-                      <tr key={inq.id} className="hover:bg-slate-50/60">
+                      <tr key={inq.id} className="hover:bg-slate-50/60 transition-colors">
                         <td className="py-3 px-4">
-                          <span className="font-bold text-slate-900 block">{inq.name || inq.full_name || inq.contact_name}</span>
-                          <span className="text-[11px] text-slate-500">{inq.email}</span>
+                          <span className="font-bold text-slate-900 block">{inq.name || inq.full_name || inq.contact_name || 'Anonymous Community Member'}</span>
+                          <span className="text-[11px] text-slate-500 block">{inq.email || inq.contact_email || 'No email provided'}</span>
+                          {inq.phone && <span className="text-[10px] text-slate-400 block">{inq.phone}</span>}
                         </td>
                         <td className="py-3 px-4 max-w-md">
                           <span className="font-bold text-slate-800 block truncate">{inq.subject || inq.course_title || inq.barrier_description || 'General Inquiry'}</span>
                           <span className="text-[11px] text-slate-500 line-clamp-2">{inq.message || inq.skills_experience || inq.goals_and_notes || ''}</span>
+                          {(inq.city || inq.organization_name) && (
+                            <span className="text-[10px] text-purple-700 font-medium block mt-0.5">
+                              {inq.organization_name || inq.city}
+                            </span>
+                          )}
                         </td>
                         <td className="py-3 px-4">
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 capitalize">
-                            {inq.status || 'unread'}
-                          </span>
+                          <select
+                            value={inq.status || 'unread'}
+                            onChange={(e) => handleInquiryStatusChange(inq.id, e.target.value)}
+                            className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition-colors cursor-pointer capitalize shadow-2xs ${
+                              inq.status === 'resolved' || inq.status === 'completed' || inq.status === 'remediated' || inq.status === 'active'
+                                ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                                : inq.status === 'in_progress' || inq.status === 'proposal_sent' || inq.status === 'under_review' || inq.status === 'oriented' || inq.status === 'contacted'
+                                ? 'bg-sky-50 text-sky-800 border-sky-300'
+                                : inq.status === 'archived' || inq.status === 'inactive' || inq.status === 'cancelled' || inq.status === 'closed'
+                                ? 'bg-slate-100 text-slate-600 border-slate-300'
+                                : 'bg-amber-50 text-amber-800 border-amber-300'
+                            }`}
+                          >
+                            <option value="unread">Unread / New</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="resolved">Resolved / Done</option>
+                            <option value="archived">Archived</option>
+                            {inquiryType === 'volunteer' && (
+                              <>
+                                <option value="contacted">Contacted</option>
+                                <option value="oriented">Oriented</option>
+                                <option value="active">Active Volunteer</option>
+                                <option value="inactive">Inactive</option>
+                              </>
+                            )}
+                            {inquiryType === 'training' && (
+                              <>
+                                <option value="inquiry_received">Inquiry Received</option>
+                                <option value="proposal_sent">Proposal Sent</option>
+                                <option value="confirmed">Confirmed</option>
+                                <option value="completed">Completed</option>
+                                <option value="cancelled">Cancelled</option>
+                              </>
+                            )}
+                            {inquiryType === 'accessibility' && (
+                              <>
+                                <option value="open">Open</option>
+                                <option value="under_review">Under Review</option>
+                                <option value="remediated">Remediated</option>
+                                <option value="closed">Closed</option>
+                              </>
+                            )}
+                          </select>
                         </td>
-                        <td className="py-3 px-4 text-slate-400 whitespace-nowrap">{inq.created_at || '—'}</td>
+                        <td className="py-3 px-4 text-slate-400 whitespace-nowrap text-[11px]">
+                          {inq.created_at ? new Date(inq.created_at).toLocaleDateString() : '—'}
+                        </td>
+                        <td className="py-3 px-4 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedInquiryView(inq)}
+                              className="p-1.5 rounded-lg text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 transition-colors cursor-pointer"
+                              title="View complete form information"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingInquiry({ ...inq })}
+                              className="p-1.5 rounded-lg text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 transition-colors cursor-pointer"
+                              title="Edit entry"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteInquiry(inq.id)}
+                              className="p-1.5 rounded-lg text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors cursor-pointer"
+                              title="Delete entry"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={4} className="py-8 text-center text-slate-400 italic">
-                        No inquiries recorded for this category.
+                      <td colSpan={5} className="py-8 text-center text-slate-400 italic">
+                        No inquiries recorded for category "{inquiryType}".
                       </td>
                     </tr>
                   )}
                 </tbody>
               </table>
             </div>
+
+            {/* MODAL 1: VIEW COMPLETE FORM INFORMATION */}
+            {selectedInquiryView && (
+              <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+                <div className="bg-white rounded-3xl max-w-2xl w-full border border-slate-200 shadow-2xl p-6 sm:p-8 space-y-6 animate-fade-in my-8">
+                  <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-100 text-purple-900">
+                        {inquiryType} Submission
+                      </span>
+                      <span className="text-xs text-slate-400 font-mono">
+                        ID: {selectedInquiryView.id}
+                      </span>
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold capitalize ${
+                        selectedInquiryView.status === 'resolved' || selectedInquiryView.status === 'completed' || selectedInquiryView.status === 'remediated'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : selectedInquiryView.status === 'in_progress'
+                          ? 'bg-sky-100 text-sky-800'
+                          : 'bg-amber-100 text-amber-800'
+                      }`}>
+                        {selectedInquiryView.status || 'unread'}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedInquiryView(null)}
+                      className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  {/* Complete Form Fields */}
+                  <div className="space-y-4 text-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Contact Name</span>
+                        <span className="text-sm font-extrabold text-slate-900 block mt-0.5">
+                          {selectedInquiryView.name || selectedInquiryView.full_name || selectedInquiryView.contact_name || 'Anonymous'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Email Address</span>
+                        <a
+                          href={`mailto:${selectedInquiryView.email || selectedInquiryView.contact_email}`}
+                          className="text-xs font-semibold text-purple-700 hover:underline block mt-0.5"
+                        >
+                          {selectedInquiryView.email || selectedInquiryView.contact_email || '—'}
+                        </a>
+                      </div>
+                      {selectedInquiryView.phone && (
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Phone</span>
+                          <a href={`tel:${selectedInquiryView.phone}`} className="text-xs font-semibold text-slate-700 hover:underline block mt-0.5">
+                            {selectedInquiryView.phone}
+                          </a>
+                        </div>
+                      )}
+                      {(selectedInquiryView.city || selectedInquiryView.organization_name) && (
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                            {selectedInquiryView.organization_name ? 'Organization' : 'City / Region'}
+                          </span>
+                          <span className="text-xs font-semibold text-slate-800 block mt-0.5">
+                            {selectedInquiryView.organization_name || selectedInquiryView.city}
+                          </span>
+                        </div>
+                      )}
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Submission Date</span>
+                        <span className="text-xs text-slate-600 block mt-0.5">
+                          {selectedInquiryView.created_at ? new Date(selectedInquiryView.created_at).toLocaleString() : '—'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Specific Category Information */}
+                    {(selectedInquiryView.subject || selectedInquiryView.course_title) && (
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Subject / Topic</span>
+                        <p className="text-sm font-bold text-slate-900 mt-0.5">
+                          {selectedInquiryView.subject || selectedInquiryView.course_title}
+                        </p>
+                      </div>
+                    )}
+
+                    {(selectedInquiryView.message || selectedInquiryView.skills_experience || selectedInquiryView.goals_and_notes) && (
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Message & Inquiry Details</span>
+                        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 leading-relaxed whitespace-pre-wrap mt-1">
+                          {selectedInquiryView.message || selectedInquiryView.skills_experience || selectedInquiryView.goals_and_notes}
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedInquiryView.barrier_description && (
+                      <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 space-y-2">
+                        <strong className="block text-xs font-bold text-rose-950">Accessibility Barrier Description:</strong>
+                        <p className="whitespace-pre-wrap">{selectedInquiryView.barrier_description}</p>
+                        {selectedInquiryView.page_url && (
+                          <div className="text-[11px] text-rose-700">Page URL: {selectedInquiryView.page_url}</div>
+                        )}
+                        {selectedInquiryView.assistive_tech && (
+                          <div className="text-[11px] text-rose-700">Assistive Technology: {selectedInquiryView.assistive_tech}</div>
+                        )}
+                      </div>
+                    )}
+
+                    {selectedInquiryView.roles_of_interest && (
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Volunteer Roles of Interest</span>
+                        <p className="text-xs font-medium text-slate-800 mt-0.5">{selectedInquiryView.roles_of_interest}</p>
+                      </div>
+                    )}
+
+                    {selectedInquiryView.availability && (
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Availability</span>
+                        <p className="text-xs font-medium text-slate-800 mt-0.5">{selectedInquiryView.availability}</p>
+                      </div>
+                    )}
+
+                    {selectedInquiryView.estimated_attendees && (
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Estimated Attendees</span>
+                          <p className="text-xs font-semibold text-slate-800 mt-0.5">{selectedInquiryView.estimated_attendees}</p>
+                        </div>
+                        {selectedInquiryView.preferred_date && (
+                          <div>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Target Date</span>
+                            <p className="text-xs font-semibold text-slate-800 mt-0.5">{selectedInquiryView.preferred_date}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {(selectedInquiryView.notes || selectedInquiryView.remediation_notes) && (
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Internal Staff Notes</span>
+                        <p className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs mt-1">
+                          {selectedInquiryView.notes || selectedInquiryView.remediation_notes}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Actions inside View Modal */}
+                  <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-slate-500">Change Status:</span>
+                      <select
+                        value={selectedInquiryView.status || 'unread'}
+                        onChange={(e) => handleInquiryStatusChange(selectedInquiryView.id, e.target.value)}
+                        className="text-xs font-bold px-3 py-1.5 rounded-xl border border-slate-300 bg-white"
+                      >
+                        <option value="unread">Unread / New</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="resolved">Resolved</option>
+                        <option value="archived">Archived</option>
+                      </select>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingInquiry({ ...selectedInquiryView });
+                          setSelectedInquiryView(null);
+                        }}
+                        className="px-4 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                      >
+                        <Edit className="w-3.5 h-3.5" />
+                        <span>Edit Entry</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteInquiry(selectedInquiryView.id)}
+                        className="px-4 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Delete</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedInquiryView(null)}
+                        className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-colors cursor-pointer"
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* MODAL 2: EDIT FORM SUBMISSION ENTRY */}
+            {editingInquiry && (
+              <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+                <div className="bg-white rounded-3xl max-w-xl w-full border border-slate-200 shadow-2xl p-6 sm:p-8 space-y-6 animate-fade-in my-8">
+                  <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                    <div>
+                      <h3 className="font-display text-lg font-black text-slate-950">
+                        Edit Form Submission Entry
+                      </h3>
+                      <p className="text-xs text-slate-500">ID: {editingInquiry.id}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setEditingInquiry(null)}
+                      className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleSaveInquiryEdit} className="space-y-4 text-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Name</label>
+                        <input
+                          type="text"
+                          value={editingInquiry.name || editingInquiry.full_name || editingInquiry.contact_name || ''}
+                          onChange={(e) => setEditingInquiry(prev => ({
+                            ...prev,
+                            name: e.target.value,
+                            full_name: e.target.value,
+                            contact_name: e.target.value
+                          }))}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-600 font-medium"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Email</label>
+                        <input
+                          type="email"
+                          value={editingInquiry.email || editingInquiry.contact_email || ''}
+                          onChange={(e) => setEditingInquiry(prev => ({
+                            ...prev,
+                            email: e.target.value,
+                            contact_email: e.target.value
+                          }))}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-600 font-medium"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Phone</label>
+                        <input
+                          type="text"
+                          value={editingInquiry.phone || ''}
+                          onChange={(e) => setEditingInquiry(prev => ({ ...prev, phone: e.target.value }))}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-600 font-medium"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Status</label>
+                        <select
+                          value={editingInquiry.status || 'unread'}
+                          onChange={(e) => setEditingInquiry(prev => ({ ...prev, status: e.target.value }))}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-600 font-semibold"
+                        >
+                          <option value="unread">Unread / New</option>
+                          <option value="in_progress">In Progress</option>
+                          <option value="resolved">Resolved</option>
+                          <option value="archived">Archived</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Subject / Topic</label>
+                      <input
+                        type="text"
+                        value={editingInquiry.subject || editingInquiry.course_title || editingInquiry.barrier_description || ''}
+                        onChange={(e) => setEditingInquiry(prev => ({
+                          ...prev,
+                          subject: e.target.value,
+                          course_title: e.target.value,
+                          barrier_description: e.target.value
+                        }))}
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-600 font-medium"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Message / Details</label>
+                      <textarea
+                        rows={4}
+                        value={editingInquiry.message || editingInquiry.skills_experience || editingInquiry.goals_and_notes || ''}
+                        onChange={(e) => setEditingInquiry(prev => ({
+                          ...prev,
+                          message: e.target.value,
+                          skills_experience: e.target.value,
+                          goals_and_notes: e.target.value
+                        }))}
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-600 font-medium"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Internal Admin Notes</label>
+                      <input
+                        type="text"
+                        value={editingInquiry.notes || editingInquiry.remediation_notes || ''}
+                        onChange={(e) => setEditingInquiry(prev => ({
+                          ...prev,
+                          notes: e.target.value,
+                          remediation_notes: e.target.value
+                        }))}
+                        placeholder="Internal staff notes, follow-up status, or notes on resolution..."
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-600 font-medium"
+                      />
+                    </div>
+
+                    <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setEditingInquiry(null)}
+                        className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition-colors cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-5 py-2 rounded-xl bg-[#5A1E65] hover:bg-purple-900 text-white font-bold transition-colors cursor-pointer shadow-xs"
+                      >
+                        Save Changes
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
           </div>
         )}
+          
+
+        {/* VOICEMAIL INBOX */}
+        {inboxSubTab === 'voicemail' && (
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-xs p-6 sm:p-8 space-y-6">
+            <div className="border-b border-slate-100 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="font-display text-xl font-black text-slate-950">
+                    Voicemail Inbox
+                  </h2>
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-purple-100 text-[#5A1E65]">
+                    {voicemails.length} Recordings
+                  </span>
+                  {voicemails.filter(v => v.status === 'new').length > 0 && (
+                    <span className="px-2 py-0.5 rounded-full text-xs font-black bg-amber-400 text-slate-950 animate-pulse">
+                      {voicemails.filter(v => v.status === 'new').length} New
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  Listen to, triage, and archive audio messages submitted by visitors when staff are away.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={exportVoicemailsToCsv}
+                  className="px-3.5 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer"
+                  title="Export all voicemails to CSV"
+                >
+                  <Download className="w-3.5 h-3.5 text-purple-700" />
+                  <span>Export CSV</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={fetchVoicemails}
+                  className="p-2 rounded-xl text-slate-500 hover:text-purple-700 hover:bg-purple-50 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all border border-slate-200"
+                  title="Refresh voicemails from server"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Refresh</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Filter and Search Bar */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-2xl flex-wrap">
+                {[
+                  { id: 'all', label: 'All Messages', count: voicemails.length },
+                  { id: 'new', label: 'New', count: voicemails.filter(v => v.status === 'new').length, badge: voicemails.filter(v => v.status === 'new').length > 0 },
+                  { id: 'reviewed', label: 'Reviewed', count: voicemails.filter(v => v.status === 'reviewed').length },
+                  { id: 'responded', label: 'Responded', count: voicemails.filter(v => v.status === 'responded').length }
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setVoicemailStatusFilter(tab.id)}
+                    className={`py-1.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      voicemailStatusFilter === tab.id
+                        ? 'bg-white text-purple-950 shadow-xs font-black'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <span>{tab.label}</span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                      tab.badge
+                        ? 'bg-amber-400 text-slate-950 font-black'
+                        : voicemailStatusFilter === tab.id
+                          ? 'bg-purple-100 text-[#5A1E65]'
+                          : 'bg-slate-200 text-slate-600'
+                    }`}>
+                      {tab.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Search input */}
+              <div className="relative flex-1 sm:max-w-xs">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={voicemailSearch}
+                  onChange={(e) => setVoicemailSearch(e.target.value)}
+                  placeholder="Search by caller, email, subject..."
+                  className="w-full pl-9 pr-7 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-400/40 bg-slate-50/50"
+                />
+                {voicemailSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setVoicemailSearch('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Voicemails List */}
+            {(() => {
+              const filtered = voicemails.filter(v => {
+                const matchesStatus = voicemailStatusFilter === 'all' || v.status === voicemailStatusFilter;
+                const matchesSearch = !voicemailSearch || 
+                  (v.name && v.name.toLowerCase().includes(voicemailSearch.toLowerCase())) ||
+                  (v.email && v.email.toLowerCase().includes(voicemailSearch.toLowerCase())) ||
+                  (v.subject && v.subject.toLowerCase().includes(voicemailSearch.toLowerCase())) ||
+                  (v.admin_notes && v.admin_notes.toLowerCase().includes(voicemailSearch.toLowerCase()));
+                return matchesStatus && matchesSearch;
+              });
+
+              if (filtered.length === 0) {
+                return (
+                  <div className="py-12 text-center text-slate-400 space-y-2 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                    <Mic className="w-8 h-8 text-slate-300 mx-auto" />
+                    <p className="text-sm font-semibold">No voicemails match the selected criteria.</p>
+                    <p className="text-xs text-slate-400">Incoming voice recordings left by visitors will appear here.</p>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="space-y-4">
+                  {filtered.map(v => {
+                    const audioSrc = v.audio_data ? `data:${v.audio_mime_type || 'audio/webm'};base64,${v.audio_data}` : `${API_BASE_URL}/admin/voicemails/${v.id}/audio`;
+                    const durationFmt = v.duration_seconds ? `${Math.floor(v.duration_seconds / 60)}:${String(v.duration_seconds % 60).padStart(2, '0')}` : '0:00';
+
+                    return (
+                      <div key={v.id} className="p-5 rounded-2xl border border-slate-200 bg-white shadow-xs hover:border-purple-200 transition-all space-y-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-extrabold text-sm text-slate-900">{v.name || 'Anonymous Caller'}</span>
+                            <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${
+                              v.status === 'new' ? 'bg-amber-100 text-amber-900 border border-amber-300 animate-pulse' :
+                              v.status === 'reviewed' ? 'bg-sky-100 text-sky-800 border border-sky-200' :
+                              'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                            }`}>
+                              {v.status || 'new'}
+                            </span>
+                            <span className="text-xs text-slate-400 flex items-center gap-1 font-mono">
+                              <Clock className="w-3 h-3" />
+                              {v.created_at ? new Date(v.created_at).toLocaleString() : 'Recently'}
+                            </span>
+                            <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-purple-50 text-purple-900 border border-purple-200">
+                              Duration: {durationFmt}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold text-slate-500">Status:</span>
+                            <select
+                              value={v.status || 'new'}
+                              onChange={(e) => handleVoicemailStatusChange(v.id, e.target.value)}
+                              className="text-xs font-bold px-2.5 py-1 rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-400"
+                            >
+                              <option value="new">New</option>
+                              <option value="reviewed">Reviewed</option>
+                              <option value="responded">Responded</option>
+                            </select>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteVoicemail(v.id)}
+                              className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 border border-rose-200 transition-colors cursor-pointer"
+                              title="Delete voicemail"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Caller Info & Subject */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                          <div>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Contact Email</span>
+                            <a href={`mailto:${v.email}`} className="text-xs font-bold text-purple-800 hover:underline">
+                              {v.email || '—'}
+                            </a>
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Subject / Topic</span>
+                            <span className="text-xs font-semibold text-slate-800">
+                              {v.subject || 'General Inquiry'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Audio Player and Download */}
+                        <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="flex-1 w-full flex items-center gap-3">
+                            <Volume2 className="w-4 h-4 text-purple-700 shrink-0" />
+                            <audio
+                              controls
+                              preload="none"
+                              src={audioSrc}
+                              className="w-full h-9 rounded-lg"
+                            >
+                              Your browser does not support the audio element.
+                            </audio>
+                          </div>
+                          <a
+                            href={audioSrc}
+                            download={`voicemail_${v.id}.webm`}
+                            className="px-3 py-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center gap-1.5 shrink-0 transition-colors shadow-2xs"
+                            title="Download audio recording"
+                          >
+                            <Download className="w-3.5 h-3.5 text-slate-600" />
+                            <span>Download Audio</span>
+                          </a>
+                        </div>
+
+                        {/* Staff Notes */}
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                            Staff Follow-up Notes
+                          </label>
+                          <input
+                            type="text"
+                            defaultValue={v.admin_notes || ''}
+                            onBlur={(e) => handleVoicemailNotesChange(v.id, e.target.value)}
+                            placeholder="Add internal staff notes on response or resolution..."
+                            className="w-full px-3 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-400 text-xs bg-slate-50/50"
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
           </div>
         )}
 

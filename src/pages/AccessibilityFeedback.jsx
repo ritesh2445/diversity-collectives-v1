@@ -14,6 +14,7 @@ import { submitAccessibilityFeedback } from '../services/api';
 import TurnstileWidget from '../components/TurnstileWidget';
 import { useLiveOrgInfo } from '../hooks/useCmsLive';
 import { usePageMeta } from '../utils/seo';
+import SendVoicemailButton from '../components/SendVoicemailButton';
 
 export default function AccessibilityFeedback() {
   const orgInfo = useLiveOrgInfo();
@@ -212,10 +213,17 @@ export default function AccessibilityFeedback() {
               Our staff is happy to read any web document aloud, take event registrations over the phone, or provide materials in an alternative format:
             </p>
             <div className="flex flex-wrap items-center gap-4 pt-1 font-bold text-[#5A1E65]">
-              <a href={`tel:${orgInfo.phoneRaw}`} className="flex items-center gap-1.5 hover:underline">
-                <Phone className="w-3.5 h-3.5" />
-                <span>Call {orgInfo.phone}</span>
-              </a>
+              {orgInfo.voicemailOnly ? (
+                <SendVoicemailButton
+                  label="Send Voice Message"
+                  subject="Accessibility Assistance Request"
+                />
+              ) : (
+                <a href={`tel:${orgInfo.phoneRaw}`} className="flex items-center gap-1.5 hover:underline">
+                  <Phone className="w-3.5 h-3.5" />
+                  <span>Call {orgInfo.phone}</span>
+                </a>
+              )}
               <a href={`mailto:${orgInfo.email}`} className="flex items-center gap-1.5 hover:underline">
                 <Mail className="w-3.5 h-3.5" />
                 <span>Email {orgInfo.email}</span>

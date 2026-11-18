@@ -14,9 +14,12 @@ import {
 } from 'lucide-react';
 import { programsList, orgInfo } from '../data/dcvcData';
 import { cmsStore } from '../services/cmsStore';
+import { useLiveOrgInfo } from '../hooks/useCmsLive';
+import SendVoicemailButton from '../components/SendVoicemailButton';
 import CardSpotlight from '../components/CardSpotlight';
 
 export default function ProgramDetail() {
+  const liveOrg = useLiveOrgInfo();
   const { slug } = useParams();
   const program = programsList.find(p => p.slug === slug) || cmsStore.getPrograms().find(p => p.slug === slug || p.id === slug);
 
@@ -92,13 +95,22 @@ export default function ProgramDetail() {
                 </div>
               </div>
               <div className="flex items-start gap-2.5">
-                <Phone className="w-4 h-4 text-[#5A1E65] mt-0.5 flex-shrink-0" />
-                <div>
-                  <span className="font-bold text-slate-900">Phone: </span>
-                  <a href={`tel:${orgInfo.phoneRaw}`} className="text-[#5A1E65] hover:underline font-bold">
-                    {program.contactPhone}
-                  </a>
-                </div>
+                {(program.voicemailOnly || liveOrg.voicemailOnly) ? (
+                  <div>
+                    <span className="font-bold text-slate-900 block mb-1">Voice Contact: </span>
+                    <SendVoicemailButton label="Send Voice Message" subject={`Inquiry about ${program.title}`} />
+                  </div>
+                ) : (
+                  <>
+                    <Phone className="w-4 h-4 text-[#5A1E65] mt-0.5 flex-shrink-0" />
+                    <div>
+                      <span className="font-bold text-slate-900">Phone: </span>
+                      <a href={`tel:${liveOrg.phoneRaw || orgInfo.phoneRaw}`} className="text-[#5A1E65] hover:underline font-bold">
+                        {program.contactPhone || liveOrg.phone || orgInfo.phone}
+                      </a>
+                    </div>
+                  </>
+                )}
               </div>
               <div className="flex items-start gap-2.5">
                 <Mail className="w-4 h-4 text-[#5A1E65] mt-0.5 flex-shrink-0" />
@@ -251,7 +263,7 @@ export default function ProgramDetail() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 perspective-1000">
-          {programsList.filter(p => p.slug !== program.slug).slice(0, 4).map(other => (
+          {allPrograms.filter(p => p.slug !== program.slug).slice(0, 4).map(other => (
             <Link
               key={other.slug}
               to={`/programs/${other.slug}`}

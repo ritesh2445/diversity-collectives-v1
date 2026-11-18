@@ -198,6 +198,18 @@ export default function UnifiedCrudModal({
                         className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-[#5A1E65] outline-none"
                       />
                     )}
+
+                    {(field.key === 'phone' || (field.label && field.label.toLowerCase().includes('phone'))) && (
+                      <label className="flex items-center gap-1.5 mt-1.5 cursor-pointer text-[11px] font-semibold text-slate-600">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(formData.voicemailOnly)}
+                          onChange={(e) => handleFieldChange('voicemailOnly', e.target.checked)}
+                          className="rounded text-[#5A1E65] focus:ring-purple-400"
+                        />
+                        <span>Toggle voicemails only (show Send Voicemail button)</span>
+                      </label>
+                    )}
                   </div>
                 );
               })}

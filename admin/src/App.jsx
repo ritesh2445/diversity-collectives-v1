@@ -69,6 +69,12 @@ import {
   resolveBusinessCorrection,
   getInquiries,
   updateInquiryStatus,
+  updateInquiry,
+  deleteInquiry,
+  getVoicemails,
+  updateVoicemailStatus,
+  deleteVoicemail,
+  getVoicemailAudioUrl,
   getStaffUsers,
   createStaffUser,
   updateStaffRole,
@@ -150,6 +156,13 @@ export default function AdminApp() {
   // Inquiries state
   const [inquiryType, setInquiryType] = useState('contact');
   const [inquiries, setInquiries] = useState([]);
+  const [selectedInquiryView, setSelectedInquiryView] = useState(null);
+  const [editingInquiry, setEditingInquiry] = useState(null);
+
+  // Voicemail Inbox state
+  const [voicemails, setVoicemails] = useState([]);
+  const [voicemailStatusFilter, setVoicemailStatusFilter] = useState('all');
+  const [voicemailSearch, setVoicemailSearch] = useState('');
 
   // Staff & RBAC state
   const [staffUsers, setStaffUsers] = useState([]);
@@ -454,6 +467,137 @@ export default function AdminApp() {
   const handleInquiryStatusChange = async (id, status) => {
     await updateInquiryStatus(inquiryType, id, status);
     loadData();
+    if (selectedInquiryView && selectedInquiryView.id === id) {
+      setSelectedInquiryView(prev => ({ ...prev, status }));
+    }
+  };
+
+  const handleVoicemailStatusChange = async (id, status) => {
+    await updateVoicemailStatus(id, status);
+    const vmList = await getVoicemails(voicemailStatusFilter);
+    setVoicemails(vmList);
+  };
+
+  const handleVoicemailNotesChange = async (id, notes) => {
+    await updateVoicemailStatus(id, undefined, notes);
+    const vmList = await getVoicemails(voicemailStatusFilter);
+    setVoicemails(vmList);
+  };
+
+  const handleDeleteVoicemail = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this voicemail and its recording? This action cannot be undone.')) return;
+    await deleteVoicemail(id);
+    const vmList = await getVoicemails(voicemailStatusFilter);
+    setVoicemails(vmList);
+  };
+
+  const exportVoicemailsToCsv = () => {
+    if (!voicemails || voicemails.length === 0) {
+      alert('No voicemails available to export.');
+      return;
+    }
+    const headers = ['ID', 'Date', 'Name', 'Email', 'Subject', 'Duration (s)', 'Status', 'Notes', 'Audio Key'];
+    const escapeCsv = (str) => `"${String(str || '').replace(/"/g, '""')}"`;
+    const rows = voicemails.map((v) => [
+      v.id || '',
+      v.created_at || '',
+      v.name || '',
+      v.email || '',
+      v.subject || '',
+      v.duration_seconds || 0,
+      v.status || 'new',
+      v.admin_notes || '',
+      v.r2_key || ''
+    ].map(escapeCsv).join(','));
+
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `dcvc_voicemails_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDeleteInquiry = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this form submission entry?')) return;
+    await deleteInquiry(inquiryType, id);
+    loadData();
+    if (selectedInquiryView && selectedInquiryView.id === id) {
+      setSelectedInquiryView(null);
+    }
+  };
+
+  const handleSaveInquiryEdit = async (e) => {
+    e?.preventDefault();
+    if (!editingInquiry) return;
+    await updateInquiry(inquiryType, editingInquiry.id, editingInquiry);
+    loadData();
+    if (selectedInquiryView && selectedInquiryView.id === editingInquiry.id) {
+      setSelectedInquiryView({ ...selectedInquiryView, ...editingInquiry });
+    }
+    setEditingInquiry(null);
+  };
+
+  const exportInquiriesToCsv = (items, categoryName = 'form_submissions') => {
+    if (!items || items.length === 0) {
+      alert('No form submissions available to export in this category.');
+      return;
+    }
+
+    const headers = [
+      'ID',
+      'Category',
+      'Name',
+      'Email',
+      'Phone',
+      'Subject / Topic / Barrier',
+      'Message / Details',
+      'Organization / City',
+      'Format / Roles / Assistive Tech',
+      'Status',
+      'Internal Notes',
+      'Created Date'
+    ];
+
+    const escapeCell = (val) => {
+      if (val === null || val === undefined) return '""';
+      const str = String(val).replace(/"/g, '""');
+      return '"' + str + '"';
+    };
+
+    const rows = items.map((inq) => [
+      inq.id || '',
+      categoryName,
+      inq.name || inq.full_name || inq.contact_name || '',
+      inq.email || inq.contact_email || '',
+      inq.phone || '',
+      inq.subject || inq.course_title || inq.barrier_description || '',
+      inq.message || inq.skills_experience || inq.goals_and_notes || '',
+      inq.organization_name || inq.city || '',
+      inq.preferred_format || inq.roles_of_interest || inq.assistive_tech || inq.page_url || '',
+      inq.status || 'unread',
+      inq.notes || inq.remediation_notes || '',
+      inq.created_at || ''
+    ]);
+
+    const csvContent = [
+      headers.map(escapeCell).join(','),
+      ...rows.map(row => row.map(escapeCell).join(','))
+    ].join('\r\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'dcvc_' + categoryName + '_submissions_' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const handleResolveCorrection = async (id) => {
@@ -2621,6 +2765,22 @@ export default function AdminApp() {
               </div>
             </div>
 
+            {/* Export CSV action bar */}
+            <div className="flex items-center justify-between pb-2">
+              <span className="text-xs font-semibold text-slate-500">
+                Showing {inquiries.length} {inquiryType} submission{inquiries.length === 1 ? '' : 's'}
+              </span>
+              <button
+                type="button"
+                onClick={() => exportInquiriesToCsv(inquiries, inquiryType)}
+                className="px-3.5 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                title="Export submissions to CSV"
+              >
+                <Download className="w-3.5 h-3.5 text-purple-700" />
+                <span>Export CSV</span>
+              </button>
+            </div>
+
             {/* Inquiries List */}
             <div className="space-y-3">
               {inquiries.length === 0 ? (
@@ -2629,9 +2789,9 @@ export default function AdminApp() {
                 </div>
               ) : (
                 inquiries.map((inq) => (
-                  <div key={inq.id} className="bg-white rounded-2xl p-5 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
+                  <div key={inq.id} className="bg-white rounded-2xl p-5 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs hover:border-purple-200 transition-colors">
+                    <div className="space-y-1 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-bold text-sm text-slate-900">
                           {inq.name || inq.full_name || inq.contact_name || 'Anonymous Community Member'}
                         </span>
@@ -2642,11 +2802,12 @@ export default function AdminApp() {
                         }`}>
                           {inq.status}
                         </span>
+                        <span className="text-[10px] text-slate-400 font-mono">ID: {inq.id}</span>
                       </div>
 
                       <div className="text-xs text-slate-600">
                         {inq.subject && <span className="font-semibold block">{inq.subject}</span>}
-                        {inq.message && <p className="mt-1">{inq.message}</p>}
+                        {inq.message && <p className="mt-1 line-clamp-2">{inq.message}</p>}
                         {inq.barrier_description && (
                           <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-900 text-xs mt-1">
                             <strong>Barrier Reported:</strong> {inq.barrier_description}
@@ -2655,13 +2816,14 @@ export default function AdminApp() {
                         )}
                         {inq.roles_of_interest && <div>Roles: {inq.roles_of_interest}</div>}
                         {inq.course_title && <div>Requested Course: {inq.course_title}</div>}
+                        {inq.notes && <div className="text-[11px] text-amber-800 font-medium">Notes: {inq.notes}</div>}
                       </div>
 
                       <div className="text-[11px] text-slate-400 flex flex-wrap gap-3 pt-1">
                         <span>Email: {inq.email}</span>
                         {inq.phone && <span>Phone: {inq.phone}</span>}
                         {inq.city && <span>City: {inq.city}</span>}
-                        <span>Date: {new Date(inq.created_at).toLocaleDateString()}</span>
+                        <span>Date: {inq.created_at ? new Date(inq.created_at).toLocaleDateString() : '—'}</span>
                       </div>
                     </div>
 
@@ -2670,6 +2832,144 @@ export default function AdminApp() {
                         value={inq.status}
                         onChange={(e) => handleInquiryStatusChange(inq.id, e.target.value)}
                         className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-300 bg-white"
+                        title="Change submission status"
+                      >
+                        <option value="unread">Unread / Pending</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="resolved">Resolved</option>
+                        <option value="archived">Archived</option>
+                      </select>
+
+                      <button
+                        type="button"
+                        onClick={() => setSelectedInquiryView(inq)}
+                        className="p-1.5 rounded-lg text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 transition-colors cursor-pointer"
+                        title="View complete form information"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setEditingInquiry({ ...inq })}
+                        className="p-1.5 rounded-lg text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 transition-colors cursor-pointer"
+                        title="Edit entry"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteInquiry(inq.id)}
+                        className="p-1.5 rounded-lg text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors cursor-pointer"
+                        title="Delete entry"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* MODAL: VIEW COMPLETE FORM INFORMATION */}
+            {selectedInquiryView && (
+              <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+                <div className="bg-white rounded-3xl max-w-2xl w-full border border-slate-200 shadow-2xl p-6 sm:p-8 space-y-6 my-8 animate-fade-in">
+                  <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-100 text-purple-900">
+                        {inquiryType} Submission
+                      </span>
+                      <span className="text-xs text-slate-400 font-mono">ID: {selectedInquiryView.id}</span>
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold capitalize bg-amber-100 text-amber-800">
+                        {selectedInquiryView.status || 'unread'}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedInquiryView(null)}
+                      className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                    >
+                      <XCircle className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <div className="space-y-4 text-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Name</span>
+                        <span className="text-sm font-extrabold text-slate-900 block mt-0.5">
+                          {selectedInquiryView.name || selectedInquiryView.full_name || selectedInquiryView.contact_name || 'Anonymous'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Email</span>
+                        <a href={`mailto:${selectedInquiryView.email}`} className="text-xs font-semibold text-purple-700 hover:underline block mt-0.5">
+                          {selectedInquiryView.email || '—'}
+                        </a>
+                      </div>
+                      {selectedInquiryView.phone && (
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Phone</span>
+                          <span className="text-xs font-semibold text-slate-700 block mt-0.5">{selectedInquiryView.phone}</span>
+                        </div>
+                      )}
+                      {selectedInquiryView.city && (
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">City</span>
+                          <span className="text-xs font-semibold text-slate-700 block mt-0.5">{selectedInquiryView.city}</span>
+                        </div>
+                      )}
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Date</span>
+                        <span className="text-xs text-slate-600 block mt-0.5">
+                          {selectedInquiryView.created_at ? new Date(selectedInquiryView.created_at).toLocaleString() : '—'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {(selectedInquiryView.subject || selectedInquiryView.course_title) && (
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Subject / Course</span>
+                        <p className="text-sm font-bold text-slate-900 mt-0.5">{selectedInquiryView.subject || selectedInquiryView.course_title}</p>
+                      </div>
+                    )}
+
+                    {selectedInquiryView.message && (
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Full Message</span>
+                        <p className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 leading-relaxed whitespace-pre-wrap mt-1">
+                          {selectedInquiryView.message}
+                        </p>
+                      </div>
+                    )}
+
+                    {selectedInquiryView.barrier_description && (
+                      <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-900">
+                        <strong className="block text-xs font-bold">Barrier Reported:</strong>
+                        <p className="mt-1">{selectedInquiryView.barrier_description}</p>
+                        {selectedInquiryView.page_url && <div className="text-[11px] text-rose-700 mt-1">Page URL: {selectedInquiryView.page_url}</div>}
+                      </div>
+                    )}
+
+                    {selectedInquiryView.notes && (
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Staff Notes</span>
+                        <p className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 mt-1">
+                          {selectedInquiryView.notes}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-slate-500">Status:</span>
+                      <select
+                        value={selectedInquiryView.status || 'unread'}
+                        onChange={(e) => handleInquiryStatusChange(selectedInquiryView.id, e.target.value)}
+                        className="text-xs font-bold px-3 py-1.5 rounded-xl border border-slate-300 bg-white"
                       >
                         <option value="unread">Unread / Pending</option>
                         <option value="in_progress">In Progress</option>
@@ -2677,10 +2977,157 @@ export default function AdminApp() {
                         <option value="archived">Archived</option>
                       </select>
                     </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingInquiry({ ...selectedInquiryView });
+                          setSelectedInquiryView(null);
+                        }}
+                        className="px-4 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                      >
+                        <Edit className="w-3.5 h-3.5" />
+                        <span>Edit</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteInquiry(selectedInquiryView.id)}
+                        className="px-4 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Delete</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedInquiryView(null)}
+                        className="px-4 py-2 rounded-xl bg-slate-900 text-white font-bold text-xs hover:bg-slate-800 transition-colors cursor-pointer"
+                      >
+                        Close
+                      </button>
+                    </div>
                   </div>
-                ))
-              )}
-            </div>
+                </div>
+              </div>
+            )}
+
+            {/* MODAL: EDIT FORM SUBMISSION ENTRY */}
+            {editingInquiry && (
+              <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+                <div className="bg-white rounded-3xl max-w-xl w-full border border-slate-200 shadow-2xl p-6 sm:p-8 space-y-6 my-8 animate-fade-in">
+                  <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                    <div>
+                      <h3 className="font-display text-lg font-black text-slate-950">Edit Submission Entry</h3>
+                      <p className="text-xs text-slate-500">ID: {editingInquiry.id}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setEditingInquiry(null)}
+                      className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                    >
+                      <XCircle className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleSaveInquiryEdit} className="space-y-4 text-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Name</label>
+                        <input
+                          type="text"
+                          value={editingInquiry.name || editingInquiry.full_name || editingInquiry.contact_name || ''}
+                          onChange={(e) => setEditingInquiry(prev => ({ ...prev, name: e.target.value, full_name: e.target.value, contact_name: e.target.value }))}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-600 font-medium"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Email</label>
+                        <input
+                          type="email"
+                          value={editingInquiry.email || ''}
+                          onChange={(e) => setEditingInquiry(prev => ({ ...prev, email: e.target.value }))}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-600 font-medium"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Phone</label>
+                        <input
+                          type="text"
+                          value={editingInquiry.phone || ''}
+                          onChange={(e) => setEditingInquiry(prev => ({ ...prev, phone: e.target.value }))}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-600 font-medium"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Status</label>
+                        <select
+                          value={editingInquiry.status || 'unread'}
+                          onChange={(e) => setEditingInquiry(prev => ({ ...prev, status: e.target.value }))}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-600 font-semibold"
+                        >
+                          <option value="unread">Unread / Pending</option>
+                          <option value="in_progress">In Progress</option>
+                          <option value="resolved">Resolved</option>
+                          <option value="archived">Archived</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Subject / Title</label>
+                      <input
+                        type="text"
+                        value={editingInquiry.subject || editingInquiry.course_title || editingInquiry.barrier_description || ''}
+                        onChange={(e) => setEditingInquiry(prev => ({ ...prev, subject: e.target.value, course_title: e.target.value, barrier_description: e.target.value }))}
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-600 font-medium"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Message / Details</label>
+                      <textarea
+                        rows={4}
+                        value={editingInquiry.message || editingInquiry.skills_experience || editingInquiry.goals_and_notes || ''}
+                        onChange={(e) => setEditingInquiry(prev => ({ ...prev, message: e.target.value }))}
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-600 font-medium"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Staff Notes</label>
+                      <input
+                        type="text"
+                        value={editingInquiry.notes || ''}
+                        onChange={(e) => setEditingInquiry(prev => ({ ...prev, notes: e.target.value }))}
+                        placeholder="Internal notes on resolution or follow-up..."
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-600 font-medium"
+                      />
+                    </div>
+
+                    <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setEditingInquiry(null)}
+                        className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition-colors cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-5 py-2 rounded-xl bg-[#5A1E65] hover:bg-purple-900 text-white font-bold transition-colors cursor-pointer shadow-xs"
+                      >
+                        Save Changes
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

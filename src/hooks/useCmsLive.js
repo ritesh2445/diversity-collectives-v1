@@ -15,6 +15,7 @@ export function buildLiveOrgInfo(settings) {
   return {
     ...orgInfo,
     ...s,
+    voicemailOnly: Boolean(s.voicemailOnly ?? orgInfo.voicemailOnly),
     address: {
       ...(orgInfo.address || {}),
       ...(typeof s.address === 'object' && s.address ? s.address : {}),

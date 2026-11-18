@@ -1,3 +1,34 @@
+
+export function mergeProgramsWithDefaults(savedPrograms = [], defaultPrograms = programsList, deletedSlugs = []) {
+  const seed = Array.isArray(defaultPrograms) && defaultPrograms.length > 0 ? defaultPrograms : programsList;
+  const deletedSet = new Set(Array.isArray(deletedSlugs) ? deletedSlugs : []);
+  
+  const map = new Map();
+  // 1. Pre-populate all standard default programs that haven't been explicitly deleted
+  for (const prog of seed) {
+    const key = prog.slug || prog.id;
+    if (key && !deletedSet.has(key)) {
+      map.set(key, { ...prog });
+    }
+  }
+
+  // 2. Overlay / append custom and edited programs
+  if (Array.isArray(savedPrograms)) {
+    for (const prog of savedPrograms) {
+      const key = prog.slug || prog.id;
+      if (key && !deletedSet.has(key)) {
+        if (map.has(key)) {
+          map.set(key, { ...map.get(key), ...prog });
+        } else {
+          map.set(key, { ...prog });
+        }
+      }
+    }
+  }
+
+  return Array.from(map.values());
+}
+
 /**
  * DCVC Admin Dashboard — Full CMS Client
  * Comprehensive management of Programs, Events, Articles, Resources, Board & Staff,

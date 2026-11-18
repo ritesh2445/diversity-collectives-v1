@@ -24,6 +24,7 @@ export const orgInfo = {
   hours: "1:00 PM – 5:00 PM Weekdays (Please call for drop-in hours)",
   phone: "(805) 644-LGBT (5428)",
   phoneRaw: "+18056445428",
+  voicemailOnly: false,
   email: "info@diversitycollective.org",
   donationUrl: "/donate",
   volunteerUrl: "/volunteer",

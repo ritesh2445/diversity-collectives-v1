@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { businessDirectorySeed } from '../data/dcvcData';
 import { usePageMeta } from '../utils/seo';
+import SendVoicemailButton from '../components/SendVoicemailButton';
 
 const LOCAL_STORAGE_KEY = 'dcvc_live_directory_businesses';
 
@@ -216,15 +217,27 @@ export default function DirectoryProfile() {
                 )}
 
                 {business.phone && (
-                  <div className="flex items-start gap-3">
-                    <Phone className="w-4 h-4 text-[#5A1E65] flex-shrink-0 mt-0.5" />
-                    <div>
-                      <span className="font-bold text-slate-900 block">Telephone</span>
-                      <a href={`tel:${business.phone}`} className="text-slate-600 hover:text-[#5A1E65]">
-                        {business.phone}
-                      </a>
+                  business.voicemailOnly ? (
+                    <div className="flex items-start gap-3">
+                      <div>
+                        <span className="font-bold text-slate-900 block mb-1">Direct Contact</span>
+                        <SendVoicemailButton
+                          label="Send Voice Message"
+                          subject={`Inquiry for ${business.name}`}
+                        />
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="flex items-start gap-3">
+                      <Phone className="w-4 h-4 text-[#5A1E65] flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-bold text-slate-900 block">Telephone</span>
+                        <a href={`tel:${business.phone}`} className="text-slate-600 hover:text-[#5A1E65]">
+                          {business.phone}
+                        </a>
+                      </div>
+                    </div>
+                  )
                 )}
 
                 {business.email && (

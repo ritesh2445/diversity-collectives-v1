@@ -1661,6 +1661,203 @@ export default {
       }
 
       // =======================================================================
+      // 8A-2. Public Voicemail Submission (POST /api/voicemail)
+      // =======================================================================
+      if ((pathname === '/api/voicemail' || pathname === '/api/voicemails') && request.method === 'POST') {
+        const contentType = request.headers.get('content-type') || '';
+        let name = '';
+        let email = '';
+        let subject = '';
+        let durationSeconds = 0;
+        let audioMimeType = 'audio/webm';
+        let audioBytes = null;
+        let audioBase64 = '';
+
+        if (contentType.includes('multipart/form-data')) {
+          const formData = await request.formData();
+          name = (formData.get('name') || '').trim();
+          email = (formData.get('email') || '').trim().toLowerCase();
+          subject = (formData.get('subject') || '').trim();
+          durationSeconds = Math.min(120, Math.max(1, parseInt(formData.get('duration') || '0', 10)));
+          const file = formData.get('audio');
+          if (file && typeof file === 'object') {
+            audioMimeType = file.type || 'audio/webm';
+            const arrayBuffer = await file.arrayBuffer();
+            audioBytes = new Uint8Array(arrayBuffer);
+            let binary = '';
+            for (let i = 0; i < audioBytes.byteLength; i++) {
+              binary += String.fromCharCode(audioBytes[i]);
+            }
+            audioBase64 = btoa(binary);
+          }
+        } else {
+          const body = await request.json().catch(() => ({}));
+          name = (body.name || '').trim();
+          email = (body.email || '').trim().toLowerCase();
+          subject = (body.subject || '').trim();
+          durationSeconds = Math.min(120, Math.max(1, parseInt(body.duration || body.duration_seconds || '0', 10)));
+          audioMimeType = body.mimeType || body.audio_mime_type || 'audio/webm';
+          audioBase64 = body.audio || body.audioBase64 || '';
+          if (audioBase64) {
+            const cleanBase64 = audioBase64.replace(/^data:[^;]+;base64,/, '');
+            const binary = atob(cleanBase64);
+            audioBytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) {
+              audioBytes[i] = binary.charCodeAt(i);
+            }
+            audioBase64 = cleanBase64;
+          }
+        }
+
+        if (!name || !email || !email.includes('@')) {
+          return errorResponse('Name and a valid email address are required.', 400, null, cors);
+        }
+
+        if (!audioBytes || audioBytes.length === 0) {
+          return errorResponse('Audio recording data is required.', 400, null, cors);
+        }
+
+        if (audioBytes.length > 10 * 1024 * 1024) {
+          return errorResponse('Audio recording exceeds maximum permitted size (10 MB).', 413, null, cors);
+        }
+
+        const id = 'vm_' + crypto.randomUUID().replace(/-/g, '').slice(0, 16);
+        const now = new Date();
+        const year = now.getUTCFullYear();
+        const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+        const ext = audioMimeType.includes('mp4') ? 'mp4' : audioMimeType.includes('ogg') ? 'ogg' : 'webm';
+        const r2Key = `voicemails/${year}/${month}/${id}.${ext}`;
+
+        let storedInR2 = false;
+        if (env.VOICEMAIL_BUCKET && typeof env.VOICEMAIL_BUCKET.put === 'function') {
+          try {
+            await env.VOICEMAIL_BUCKET.put(r2Key, audioBytes, {
+              httpMetadata: { contentType: audioMimeType },
+              customMetadata: {
+                senderName: name,
+                senderEmail: email,
+                durationSeconds: String(durationSeconds)
+              }
+            });
+            storedInR2 = true;
+          } catch (r2Err) {
+            console.warn('[Voicemail] R2 upload failed, falling back to database storage:', r2Err.message);
+          }
+        }
+
+        const db = getDb(env);
+        if (db) {
+          try {
+            await db.execute({
+              sql: `INSERT INTO voicemails (
+                id, name, email, subject, duration_seconds, r2_key, audio_mime_type, file_size_bytes, audio_data, status, ip_hash, user_agent, created_at
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?, ?, ?)`,
+              args: [
+                id,
+                name,
+                email,
+                subject || null,
+                durationSeconds,
+                r2Key,
+                audioMimeType,
+                audioBytes.length,
+                storedInR2 ? null : audioBase64,
+                clientIp || 'unknown',
+                request.headers.get('user-agent') || 'unknown',
+                now.toISOString()
+              ]
+            });
+          } catch (dbErr) {
+            console.warn('[Voicemail] DB insert error, attempting table creation fallback:', dbErr.message);
+            try {
+              await db.execute({
+                sql: `CREATE TABLE IF NOT EXISTS voicemails (
+                  id TEXT PRIMARY KEY,
+                  name TEXT NOT NULL,
+                  email TEXT NOT NULL,
+                  subject TEXT,
+                  duration_seconds INTEGER DEFAULT 0,
+                  r2_key TEXT NOT NULL,
+                  audio_mime_type TEXT DEFAULT 'audio/webm',
+                  file_size_bytes INTEGER DEFAULT 0,
+                  audio_data TEXT,
+                  status TEXT DEFAULT 'new' CHECK(status IN ('new', 'reviewed', 'responded')),
+                  admin_notes TEXT,
+                  ip_hash TEXT,
+                  user_agent TEXT,
+                  created_at TEXT DEFAULT (datetime('now')),
+                  reviewed_at TEXT,
+                  responded_at TEXT
+                )`,
+                args: []
+              });
+              await db.execute({
+                sql: `INSERT INTO voicemails (
+                  id, name, email, subject, duration_seconds, r2_key, audio_mime_type, file_size_bytes, audio_data, status, ip_hash, user_agent, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?, ?, ?)`,
+                args: [
+                  id,
+                  name,
+                  email,
+                  subject || null,
+                  durationSeconds,
+                  r2Key,
+                  audioMimeType,
+                  audioBytes.length,
+                  storedInR2 ? null : audioBase64,
+                  clientIp || 'unknown',
+                  request.headers.get('user-agent') || 'unknown',
+                  now.toISOString()
+                ]
+              });
+            } catch (retryErr) {
+              console.error('[Voicemail] Failed to insert voicemail to DB:', retryErr.message);
+            }
+          }
+        }
+
+        const durationFormatted = `${Math.floor(durationSeconds / 60)}m ${durationSeconds % 60}s`;
+        const adminUrl = `${env.FRONTEND_BASE_URL || 'https://diversitycollectivevc.org'}/admin`;
+
+        try {
+          await sendEmail({
+            apiKey: env.RESEND_API_KEY,
+            from: env.RESEND_FROM_EMAIL || 'Diversity Collective <noreply@diversitycollective.org>',
+            to: env.DCVC_STAFF_EMAIL || 'info@diversitycollective.org',
+            replyTo: email,
+            subject: `[New Voicemail] Voice message from ${name} (${durationFormatted})`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 16px;">
+                <h2 style="color: #5A1E65; margin-top: 0;">New Community Voicemail Received</h2>
+                <p style="color: #475569; font-size: 14px;">A visitor left a voice message on the Diversity Collective website:</p>
+                <div style="background: #ffffff; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0; margin: 16px 0; font-size: 13px; line-height: 1.6;">
+                  <p style="margin: 4px 0;"><strong>Sender Name:</strong> ${name}</p>
+                  <p style="margin: 4px 0;"><strong>Sender Email:</strong> <a href="mailto:${email}" style="color: #7e22ce;">${email}</a></p>
+                  ${subject ? `<p style="margin: 4px 0;"><strong>Subject:</strong> ${subject}</p>` : ''}
+                  <p style="margin: 4px 0;"><strong>Audio Duration:</strong> ${durationFormatted}</p>
+                  <p style="margin: 4px 0;"><strong>Submission ID:</strong> <code>${id}</code></p>
+                </div>
+                <div style="margin-top: 20px;">
+                  <a href="${adminUrl}" style="display: inline-block; padding: 12px 24px; background: #5A1E65; color: #ffffff; font-weight: bold; font-size: 13px; text-decoration: none; border-radius: 8px;">
+                    Listen in Admin Voicemail Inbox
+                  </a>
+                </div>
+              </div>
+            `
+          });
+        } catch (emailErr) {
+          console.warn('[Voicemail] Notification email failed (recording safely stored):', emailErr.message);
+        }
+
+        return jsonResponse({
+          success: true,
+          message: 'Thank you! Your voice message has been securely recorded and sent to our team.',
+          id,
+          duration: durationSeconds
+        }, 200, cors);
+      }
+
+      // =======================================================================
       // 8B. Specialized Inquiries (Appointments, Resources, Community Joins)
       //     (POST /api/inquiries)
       // =======================================================================
@@ -4819,6 +5016,297 @@ export default {
           }
 
           return jsonResponse({ success: true, message: `Status updated to ${status}.` }, 200, cors);
+        }
+
+        // 15.10b Operational Inquiries Edit Entry (PUT /api/admin/inquiries/:type/:id)
+        if (pathname.startsWith('/api/admin/inquiries/') && request.method === 'PUT') {
+          if (!requireRole(authUser.role, ['admin', 'approver', 'editor'])) {
+            return errorResponse('Forbidden', 403, null, cors);
+          }
+
+          const parts = pathname.replace('/api/admin/inquiries/', '').split('/');
+          const [inquiryType, inquiryId] = parts;
+          const body = await request.json().catch(() => ({}));
+          const db = getDb(env);
+
+          if (db && inquiryId) {
+            if (inquiryType === 'volunteer') {
+              await db.execute({
+                sql: `UPDATE volunteer_applications SET 
+                  full_name = coalesce(?, full_name), 
+                  email = coalesce(?, email), 
+                  phone = coalesce(?, phone), 
+                  city = coalesce(?, city), 
+                  status = coalesce(?, status), 
+                  availability = coalesce(?, availability), 
+                  roles_of_interest = coalesce(?, roles_of_interest), 
+                  skills_experience = coalesce(?, skills_experience) 
+                  WHERE id = ?`,
+                args: [
+                  body.full_name || body.name || null,
+                  body.email || null,
+                  body.phone || null,
+                  body.city || null,
+                  body.status || null,
+                  body.availability || null,
+                  body.roles_of_interest || null,
+                  body.skills_experience || body.message || null,
+                  inquiryId
+                ]
+              });
+            } else if (inquiryType === 'training') {
+              await db.execute({
+                sql: `UPDATE training_bookings SET 
+                  organization_name = coalesce(?, organization_name), 
+                  contact_name = coalesce(?, contact_name), 
+                  email = coalesce(?, email), 
+                  phone = coalesce(?, phone), 
+                  course_title = coalesce(?, course_title), 
+                  status = coalesce(?, status), 
+                  estimated_attendees = coalesce(?, estimated_attendees), 
+                  preferred_date = coalesce(?, preferred_date), 
+                  goals_and_notes = coalesce(?, goals_and_notes) 
+                  WHERE id = ?`,
+                args: [
+                  body.organization_name || null,
+                  body.contact_name || body.name || null,
+                  body.email || null,
+                  body.phone || null,
+                  body.course_title || null,
+                  body.status || null,
+                  body.estimated_attendees ? Number(body.estimated_attendees) : null,
+                  body.preferred_date || null,
+                  body.goals_and_notes || body.message || null,
+                  inquiryId
+                ]
+              });
+            } else if (inquiryType === 'accessibility') {
+              await db.execute({
+                sql: `UPDATE accessibility_feedback SET 
+                  contact_name = coalesce(?, contact_name), 
+                  contact_email = coalesce(?, contact_email), 
+                  barrier_description = coalesce(?, barrier_description), 
+                  page_url = coalesce(?, page_url), 
+                  status = coalesce(?, status), 
+                  remediation_notes = coalesce(?, remediation_notes) 
+                  WHERE id = ?`,
+                args: [
+                  body.contact_name || body.name || null,
+                  body.contact_email || body.email || null,
+                  body.barrier_description || body.message || null,
+                  body.page_url || null,
+                  body.status || null,
+                  body.remediation_notes || body.notes || null,
+                  inquiryId
+                ]
+              });
+            } else {
+              await db.execute({
+                sql: `UPDATE contact_submissions SET 
+                  name = coalesce(?, name), 
+                  email = coalesce(?, email), 
+                  phone = coalesce(?, phone), 
+                  subject = coalesce(?, subject), 
+                  message = coalesce(?, message), 
+                  status = coalesce(?, status), 
+                  notes = coalesce(?, notes) 
+                  WHERE id = ?`,
+                args: [
+                  body.name || body.full_name || null,
+                  body.email || null,
+                  body.phone || null,
+                  body.subject || null,
+                  body.message || null,
+                  body.status || null,
+                  body.notes || null,
+                  inquiryId
+                ]
+              });
+            }
+          }
+
+          return jsonResponse({ success: true, message: `Inquiry entry updated successfully.` }, 200, cors);
+        }
+
+        // 15.10c Operational Inquiries Delete Entry (DELETE /api/admin/inquiries/:type/:id)
+        if (pathname.startsWith('/api/admin/inquiries/') && request.method === 'DELETE') {
+          if (!requireRole(authUser.role, ['admin', 'approver', 'editor'])) {
+            return errorResponse('Forbidden', 403, null, cors);
+          }
+
+          const parts = pathname.replace('/api/admin/inquiries/', '').split('/');
+          const [inquiryType, inquiryId] = parts;
+          const db = getDb(env);
+
+          if (db && inquiryId) {
+            let table = 'contact_submissions';
+            if (inquiryType === 'volunteer') table = 'volunteer_applications';
+            if (inquiryType === 'training') table = 'training_bookings';
+            if (inquiryType === 'accessibility') table = 'accessibility_feedback';
+
+            await db.execute({
+              sql: `DELETE FROM ${table} WHERE id = ?`,
+              args: [inquiryId]
+            });
+          }
+
+          return jsonResponse({ success: true, message: `Inquiry entry ${inquiryId} successfully deleted.` }, 200, cors);
+        }
+
+        // 15.10d Admin Voicemails List (GET /api/admin/voicemails)
+        if (pathname === '/api/admin/voicemails' && request.method === 'GET') {
+          if (!requireRole(authUser.role, ['admin', 'approver', 'editor', 'read_only'])) {
+            return errorResponse('Forbidden', 403, null, cors);
+          }
+
+          const statusFilter = url.searchParams.get('status') || 'all';
+          const db = getDb(env);
+
+          if (!db) {
+            return jsonResponse({ success: true, voicemails: [] }, 200, cors);
+          }
+
+          let query = `SELECT id, name, email, subject, duration_seconds, r2_key, audio_mime_type, file_size_bytes, status, admin_notes, created_at, reviewed_at, responded_at FROM voicemails`;
+          const args = [];
+
+          if (statusFilter && statusFilter !== 'all') {
+            query += ` WHERE status = ?`;
+            args.push(statusFilter);
+          }
+          query += ` ORDER BY created_at DESC LIMIT 100`;
+
+          try {
+            const res = await db.execute({ sql: query, args });
+            return jsonResponse({ success: true, voicemails: res.rows || [] }, 200, cors);
+          } catch {
+            return jsonResponse({ success: true, voicemails: [] }, 200, cors);
+          }
+        }
+
+        // 15.10e Admin Voicemail Audio Stream (GET /api/admin/voicemails/:id/audio)
+        if (pathname.startsWith('/api/admin/voicemails/') && pathname.endsWith('/audio') && request.method === 'GET') {
+          if (!requireRole(authUser.role, ['admin', 'approver', 'editor', 'read_only'])) {
+            return errorResponse('Forbidden', 403, null, cors);
+          }
+
+          const id = pathname.replace('/api/admin/voicemails/', '').replace('/audio', '').trim();
+          const db = getDb(env);
+
+          let voicemail = null;
+          if (db) {
+            try {
+              const res = await db.execute({ sql: `SELECT * FROM voicemails WHERE id = ? LIMIT 1`, args: [id] });
+              voicemail = res.rows?.[0];
+            } catch {}
+          }
+
+          if (!voicemail) {
+            return errorResponse('Voicemail recording not found.', 404, null, cors);
+          }
+
+          const mimeType = voicemail.audio_mime_type || 'audio/webm';
+
+          if (env.VOICEMAIL_BUCKET && voicemail.r2_key) {
+            try {
+              const r2Obj = await env.VOICEMAIL_BUCKET.get(voicemail.r2_key);
+              if (r2Obj) {
+                return new Response(r2Obj.body, {
+                  headers: {
+                    'Content-Type': mimeType,
+                    'Content-Disposition': `inline; filename="voicemail-${id}.webm"`,
+                    'Cache-Control': 'private, max-age=3600',
+                    ...cors
+                  }
+                });
+              }
+            } catch (r2Err) {
+              console.warn('[Voicemail] R2 fetch error:', r2Err.message);
+            }
+          }
+
+          if (voicemail.audio_data) {
+            const binary = atob(voicemail.audio_data);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) {
+              bytes[i] = binary.charCodeAt(i);
+            }
+            return new Response(bytes, {
+              headers: {
+                'Content-Type': mimeType,
+                'Content-Disposition': `inline; filename="voicemail-${id}.webm"`,
+                'Cache-Control': 'private, max-age=3600',
+                ...cors
+              }
+            });
+          }
+
+          return errorResponse('Audio recording file not found in storage.', 404, null, cors);
+        }
+
+        // 15.10f Admin Voicemail Status Update (PATCH /api/admin/voicemails/:id)
+        if (pathname.startsWith('/api/admin/voicemails/') && request.method === 'PATCH') {
+          if (!requireRole(authUser.role, ['admin', 'approver', 'editor'])) {
+            return errorResponse('Forbidden', 403, null, cors);
+          }
+
+          const id = pathname.replace('/api/admin/voicemails/', '').trim();
+          const body = await request.json().catch(() => ({}));
+          const { status, admin_notes } = body;
+          const db = getDb(env);
+
+          if (db && status) {
+            const now = new Date().toISOString();
+            let extraClause = '';
+            const args = [status];
+            if (status === 'reviewed') {
+              extraClause = ', reviewed_at = ?';
+              args.push(now);
+            } else if (status === 'responded') {
+              extraClause = ', responded_at = ?';
+              args.push(now);
+            }
+            if (admin_notes !== undefined) {
+              extraClause += ', admin_notes = ?';
+              args.push(admin_notes);
+            }
+            args.push(id);
+
+            try {
+              await db.execute({
+                sql: `UPDATE voicemails SET status = ?${extraClause} WHERE id = ?`,
+                args
+              });
+            } catch (err) {
+              console.warn('[Voicemail] Update error:', err.message);
+            }
+          }
+
+          return jsonResponse({ success: true, message: `Voicemail ${id} updated.` }, 200, cors);
+        }
+
+        // 15.10g Admin Voicemail Delete (DELETE /api/admin/voicemails/:id)
+        if (pathname.startsWith('/api/admin/voicemails/') && request.method === 'DELETE') {
+          if (!requireRole(authUser.role, ['admin', 'approver'])) {
+            return errorResponse('Forbidden', 403, null, cors);
+          }
+
+          const id = pathname.replace('/api/admin/voicemails/', '').trim();
+          const db = getDb(env);
+
+          if (db) {
+            try {
+              const res = await db.execute({ sql: `SELECT r2_key FROM voicemails WHERE id = ? LIMIT 1`, args: [id] });
+              const r2Key = res.rows?.[0]?.r2_key;
+              if (r2Key && env.VOICEMAIL_BUCKET && typeof env.VOICEMAIL_BUCKET.delete === 'function') {
+                await env.VOICEMAIL_BUCKET.delete(r2Key).catch(() => {});
+              }
+              await db.execute({ sql: `DELETE FROM voicemails WHERE id = ?`, args: [id] });
+            } catch (delErr) {
+              console.warn('[Voicemail] Delete error:', delErr.message);
+            }
+          }
+
+          return jsonResponse({ success: true, message: `Voicemail ${id} successfully deleted.` }, 200, cors);
         }
 
         // 15.11 CSV Data Export (GET /api/admin/export/:type)

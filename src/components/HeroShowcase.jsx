@@ -17,6 +17,8 @@ import { resolveHeroTheme } from '../services/heroThemeStore';
 import { DEFAULT_PAGE_BLOCKS } from '../data/siteDefaults';
 import { translationService } from '../services/translationService';
 import CardSpotlight from './CardSpotlight';
+import { useLiveOrgInfo } from '../hooks/useCmsLive';
+import SendVoicemailButton from './SendVoicemailButton';
 
 const DEFAULT_HERO_PROPS =
   DEFAULT_PAGE_BLOCKS.find((b) => b.type === 'hero_banner')?.props || {};
@@ -386,6 +388,7 @@ export default function HeroShowcase({
   onTriggerConfetti = undefined,
   afterWaveContent = null
 }) {
+  const liveOrg = useLiveOrgInfo();
   const [windowWidth, setWindowWidth] = useState(() =>
     typeof window !== 'undefined' ? window.innerWidth : 1280
   );
@@ -623,10 +626,17 @@ export default function HeroShowcase({
                 <span>{`${statusHeadline} · ${statusSchedule} · ${statusTag}`}</span>
               </SafeNav>
 
-              <div className="hidden sm:inline-flex items-center gap-2 text-slate-700 bg-white/90 px-4 py-1.5 rounded-full border border-purple-200/70 text-xs font-semibold shadow-2xs">
-                <Phone className="w-3.5 h-3.5 text-purple-700" />
-                <span>{helplineText}</span>
-              </div>
+              {liveOrg.voicemailOnly ? (
+                <SendVoicemailButton
+                  label="Send Voice Message"
+                  className="hidden sm:inline-flex items-center gap-2 text-[#5A1E65] bg-white/90 hover:bg-white px-4 py-1.5 rounded-full border border-purple-200/70 text-xs font-bold shadow-2xs cursor-pointer transition-colors"
+                />
+              ) : (
+                <div className="hidden sm:inline-flex items-center gap-2 text-slate-700 bg-white/90 px-4 py-1.5 rounded-full border border-purple-200/70 text-xs font-semibold shadow-2xs">
+                  <Phone className="w-3.5 h-3.5 text-purple-700" />
+                  <span>{helplineText}</span>
+                </div>
+              )}
             </div>
           ) : (
             <div className="flex items-center justify-start w-full max-w-full min-w-0">

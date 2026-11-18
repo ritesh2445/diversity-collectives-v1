@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { businessDirectorySeed } from '../data/dcvcData';
 import CardSpotlight from '../components/CardSpotlight';
+import SendVoicemailButton from '../components/SendVoicemailButton';
 import MobileCarousel from '../components/MobileCarousel';
 import { usePageMeta } from '../utils/seo';
 
@@ -445,14 +446,22 @@ export default function Directory() {
                   </Link>
 
                   {biz.phone && (
-                    <a
-                      href={`tel:${biz.phone.replace(/[^0-9]/g, '')}`}
-                      className="text-slate-600 hover:text-slate-950 inline-flex items-center gap-1"
-                      title={biz.phone}
-                    >
-                      <Phone className="w-3.5 h-3.5" />
-                      <span>Call</span>
-                    </a>
+                    biz.voicemailOnly ? (
+                      <SendVoicemailButton
+                        label="Voicemail"
+                        subject={`Directory Inquiry: ${biz.name}`}
+                        compact
+                      />
+                    ) : (
+                      <a
+                        href={`tel:${biz.phone.replace(/[^0-9]/g, '')}`}
+                        className="text-slate-600 hover:text-slate-950 inline-flex items-center gap-1"
+                        title={biz.phone}
+                      >
+                        <Phone className="w-3.5 h-3.5" />
+                        <span>Call</span>
+                      </a>
+                    )
                   )}
 
                   {biz.website && (

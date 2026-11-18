@@ -4,6 +4,7 @@ import { AlertTriangle, RefreshCw, Mail, Phone, MapPin, ArrowLeft, HeartHandshak
 import { usePageMeta } from '../utils/seo';
 
 export default function SubmissionError() {
+  const liveOrg = useLiveOrgInfo();
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const errorMessage = searchParams.get('message') || location.state?.error || 'We encountered an unexpected issue while transmitting your submission to our servers.';

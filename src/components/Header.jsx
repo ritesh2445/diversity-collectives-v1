@@ -25,12 +25,15 @@ import SmartSearchModal from './SmartSearchModal';
 import MiniCalendarPopover from './MiniCalendarPopover';
 import { useScrollLock } from '../utils/scrollLock';
 import { orgInfo } from '../data/dcvcData';
+import { useLiveOrgInfo } from '../hooks/useCmsLive';
+import SendVoicemailButton from './SendVoicemailButton';
 import { a11yStore } from '../accessibility/a11yStore';
 import { translationService } from '../services/translationService';
 import AutoFitText from './ui/AutoFitText';
 import '../services/cmsStore';
 
 export default function Header() {
+  const liveOrg = useLiveOrgInfo();
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -587,15 +590,22 @@ export default function Header() {
                 </AutoFitText>
               </Link>
 
-              <a
-                href={`tel:${orgInfo.phone.replace(/[^0-9]/g, '')}`}
-                className="w-full py-2.5 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-800 text-xs font-bold flex items-center justify-center gap-2 transition-colors text-center"
-              >
-                <Phone className="w-3.5 h-3.5 text-[#5A1E65] shrink-0" />
-                <AutoFitText maxChars={28}>
-                  <span>{translationService.t('nav_call_sanctuary', `Call: ${orgInfo.phone}`)}</span>
-                </AutoFitText>
-              </a>
+              {liveOrg.voicemailOnly ? (
+                <SendVoicemailButton
+                  className="w-full py-2.5 px-4 rounded-xl border border-purple-300 bg-purple-50 hover:bg-purple-100 text-[#5A1E65] text-xs font-bold flex items-center justify-center gap-2 transition-colors text-center shadow-xs"
+                  label="Send Voice Message"
+                />
+              ) : (
+                <a
+                  href={`tel:${(liveOrg.phone || orgInfo.phone).replace(/[^0-9]/g, '')}`}
+                  className="w-full py-2.5 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-800 text-xs font-bold flex items-center justify-center gap-2 transition-colors text-center"
+                >
+                  <Phone className="w-3.5 h-3.5 text-[#5A1E65] shrink-0" />
+                  <AutoFitText maxChars={28}>
+                    <span>{translationService.t('nav_call_sanctuary', `Call: ${liveOrg.phone || orgInfo.phone}`)}</span>
+                  </AutoFitText>
+                </a>
+              )}
             </div>
 
           </div>

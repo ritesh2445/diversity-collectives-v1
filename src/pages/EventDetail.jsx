@@ -16,6 +16,8 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { liveEvents, orgInfo } from '../data/dcvcData';
+import { useLiveOrgInfo } from '../hooks/useCmsLive';
+import SendVoicemailButton from '../components/SendVoicemailButton';
 import { cmsStore } from '../services/cmsStore';
 import { submitEventRsvp } from '../services/api';
 import TurnstileWidget from '../components/TurnstileWidget';
@@ -24,6 +26,7 @@ import { getGoogleCalendarUrl, downloadIcsFile } from '../utils/calendar';
 import { usePageMeta } from '../utils/seo';
 
 export default function EventDetail() {
+  const liveOrg = useLiveOrgInfo();
   const { slug } = useParams();
   const event = liveEvents.find(e => e.slug === slug) || cmsStore.getEvents().find(e => e.slug === slug || e.id === slug);
   const [copied, setCopied] = useState(false);
@@ -455,7 +458,7 @@ export default function EventDetail() {
                   Email: <a href={`mailto:${event.contactEmail || orgInfo.email}`} className="text-[#5A1E65] hover:underline font-bold">{event.contactEmail || orgInfo.email}</a>
                 </p>
                 <p className="text-xs text-slate-600 font-medium">
-                  Phone: <a href={`tel:${orgInfo.phoneRaw}`} className="text-[#5A1E65] hover:underline font-bold">{orgInfo.phone}</a>
+                  {liveOrg.voicemailOnly ? <SendVoicemailButton label="Send Voice Message" subject={`Question about ${event.title}`} compact /> : <>Phone: <a href={`tel:${liveOrg.phoneRaw || orgInfo.phoneRaw}`} className="text-[#5A1E65] hover:underline font-bold">{liveOrg.phone || orgInfo.phone}</a></>}
                 </p>
               </div>
 

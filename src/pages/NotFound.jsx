@@ -11,6 +11,7 @@ import {
   Phone
 } from 'lucide-react';
 import { useLiveOrgInfo } from '../hooks/useCmsLive';
+import SendVoicemailButton from '../components/SendVoicemailButton';
 import { usePageMeta } from '../utils/seo';
 
 export default function NotFound() {
@@ -97,7 +98,7 @@ export default function NotFound() {
         {/* Crisis Support Footnote */}
         <div className="pt-8 border-t border-slate-200 text-xs text-slate-500 flex items-center justify-center gap-2">
           <LifeBuoy className="w-4 h-4 text-rose-500 flex-shrink-0" />
-          <span>Need immediate help? Call <strong className="text-slate-900">{orgInfo.phone}</strong> or dial <a href="tel:988" className="font-bold text-rose-600 underline">988</a> for 24/7 crisis support.</span>
+          <span>Need immediate help? {orgInfo.voicemailOnly ? <SendVoicemailButton label="Send Voice Message" compact /> : <>Call <strong className="text-slate-900">{orgInfo.phone}</strong></>} or dial <a href="tel:988" className="font-bold text-rose-600 underline">988</a> for 24/7 crisis support.</span>
         </div>
 
       </div>
