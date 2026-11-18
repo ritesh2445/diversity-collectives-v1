@@ -52,6 +52,7 @@ import {
   galleryPhotos,
   memoryLaneMilestones,
   businessDirectorySeed,
+  podcastsSeed,
   getBoardMemberSlug
 } from '../data/dcvcData.js';
 import {
@@ -157,7 +158,9 @@ export const INITIAL_CMS_DATA = {
   businesses: businessDirectorySeed || [],
   customKnowledge: [],
   gallery: galleryPhotos || [],
-  memoryLane: memoryLaneMilestones || []
+  memoryLane: memoryLaneMilestones || [],
+  podcasts: podcastsSeed || [],
+  mediaSuggestions: []
 };
 
 class CmsStoreEngine {
@@ -647,7 +650,9 @@ class CmsStoreEngine {
         resources: parsed.resources || INITIAL_CMS_DATA.resources,
         staff: parsed.staff || INITIAL_CMS_DATA.staff,
         gallery: parsed.gallery || INITIAL_CMS_DATA.gallery,
-        memoryLane: parsed.memoryLane || INITIAL_CMS_DATA.memoryLane
+        memoryLane: parsed.memoryLane || INITIAL_CMS_DATA.memoryLane,
+        podcasts: parsed.podcasts || INITIAL_CMS_DATA.podcasts,
+        mediaSuggestions: parsed.mediaSuggestions || []
       };
     } catch {
       return INITIAL_CMS_DATA;
@@ -1208,6 +1213,79 @@ class CmsStoreEngine {
       (g) => g.slug !== slugOrId && g.id !== slugOrId
     );
     this.saveData({ ...this.data, communityGroups: existing });
+    return existing;
+  }
+
+  // --------------------------------------------------------------------------
+  // Podcasts & Media CRUD
+  // --------------------------------------------------------------------------
+  getPodcasts() {
+    return this.data.podcasts || podcastsSeed || [];
+  }
+
+  savePodcast(podcast) {
+    const existing = [...this.getPodcasts()];
+    const slug = podcast.slug || (podcast.title || 'new-episode').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const index = existing.findIndex(p => p.id === podcast.id || p.slug === slug);
+    if (index >= 0) {
+      existing[index] = { ...existing[index], ...podcast, slug };
+    } else {
+      existing.unshift({
+        ...podcast,
+        id: podcast.id || `pod-${Date.now()}`,
+        slug,
+        episodeNumber: podcast.episodeNumber || (existing.length + 1)
+      });
+    }
+    this.saveData({ ...this.data, podcasts: existing });
+    return existing;
+  }
+
+  savePodcasts(podcasts) {
+    if (!Array.isArray(podcasts)) return this.getPodcasts();
+    this.saveData({ ...this.data, podcasts });
+    return podcasts;
+  }
+
+  deletePodcast(slugOrId) {
+    const existing = this.getPodcasts().filter(p => p.slug !== slugOrId && p.id !== slugOrId);
+    this.saveData({ ...this.data, podcasts: existing });
+    return existing;
+  }
+
+  // --------------------------------------------------------------------------
+  // Media & Podcast Content Suggestions CRUD
+  // --------------------------------------------------------------------------
+  getMediaSuggestions() {
+    return this.data.mediaSuggestions || [];
+  }
+
+  saveMediaSuggestion(suggestion) {
+    const existing = [...this.getMediaSuggestions()];
+    const newSuggestion = {
+      ...suggestion,
+      id: suggestion.id || `sug-${Date.now()}`,
+      status: suggestion.status || 'new',
+      createdAt: suggestion.createdAt || new Date().toISOString()
+    };
+    existing.unshift(newSuggestion);
+    this.saveData({ ...this.data, mediaSuggestions: existing });
+    return newSuggestion;
+  }
+
+  updateMediaSuggestion(id, patch) {
+    const existing = [...this.getMediaSuggestions()];
+    const index = existing.findIndex(s => s.id === id);
+    if (index >= 0) {
+      existing[index] = { ...existing[index], ...patch, updatedAt: new Date().toISOString() };
+      this.saveData({ ...this.data, mediaSuggestions: existing });
+    }
+    return existing;
+  }
+
+  deleteMediaSuggestion(id) {
+    const existing = this.getMediaSuggestions().filter(s => s.id !== id);
+    this.saveData({ ...this.data, mediaSuggestions: existing });
     return existing;
   }
 }

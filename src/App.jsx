@@ -77,6 +77,7 @@ const News = lazyWithRetry(() => import('./pages/News'));
 const NewsArticle = lazyWithRetry(() => import('./pages/NewsArticle'));
 const Gallery = lazyWithRetry(() => import('./pages/Gallery'));
 const Resources = lazyWithRetry(() => import('./pages/Resources'));
+const PodcastsMedia = lazyWithRetry(() => import('./pages/PodcastsMedia'));
 
 // Engagement & Giving
 const GetInvolved = lazyWithRetry(() => import('./pages/GetInvolved'));
@@ -280,6 +281,10 @@ function AppLayout() {
 
               {/* Visual Gallery */}
               <Route path="/gallery" element={<Gallery />} />
+
+              {/* Podcasts & Media */}
+              <Route path="/media" element={<PodcastsMedia />} />
+              <Route path="/podcasts" element={<PodcastsMedia />} />
 
               {/* Engagement & Action */}
               <Route path="/get-involved" element={<GetInvolved />} />

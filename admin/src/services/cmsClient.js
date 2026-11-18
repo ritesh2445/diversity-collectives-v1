@@ -403,7 +403,29 @@ export const DEFAULT_CMS_SEED = {
       image: "/images/volunteers.jpg",
       quote: "Our doors are open. You are always welcome here."
     }
-  ]
+  ],
+  podcasts: [
+    {
+      id: "pod-1",
+      slug: "decade-of-resilience-founding-story",
+      title: "A Decade of Resilience: The Founding Story of Diversity Collective",
+      episodeNumber: 1,
+      season: 1,
+      category: "History & Leadership",
+      host: "DCVC Communications Team",
+      guests: "Founding Board Members & Community Elders",
+      duration: "42 min",
+      date: "January 20, 2026",
+      link: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      audioUrl: "",
+      coverImage: "/images/community-gathering.jpg",
+      summary: "Reflecting on ten years of grassroots LGBTQ+ advocacy across Ventura County.",
+      description: "In this premiere episode of the DCVC Community Podcast, we sit down with our founding organizers.",
+      tags: ["History", "Advocacy", "Founders", "Community"],
+      featured: true
+    }
+  ],
+  mediaSuggestions: []
 };
 
 export function getLiveCmsData() {
@@ -426,7 +448,9 @@ export function getLiveCmsData() {
       resources: parsed.resources || DEFAULT_CMS_SEED.resources,
       staff: parsed.staff || DEFAULT_CMS_SEED.staff,
       gallery: parsed.gallery || DEFAULT_CMS_SEED.gallery,
-      memoryLane: parsed.memoryLane || DEFAULT_CMS_SEED.memoryLane
+      memoryLane: parsed.memoryLane || DEFAULT_CMS_SEED.memoryLane,
+      podcasts: parsed.podcasts || DEFAULT_CMS_SEED.podcasts || [],
+      mediaSuggestions: parsed.mediaSuggestions || []
     };
   } catch {
     return DEFAULT_CMS_SEED;
@@ -628,4 +652,47 @@ export function saveCmsSettings(settingsUpdates) {
   const updated = { ...data.settings, ...settingsUpdates };
   saveLiveCmsData({ ...data, settings: updated });
   return updated;
+}
+
+
+export function saveCmsPodcast(podcast) {
+  const data = getLiveCmsData();
+  const list = [...(data.podcasts || [])];
+  const idx = list.findIndex(p => p.id === podcast.id || p.slug === podcast.slug);
+  if (idx >= 0) {
+    list[idx] = { ...list[idx], ...podcast };
+  } else {
+    list.unshift({ ...podcast, id: podcast.id || ("pod-" + Date.now()), episodeNumber: podcast.episodeNumber || (list.length + 1) });
+  }
+  saveLiveCmsData({ ...data, podcasts: list });
+  return list;
+}
+
+export function deleteCmsPodcast(id) {
+  const data = getLiveCmsData();
+  const list = (data.podcasts || []).filter(p => p.id !== id && p.slug !== id);
+  saveLiveCmsData({ ...data, podcasts: list });
+  return list;
+}
+
+export function saveMediaSuggestion(suggestion) {
+  const data = getLiveCmsData();
+  const list = [...(data.mediaSuggestions || [])];
+  list.unshift({ ...suggestion, id: suggestion.id || ("sug-" + Date.now()), status: suggestion.status || "new", createdAt: suggestion.createdAt || new Date().toISOString() });
+  saveLiveCmsData({ ...data, mediaSuggestions: list });
+  return list;
+}
+
+export function updateMediaSuggestion(id, patch) {
+  const data = getLiveCmsData();
+  const list = (data.mediaSuggestions || []).map(s => s.id === id ? { ...s, ...patch, updatedAt: new Date().toISOString() } : s);
+  saveLiveCmsData({ ...data, mediaSuggestions: list });
+  return list;
+}
+
+export function deleteMediaSuggestion(id) {
+  const data = getLiveCmsData();
+  const list = (data.mediaSuggestions || []).filter(s => s.id !== id);
+  saveLiveCmsData({ ...data, mediaSuggestions: list });
+  return list;
 }

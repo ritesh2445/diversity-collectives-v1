@@ -30,7 +30,9 @@ import {
   Layers,
   ArrowRight,
   FolderOpen,
-  Palette
+  Palette,
+  Mic,
+  Radio
 } from 'lucide-react';
 import ImagePicker from './ImagePicker.jsx';
 import PictureFolderManager from './PictureFolderManager.jsx';
@@ -59,6 +61,8 @@ import {
   deleteCmsSponsor,
   saveCmsTraining,
   deleteCmsTraining,
+  saveCmsPodcast,
+  deleteCmsPodcast,
   saveCmsSettings,
   DEFAULT_CMS_SEED
 } from '../services/cmsClient.js';
@@ -478,13 +482,35 @@ export default function CmsStudio() {
         summary: '',
         learningObjectives: ['Understand LGBTQ+ affirming practices and inclusive terminology.']
       });
+    } else if (type === 'podcast') {
+      setFormData({
+        title: '',
+        slug: '',
+        episodeNumber: (cmsData.podcasts?.length || 0) + 1,
+        season: 1,
+        category: 'Community Stories',
+        host: 'DCVC Team',
+        guests: '',
+        duration: '30 min',
+        date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+        link: '',
+        audioUrl: '',
+        coverImage: '/images/community-gathering.jpg',
+        summary: '',
+        description: '',
+        featured: false
+      });
     }
   };
 
   const openEditModal = (type, item) => {
     setModalType(type);
     setEditingItem(item);
-    if (type === 'news') {
+    if (type === 'podcast') {
+      setFormData({
+        ...item
+      });
+    } else if (type === 'news') {
       setFormData({
         ...item,
         originalId: item.id || item.slug,
@@ -551,6 +577,9 @@ export default function CmsStudio() {
         : String(formData.learningObjectives || '').split('\n').map((s) => s.trim()).filter(Boolean);
       saveCmsTraining({ ...formData, learningObjectives: normalizedObjectives });
       showToast(`Training "${formData.title}" published live.`);
+    } else if (modalType === 'podcast') {
+      saveCmsPodcast(formData);
+      showToast(`Podcast episode "${formData.title}" saved.`);
     }
     refreshData();
     setModalType(null);
@@ -568,6 +597,7 @@ export default function CmsStudio() {
     else if (type === 'milestone') deleteCmsMilestone(idOrYear);
     else if (type === 'sponsor') deleteCmsSponsor(idOrYear);
     else if (type === 'training') deleteCmsTraining(idOrYear);
+    else if (type === 'podcast') deleteCmsPodcast(idOrYear);
     refreshData();
     showToast('Content item deleted & synced live.');
   };
@@ -599,6 +629,7 @@ export default function CmsStudio() {
     { id: 'events', label: 'Events & Calendar', count: cmsData.events?.length || 0, icon: Calendar },
     { id: 'trainings', label: 'P.R.I.D.E. Trainings', count: cmsData.trainings?.length || 0, icon: Award },
     { id: 'sponsors', label: 'Sponsors & Partners', count: cmsData.sponsors?.length || 0, icon: Heart },
+    { id: 'podcasts', label: 'Podcasts & Media', count: cmsData.podcasts?.length || 0, icon: Mic },
     { id: 'news', label: 'News & Articles', count: cmsData.news?.length || 0, icon: FileText },
     { id: 'resources', label: 'Community Resources', count: cmsData.resources?.length || 0, icon: BookOpen },
     { id: 'staff', label: 'Board & Staff', count: cmsData.staff?.length || 0, icon: Users },
@@ -985,6 +1016,122 @@ export default function CmsStudio() {
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================================
+          SUB-TAB: PODCASTS & MEDIA
+          ====================================================================== */}
+      {activeSubTab === 'podcasts' && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h3 className="font-display text-xl font-bold text-slate-950">
+                Podcasts & Community Media ({cmsData.podcasts?.length || 0})
+              </h3>
+              <p className="text-xs text-slate-600 mt-0.5">
+                Create podcast episodes and paste streaming links (YouTube, Spotify, Apple Podcasts, audio URLs).
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => openCreateModal('podcast')}
+              className="px-4 py-2.5 rounded-xl bg-[#5A1E65] hover:bg-[#43144A] text-white text-xs font-extrabold flex items-center gap-1.5 shadow-sm cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Podcast Episode</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {(cmsData.podcasts || []).map((pod) => (
+              <div
+                key={pod.id || pod.slug}
+                className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between gap-3"
+              >
+                <div>
+                  <div className="relative h-36 rounded-xl overflow-hidden mb-3 bg-slate-900">
+                    <img
+                      src={pod.coverImage || '/images/community-gathering.jpg'}
+                      alt={pod.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-sm text-[10px] font-bold text-amber-300">
+                      Ep {pod.episodeNumber || 1}
+                    </div>
+                    {pod.category && (
+                      <div className="absolute top-2 right-2 px-2 py-0.5 rounded-md bg-purple-900/80 backdrop-blur-sm text-[10px] font-bold text-purple-200">
+                        {pod.category}
+                      </div>
+                    )}
+                    {pod.duration && (
+                      <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-sm text-[10px] font-medium text-white flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-amber-300" />
+                        <span>{pod.duration}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <h4 className="font-display text-sm font-extrabold text-slate-950 line-clamp-2">
+                    {pod.title}
+                  </h4>
+                  {pod.guests && (
+                    <p className="text-[11px] text-slate-500 font-medium mt-1 truncate">
+                      Guests: {pod.guests}
+                    </p>
+                  )}
+                  <p className="text-xs text-slate-600 mt-2 line-clamp-2">
+                    {pod.summary || pod.description}
+                  </p>
+
+                  {pod.link && (
+                    <div className="mt-3">
+                      <a
+                        href={pod.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-[11px] font-bold text-[#5A1E65] hover:underline truncate max-w-full"
+                      >
+                        <ExternalLink className="w-3 h-3 shrink-0" />
+                        <span className="truncate">{pod.link}</span>
+                      </a>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                  <a
+                    href={`/media#${pod.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] font-bold text-slate-500 hover:text-[#5A1E65] flex items-center gap-1"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>Preview</span>
+                  </a>
+
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => openEditModal('podcast', pod)}
+                      className="p-1.5 text-purple-800 hover:bg-purple-50 rounded-lg cursor-pointer"
+                      title="Edit episode"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteItem('podcast', pod.slug || pod.id)}
+                      className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg cursor-pointer"
+                      title="Delete episode"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -2754,6 +2901,115 @@ export default function CmsStudio() {
                         ...formData,
                         learningObjectives: e.target.value.split('\n')
                       })}
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Podcast & Media Episode Form Fields */}
+              {modalType === 'podcast' && (
+                <>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Episode Title <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.title || ''}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      placeholder="e.g. A Decade of Resilience"
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Episode #</label>
+                      <input
+                        type="number"
+                        value={formData.episodeNumber || 1}
+                        onChange={(e) => setFormData({ ...formData, episodeNumber: parseInt(e.target.value, 10) || 1 })}
+                        className="w-full px-3 py-2 border rounded-xl text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Duration</label>
+                      <input
+                        type="text"
+                        value={formData.duration || ''}
+                        onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                        placeholder="e.g. 35 min"
+                        className="w-full px-3 py-2 border rounded-xl text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Category / Topic</label>
+                      <input
+                        type="text"
+                        value={formData.category || ''}
+                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                        placeholder="e.g. Youth Voices"
+                        className="w-full px-3 py-2 border rounded-xl text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Host / Speaker</label>
+                      <input
+                        type="text"
+                        value={formData.host || ''}
+                        onChange={(e) => setFormData({ ...formData, host: e.target.value })}
+                        placeholder="e.g. DCVC Communications Team"
+                        className="w-full px-3 py-2 border rounded-xl text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Guest(s)</label>
+                      <input
+                        type="text"
+                        value={formData.guests || ''}
+                        onChange={(e) => setFormData({ ...formData, guests: e.target.value })}
+                        placeholder="e.g. Founding Members & Community Elders"
+                        className="w-full px-3 py-2 border rounded-xl text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  {/* PASTE LINK INPUT */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Podcast / Video Link (YouTube, Spotify, Apple Podcasts, Soundcloud, audio URL) <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="url"
+                      required
+                      value={formData.link || ''}
+                      onChange={(e) => setFormData({ ...formData, link: e.target.value })}
+                      placeholder="https://www.youtube.com/watch?v=... or https://open.spotify.com/..."
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      Paste the URL where visitors can listen or watch this episode.
+                    </p>
+                  </div>
+
+                  <ImagePicker
+                    value={formData.coverImage || '/images/community-gathering.jpg'}
+                    onChange={(url) => setFormData({ ...formData, coverImage: url })}
+                    label="Episode Cover Image"
+                  />
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Summary / Description</label>
+                    <textarea
+                      rows={3}
+                      value={formData.summary || formData.description || ''}
+                      onChange={(e) => setFormData({ ...formData, summary: e.target.value, description: e.target.value })}
+                      placeholder="Brief overview of the conversation and show notes..."
                       className="w-full px-3 py-2 border rounded-xl text-xs"
                     />
                   </div>

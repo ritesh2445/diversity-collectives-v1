@@ -430,7 +430,25 @@ export const SCHEMA_STATEMENTS = [
   )`,
 
   `CREATE INDEX IF NOT EXISTS idx_voicemails_status_date ON voicemails (status, created_at DESC)`,
-  `CREATE INDEX IF NOT EXISTS idx_voicemails_created_at ON voicemails (created_at DESC)`
+  `CREATE INDEX IF NOT EXISTS idx_voicemails_created_at ON voicemails (created_at DESC)`,
+
+  // 19. Podcasts & Media Content Suggestions
+  `CREATE TABLE IF NOT EXISTS media_suggestions (
+    id TEXT PRIMARY KEY,
+    name TEXT,
+    email TEXT,
+    category TEXT DEFAULT 'Podcast Episode',
+    topic TEXT NOT NULL,
+    description TEXT,
+    guest_recommendation TEXT,
+    link_url TEXT,
+    status TEXT DEFAULT 'new' CHECK(status IN ('new', 'reviewed', 'scheduled', 'archived')),
+    admin_notes TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now'))
+  )`,
+
+  `CREATE INDEX IF NOT EXISTS idx_media_suggestions_status_date ON media_suggestions (status, created_at DESC)`
 ];
 
 export const INITIAL_SEEDS = [

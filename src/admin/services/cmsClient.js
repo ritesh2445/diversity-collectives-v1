@@ -170,3 +170,31 @@ export function deleteCmsCommunityGroup(slugOrId) {
   publishAdminSitePatch({ cmsData: cmsStore.getData() }).catch(() => {});
   return list;
 }
+
+export function saveCmsPodcast(podcast) {
+  const list = cmsStore.savePodcast(podcast);
+  publishAdminSitePatch({ cmsData: cmsStore.getData() }).catch(() => {});
+  return list;
+}
+
+export function deleteCmsPodcast(slugOrId) {
+  const list = cmsStore.deletePodcast(slugOrId);
+  publishAdminSitePatch({ cmsData: cmsStore.getData() }).catch(() => {});
+  return list;
+}
+
+export function saveMediaSuggestion(suggestion) {
+  return cmsStore.saveMediaSuggestion(suggestion);
+}
+
+export function updateMediaSuggestion(id, patch) {
+  const list = cmsStore.updateMediaSuggestion(id, patch);
+  publishAdminSitePatch({ cmsData: cmsStore.getData() }).catch(() => {});
+  return list;
+}
+
+export function deleteMediaSuggestion(id) {
+  const list = cmsStore.deleteMediaSuggestion(id);
+  publishAdminSitePatch({ cmsData: cmsStore.getData() }).catch(() => {});
+  return list;
+}

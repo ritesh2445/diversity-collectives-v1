@@ -1470,3 +1470,82 @@ export const businessDirectorySeed = [
     tags: ["Faith Community", "Bilingual Spanish", "Affirming Church", "Community Gathering"]
   }
 ];
+
+export const podcastsSeed = [
+  {
+    id: "pod-1",
+    slug: "decade-of-resilience-founding-story",
+    title: "A Decade of Resilience: The Founding Story of Diversity Collective",
+    episodeNumber: 1,
+    season: 1,
+    category: "History & Leadership",
+    host: "DCVC Communications Team",
+    guests: "Founding Board Members & Community Elders",
+    duration: "42 min",
+    date: "January 20, 2026",
+    link: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    audioUrl: "",
+    coverImage: "/images/community-gathering.jpg",
+    summary: "Reflecting on ten years of grassroots LGBTQ+ advocacy across Ventura County. How community members transformed a volunteer initiative into a permanent countywide safe harbor.",
+    description: "In this premiere episode of the DCVC Community Podcast, we sit down with our founding organizers to revisit the pivotal moments of 2014 when Ventura County lacked dedicated LGBTQ+ facilities. Hear firsthand stories of organizing the first Ventura County Pride, establishing our permanent Community Resource Center on Portola Road, and our vision for the next decade.",
+    tags: ["History", "Advocacy", "Founders", "Community"],
+    featured: true
+  },
+  {
+    id: "pod-2",
+    slug: "rainbow-umbrella-youth-voices",
+    title: "Rainbow Umbrella: Safe Harbor, Identity & Youth Leadership",
+    episodeNumber: 2,
+    season: 1,
+    category: "Youth Voices",
+    host: "Youth Programs Coordinator",
+    guests: "Rainbow Umbrella Youth Facilitators",
+    duration: "34 min",
+    date: "February 12, 2026",
+    link: "https://open.spotify.com",
+    audioUrl: "",
+    coverImage: "/images/youth-umbrella.jpg",
+    summary: "Inside our Friday night drop-in circles for ages 13–23. Young leaders discuss finding their voices, navigating schools, mental health, and organizing the annual Pride Prom.",
+    description: "Every Friday at 5:30 PM, the Community Resource Center fills with laughter, mutual support, and creative expression. In this episode, youth facilitators share what having an unconditionally affirming space has meant for their self-acceptance, mental wellbeing, and leadership development.",
+    tags: ["Youth", "Rainbow Umbrella", "Mental Health", "Peer Support"],
+    featured: true
+  },
+  {
+    id: "pod-3",
+    slug: "diversity-shines-healthcare-equity",
+    title: "Diversity SHINES: Breaking Barriers in Community Sexual Wellness",
+    episodeNumber: 3,
+    season: 1,
+    category: "Health & Wellness",
+    host: "Diversity SHINES Clinical Director",
+    guests: "Ventura County Public Health Specialists",
+    duration: "29 min",
+    date: "March 5, 2026",
+    link: "https://www.youtube.com",
+    audioUrl: "",
+    coverImage: "/images/shines-screening.jpg",
+    summary: "How our mobile clinics bring confidential 15-minute rapid HIV/HCV screenings and PrEP navigation directly to agricultural and underserved communities.",
+    description: "Stigma and geography should never be barriers to compassionate healthcare. Learn how Diversity SHINES partners with regional health clinics to deliver free, confidential testing, bilingual counseling, barrier protection supplies, and vital medical linkages across all 10 Ventura County cities.",
+    tags: ["Healthcare", "Diversity SHINES", "Public Health", "Wellness"],
+    featured: false
+  },
+  {
+    id: "pod-4",
+    slug: "affirming-business-network-allies-in-action",
+    title: "Affirming Ventura: Local Businesses Standing Up for Inclusive Spaces",
+    episodeNumber: 4,
+    season: 1,
+    category: "Community & Business",
+    host: "Community Outreach Director",
+    guests: "Local Business Owners & Directory Members",
+    duration: "38 min",
+    date: "March 18, 2026",
+    link: "https://open.spotify.com",
+    audioUrl: "",
+    coverImage: "/images/crc-building.jpg",
+    summary: "Local business owners discuss signing the DCVC Affirming Directory Pledge, creating safe public spaces, and the economic power of inclusive community solidarity.",
+    description: "From coffee houses and independent bookstores to legal clinics and medical practices, businesses across Ventura County are taking active steps to ensure LGBTQ+ patrons, employees, and families are treated with dignity and care. Discover what it takes to earn the verified affirming seal.",
+    tags: ["Local Business", "Affirming Directory", "Inclusion", "Ventura County"],
+    featured: false
+  }
+];

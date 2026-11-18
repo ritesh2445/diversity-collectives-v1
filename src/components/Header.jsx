@@ -17,7 +17,9 @@ import {
   MapPin,
   ChevronRight,
   ChevronDown,
-  Search
+  Search,
+  Mic,
+  PhoneCall
 } from 'lucide-react';
 import TraditionalAccessibilityIcon from './icons/TraditionalAccessibilityIcon';
 import LanguageSelector from './LanguageSelector';
@@ -128,7 +130,9 @@ export default function Header() {
     { label: translationService.t('nav_directory', 'Directory'), to: "/directory", icon: Compass, desc: translationService.t('nav_desc_directory', "LGBTQ+ affirming business network") },
     { label: translationService.t('nav_training', 'Training'), to: "/training", icon: Sparkles, desc: translationService.t('nav_desc_training', "P.R.I.D.E. cultural competency") },
     { label: translationService.t('nav_news', 'News'), to: "/news", icon: Info, desc: translationService.t('nav_desc_news', "Stories, updates & advocacy") },
-    { label: translationService.t('nav_gallery', 'Gallery'), to: "/gallery", icon: Sparkles, desc: translationService.t('nav_desc_gallery', "Celebration & memories") }
+    { label: translationService.t('nav_gallery', 'Gallery'), to: "/gallery", icon: Sparkles, desc: translationService.t('nav_desc_gallery', "Celebration & memories") },
+    { label: translationService.t('nav_podcasts', 'Podcasts & Media'), to: "/media", icon: Mic, desc: translationService.t('nav_desc_podcasts', "Conversations, stories & community media") },
+    { label: translationService.t('nav_contact', 'Get in Touch'), to: "/contact", icon: PhoneCall, desc: translationService.t('nav_desc_contact', "Reach our team, voicemails & location") }
   ];
 
   const allNavItems = [...primaryNavItems, ...secondaryNavItems];
@@ -192,18 +196,15 @@ export default function Header() {
 
             {/* Desktop Center Navigation - Clean 5 Pillars + "More" Dropdown to Guarantee Zero Collision */}
             <nav id="main-navigation" className="hidden xl:flex items-center gap-1 xl:gap-1.5 2xl:gap-2 flex-shrink min-w-0 mr-2 lg:mr-4" aria-label="Main Navigation">
-              {/* Primary Pillars - Responsive: Community & Resources tuck into 'More' on xl (1280-1535px) to guarantee zero collision in long languages */}
+              {/* Primary Pillars */}
               {primaryNavItems.map((item) => {
                 const isActive = location.pathname === item.to ||
                   (item.to !== '/' && location.pathname.startsWith(item.to));
-                const isExtraOnXl = item.to === '/community' || item.to === '/resources';
                 return (
                   <Link
                     key={item.to}
                     to={item.to}
-                    className={`nav-bar-btn px-2.5 2xl:px-3 py-1.5 2xl:py-2 text-xs 2xl:text-sm font-bold rounded-full transition-all whitespace-nowrap ${
-                      isExtraOnXl ? 'hidden min-[1750px]:inline-block' : 'inline-block'
-                    } ${isActive
+                    className={`nav-bar-btn px-2.5 2xl:px-3 py-1.5 2xl:py-2 text-xs 2xl:text-sm font-bold rounded-full transition-all whitespace-nowrap inline-block ${isActive
                         ? 'nav-bar-btn-active shadow-md shadow-purple-500/20'
                         : ''
                       }`}
@@ -213,7 +214,7 @@ export default function Header() {
                 );
               })}
 
-              {/* "More" Dropdown on desktop (Directory, Training, News, Gallery + Community/Resources on xl) */}
+              {/* "More" Dropdown on desktop (Directory, Training, News, Gallery, Podcasts & Media, Get in Touch) */}
               <div className="relative" ref={moreDropdownRef} data-no-autofit="true">
                 <button
                   type="button"
@@ -238,33 +239,6 @@ export default function Header() {
                     className="absolute left-0 mt-2 w-72 sm:w-80 min-w-[18rem] sm:min-w-[20rem] max-w-[90vw] rounded-2xl bg-white/95 backdrop-blur-xl border border-purple-200 shadow-2xl p-2.5 z-50 animate-in fade-in duration-100 origin-top-left"
                   >
                     <div className="space-y-1">
-                      {/* Responsive xl-only items: Community & Resources */}
-                      {primaryNavItems.filter(p => p.to === '/community' || p.to === '/resources').map(item => {
-                        const ItemIcon = item.icon;
-                        const isActive = location.pathname === item.to ||
-                          (item.to !== '/' && location.pathname.startsWith(item.to));
-                        return (
-                          <Link
-                            key={item.to}
-                            to={item.to}
-                            data-no-autofit="true"
-                            onClick={() => setMoreOpen(false)}
-                            className={`w-full xl:flex min-[1750px]:hidden items-start gap-2.5 p-2 rounded-xl transition-colors duration-150 group cursor-pointer ${isActive
-                                ? 'bg-[#5A1E65] text-white font-bold shadow-xs'
-                                : 'text-slate-800 hover:bg-purple-50 hover:text-[#5A1E65]'
-                              }`}
-                          >
-                            <div className={`p-1.5 rounded-lg shrink-0 mt-0.5 ${isActive ? 'bg-white/20 text-white' : 'bg-purple-100/70 text-[#5A1E65] group-hover:bg-[#5A1E65] group-hover:text-white transition-colors'}`}>
-                              <ItemIcon className="w-3.5 h-3.5" />
-                            </div>
-                            <div className="flex flex-col min-w-0 pr-1">
-                              <span className={`text-xs font-bold leading-snug break-words ${isActive ? 'text-white' : 'text-slate-900 group-hover:text-[#5A1E65]'}`}>{item.label}</span>
-                              <span className={`text-[11px] leading-snug mt-0.5 line-clamp-2 break-words ${isActive ? 'text-white/80' : 'text-slate-500'}`}>{item.desc}</span>
-                            </div>
-                          </Link>
-                        );
-                      })}
-
                       {secondaryNavItems.map((item) => {
                         const ItemIcon = item.icon;
                         const isActive = location.pathname === item.to ||

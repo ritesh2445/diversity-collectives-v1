@@ -117,6 +117,7 @@ export class LunaLearningEngine {
       businesses: [],
       board: [],
       staff: [],
+      podcasts: [],
       trainings: [],
       resources: [],
       facilities: [],
@@ -295,6 +296,22 @@ export class LunaLearningEngine {
     });
 
     // 5. Affirming Business Directory
+    // 10. Podcasts & Community Media
+    const livePodcasts = liveCms.podcasts || [];
+    this.knowledge.podcasts = livePodcasts.map((pod) => ({
+      id: pod.id || `pod-${pod.slug}`,
+      slug: pod.slug,
+      title: pod.title,
+      category: pod.category || 'Podcasts & Media',
+      host: pod.host || 'DCVC Team',
+      guests: pod.guests || '',
+      duration: pod.duration || '',
+      date: pod.date || '',
+      link: pod.link || '/media',
+      summary: pod.summary || pod.description || '',
+      url: `/media#${pod.slug}`
+    }));
+
     this.knowledge.businesses = (liveBusinesses || []).map((b) => ({
       id: b.id || `biz-${b.slug || normalizeText(b.name)}`,
       slug: b.slug || normalizeText(b.name).replace(/\s+/g, '-'),
@@ -826,6 +843,19 @@ export class LunaLearningEngine {
           { title: "Events Calendar", url: "/events" }
         ],
         mode: "client-conversational"
+      };
+    }
+
+    // Podcasts & Media questions
+    if (/\b(podcast|podcasts|media|episode|episodes|audio story|audio stories|interview|listen)\b/i.test(q)) {
+      const episodeList = (this.knowledge.podcasts || []).slice(0, 3).map(p => `• **${p.title}** (${p.duration || 'Full episode'})`).join('\n');
+      return {
+        success: true,
+        answer: `Diversity Collective produces community podcasts and audio stories amplifying LGBTQ+ voices, healthcare equity, youth leadership, and local history across Ventura County! 🎙️\n\n${episodeList ? `Recent episodes include:\n${episodeList}\n\n` : ''}You can stream all episodes, check show notes, and **suggest ideas for new content or guest speakers** on our Podcasts & Media page.`,
+        citations: [
+          { title: "Podcasts & Media", url: "/media" }
+        ],
+        mode: "client-factual"
       };
     }
 

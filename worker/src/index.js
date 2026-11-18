@@ -1858,6 +1858,59 @@ export default {
       }
 
       // =======================================================================
+      // 8A-3. Public Media & Podcast Suggestion Submission (POST /api/media/suggestions)
+      // =======================================================================
+      if (pathname === '/api/media/suggestions' && request.method === 'POST') {
+        const body = await request.json().catch(() => ({}));
+        const { name, email, category, topic, description, guestRecommendation, linkUrl } = body;
+        if (!topic || typeof topic !== 'string' || !topic.trim()) {
+          return errorResponse('Topic is required', 400, null, cors);
+        }
+
+        const id = 'sug-' + crypto.randomUUID();
+        const db = getDb(env);
+        if (db) {
+          try {
+            await db.execute({
+              sql: `CREATE TABLE IF NOT EXISTS media_suggestions (
+                id TEXT PRIMARY KEY,
+                name TEXT,
+                email TEXT,
+                category TEXT DEFAULT 'Podcast Episode',
+                topic TEXT NOT NULL,
+                description TEXT,
+                guest_recommendation TEXT,
+                link_url TEXT,
+                status TEXT DEFAULT 'new' CHECK(status IN ('new', 'reviewed', 'scheduled', 'archived')),
+                admin_notes TEXT,
+                created_at TEXT DEFAULT (datetime('now')),
+                updated_at TEXT DEFAULT (datetime('now'))
+              )`,
+              args: []
+            });
+            await db.execute({
+              sql: `INSERT INTO media_suggestions (id, name, email, category, topic, description, guest_recommendation, link_url, status)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'new')`,
+              args: [
+                id,
+                (name || '').trim(),
+                (email || '').trim(),
+                (category || 'Podcast Episode').trim(),
+                topic.trim(),
+                (description || '').trim(),
+                (guestRecommendation || '').trim(),
+                (linkUrl || '').trim()
+              ]
+            });
+          } catch (err) {
+            console.warn('[Worker] Failed to save media suggestion to db:', err.message);
+          }
+        }
+
+        return jsonResponse({ success: true, id, message: 'Suggestion received' }, 200, cors);
+      }
+
+      // =======================================================================
       // 8B. Specialized Inquiries (Appointments, Resources, Community Joins)
       //     (POST /api/inquiries)
       // =======================================================================
@@ -5307,6 +5360,70 @@ export default {
           }
 
           return jsonResponse({ success: true, message: `Voicemail ${id} successfully deleted.` }, 200, cors);
+        }
+
+        // 15.10h Admin Media Suggestions List (GET /api/admin/media-suggestions)
+        if (pathname === '/api/admin/media-suggestions' && request.method === 'GET') {
+          if (!requireRole(authUser.role, ['admin', 'approver', 'editor', 'read_only'])) {
+            return errorResponse('Forbidden', 403, null, cors);
+          }
+          const statusFilter = url.searchParams.get('status') || 'all';
+          const db = getDb(env);
+          let suggestions = [];
+          if (db) {
+            try {
+              let sql = `SELECT * FROM media_suggestions ORDER BY created_at DESC LIMIT 150`;
+              let args = [];
+              if (statusFilter !== 'all') {
+                sql = `SELECT * FROM media_suggestions WHERE status = ? ORDER BY created_at DESC LIMIT 150`;
+                args = [statusFilter];
+              }
+              const res = await db.execute({ sql, args });
+              suggestions = res.rows || [];
+            } catch (err) {
+              console.warn('[Worker] Failed to query media suggestions:', err.message);
+            }
+          }
+          return jsonResponse({ success: true, suggestions, count: suggestions.length }, 200, cors);
+        }
+
+        // 15.10i Admin Media Suggestion Status Update (PATCH /api/admin/media-suggestions/:id)
+        if (pathname.startsWith('/api/admin/media-suggestions/') && request.method === 'PATCH') {
+          if (!requireRole(authUser.role, ['admin', 'approver', 'editor'])) {
+            return errorResponse('Forbidden', 403, null, cors);
+          }
+          const id = pathname.replace('/api/admin/media-suggestions/', '').trim();
+          const body = await request.json().catch(() => ({}));
+          const { status, admin_notes } = body;
+          const db = getDb(env);
+          if (db && status) {
+            try {
+              await db.execute({
+                sql: `UPDATE media_suggestions SET status = ?, admin_notes = COALESCE(?, admin_notes), updated_at = datetime('now') WHERE id = ?`,
+                args: [status, admin_notes || null, id]
+              });
+            } catch (err) {
+              console.warn('[Worker] Failed to update media suggestion:', err.message);
+            }
+          }
+          return jsonResponse({ success: true, id, status }, 200, cors);
+        }
+
+        // 15.10j Admin Media Suggestion Delete (DELETE /api/admin/media-suggestions/:id)
+        if (pathname.startsWith('/api/admin/media-suggestions/') && request.method === 'DELETE') {
+          if (!requireRole(authUser.role, ['admin', 'approver'])) {
+            return errorResponse('Forbidden', 403, null, cors);
+          }
+          const id = pathname.replace('/api/admin/media-suggestions/', '').trim();
+          const db = getDb(env);
+          if (db) {
+            try {
+              await db.execute({ sql: `DELETE FROM media_suggestions WHERE id = ?`, args: [id] });
+            } catch (err) {
+              console.warn('[Worker] Failed to delete media suggestion:', err.message);
+            }
+          }
+          return jsonResponse({ success: true, id, deleted: true }, 200, cors);
         }
 
         // 15.11 CSV Data Export (GET /api/admin/export/:type)

@@ -630,6 +630,9 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
   // Voicemail Inbox State
   const [voicemails, setVoicemails] = useState([]);
   const [voicemailStatusFilter, setVoicemailStatusFilter] = useState('all');
+  const [mediaSuggestions, setMediaSuggestions] = useState([]);
+  const [mediaSuggestionStatusFilter, setMediaSuggestionStatusFilter] = useState('all');
+  const [mediaSuggestionSearch, setMediaSuggestionSearch] = useState('');
   const [voicemailSearch, setVoicemailSearch] = useState('');
   const [playingVoicemailId, setPlayingVoicemailId] = useState(null);
 
@@ -678,6 +681,7 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
         if (inboxSubTab === 'directory') fetchDirectoryBusinesses();
         if (inboxSubTab === 'inquiries') fetchInquiries(inquiryType);
         if (inboxSubTab === 'voicemail') fetchVoicemails();
+        if (inboxSubTab === 'suggestions') fetchMediaSuggestions();
       }
       if (activeTab === 'gallery') fetchAdminGallery();
       if (activeTab === 'security' && user.role === 'admin') fetchTeamUsers();
@@ -3090,6 +3094,25 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                 {voicemails.filter(v => v.status === 'new').length > 0 && (
                   <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-amber-400 text-slate-950 font-black animate-pulse">
                     {voicemails.filter(v => v.status === 'new').length} New
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => {
+                  setInboxSubTab('suggestions');
+                  fetchMediaSuggestions();
+                }}
+                className={`px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-2 transition-all cursor-pointer ${
+                  inboxSubTab === 'suggestions'
+                    ? 'bg-[#5A1E65] text-white shadow-xs'
+                    : 'text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                <Lightbulb className="w-3.5 h-3.5" />
+                <span>Podcast & Content Ideas ({mediaSuggestions.length})</span>
+                {mediaSuggestions.filter(s => s.status === 'new').length > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-amber-400 text-slate-950 font-black">
+                    {mediaSuggestions.filter(s => s.status === 'new').length} New
                   </span>
                 )}
               </button>
