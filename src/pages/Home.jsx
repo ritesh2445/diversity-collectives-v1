@@ -337,13 +337,6 @@ export default function Home() {
     }
   ];
 
-  const programCategories = [
-    { id: 'all', label: 'All Programs' },
-    { id: 'youth', label: 'Youth & Families' },
-    { id: 'adults', label: 'Adults & 55+' },
-    { id: 'recovery', label: 'Recovery & Growth' }
-  ];
-
   const allSourcePrograms = cmsPrograms || programsList;
   const findProg = (slugPart) => allSourcePrograms.find((p) => p.slug?.includes(slugPart));
   const mapGroupToCard = (item, fallbackImg, bucket) => ({
@@ -403,47 +396,44 @@ export default function Home() {
     };
   };
 
-  // Dynamic Home Programs with CMS reactivity, new program persistence, and community groups
+  // Exact 9 foundational Home Programs — preserves pristine homepage sequence
+  const base9Programs = useMemo(() => [
+    findGroup('Queer Adulting', '/images/community-gathering.jpg', 'adults'),
+    (() => {
+      const lu = findProg('little-unicorns');
+      return lu ? { ...lu, programGroup: 'youth', ctaLink: `/programs/${lu.slug}` } : findGroup('Little Unicorns', '/images/little-unicorns.png', 'youth');
+    })(),
+    (() => {
+      const ru = findProg('rainbow-umbrella');
+      return ru ? { ...ru, programGroup: 'youth', ctaLink: `/programs/${ru.slug}` } : findGroup('Rainbow Umbrella', '/images/youth-umbrella.jpg', 'youth');
+    })(),
+    findGroup('PFLAG', '/images/volunteers.jpg', 'youth'),
+    findGroup('Narcotics Anonymous', '/images/crc-building.jpg', 'recovery'),
+    findGroup('Transverse', '/images/hero-community.jpg', 'adults'),
+    findGroup('Toastmasters', '/images/community-gathering.jpg', 'recovery'),
+    findGroup("Men's Collective", '/images/volunteers.jpg', 'adults'),
+    findGroup('Silver Collective', '/images/community-gathering.jpg', 'adults')
+  ].filter(Boolean), [allSourcePrograms, communityGroups]);
+
+  // Combined Home Programs: Base 9 remain identical; new CMS additions are dynamically appended
   const orderedAllPrograms = useMemo(() => {
-    // 1. Map all active programs from CMS / allSourcePrograms
-    const cmsCards = (allSourcePrograms || [])
-      .filter((p) => p && p.active !== false)
+    const existingSlugs = new Set(base9Programs.map((p) => (p.slug || '').toLowerCase()));
+    const existingTitles = new Set(base9Programs.map((p) => (p.title || p.name || '').toLowerCase().trim()));
+
+    // Any newly added program in CMS Studio outside the base 9 is seamlessly appended to the Home Page
+    const customCmsCards = (cmsPrograms || [])
+      .filter((p) => p && p.active !== false && !existingSlugs.has((p.slug || '').toLowerCase()) && !existingTitles.has((p.title || '').toLowerCase().trim()))
       .map(mapProgramToCard);
 
-    const existingSlugs = new Set(cmsCards.map((c) => c.slug.toLowerCase()));
-    const existingTitles = new Set(cmsCards.map((c) => c.title.toLowerCase().trim()));
+    return [...base9Programs, ...customCmsCards];
+  }, [base9Programs, cmsPrograms]);
 
-    // 2. Add hosted community groups that are not already represented by a dedicated CMS program
-    const hostedCommunityGroupCards = [
-      findGroup('Queer Adulting', '/images/community-gathering.jpg', 'adults'),
-      findGroup('PFLAG', '/images/volunteers.jpg', 'youth'),
-      findGroup('Narcotics Anonymous', '/images/crc-building.jpg', 'recovery'),
-      findGroup('Transverse', '/images/hero-community.jpg', 'adults'),
-      findGroup('Toastmasters', '/images/community-gathering.jpg', 'recovery'),
-      findGroup("Men's Collective", '/images/volunteers.jpg', 'adults'),
-      findGroup('Silver Collective', '/images/community-gathering.jpg', 'adults')
-    ].filter((g) => {
-      if (!g) return false;
-      const slugMatch = existingSlugs.has(g.slug.toLowerCase());
-      const titleMatch = existingTitles.has(g.title.toLowerCase().trim());
-      return !slugMatch && !titleMatch;
-    });
-
-    const combined = [...cmsCards, ...hostedCommunityGroupCards];
-
-    // Maintain custom order if specified in cmsPrograms
-    const cmsOrderMap = new Map();
-    (cmsPrograms || []).forEach((p, idx) => {
-      if (p.slug) cmsOrderMap.set(p.slug.toLowerCase(), idx);
-    });
-
-    return combined.sort((a, b) => {
-      const idxA = cmsOrderMap.has(a.slug.toLowerCase()) ? cmsOrderMap.get(a.slug.toLowerCase()) : 99;
-      const idxB = cmsOrderMap.has(b.slug.toLowerCase()) ? cmsOrderMap.get(b.slug.toLowerCase()) : 99;
-      if (idxA !== 99 && idxB !== 99) return idxA - idxB;
-      return 0;
-    });
-  }, [cmsPrograms, allSourcePrograms, communityGroups]);
+  const programCategories = useMemo(() => [
+    { id: 'all', label: orderedAllPrograms.length === 9 ? 'All 9 Featured Programs' : `All (${orderedAllPrograms.length}) Featured Programs` },
+    { id: 'youth', label: 'Youth & Families' },
+    { id: 'adults', label: 'Adults & 55+' },
+    { id: 'recovery', label: 'Recovery & Growth' }
+  ], [orderedAllPrograms.length]);
 
   const filteredPrograms = orderedAllPrograms.filter((program) => {
     if (selectedCategory === 'all') return true;

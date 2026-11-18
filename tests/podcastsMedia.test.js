@@ -88,4 +88,59 @@ describe('Podcasts & Community Media Engine', () => {
     assert.ok(reply.answer.toLowerCase().includes('podcast') || reply.answer.toLowerCase().includes('audio'), 'Answer should mention podcasts');
     assert.ok(reply.citations.some(c => c.url === '/media'), 'Citation should point to /media');
   });
+
+  test('In-Frame Media Parsing: parseMediaSource correctly detects YouTube, Spotify, Apple, and Audio', async () => {
+    const { parseMediaSource } = await import('../src/utils/mediaEmbed.js');
+
+    // 1. YouTube
+    const yt = parseMediaSource('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+    assert.strictEqual(yt.type, 'youtube');
+    assert.ok(yt.embedUrl.includes('youtube-nocookie.com/embed/dQw4w9WgXcQ'));
+
+    // 2. Spotify
+    const sp = parseMediaSource('https://open.spotify.com/episode/7makk4oTQel546v0PZSI45');
+    assert.strictEqual(sp.type, 'spotify');
+    assert.ok(sp.embedUrl.includes('open.spotify.com/embed/episode/7makk4oTQel546v0PZSI45'));
+
+    // 3. Apple Podcasts
+    const ap = parseMediaSource('https://podcasts.apple.com/us/podcast/example/id123456789');
+    assert.strictEqual(ap.type, 'apple');
+    assert.ok(ap.embedUrl.includes('embed.podcasts.apple.com'));
+
+    // 4. Direct Audio
+    const audio = parseMediaSource('https://media.diversitycollectivevc.org/episodes/episode1.mp3');
+    assert.strictEqual(audio.type, 'audio');
+    assert.strictEqual(audio.src, 'https://media.diversitycollectivevc.org/episodes/episode1.mp3');
+  });
+
+  test('Safety Guard: addition or deletion of any program strictly does NOT delete events or wipe database', () => {
+    const initialEvents = cmsStore.getEvents();
+    assert.ok(initialEvents.length >= 5, 'Pre-populated events must exist');
+
+    // 1. Add a program
+    const newProg = {
+      title: 'Youth Safe Space Coding Lab',
+      tagline: 'STEM and tech community for queer youth',
+      slug: 'youth-coding-lab',
+      active: true
+    };
+    cmsStore.saveProgram(newProg);
+
+    // Verify events were NOT deleted
+    const eventsAfterProgAdd = cmsStore.getEvents();
+    assert.strictEqual(eventsAfterProgAdd.length, initialEvents.length, 'Adding a program MUST NOT delete events');
+    for (const evt of initialEvents) {
+      assert.ok(eventsAfterProgAdd.some(e => e.id === evt.id || e.slug === evt.slug), `Event ${evt.title} must still exist`);
+    }
+
+    // 2. Delete the program
+    cmsStore.deleteProgram('youth-coding-lab');
+
+    // Verify events STILL exist and were NOT deleted
+    const eventsAfterProgDelete = cmsStore.getEvents();
+    assert.strictEqual(eventsAfterProgDelete.length, initialEvents.length, 'Deleting a program MUST NOT delete events');
+    for (const evt of initialEvents) {
+      assert.ok(eventsAfterProgDelete.some(e => e.id === evt.id || e.slug === evt.slug), `Event ${evt.title} must still exist`);
+    }
+  });
 });

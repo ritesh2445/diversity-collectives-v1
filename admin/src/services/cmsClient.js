@@ -86,6 +86,57 @@ export function mergeStaffWithDefaults(savedStaff = [], defaultStaff = null, del
   return result;
 }
 
+export function mergeEventsWithDefaults(savedEvents = [], defaultEvents = null, deletedIds = []) {
+  const seed = Array.isArray(defaultEvents) && defaultEvents.length > 0 ? defaultEvents : (DEFAULT_CMS_SEED?.events || []);
+  const deletedSet = new Set(Array.isArray(deletedIds) ? deletedIds : []);
+
+  if (!Array.isArray(savedEvents) || savedEvents.length === 0) {
+    return seed.filter(e => !deletedSet.has(e.id) && !deletedSet.has(e.slug));
+  }
+
+  const result = [];
+  const seenKeys = new Set();
+
+  for (const evt of savedEvents) {
+    if (!evt || typeof evt !== 'object') continue;
+    const cleanId = evt.id ? String(evt.id).trim() : null;
+    const cleanSlug = evt.slug ? String(evt.slug).trim() : null;
+    const cleanTitle = (evt.title || '').trim().toLowerCase();
+    const key = cleanId || cleanSlug || cleanTitle;
+
+    if (key && !deletedSet.has(key) && !deletedSet.has(cleanId) && !deletedSet.has(cleanSlug) && !seenKeys.has(key)) {
+      seenKeys.add(key);
+      if (cleanId) seenKeys.add(cleanId);
+      if (cleanSlug) seenKeys.add(cleanSlug);
+
+      const seedMatch = seed.find(s => (s.id && s.id === cleanId) || (s.slug && cleanSlug && s.slug === cleanSlug) || (s.title && s.title.toLowerCase().trim() === cleanTitle));
+      result.push({
+        ...(seedMatch || {}),
+        ...evt,
+        id: cleanId || (seedMatch && seedMatch.id) || `evt-${Date.now()}`,
+        slug: cleanSlug || (seedMatch && seedMatch.slug) || (evt.title ? evt.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'event')
+      });
+    }
+  }
+
+  for (const s of seed) {
+    if (!s) continue;
+    const cleanId = s.id ? String(s.id).trim() : null;
+    const cleanSlug = s.slug ? String(s.slug).trim() : null;
+    const cleanTitle = (s.title || '').trim().toLowerCase();
+    const key = cleanId || cleanSlug || cleanTitle;
+
+    if (key && !deletedSet.has(key) && !deletedSet.has(cleanId) && !deletedSet.has(cleanSlug) && !seenKeys.has(key) && !seenKeys.has(cleanId) && !seenKeys.has(cleanSlug)) {
+      seenKeys.add(key);
+      if (cleanId) seenKeys.add(cleanId);
+      if (cleanSlug) seenKeys.add(cleanSlug);
+      result.push({ ...s });
+    }
+  }
+
+  return result;
+}
+
 /**
  * DCVC Admin Dashboard — Full CMS Client
  * Comprehensive management of Programs, Events, Articles, Resources, Board & Staff,
@@ -497,10 +548,12 @@ export function getLiveCmsData() {
       settings: { ...DEFAULT_CMS_SEED.settings, ...(parsed.settings || {}) },
       programs: mergeProgramsWithDefaults(parsed.programs, DEFAULT_CMS_SEED.programs, parsed.deletedPrograms || []),
       deletedPrograms: parsed.deletedPrograms || [],
-      events: parsed.events || DEFAULT_CMS_SEED.events,
+      events: mergeEventsWithDefaults(parsed.events, DEFAULT_CMS_SEED.events, parsed.deletedEvents || []),
+      deletedEvents: parsed.deletedEvents || [],
       news: parsed.news || DEFAULT_CMS_SEED.news,
       resources: parsed.resources || DEFAULT_CMS_SEED.resources,
-      staff: parsed.staff || DEFAULT_CMS_SEED.staff,
+      staff: mergeStaffWithDefaults(parsed.staff, DEFAULT_CMS_SEED.staff, parsed.deletedStaff || []),
+      deletedStaff: parsed.deletedStaff || [],
       gallery: parsed.gallery || DEFAULT_CMS_SEED.gallery,
       memoryLane: parsed.memoryLane || DEFAULT_CMS_SEED.memoryLane,
       podcasts: parsed.podcasts || DEFAULT_CMS_SEED.podcasts || [],

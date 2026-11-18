@@ -108,6 +108,60 @@ export function mergeStaffWithDefaults(savedStaff = [], defaultStaff = null, del
   return result;
 }
 
+export function mergeEventsWithDefaults(savedEvents = [], defaultEvents = null, deletedIds = []) {
+  const seed = Array.isArray(defaultEvents) && defaultEvents.length > 0 ? defaultEvents : (liveEvents || []);
+  const deletedSet = new Set(Array.isArray(deletedIds) ? deletedIds : []);
+
+  if (!Array.isArray(savedEvents) || savedEvents.length === 0) {
+    return normalizeCmsEventList(seed.filter(e => !deletedSet.has(e.id) && !deletedSet.has(e.slug)));
+  }
+
+  const result = [];
+  const seenKeys = new Set();
+
+  // 1. Process all saved events first (including new events and edits) in their exact saved order
+  for (const evt of savedEvents) {
+    if (!evt || typeof evt !== 'object') continue;
+    const cleanId = evt.id ? String(evt.id).trim() : null;
+    const cleanSlug = evt.slug ? String(evt.slug).trim() : null;
+    const cleanTitle = (evt.title || '').trim().toLowerCase();
+    const key = cleanId || cleanSlug || cleanTitle;
+
+    if (key && !deletedSet.has(key) && !deletedSet.has(cleanId) && !deletedSet.has(cleanSlug) && !seenKeys.has(key)) {
+      seenKeys.add(key);
+      if (cleanId) seenKeys.add(cleanId);
+      if (cleanSlug) seenKeys.add(cleanSlug);
+
+      const seedMatch = seed.find(s => (s.id && s.id === cleanId) || (s.slug && cleanSlug && s.slug === cleanSlug) || (s.title && s.title.toLowerCase().trim() === cleanTitle));
+      const norm = normalizeCmsEvent({
+        ...(seedMatch || {}),
+        ...evt,
+        id: cleanId || (seedMatch && seedMatch.id) || `evt-${Date.now()}`,
+        slug: cleanSlug || (seedMatch && seedMatch.slug) || (evt.title ? evt.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'event')
+      });
+      result.push(norm);
+    }
+  }
+
+  // 2. Pre-populate all seed events that have not been explicitly deleted
+  for (const s of seed) {
+    if (!s) continue;
+    const cleanId = s.id ? String(s.id).trim() : null;
+    const cleanSlug = s.slug ? String(s.slug).trim() : null;
+    const cleanTitle = (s.title || '').trim().toLowerCase();
+    const key = cleanId || cleanSlug || cleanTitle;
+
+    if (key && !deletedSet.has(key) && !deletedSet.has(cleanId) && !deletedSet.has(cleanSlug) && !seenKeys.has(key) && !seenKeys.has(cleanId) && !seenKeys.has(cleanSlug)) {
+      seenKeys.add(key);
+      if (cleanId) seenKeys.add(cleanId);
+      if (cleanSlug) seenKeys.add(cleanSlug);
+      result.push(normalizeCmsEvent(s));
+    }
+  }
+
+  return normalizeCmsEventList(result);
+}
+
 /**
  * DCVC Centralized Content Management System (CMS) Reactive Store
  * Provides complete reactive CRUD operations, local persistence, multi-tab sync,
@@ -727,7 +781,8 @@ class CmsStoreEngine {
         settings: { ...INITIAL_CMS_DATA.settings, ...(parsed.settings || {}) },
         programs: mergeProgramsWithDefaults(parsed.programs, INITIAL_CMS_DATA.programs, parsed.deletedPrograms || []),
         deletedPrograms: parsed.deletedPrograms || [],
-        events: normalizeCmsEventList(parsed.events || INITIAL_CMS_DATA.events),
+        events: mergeEventsWithDefaults(parsed.events, INITIAL_CMS_DATA.events, parsed.deletedEvents || []),
+        deletedEvents: parsed.deletedEvents || [],
         sponsors: parsed.sponsors || INITIAL_CMS_DATA.sponsors,
         trainings: parsed.trainings || INITIAL_CMS_DATA.trainings,
         communityGroups: parsed.communityGroups || INITIAL_CMS_DATA.communityGroups,
@@ -755,7 +810,9 @@ class CmsStoreEngine {
   saveData(data, { broadcast = true } = {}) {
     const cleanData = {
       ...data,
-      events: normalizeCmsEventList(data.events || this.data.events || []),
+      programs: mergeProgramsWithDefaults(data.programs || this.data.programs, INITIAL_CMS_DATA.programs, data.deletedPrograms || this.data.deletedPrograms || []),
+      events: mergeEventsWithDefaults(data.events || this.data.events, INITIAL_CMS_DATA.events, data.deletedEvents || this.data.deletedEvents || []),
+      staff: mergeStaffWithDefaults(data.staff || this.data.staff, INITIAL_CMS_DATA.staff, data.deletedStaff || this.data.deletedStaff || []),
       lastUpdated: new Date().toISOString()
     };
     this.data = cleanData;
@@ -916,12 +973,14 @@ class CmsStoreEngine {
   // Events CRUD
   // --------------------------------------------------------------------------
   getEvents() {
-    return this.data.events;
+    return mergeEventsWithDefaults(this.data.events, INITIAL_CMS_DATA.events, this.data.deletedEvents || []);
   }
 
   saveEvent(event) {
-    const existing = [...this.data.events];
-    const index = existing.findIndex(e => e.id === event.id || e.slug === event.slug);
+    if (!event || typeof event !== 'object') return this.getEvents();
+    const existing = this.getEvents();
+    const cleanTitle = (event.title || '').trim().toLowerCase();
+    const index = existing.findIndex(e => (event.id && e.id === event.id) || (event.slug && e.slug === event.slug) || (cleanTitle && e.title && e.title.toLowerCase().trim() === cleanTitle));
     if (index >= 0) {
       existing[index] = normalizeCmsEvent({ ...existing[index], ...event });
     } else {
@@ -937,14 +996,14 @@ class CmsStoreEngine {
   }
 
   saveEvents(events) {
-    if (!Array.isArray(events)) return this.data.events;
-    const normalized = normalizeCmsEventList(events);
-    this.saveData({ ...this.data, events: normalized });
-    return normalized;
+    if (!Array.isArray(events)) return this.getEvents();
+    const merged = mergeEventsWithDefaults(events, INITIAL_CMS_DATA.events, this.data.deletedEvents || []);
+    this.saveData({ ...this.data, events: merged });
+    return merged;
   }
 
   toggleEventCancellation(eventId, cancellationNotice = '') {
-    const existing = this.data.events.map(evt => {
+    const existing = this.getEvents().map(evt => {
       if (evt.id === eventId || evt.slug === eventId) {
         const nextCancelled = !evt.isCancelled;
         return {
@@ -960,8 +1019,10 @@ class CmsStoreEngine {
   }
 
   deleteEvent(eventId) {
-    const existing = this.data.events.filter(e => e.id !== eventId && e.slug !== eventId);
-    this.saveData({ ...this.data, events: existing });
+    if (!eventId) return this.getEvents();
+    const existing = this.getEvents().filter(e => e.id !== eventId && e.slug !== eventId);
+    const deleted = Array.from(new Set([...(this.data.deletedEvents || []), eventId]));
+    this.saveData({ ...this.data, events: existing, deletedEvents: deleted });
     return existing;
   }
 

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Mic,
@@ -18,17 +18,21 @@ import {
   Tag,
   Volume2,
   ChevronRight,
-  Headphones
+  Headphones,
+  Maximize2
 } from 'lucide-react';
 import { cmsStore } from '../services/cmsStore';
 import { saveMediaSuggestion } from '../admin/services/cmsClient';
+import ProfessionalMediaPlayerFrame from '../components/ProfessionalMediaPlayerFrame';
 
 export default function PodcastsMedia() {
   const [podcasts, setPodcasts] = useState(() => cmsStore.getPodcasts());
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeEpisode, setActiveEpisode] = useState(null);
+  const [theaterMode, setTheaterMode] = useState(false);
   const [copiedSlug, setCopiedSlug] = useState(null);
+  const playerFrameRef = useRef(null);
 
   // Suggest Ideas Modal State
   const [showSuggestModal, setShowSuggestModal] = useState(false);
@@ -86,6 +90,15 @@ export default function PodcastsMedia() {
         setTimeout(() => setCopiedSlug(null), 2500);
       });
     }
+  };
+
+  const handlePlayEpisode = (podcast) => {
+    setActiveEpisode(podcast);
+    setTimeout(() => {
+      if (playerFrameRef.current) {
+        playerFrameRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 80);
   };
 
   const handleSuggestSubmit = async (e) => {
@@ -253,6 +266,18 @@ export default function PodcastsMedia() {
           </button>
         </div>
 
+        {/* Dynamic In-Site Media Player Frame */}
+        {activeEpisode && (
+          <div ref={playerFrameRef} className="pt-2 pb-8 scroll-mt-20">
+            <ProfessionalMediaPlayerFrame
+              episode={activeEpisode}
+              onClose={() => setActiveEpisode(null)}
+              theaterMode={theaterMode}
+              onToggleTheater={() => setTheaterMode(!theaterMode)}
+            />
+          </div>
+        )}
+
         {/* Episodes Grid */}
         {filteredPodcasts.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-3xl border border-dashed border-purple-200 p-8">
@@ -278,7 +303,11 @@ export default function PodcastsMedia() {
               <article
                 key={podcast.id || podcast.slug}
                 id={podcast.slug}
-                className="group relative bg-white rounded-3xl border border-purple-100/80 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col justify-between"
+                className={`group relative bg-white rounded-3xl border transition-all duration-300 overflow-hidden flex flex-col justify-between ${
+                  activeEpisode?.slug === podcast.slug
+                    ? 'border-purple-600 ring-2 ring-purple-600/25 shadow-xl'
+                    : 'border-purple-100/80 shadow-md hover:shadow-xl'
+                }`}
               >
                 {/* Top Image / Media Cover Banner */}
                 <div className="relative h-48 sm:h-52 w-full overflow-hidden bg-slate-900">
@@ -302,16 +331,23 @@ export default function PodcastsMedia() {
                   </div>
 
                   {/* Play Trigger Overlay */}
-                  {podcast.link && (
-                    <a
-                      href={podcast.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-amber-400 hover:bg-amber-300 text-slate-950 flex items-center justify-center shadow-lg transition-transform group-hover:scale-110 cursor-pointer"
-                      title="Listen to episode"
+                  {(podcast.link || podcast.audioUrl) && (
+                    <button
+                      type="button"
+                      onClick={() => handlePlayEpisode(podcast)}
+                      className={`absolute bottom-3 right-3 w-11 h-11 rounded-full flex items-center justify-center shadow-xl transition-all duration-300 transform group-hover:scale-110 cursor-pointer ${
+                        activeEpisode?.slug === podcast.slug
+                          ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 ring-4 ring-amber-400/40 scale-105'
+                          : 'bg-amber-400 hover:bg-amber-300 text-slate-950'
+                      }`}
+                      title={activeEpisode?.slug === podcast.slug ? 'Playing now in site frame' : 'Play episode directly on site'}
                     >
-                      <Play className="w-4 h-4 fill-current ml-0.5" />
-                    </a>
+                      {activeEpisode?.slug === podcast.slug ? (
+                        <Radio className="w-5 h-5 text-slate-950 animate-pulse" />
+                      ) : (
+                        <Play className="w-5 h-5 fill-current ml-0.5" />
+                      )}
+                    </button>
                   )}
 
                   {/* Date & Duration Info */}
@@ -352,21 +388,44 @@ export default function PodcastsMedia() {
 
                   {/* Bottom Action Bar */}
                   <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
-                    {podcast.link ? (
-                      <a
-                        href={podcast.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#5A1E65] hover:bg-purple-900 text-white text-xs font-bold transition-all shadow-xs"
+                    {(podcast.link || podcast.audioUrl) ? (
+                      <button
+                        type="button"
+                        onClick={() => handlePlayEpisode(podcast)}
+                        className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer ${
+                          activeEpisode?.slug === podcast.slug
+                            ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-md shadow-amber-900/20'
+                            : 'bg-[#5A1E65] hover:bg-purple-900 text-white'
+                        }`}
                       >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                        <span>Listen / Watch Link</span>
-                      </a>
+                        {activeEpisode?.slug === podcast.slug ? (
+                          <>
+                            <Radio className="w-3.5 h-3.5 animate-pulse" />
+                            <span>Playing in Site Frame</span>
+                          </>
+                        ) : (
+                          <>
+                            <Play className="w-3.5 h-3.5 fill-current" />
+                            <span>Play Episode in Frame</span>
+                          </>
+                        )}
+                      </button>
                     ) : (
-                      <span className="text-xs text-slate-400 italic">Link coming soon</span>
+                      <span className="text-xs text-slate-400 italic">Media coming soon</span>
                     )}
 
                     <div className="flex items-center gap-1.5">
+                      {podcast.link && (
+                        <a
+                          href={podcast.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2 rounded-xl text-slate-500 hover:text-[#5A1E65] hover:bg-purple-50 transition-colors"
+                          title="Open original external link"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                      )}
                       <button
                         type="button"
                         onClick={(e) => handleShare(e, podcast)}
@@ -388,6 +447,50 @@ export default function PodcastsMedia() {
           </div>
         )}
       </section>
+
+      {/* Sticky Floating Mini Player Bar at bottom */}
+      {activeEpisode && !theaterMode && (
+        <div className="fixed bottom-4 left-4 right-4 max-w-3xl mx-auto z-40 bg-slate-950/95 backdrop-blur-xl border border-purple-500/40 rounded-2xl shadow-2xl p-3 px-5 flex items-center justify-between gap-4 text-white">
+          <div className="flex items-center gap-3 min-w-0">
+            <img
+              src={activeEpisode.coverImage || '/images/community-gathering.jpg'}
+              alt=""
+              className="w-10 h-10 rounded-lg object-cover border border-purple-400/30 shrink-0"
+            />
+            <div className="min-w-0">
+              <span className="text-[10px] font-black uppercase text-amber-400 tracking-wider">Now Playing</span>
+              <p className="text-xs font-bold text-white truncate max-w-xs sm:max-w-md">{activeEpisode.title}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                playerFrameRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }}
+              className="px-3 py-1.5 rounded-xl bg-purple-700/60 hover:bg-purple-600 text-[11px] font-bold text-white transition-colors cursor-pointer"
+            >
+              View Frame
+            </button>
+            <button
+              type="button"
+              onClick={() => setTheaterMode(true)}
+              className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer hidden sm:inline"
+              title="Expand Theater Frame"
+            >
+              <Maximize2 className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveEpisode(null)}
+              className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+              title="Close Player"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Suggest Ideas Callout Banner */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16">
