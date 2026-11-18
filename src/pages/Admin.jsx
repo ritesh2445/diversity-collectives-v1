@@ -52,7 +52,8 @@ import {
   Mic,
   Volume2,
   Play,
-  Pause
+  Pause,
+  Lightbulb
 } from 'lucide-react';
 import { businessDirectorySeed } from '../data/dcvcData';
 import { usePageMeta } from '../utils/seo';
