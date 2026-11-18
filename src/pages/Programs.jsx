@@ -48,7 +48,7 @@ export default function Programs() {
 
   useEffect(() => {
     const unsubscribe = cmsStore.subscribe((data) => {
-      if (data?.programs) setPrograms(data.programs);
+      setPrograms(cmsStore.getPrograms());
     });
     return unsubscribe;
   }, []);

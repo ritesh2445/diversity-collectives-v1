@@ -153,4 +153,41 @@ describe('CMS Comprehensive CRUD Operations & Frontend Instant Reactivity', () =
     cmsStore.saveSettings({ tagline: 'Testing Unsubscribe' });
     assert.equal(callCount, countAfterUnsub, 'Unsubscribed listener must not be called');
   });
+
+  it('5. Home Page Programs & Sections: Newly added CMS program is immediately available for Home page', () => {
+    const initialPrograms = cmsStore.getPrograms();
+    const newHomeProgram = {
+      title: 'Trans & Nonbinary Coastal Hike',
+      tagline: 'Outdoor exploration & mindful community wellness',
+      slug: 'trans-coastal-hike',
+      category: 'Adults & 55+',
+      audience: 'Trans & Nonbinary individuals 18+',
+      schedule: 'Every 2nd Saturday 9:00 AM',
+      location: 'Ventura Botanical Gardens',
+      summary: 'Guided scenic hikes offering community bonding and fresh air.',
+      active: true
+    };
+
+    let receivedPrograms = null;
+    const unsub = cmsStore.subscribe(() => {
+      receivedPrograms = cmsStore.getPrograms();
+    });
+
+    cmsStore.saveProgram(newHomeProgram);
+
+    // Verify subscriber immediately received updated list
+    assert.ok(receivedPrograms, 'Subscriber must be notified with new program');
+    const found = receivedPrograms.find(p => p.slug === 'trans-coastal-hike');
+    assert.ok(found, 'New program must exist in subscribed programs');
+    assert.equal(found.title, 'Trans & Nonbinary Coastal Hike');
+
+    // Verify that all initial seed programs are still present
+    for (const seed of initialPrograms) {
+      assert.ok(receivedPrograms.some(p => p.slug === seed.slug), `Seed program ${seed.slug} must still be in list`);
+    }
+
+    // Cleanup
+    cmsStore.deleteProgram('trans-coastal-hike');
+    unsub();
+  });
 });

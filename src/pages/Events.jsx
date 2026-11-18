@@ -57,9 +57,7 @@ export default function Events() {
 
   useEffect(() => {
     const unsubscribe = cmsStore.subscribe((data) => {
-      if (data?.events) {
-        setEvents(data.events);
-      }
+      setEvents(cmsStore.getEvents());
     });
     return unsubscribe;
   }, []);

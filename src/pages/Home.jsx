@@ -76,10 +76,10 @@ export default function Home() {
 
   useEffect(() => {
     const unsubscribe = cmsStore.subscribe((data) => {
-      if (data?.programs) setCmsPrograms(data.programs);
-      if (data?.events) setCmsEvents(data.events);
-      if (data?.sponsors) setCmsSponsors(data.sponsors);
-      if (data?.settings) setCmsSettings(data.settings);
+      setCmsPrograms(cmsStore.getPrograms());
+      setCmsEvents(cmsStore.getEvents());
+      setCmsSponsors(cmsStore.getSponsors());
+      setCmsSettings(cmsStore.getSettings());
     });
     return unsubscribe;
   }, []);
@@ -338,7 +338,7 @@ export default function Home() {
   ];
 
   const programCategories = [
-    { id: 'all', label: 'All 9 Featured Programs' },
+    { id: 'all', label: 'All Programs' },
     { id: 'youth', label: 'Youth & Families' },
     { id: 'adults', label: 'Adults & 55+' },
     { id: 'recovery', label: 'Recovery & Growth' }
@@ -364,34 +364,82 @@ export default function Home() {
     return match ? mapGroupToCard(match, fallbackImg, bucket) : null;
   };
 
-  // Exact requested Home Programs with CardOrderManager / cmsPrograms reactive order sync
+  const inferProgramGroup = (prog) => {
+    if (prog.programGroup) return prog.programGroup;
+    const text = `${prog.category || ''} ${prog.audience || ''} ${prog.title || ''} ${prog.tagline || ''} ${prog.summary || ''}`.toLowerCase();
+    if (text.includes('youth') || text.includes('unicorn') || text.includes('umbrella') || text.includes('kid') || text.includes('teen') || text.includes('child') || text.includes('family') || text.includes('families')) {
+      return 'youth';
+    }
+    if (text.includes('recovery') || text.includes('sober') || text.includes('narcotics') || text.includes('health') || text.includes('wellness') || text.includes('hiv') || text.includes('testing') || text.includes('shines') || text.includes('growth')) {
+      return 'recovery';
+    }
+    return 'adults';
+  };
+
+  const mapProgramToCard = (p) => {
+    const slug = p.slug || (p.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    let group = p.programGroup;
+    if (!group) {
+      if (slug.includes('little-unicorns') || slug.includes('rainbow-umbrella')) group = 'youth';
+      else if (slug.includes('diversity-shines')) group = 'recovery';
+      else if (slug.includes('community-resource-center')) group = 'adults';
+      else group = inferProgramGroup(p);
+    }
+    return {
+      ...p,
+      slug,
+      title: p.title || 'Untitled Program',
+      audience: p.audience || 'All LGBTQ+ community members and affirming allies',
+      tagline: p.tagline || p.category || '',
+      summary: p.summary || p.description || '',
+      schedule: p.schedule || 'See program details',
+      location: p.location || 'DCVC Community Resource Center',
+      heroImage: p.heroImage || '/images/crc-building.jpg',
+      imageFit: p.imageFit || (slug === 'little-unicorns' || slug === 'community-resource-center' ? 'contain' : 'cover'),
+      programGroup: group,
+      ctaLink: p.ctaLink || `/programs/${slug}`,
+      ctaText: p.ctaText || 'Learn More & Join',
+      isExternal: Boolean(p.isExternal)
+    };
+  };
+
+  // Dynamic Home Programs with CMS reactivity, new program persistence, and community groups
   const orderedAllPrograms = useMemo(() => {
-    const rawList = [
+    // 1. Map all active programs from CMS / allSourcePrograms
+    const cmsCards = (allSourcePrograms || [])
+      .filter((p) => p && p.active !== false)
+      .map(mapProgramToCard);
+
+    const existingSlugs = new Set(cmsCards.map((c) => c.slug.toLowerCase()));
+    const existingTitles = new Set(cmsCards.map((c) => c.title.toLowerCase().trim()));
+
+    // 2. Add hosted community groups that are not already represented by a dedicated CMS program
+    const hostedCommunityGroupCards = [
       findGroup('Queer Adulting', '/images/community-gathering.jpg', 'adults'),
-      (() => {
-        const lu = findProg('little-unicorns');
-        return lu ? { ...lu, programGroup: 'youth', ctaLink: `/programs/${lu.slug}` } : findGroup('Little Unicorns', '/images/little-unicorns.png', 'youth');
-      })(),
-      (() => {
-        const ru = findProg('rainbow-umbrella');
-        return ru ? { ...ru, programGroup: 'youth', ctaLink: `/programs/${ru.slug}` } : findGroup('Rainbow Umbrella', '/images/youth-umbrella.jpg', 'youth');
-      })(),
       findGroup('PFLAG', '/images/volunteers.jpg', 'youth'),
       findGroup('Narcotics Anonymous', '/images/crc-building.jpg', 'recovery'),
       findGroup('Transverse', '/images/hero-community.jpg', 'adults'),
       findGroup('Toastmasters', '/images/community-gathering.jpg', 'recovery'),
       findGroup("Men's Collective", '/images/volunteers.jpg', 'adults'),
       findGroup('Silver Collective', '/images/community-gathering.jpg', 'adults')
-    ].filter(Boolean);
-
-    const cmsOrderMap = new Map();
-    (cmsPrograms || []).forEach((p, idx) => {
-      if (p.slug) cmsOrderMap.set(p.slug, idx);
+    ].filter((g) => {
+      if (!g) return false;
+      const slugMatch = existingSlugs.has(g.slug.toLowerCase());
+      const titleMatch = existingTitles.has(g.title.toLowerCase().trim());
+      return !slugMatch && !titleMatch;
     });
 
-    return rawList.sort((a, b) => {
-      const idxA = cmsOrderMap.has(a.slug) ? cmsOrderMap.get(a.slug) : 99;
-      const idxB = cmsOrderMap.has(b.slug) ? cmsOrderMap.get(b.slug) : 99;
+    const combined = [...cmsCards, ...hostedCommunityGroupCards];
+
+    // Maintain custom order if specified in cmsPrograms
+    const cmsOrderMap = new Map();
+    (cmsPrograms || []).forEach((p, idx) => {
+      if (p.slug) cmsOrderMap.set(p.slug.toLowerCase(), idx);
+    });
+
+    return combined.sort((a, b) => {
+      const idxA = cmsOrderMap.has(a.slug.toLowerCase()) ? cmsOrderMap.get(a.slug.toLowerCase()) : 99;
+      const idxB = cmsOrderMap.has(b.slug.toLowerCase()) ? cmsOrderMap.get(b.slug.toLowerCase()) : 99;
       if (idxA !== 99 && idxB !== 99) return idxA - idxB;
       return 0;
     });
@@ -628,18 +676,24 @@ export default function Home() {
               if (program.slug === 'little-unicorns') {
                 cardTheme = "card-vibrant-rose";
                 audienceBadgeColor = "text-rose-900 bg-rose-100 border-rose-300";
-              }
-              if (program.slug === 'diversity-shines') {
+              } else if (program.slug === 'diversity-shines') {
                 cardTheme = "card-vibrant-teal";
                 audienceBadgeColor = "text-teal-900 bg-teal-100 border-teal-300";
-              }
-              if (program.slug === 'rainbow-umbrella') {
+              } else if (program.slug === 'rainbow-umbrella') {
                 cardTheme = "card-vibrant-amber";
                 audienceBadgeColor = "text-amber-900 bg-amber-100 border-amber-300";
-              }
-              if (program.slug === 'community-resource-center') {
+              } else if (program.slug === 'community-resource-center') {
                 cardTheme = "card-vibrant-indigo";
                 audienceBadgeColor = "text-indigo-900 bg-indigo-100 border-indigo-300";
+              } else if (program.programGroup === 'youth') {
+                cardTheme = "card-vibrant-rose";
+                audienceBadgeColor = "text-rose-900 bg-rose-100 border-rose-300";
+              } else if (program.programGroup === 'recovery') {
+                cardTheme = "card-vibrant-teal";
+                audienceBadgeColor = "text-teal-900 bg-teal-100 border-teal-300";
+              } else {
+                cardTheme = "card-vibrant-purple";
+                audienceBadgeColor = "text-purple-900 bg-purple-100 border-purple-300";
               }
 
               return (
