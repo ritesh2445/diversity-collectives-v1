@@ -14,22 +14,22 @@ export default function BoardAndStaff() {
     canonicalPath: '/board-and-staff'
   });
 
-  const [allStaff, setAllStaff] = useState(() => cmsStore.getStaff?.() || []);
+  const [allStaff, setAllStaff] = useState(() => cmsStore.getStaff());
 
   useEffect(() => {
-    const unsub = cmsStore.subscribe((data) => {
-      if (data?.staff) setAllStaff(data.staff);
+    const unsub = cmsStore.subscribe(() => {
+      setAllStaff(cmsStore.getStaff());
     });
     return unsub;
   }, []);
 
-  const operationalStaff = (allStaff.filter(s => s.category === 'staff').length > 0)
-    ? allStaff.filter(s => s.category === 'staff')
-    : staffMembers;
+  const operationalStaff = allStaff.filter(s => s.category === 'staff').length > 0 
+    ? allStaff.filter(s => s.category === 'staff') 
+    : staffMembers.map(s => ({ ...s, category: 'staff', title: s.title || s.role }));
 
-  const boardTeam = (allStaff.filter(s => s.category === 'board').length > 0)
+  const boardTeam = allStaff.filter(s => s.category === 'board').length > 0
     ? allStaff.filter(s => s.category === 'board')
-    : boardMembers;
+    : boardMembers.map(b => ({ ...b, category: 'board', title: b.title || b.role }));
 
   return (
     <div className="w-full max-w-full overflow-x-clip pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">

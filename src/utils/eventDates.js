@@ -173,6 +173,8 @@ export function normalizeCmsEvent(evt) {
 
   return {
     ...evt,
+    isCancelled: Boolean(evt.isCancelled),
+    cancellationNotice: evt.cancellationNotice || '',
     date: displayDate,
     isoDate: parsed.isoDate,
     month: parsed.monthAbbr,

@@ -135,6 +135,33 @@ function mergeLiveSyncPrograms(incoming = [], existing = [], deleted = []) {
   return result;
 }
 
+function mergeLiveSyncStaff(incoming = [], existing = [], deleted = []) {
+  const deletedSet = new Set(deleted || []);
+  const result = [];
+  const seenKeys = new Set();
+  for (const s of incoming) {
+    if (!s || typeof s !== 'object') continue;
+    const nameSlug = s.name ? String(s.name).toLowerCase().replace(/[^a-z0-9]+/g, '-') : '';
+    const rawKey = s.id || s.slug || nameSlug;
+    const key = rawKey ? String(rawKey).trim() : '';
+    if (key && !deletedSet.has(key) && !deletedSet.has(s.id) && !deletedSet.has(s.name) && !seenKeys.has(key)) {
+      seenKeys.add(key);
+      result.push({ ...s, id: s.id || key });
+    }
+  }
+  for (const s of existing) {
+    if (!s || typeof s !== 'object') continue;
+    const nameSlug = s.name ? String(s.name).toLowerCase().replace(/[^a-z0-9]+/g, '-') : '';
+    const rawKey = s.id || s.slug || nameSlug;
+    const key = rawKey ? String(rawKey).trim() : '';
+    if (key && !deletedSet.has(key) && !deletedSet.has(s.id) && !deletedSet.has(s.name) && !seenKeys.has(key)) {
+      seenKeys.add(key);
+      result.push({ ...s, id: s.id || key });
+    }
+  }
+  return result;
+}
+
 export function applySiteStatePayload(state, { broadcast = false } = {}) {
   if (!state || typeof state !== 'object') return;
 
@@ -176,11 +203,18 @@ export function applySiteStatePayload(state, { broadcast = false } = {}) {
     const deletedSlugs = Array.from(new Set([...(state.cmsData.deletedPrograms || []), ...(existing.deletedPrograms || [])]));
     const mergedPrograms = mergeLiveSyncPrograms(incomingPrograms, existingPrograms, deletedSlugs);
 
+    const incomingStaff = Array.isArray(state.cmsData.staff) ? state.cmsData.staff : (existing.staff || []);
+    const existingStaff = Array.isArray(existing.staff) ? existing.staff : [];
+    const deletedStaff = Array.from(new Set([...(state.cmsData.deletedStaff || []), ...(existing.deletedStaff || [])]));
+    const mergedStaff = mergeLiveSyncStaff(incomingStaff, existingStaff, deletedStaff);
+
     const mergedCms = {
       ...existing,
       ...state.cmsData,
       programs: mergedPrograms,
       deletedPrograms: deletedSlugs,
+      staff: mergedStaff,
+      deletedStaff: deletedStaff,
       settings: { ...(existing.settings || {}), ...(state.cmsData.settings || {}) }
     };
     if (Array.isArray(mergedCms.events)) {

@@ -44,6 +44,70 @@ export function mergeProgramsWithDefaults(savedPrograms = [], defaultPrograms = 
   return result;
 }
 
+export function mergeStaffWithDefaults(savedStaff = [], defaultStaff = null, deletedIds = []) {
+  const seed = Array.isArray(defaultStaff) && defaultStaff.length > 0 ? defaultStaff : [
+    ...(staffMembers || []).map((s, idx) => ({
+      id: s.id || `staff-${(s.slug || s.name || idx).toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+      slug: s.slug || (s.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      category: 'staff',
+      title: s.title || s.role || 'Staff Member',
+      role: s.role || s.title || 'Staff Member',
+      photo: s.photo || s.image || '/images/volunteers.jpg',
+      ...s
+    })),
+    ...(boardMembers || []).map((b, idx) => ({
+      id: b.id || `board-${(b.slug || b.name || idx).toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+      slug: b.slug || (b.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      category: 'board',
+      title: b.title || b.role || 'Board Member',
+      role: b.role || b.title || 'Board Member',
+      photo: b.photo || b.image || '/images/volunteers.jpg',
+      ...b
+    }))
+  ];
+
+  const deletedSet = new Set(Array.isArray(deletedIds) ? deletedIds : []);
+
+  if (!Array.isArray(savedStaff) || savedStaff.length === 0) {
+    return seed.filter(s => !deletedSet.has(s.id) && !deletedSet.has(s.name) && !deletedSet.has(s.slug));
+  }
+
+  const result = [];
+  const seenKeys = new Set();
+
+  // 1. Preserve all saved staff/board in their exact order
+  for (const member of savedStaff) {
+    if (!member || typeof member !== 'object') continue;
+    const memName = (member.name || '').trim();
+    const rawKey = member.id || member.slug || (memName ? `${member.category || 'staff'}-${memName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}` : '');
+    const key = rawKey ? String(rawKey).trim() : '';
+
+    if (key && !deletedSet.has(key) && !deletedSet.has(member.id) && !deletedSet.has(memName) && !seenKeys.has(key)) {
+      seenKeys.add(key);
+      const seedMatch = seed.find(s => (s.id && s.id === key) || (s.slug && member.slug && s.slug === member.slug) || (s.name && memName && s.name.toLowerCase().trim() === memName.toLowerCase()));
+      result.push({
+        ...(seedMatch || {}),
+        ...member,
+        id: member.id || (seedMatch && seedMatch.id) || key,
+        title: member.title || member.role || (seedMatch && (seedMatch.title || seedMatch.role)) || 'Team Member',
+        photo: member.photo || member.image || (seedMatch && (seedMatch.photo || seedMatch.image)) || '/images/volunteers.jpg'
+      });
+    }
+  }
+
+  // 2. Append any missing seed members not explicitly deleted
+  for (const member of seed) {
+    const memName = (member.name || '').trim();
+    const key = member.id || member.slug || (memName ? `${member.category || 'staff'}-${member.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}` : '');
+    if (key && !deletedSet.has(key) && !deletedSet.has(member.id) && !deletedSet.has(memName) && !seenKeys.has(key)) {
+      seenKeys.add(key);
+      result.push({ ...member });
+    }
+  }
+
+  return result;
+}
+
 /**
  * DCVC Centralized Content Management System (CMS) Reactive Store
  * Provides complete reactive CRUD operations, local persistence, multi-tab sync,
@@ -164,8 +228,24 @@ export const INITIAL_CMS_DATA = {
   trainings: trainingCourses || [],
   communityGroups: communityGroups || [],
   staff: [
-    ...(staffMembers || []).map(s => ({ ...s, category: 'staff' })),
-    ...(boardMembers || []).map(b => ({ ...b, category: 'board' }))
+    ...(staffMembers || []).map((s, idx) => ({
+      id: s.id || `staff-${(s.slug || s.name || idx).toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+      slug: s.slug || (s.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      category: 'staff',
+      title: s.title || s.role || 'Staff Member',
+      role: s.role || s.title || 'Staff Member',
+      photo: s.photo || s.image || '/images/volunteers.jpg',
+      ...s
+    })),
+    ...(boardMembers || []).map((b, idx) => ({
+      id: b.id || `board-${(b.slug || b.name || idx).toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+      slug: b.slug || (b.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      category: 'board',
+      title: b.title || b.role || 'Board Member',
+      role: b.role || b.title || 'Board Member',
+      photo: b.photo || b.image || '/images/volunteers.jpg',
+      ...b
+    }))
   ],
   businesses: businessDirectorySeed || [],
   customKnowledge: [],
@@ -617,12 +697,12 @@ class CmsStoreEngine {
   }
 
   getBoardMembers() {
-    const board = (this.data.staff || []).filter((s) => s.category === 'board');
+    const board = this.getStaff().filter((s) => s.category === 'board');
     return board.length > 0 ? board : (boardMembers || []);
   }
 
   getStaffMembers() {
-    const st = (this.data.staff || []).filter((s) => s.category === 'staff');
+    const st = this.getStaff().filter((s) => s.category === 'staff');
     return st.length > 0 ? st : (staffMembers || []);
   }
 
@@ -660,7 +740,8 @@ class CmsStoreEngine {
             }))
           : INITIAL_CMS_DATA.news,
         resources: parsed.resources || INITIAL_CMS_DATA.resources,
-        staff: parsed.staff || INITIAL_CMS_DATA.staff,
+        staff: mergeStaffWithDefaults(parsed.staff, INITIAL_CMS_DATA.staff, parsed.deletedStaff || []),
+        deletedStaff: parsed.deletedStaff || [],
         gallery: parsed.gallery || INITIAL_CMS_DATA.gallery,
         memoryLane: parsed.memoryLane || INITIAL_CMS_DATA.memoryLane,
         podcasts: parsed.podcasts || INITIAL_CMS_DATA.podcasts,
@@ -1071,7 +1152,7 @@ class CmsStoreEngine {
   // Staff & Board Members CRUD
   // --------------------------------------------------------------------------
   getStaff() {
-    return this.data.staff;
+    return mergeStaffWithDefaults(this.data.staff, INITIAL_CMS_DATA.staff, this.data.deletedStaff || []);
   }
 
   saveStaff(memberOrList) {
@@ -1079,24 +1160,51 @@ class CmsStoreEngine {
       this.saveData({ ...this.data, staff: memberOrList });
       return memberOrList;
     }
-    const existing = [...this.data.staff];
-    const index = existing.findIndex(s => s.id === memberOrList.id || (s.name === memberOrList.name && s.category === memberOrList.category));
+    const existing = mergeStaffWithDefaults(this.data.staff, INITIAL_CMS_DATA.staff, this.data.deletedStaff || []);
+
+    const targetId = memberOrList.id ? String(memberOrList.id).trim() : null;
+    const cleanName = (memberOrList.name || '').trim();
+    const targetCategory = memberOrList.category || 'staff';
+    const memberSlug = memberOrList.slug || cleanName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const memberId = targetId || `${targetCategory}-${memberSlug || Date.now()}`;
+
+    const normalizedMember = {
+      ...memberOrList,
+      id: memberId,
+      slug: memberSlug,
+      name: cleanName || 'Unnamed Member',
+      title: memberOrList.title || memberOrList.role || (targetCategory === 'board' ? 'Board Member' : 'Staff Member'),
+      role: memberOrList.role || memberOrList.title || (targetCategory === 'board' ? 'Board Member' : 'Staff Member'),
+      category: targetCategory,
+      email: memberOrList.email || 'info@diversitycollective.org',
+      photo: memberOrList.photo || memberOrList.image || '/images/volunteers.jpg',
+      bio: memberOrList.bio || ''
+    };
+
+    // STRICT MATCHING - NEVER compare empty strings or undefined!
+    const index = existing.findIndex(s => {
+      if (targetId && s.id && String(s.id) === targetId) return true;
+      if (cleanName && s.name && s.name.toLowerCase().trim() === cleanName.toLowerCase() && s.category === targetCategory) return true;
+      if (memberSlug && s.slug && String(s.slug) === memberSlug && s.category === targetCategory) return true;
+      return false;
+    });
+
     if (index >= 0) {
-      existing[index] = { ...existing[index], ...memberOrList };
+      existing[index] = { ...existing[index], ...normalizedMember };
     } else {
-      const newMember = {
-        ...memberOrList,
-        id: memberOrList.id || `staff-${Date.now()}`
-      };
-      existing.push(newMember);
+      existing.push(normalizedMember);
     }
-    this.saveData({ ...this.data, staff: existing });
+
+    const deleted = (this.data.deletedStaff || []).filter(d => d !== normalizedMember.id && d !== normalizedMember.name && d !== targetId);
+    this.saveData({ ...this.data, staff: existing, deletedStaff: deleted });
     return existing;
   }
 
   deleteStaff(memberId) {
-    const existing = this.data.staff.filter(s => s.id !== memberId);
-    this.saveData({ ...this.data, staff: existing });
+    if (!memberId) return this.getStaff();
+    const existing = this.getStaff().filter(s => s.id !== memberId && s.name !== memberId && s.slug !== memberId);
+    const deleted = Array.from(new Set([...(this.data.deletedStaff || []), memberId]));
+    this.saveData({ ...this.data, staff: existing, deletedStaff: deleted });
     return existing;
   }
 

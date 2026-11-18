@@ -438,9 +438,10 @@ export default function CmsStudio() {
       });
     } else if (type === 'staff') {
       setFormData({
+        id: `stf-${Date.now()}`,
         name: '',
         title: '',
-        category: 'staff',
+        category: 'board',
         email: 'info@diversitycollective.org',
         bio: '',
         photo: '/images/volunteers.jpg'
@@ -543,6 +544,13 @@ export default function CmsStudio() {
         originalId: item.id || item.slug,
         originalSlug: item.slug
       });
+    } else if (type === 'staff') {
+      setFormData({
+        ...item,
+        originalId: item.id,
+        title: item.title || item.role || '',
+        photo: item.photo || item.image || '/images/volunteers.jpg'
+      });
     } else {
       setFormData({ ...item });
     }
@@ -581,8 +589,12 @@ export default function CmsStudio() {
       saveCmsResource(formData);
       showToast(`Resource "${formData.name}" saved.`);
     } else if (modalType === 'staff') {
-      saveCmsStaff(formData);
-      showToast(`Team member "${formData.name}" saved.`);
+      saveCmsStaff({
+        ...formData,
+        originalId: editingItem?.id,
+        title: formData.title || formData.role || 'Team Member'
+      });
+      showToast(`${formData.category === 'board' ? 'Board Member' : 'Staff Member'} "${formData.name}" saved.`);
     } else if (modalType === 'gallery') {
       saveCmsGalleryPhoto(formData);
       showToast(`Gallery photo "${formData.title}" saved.`);

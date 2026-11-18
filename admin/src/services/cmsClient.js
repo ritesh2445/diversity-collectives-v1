@@ -44,6 +44,48 @@ export function mergeProgramsWithDefaults(savedPrograms = [], defaultPrograms = 
   return result;
 }
 
+export function mergeStaffWithDefaults(savedStaff = [], defaultStaff = null, deletedIds = []) {
+  const seed = Array.isArray(defaultStaff) && defaultStaff.length > 0 ? defaultStaff : (DEFAULT_CMS_SEED?.staff || []);
+  const deletedSet = new Set(Array.isArray(deletedIds) ? deletedIds : []);
+
+  if (!Array.isArray(savedStaff) || savedStaff.length === 0) {
+    return seed.filter(s => !deletedSet.has(s.id) && !deletedSet.has(s.name) && !deletedSet.has(s.slug));
+  }
+
+  const result = [];
+  const seenKeys = new Set();
+
+  for (const member of savedStaff) {
+    if (!member || typeof member !== 'object') continue;
+    const memName = (member.name || '').trim();
+    const rawKey = member.id || member.slug || (memName ? `${member.category || 'staff'}-${memName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}` : '');
+    const key = rawKey ? String(rawKey).trim() : '';
+
+    if (key && !deletedSet.has(key) && !deletedSet.has(member.id) && !deletedSet.has(memName) && !seenKeys.has(key)) {
+      seenKeys.add(key);
+      const seedMatch = seed.find(s => (s.id && s.id === key) || (s.slug && member.slug && s.slug === member.slug) || (s.name && memName && s.name.toLowerCase().trim() === memName.toLowerCase()));
+      result.push({
+        ...(seedMatch || {}),
+        ...member,
+        id: member.id || (seedMatch && seedMatch.id) || key,
+        title: member.title || member.role || (seedMatch && (seedMatch.title || seedMatch.role)) || 'Team Member',
+        photo: member.photo || member.image || (seedMatch && (seedMatch.photo || seedMatch.image)) || '/images/volunteers.jpg'
+      });
+    }
+  }
+
+  for (const member of seed) {
+    const memName = (member.name || '').trim();
+    const key = member.id || member.slug || (memName ? `${member.category || 'staff'}-${memName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}` : '');
+    if (key && !deletedSet.has(key) && !deletedSet.has(member.id) && !deletedSet.has(memName) && !seenKeys.has(key)) {
+      seenKeys.add(key);
+      result.push({ ...member });
+    }
+  }
+
+  return result;
+}
+
 /**
  * DCVC Admin Dashboard — Full CMS Client
  * Comprehensive management of Programs, Events, Articles, Resources, Board & Staff,
@@ -625,22 +667,53 @@ export function deleteCmsResource(id) {
 }
 
 export function saveCmsStaff(member) {
+  if (!member || typeof member !== 'object') return getLiveCmsData().staff;
   const data = getLiveCmsData();
-  const list = [...data.staff];
-  const idx = list.findIndex(s => s.id === member.id);
+  const list = mergeStaffWithDefaults(data.staff, DEFAULT_CMS_SEED?.staff, data.deletedStaff || []);
+
+  const targetId = member.id ? String(member.id).trim() : null;
+  const cleanName = (member.name || '').trim();
+  const targetCategory = member.category || 'staff';
+  const memberSlug = member.slug || cleanName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  const memberId = targetId || `${targetCategory}-${memberSlug || Date.now()}`;
+
+  const normalizedMember = {
+    ...member,
+    id: memberId,
+    slug: memberSlug,
+    name: cleanName || 'Unnamed Member',
+    title: member.title || member.role || (targetCategory === 'board' ? 'Board Member' : 'Staff Member'),
+    role: member.role || member.title || (targetCategory === 'board' ? 'Board Member' : 'Staff Member'),
+    category: targetCategory,
+    email: member.email || 'info@diversitycollective.org',
+    photo: member.photo || member.image || '/images/volunteers.jpg',
+    bio: member.bio || ''
+  };
+
+  const idx = list.findIndex(s => {
+    if (targetId && s.id && String(s.id) === targetId) return true;
+    if (cleanName && s.name && s.name.toLowerCase().trim() === cleanName.toLowerCase() && s.category === targetCategory) return true;
+    if (memberSlug && s.slug && String(s.slug) === memberSlug && s.category === targetCategory) return true;
+    return false;
+  });
+
   if (idx >= 0) {
-    list[idx] = { ...list[idx], ...member };
+    list[idx] = { ...list[idx], ...normalizedMember };
   } else {
-    list.push({ ...member, id: member.id || `stf-${Date.now()}` });
+    list.push(normalizedMember);
   }
-  saveLiveCmsData({ ...data, staff: list });
+
+  const deleted = (data.deletedStaff || []).filter(d => d !== normalizedMember.id && d !== normalizedMember.name && d !== targetId);
+  saveLiveCmsData({ ...data, staff: list, deletedStaff: deleted });
   return list;
 }
 
 export function deleteCmsStaff(id) {
+  if (!id) return getLiveCmsData().staff;
   const data = getLiveCmsData();
-  const list = data.staff.filter(s => s.id !== id);
-  saveLiveCmsData({ ...data, staff: list });
+  const list = mergeStaffWithDefaults(data.staff, DEFAULT_CMS_SEED?.staff, data.deletedStaff || []).filter(s => s.id !== id && s.name !== id && s.slug !== id);
+  const deleted = Array.from(new Set([...(data.deletedStaff || []), id]));
+  saveLiveCmsData({ ...data, staff: list, deletedStaff: deleted });
   return list;
 }
 
