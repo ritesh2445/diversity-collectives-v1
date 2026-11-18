@@ -30,6 +30,7 @@ import {
   Layers,
   ArrowRight,
   FolderOpen,
+  Palette,
   Mic,
   Radio
 } from 'lucide-react';
@@ -56,11 +57,17 @@ import {
   deleteCmsGalleryPhoto,
   saveCmsMilestone,
   deleteCmsMilestone,
+  saveCmsSponsor,
+  deleteCmsSponsor,
+  saveCmsTraining,
+  deleteCmsTraining,
   saveCmsPodcast,
   deleteCmsPodcast,
   saveCmsSettings,
   DEFAULT_CMS_SEED
 } from '../services/cmsClient.js';
+import { parseEventDate, normalizeCmsEvent } from '../../utils/eventDates.js';
+import { SYNC_EVENTS } from '../../services/liveSync.js';
 
 export default function CmsStudio() {
   const [cmsData, setCmsData] = useState(getLiveCmsData());
@@ -86,6 +93,19 @@ export default function CmsStudio() {
   const refreshData = () => {
     setCmsData(getLiveCmsData());
   };
+
+  useEffect(() => {
+    const onCmsUpdate = () => setCmsData(getLiveCmsData());
+    const onSubTabNav = (e) => {
+      if (e?.detail?.subTab) setActiveSubTab(e.detail.subTab);
+    };
+    window.addEventListener(SYNC_EVENTS.CMS_CHANGED, onCmsUpdate);
+    window.addEventListener('dcvc-admin-cms-subtab', onSubTabNav);
+    return () => {
+      window.removeEventListener(SYNC_EVENTS.CMS_CHANGED, onCmsUpdate);
+      window.removeEventListener('dcvc-admin-cms-subtab', onSubTabNav);
+    };
+  }, []);
 
   const showToast = (msg) => {
     setFeedbackMsg(msg);
@@ -349,19 +369,26 @@ export default function CmsStudio() {
     setModalType(type);
     setEditingItem(null);
     if (type === 'program') {
+      const progCount = (cmsData.programs?.length || 0) + 1;
+      const chapterStr = progCount < 10 ? `0${progCount}` : `${progCount}`;
       setFormData({
+        id: `prog-${Date.now()}`,
         title: '',
         tagline: '',
         slug: '',
-        chapter: `0${(cmsData.programs?.length || 0) + 1}`,
+        chapter: chapterStr,
         heroImage: '/images/crc-building.jpg',
+        imageFit: 'contain',
         accent: '#5A1E65',
         fontSize: 'base',
         fontColor: '#5A1E65',
         audience: 'All LGBTQ+ community members and affirming allies',
+        audienceColor: '#7E22CE',
         schedule: 'Monday – Friday, 1:00 PM – 5:00 PM',
         location: '2471 Portola Road, Suite 100, Ventura, CA 93003',
         summary: '',
+        description: '',
+        amenities: [],
         contactEmail: 'info@diversitycollective.org',
         contactPhone: '(805) 644-5428',
         active: true
@@ -370,6 +397,7 @@ export default function CmsStudio() {
       setFormData({
         title: '',
         slug: '',
+        isoDate: '2026-08-15',
         date: 'August 15, 2026',
         time: '11:00 AM – 7:00 PM',
         location: 'Ventura County, CA',
@@ -426,6 +454,40 @@ export default function CmsStudio() {
         description: '',
         quote: ''
       });
+    } else if (type === 'milestone') {
+      setFormData({
+        year: '2026',
+        title: '',
+        subtitle: '',
+        description: '',
+        stat: '100% Community-Powered',
+        badge: 'Center Era',
+        image: '/images/community-gathering.jpg',
+        pictureFolder: [],
+        fontSize: 'base',
+        fontColor: '#5A1E65',
+        quote: '',
+        details: ''
+      });
+    } else if (type === 'sponsor') {
+      setFormData({
+        name: '',
+        shortName: '',
+        role: 'Community Health & Center Partner',
+        url: 'https://diversitycollectivevc.org',
+        logo: '/images/vcph-logo.png'
+      });
+    } else if (type === 'training') {
+      setFormData({
+        title: '',
+        slug: '',
+        badge: 'Cultural Competency Workshop',
+        duration: 'Tailored Session',
+        format: 'In-Person or Interactive Virtual',
+        targetAudience: 'Educators, Healthcare Teams & Corporate Staff',
+        summary: '',
+        learningObjectives: ['Understand LGBTQ+ affirming practices and inclusive terminology.']
+      });
     } else if (type === 'podcast') {
       setFormData({
         title: '',
@@ -444,21 +506,6 @@ export default function CmsStudio() {
         description: '',
         featured: false
       });
-    } else if (type === 'milestone') {
-      setFormData({
-        year: '2026',
-        title: '',
-        subtitle: '',
-        description: '',
-        stat: '100% Community-Powered',
-        badge: 'Center Era',
-        image: '/images/community-gathering.jpg',
-        pictureFolder: [],
-        fontSize: 'base',
-        fontColor: '#5A1E65',
-        quote: '',
-        details: ''
-      });
     }
   };
 
@@ -472,12 +519,29 @@ export default function CmsStudio() {
     } else if (type === 'news') {
       setFormData({
         ...item,
+        originalId: item.id || item.slug,
+        originalSlug: item.slug,
+        body: item.body || item.content || '',
+        content: item.content || item.body || '',
         tags: Array.isArray(item.tags) ? item.tags.join(', ') : (item.tags || '')
       });
     } else if (type === 'milestone') {
       setFormData({
         ...item,
         pictureFolder: item.pictureFolder || []
+      });
+    } else if (type === 'event') {
+      const parsed = parseEventDate(item);
+      setFormData({
+        ...item,
+        isoDate: parsed?.isoDate || item.isoDate || '',
+        date: item.date || parsed?.displayDate || ''
+      });
+    } else if (type === 'program') {
+      setFormData({
+        ...item,
+        originalId: item.id || item.slug,
+        originalSlug: item.slug
       });
     } else {
       setFormData({ ...item });
@@ -487,16 +551,31 @@ export default function CmsStudio() {
   const handleSaveModal = (e) => {
     e.preventDefault();
     if (modalType === 'program') {
-      saveCmsProgram(formData);
-      showToast(`Program "${formData.title}" saved.`);
+      const cleanTitle = (formData.title || '').trim();
+      const fallbackSlug = cleanTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      const progSlug = (formData.slug || '').trim() || fallbackSlug || `program-${Date.now()}`;
+      const payload = {
+        ...formData,
+        slug: progSlug,
+        originalId: editingItem?.id || editingItem?.slug,
+        originalSlug: editingItem?.slug
+      };
+      saveCmsProgram(payload);
+      showToast(`Program "${formData.title}" published live.`);
     } else if (modalType === 'event') {
-      saveCmsEvent(formData);
-      showToast(`Event "${formData.title}" saved.`);
+      const normalizedEvent = normalizeCmsEvent(formData);
+      saveCmsEvent(normalizedEvent);
+      showToast(`Event "${normalizedEvent.title}" saved & synced to website Calendar.`);
     } else if (modalType === 'news') {
       const formattedTags = typeof formData.tags === 'string'
         ? formData.tags.split(',').map(t => t.trim()).filter(Boolean)
         : formData.tags;
-      saveCmsArticle({ ...formData, tags: formattedTags });
+      saveCmsArticle({
+        ...formData,
+        originalId: editingItem?.id || editingItem?.slug,
+        originalSlug: editingItem?.slug,
+        tags: formattedTags
+      });
       showToast(`Article "${formData.title}" saved.`);
     } else if (modalType === 'resource') {
       saveCmsResource(formData);
@@ -510,6 +589,15 @@ export default function CmsStudio() {
     } else if (modalType === 'milestone') {
       saveCmsMilestone(formData);
       showToast(`Milestone "${formData.year}" saved.`);
+    } else if (modalType === 'sponsor') {
+      saveCmsSponsor(formData);
+      showToast(`Sponsor "${formData.name}" published live.`);
+    } else if (modalType === 'training') {
+      const normalizedObjectives = Array.isArray(formData.learningObjectives)
+        ? formData.learningObjectives
+        : String(formData.learningObjectives || '').split('\n').map((s) => s.trim()).filter(Boolean);
+      saveCmsTraining({ ...formData, learningObjectives: normalizedObjectives });
+      showToast(`Training "${formData.title}" published live.`);
     } else if (modalType === 'podcast') {
       saveCmsPodcast(formData);
       showToast(`Podcast episode "${formData.title}" saved.`);
@@ -528,9 +616,11 @@ export default function CmsStudio() {
     else if (type === 'staff') deleteCmsStaff(idOrYear);
     else if (type === 'gallery') deleteCmsGalleryPhoto(idOrYear);
     else if (type === 'milestone') deleteCmsMilestone(idOrYear);
+    else if (type === 'sponsor') deleteCmsSponsor(idOrYear);
+    else if (type === 'training') deleteCmsTraining(idOrYear);
     else if (type === 'podcast') deleteCmsPodcast(idOrYear);
     refreshData();
-    showToast('Content item deleted.');
+    showToast('Content item deleted & synced live.');
   };
 
   const handleSaveSettingsForm = (e) => {
@@ -558,6 +648,8 @@ export default function CmsStudio() {
   const subTabs = [
     { id: 'programs', label: 'Programs & Clinical Care', count: cmsData.programs?.length || 0, icon: Sparkles },
     { id: 'events', label: 'Events & Calendar', count: cmsData.events?.length || 0, icon: Calendar },
+    { id: 'trainings', label: 'P.R.I.D.E. Trainings', count: cmsData.trainings?.length || 0, icon: Award },
+    { id: 'sponsors', label: 'Sponsors & Partners', count: cmsData.sponsors?.length || 0, icon: Heart },
     { id: 'podcasts', label: 'Podcasts & Media', count: cmsData.podcasts?.length || 0, icon: Mic },
     { id: 'news', label: 'News & Articles', count: cmsData.news?.length || 0, icon: FileText },
     { id: 'resources', label: 'Community Resources', count: cmsData.resources?.length || 0, icon: BookOpen },
@@ -746,6 +838,18 @@ export default function CmsStudio() {
                   })()}
 
                   <div>
+                    {prog.audience && (
+                      <span
+                        className="inline-block text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border mb-1.5 shadow-2xs truncate max-w-full"
+                        style={{
+                          color: prog.audienceColor || prog.accent || '#7E22CE',
+                          backgroundColor: `${prog.audienceColor || prog.accent || '#7E22CE'}15`,
+                          borderColor: `${prog.audienceColor || prog.accent || '#7E22CE'}35`
+                        }}
+                      >
+                        {prog.audience}
+                      </span>
+                    )}
                     <h4 className="font-display text-lg font-black text-slate-950 leading-tight">
                       {prog.title}
                     </h4>
@@ -820,14 +924,30 @@ export default function CmsStudio() {
                 Schedule signature galas, oceanside Pride festivals, or post live cancellation/reschedule alerts.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => openCreateModal('event')}
-              className="px-4 py-2.5 rounded-xl bg-[#5A1E65] hover:bg-[#43144A] text-white font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Create New Event</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowImportEventsModal(true);
+                  setImportEventsParsed([]);
+                  setImportEventsRawText('');
+                  setImportEventsError('');
+                }}
+                className="px-4 py-2.5 rounded-xl bg-purple-100 hover:bg-purple-200 text-[#5A1E65] font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
+                title="Import events from CSV or JSON"
+              >
+                <Upload className="w-4 h-4" />
+                <span>Import Events</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => openCreateModal('event')}
+                className="px-4 py-2.5 rounded-xl bg-[#5A1E65] hover:bg-[#43144A] text-white font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Create New Event</span>
+              </button>
+            </div>
           </div>
 
           <div className="space-y-4">
@@ -1507,6 +1627,159 @@ export default function CmsStudio() {
       )}
 
       {/* ======================================================================
+          SUB-TAB: P.R.I.D.E. TRAININGS & WORKSHOPS
+          ====================================================================== */}
+      {activeSubTab === 'trainings' && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h3 className="font-display text-xl font-bold text-slate-950">
+                P.R.I.D.E. Educational Trainings ({cmsData.trainings?.length || 0})
+              </h3>
+              <p className="text-xs text-slate-600 mt-0.5">
+                Add or update cultural competency workshops displayed across /training and booking forms.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => openCreateModal('training')}
+              className="px-4 py-2.5 rounded-xl bg-[#5A1E65] hover:bg-[#43144A] text-white text-xs font-extrabold flex items-center gap-1.5 shadow-sm cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Training Workshop</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {(cmsData.trainings || []).map((course) => (
+              <div
+                key={course.slug || course.id || course.title}
+                className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between gap-4"
+              >
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-purple-100 text-[#5A1E65]">
+                      {course.badge || 'P.R.I.D.E. Workshop'}
+                    </span>
+                    <span className="text-[11px] font-bold text-slate-600">
+                      {course.duration || 'Tailored Session'}
+                    </span>
+                  </div>
+                  <h4 className="font-display text-base font-extrabold text-slate-950">
+                    {course.title}
+                  </h4>
+                  <p className="text-xs text-slate-700 leading-relaxed line-clamp-3">
+                    {course.summary}
+                  </p>
+                  <p className="text-[11px] text-slate-600 font-semibold">
+                    Audience: {course.targetAudience || 'Organizations & Educators'}
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200">
+                  <button
+                    type="button"
+                    onClick={() => openEditModal('training', course)}
+                    className="px-3 py-1.5 rounded-xl text-purple-800 hover:bg-purple-50 border border-purple-200 text-xs font-bold inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    <Edit className="w-3.5 h-3.5" />
+                    <span>Edit</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteItem('training', course.slug || course.id)}
+                    className="px-3 py-1.5 rounded-xl text-rose-700 hover:bg-rose-50 border border-rose-200 text-xs font-bold inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================================
+          SUB-TAB: SPONSORS & COMMUNITY PARTNERSHIPS
+          ====================================================================== */}
+      {activeSubTab === 'sponsors' && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h3 className="font-display text-xl font-bold text-slate-950">
+                Partnerships & Official Sponsors ({cmsData.sponsors?.length || 0})
+              </h3>
+              <p className="text-xs text-slate-600 mt-0.5">
+                Changes sync live to the Homepage Partnership Strip, Footer, and Sponsors Directory.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => openCreateModal('sponsor')}
+              className="px-4 py-2.5 rounded-xl bg-[#5A1E65] hover:bg-[#43144A] text-white text-xs font-extrabold flex items-center gap-1.5 shadow-sm cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Partner / Sponsor</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {(cmsData.sponsors || []).map((sp) => (
+              <div
+                key={sp.id || sp.name}
+                className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between gap-3"
+              >
+                <div className="flex items-start gap-3">
+                  {sp.logo ? (
+                    <img
+                      src={sp.logo}
+                      alt={sp.name}
+                      className="w-12 h-12 rounded-xl object-contain bg-slate-100 border border-slate-200 shrink-0 p-1"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-xl bg-purple-100 text-[#5A1E65] flex items-center justify-center font-black text-xs shrink-0">
+                      {sp.shortName || sp.name?.slice(0, 3) || 'PRT'}
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <h4 className="font-display text-sm font-extrabold text-slate-950 truncate">
+                      {sp.name}
+                    </h4>
+                    <p className="text-[11px] font-bold text-[#5A1E65] truncate">
+                      {sp.role || 'Community Partner'}
+                    </p>
+                    {sp.url && (
+                      <p className="text-[11px] text-slate-600 truncate">{sp.url}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200">
+                  <button
+                    type="button"
+                    onClick={() => openEditModal('sponsor', sp)}
+                    className="p-2 text-purple-800 hover:bg-purple-50 rounded-xl cursor-pointer"
+                    aria-label={`Edit ${sp.name}`}
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteItem('sponsor', sp.id || sp.name)}
+                    className="p-2 text-rose-700 hover:bg-rose-50 rounded-xl cursor-pointer"
+                    aria-label={`Delete ${sp.name}`}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================================
           SUB-TAB 7: SITE-WIDE SETTINGS & CRISIS ALERT BAR
           ====================================================================== */}
       {activeSubTab === 'settings' && (
@@ -1568,6 +1841,18 @@ export default function CmsStudio() {
                   })}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#5A1E65] outline-none"
                 />
+                <label className="flex items-center gap-2 mt-2 cursor-pointer text-xs font-semibold text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(cmsData.settings?.voicemailOnly)}
+                    onChange={(e) => setCmsData({
+                      ...cmsData,
+                      settings: { ...cmsData.settings, voicemailOnly: e.target.checked }
+                    })}
+                    className="rounded text-[#5A1E65] focus:ring-purple-400"
+                  />
+                  <span>Toggle voicemails only (hide phone number across site and display "Send Voicemail" button)</span>
+                </label>
               </div>
 
               <div>
@@ -1737,14 +2022,22 @@ export default function CmsStudio() {
               {/* Program Form Fields */}
               {modalType === 'program' && (
                 <>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1">Title</label>
                       <input
                         type="text"
                         required
                         value={formData.title || ''}
-                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                        onChange={(e) => {
+                          const title = e.target.value;
+                          const autoSlug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+                          setFormData({
+                            ...formData,
+                            title,
+                            slug: (!editingItem || !formData.slug) ? autoSlug : formData.slug
+                          });
+                        }}
                         className="w-full px-3 py-2 border rounded-xl text-xs"
                       />
                     </div>
@@ -1760,7 +2053,22 @@ export default function CmsStudio() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="sm:col-span-1">
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        URL Slug <span className="font-normal text-slate-400">(/programs/...)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.slug || ''}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, '')
+                        })}
+                        placeholder="e.g. youth-art-circle"
+                        className="w-full px-3 py-2 border rounded-xl text-xs font-mono"
+                      />
+                    </div>
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1">Chapter</label>
                       <input
@@ -1818,14 +2126,98 @@ export default function CmsStudio() {
                     label="Title & Header Typography"
                   />
 
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Audience</label>
+                  <div className="p-3.5 rounded-2xl bg-slate-50/90 border border-slate-200 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-bold text-slate-800">Audience</label>
+                      <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-semibold">
+                        <Palette className="w-3.5 h-3.5 text-purple-700" />
+                        <span>Badge & Text Color:</span>
+                        <span 
+                          className="font-mono text-[10px] px-1.5 py-0.5 rounded-md border font-bold"
+                          style={{ 
+                            color: formData.audienceColor || formData.accent || '#7E22CE',
+                            backgroundColor: `${formData.audienceColor || formData.accent || '#7E22CE'}15`,
+                            borderColor: `${formData.audienceColor || formData.accent || '#7E22CE'}35`
+                          }}
+                        >
+                          {formData.audienceColor || formData.accent || '#7E22CE'}
+                        </span>
+                      </div>
+                    </div>
+
                     <input
                       type="text"
                       value={formData.audience || ''}
                       onChange={(e) => setFormData({ ...formData, audience: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                      placeholder="e.g. All LGBTQIA+ individuals, families, youth, seniors, and allies"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs bg-white text-slate-900 focus:ring-2 focus:ring-[#5A1E65]"
                     />
+
+                    {/* Color Chooser Option */}
+                    <div className="pt-2 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-2.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-[11px] font-bold text-slate-600 mr-1">Choose Color:</span>
+                        {[
+                          { name: 'Royal Purple', hex: '#5A1E65' },
+                          { name: 'Amethyst Violet', hex: '#7E22CE' },
+                          { name: 'Sunset Rose', hex: '#D91B5C' },
+                          { name: 'Vibrant Coral', hex: '#E11D48' },
+                          { name: 'Golden Amber', hex: '#D97706' },
+                          { name: 'Vibrant Emerald', hex: '#059669' },
+                          { name: 'Forest Emerald', hex: '#1E5A44' },
+                          { name: 'Ocean Sky', hex: '#0284C7' },
+                          { name: 'Indigo Pride', hex: '#4338CA' },
+                          { name: 'Deep Slate', hex: '#0F172A' }
+                        ].map((c) => {
+                          const activeColor = (formData.audienceColor || formData.accent || '#7E22CE').toLowerCase();
+                          const isSelected = activeColor === c.hex.toLowerCase();
+                          return (
+                            <button
+                              key={c.hex}
+                              type="button"
+                              onClick={() => setFormData({ ...formData, audienceColor: c.hex })}
+                              title={c.name}
+                              className={`w-6 h-6 rounded-full border-2 transition-all cursor-pointer relative ${
+                                isSelected ? 'scale-125 border-slate-950 shadow-md ring-2 ring-purple-400' : 'border-white hover:scale-110 shadow-2xs'
+                              }`}
+                              style={{ backgroundColor: c.hex }}
+                            />
+                          );
+                        })}
+                      </div>
+
+                      <div className="flex items-center gap-1.5 ml-auto">
+                        <input
+                          type="color"
+                          value={formData.audienceColor?.startsWith('#') ? formData.audienceColor : (formData.accent?.startsWith('#') ? formData.accent : '#7E22CE')}
+                          onChange={(e) => setFormData({ ...formData, audienceColor: e.target.value })}
+                          className="w-7 h-7 rounded-lg border border-slate-300 cursor-pointer p-0.5 bg-white shadow-2xs"
+                          title="Pick custom color"
+                        />
+                        <input
+                          type="text"
+                          value={formData.audienceColor || ''}
+                          onChange={(e) => setFormData({ ...formData, audienceColor: e.target.value })}
+                          placeholder={formData.accent || '#7E22CE'}
+                          className="w-20 px-2 py-1 text-[11px] font-mono border border-slate-300 rounded-lg text-center uppercase bg-white text-slate-800"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Live Badge Preview */}
+                    <div className="pt-1.5 flex items-center gap-2">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Live Badge Preview:</span>
+                      <span
+                        className="text-[10px] font-black tracking-wider px-2.5 py-0.5 rounded-full border uppercase shadow-2xs transition-colors"
+                        style={{
+                          color: formData.audienceColor || formData.accent || '#7E22CE',
+                          backgroundColor: `${formData.audienceColor || formData.accent || '#7E22CE'}15`,
+                          borderColor: `${formData.audienceColor || formData.accent || '#7E22CE'}35`
+                        }}
+                      >
+                        {formData.audience || 'Audience Preview'}
+                      </span>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
@@ -1876,17 +2268,69 @@ export default function CmsStudio() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">Date</label>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Calendar Date Picker (Auto-Syncs Website Calendar)
+                      </label>
+                      <input
+                        type="date"
+                        value={formData.isoDate || parseEventDate(formData)?.isoDate || ''}
+                        onChange={(e) => {
+                          const iso = e.target.value;
+                          const parsed = parseEventDate(iso);
+                          setFormData({
+                            ...formData,
+                            isoDate: iso,
+                            date: parsed ? parsed.displayDate : formData.date,
+                            month: parsed?.monthAbbr,
+                            day: parsed?.dayStr,
+                            year: parsed?.yearStr
+                          });
+                        }}
+                        className="w-full px-3 py-2 border border-purple-200 bg-purple-50/30 rounded-xl text-xs font-bold text-slate-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Display Date Text</label>
                       <input
                         type="text"
                         required
                         value={formData.date || ''}
-                        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const parsed = parseEventDate(val);
+                          setFormData({
+                            ...formData,
+                            date: val,
+                            ...(parsed ? { isoDate: parsed.isoDate, month: parsed.monthAbbr, day: parsed.dayStr, year: parsed.yearStr } : {})
+                          });
+                        }}
+                        placeholder="e.g., August 15, 2026"
                         className="w-full px-3 py-2 border rounded-xl text-xs"
                       />
                     </div>
+                  </div>
+
+                  {(() => {
+                    const previewDate = parseEventDate(formData);
+                    return (
+                      <div className={`px-3 py-2 rounded-xl border text-[11px] font-bold flex items-center gap-2 ${
+                        previewDate
+                          ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                          : 'bg-amber-50 border-amber-200 text-amber-800'
+                      }`}>
+                        <Calendar className="w-3.5 h-3.5 shrink-0" />
+                        <span>
+                          {previewDate
+                            ? `Calendar Auto-Slot: ${previewDate.monthAbbr} ${previewDate.dayStr}, ${previewDate.yearStr} (${previewDate.isoDate})`
+                            : 'Use Calendar Date Picker or enter e.g. "October 18, 2026" to auto-place on /events calendar.'}
+                        </span>
+                      </div>
+                    );
+                  })()}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1">Time</label>
                       <input
@@ -2058,7 +2502,7 @@ export default function CmsStudio() {
                     </label>
                     <NewsWritingPad
                       value={formData.body || formData.content || ''}
-                      onChange={(html) => setFormData(prev => ({ ...prev, body: html }))}
+                      onChange={(html) => setFormData(prev => ({ ...prev, body: html, content: html }))}
                       onReadTimeCalculated={(time) => setFormData(prev => ({ ...prev, readTime: time }))}
                     />
                   </div>
@@ -2099,6 +2543,15 @@ export default function CmsStudio() {
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                         className="w-full px-3 py-2 border rounded-xl text-xs"
                       />
+                      <label className="flex items-center gap-1.5 mt-1.5 cursor-pointer text-[11px] font-semibold text-slate-600">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(formData.voicemailOnly)}
+                          onChange={(e) => setFormData({ ...formData, voicemailOnly: e.target.checked })}
+                          className="rounded text-[#5A1E65] focus:ring-purple-400"
+                        />
+                        <span>Toggle voicemails only (show Send Voicemail button)</span>
+                      </label>
                     </div>
                   </div>
 
@@ -2374,6 +2827,233 @@ export default function CmsStudio() {
                       required
                       value={formData.description || ''}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Sponsor Form Fields */}
+              {modalType === 'sponsor' && (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Organization / Partner Name</label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.name || ''}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        className="w-full px-3 py-2 border rounded-xl text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Short Acronym (e.g. VCBH)</label>
+                      <input
+                        type="text"
+                        value={formData.shortName || ''}
+                        onChange={(e) => setFormData({ ...formData, shortName: e.target.value })}
+                        className="w-full px-3 py-2 border rounded-xl text-xs"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Partnership Role / Tier</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.role || ''}
+                      onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Partner Website URL</label>
+                    <input
+                      type="url"
+                      value={formData.url || ''}
+                      onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                  </div>
+                  <ImagePicker
+                    value={formData.logo}
+                    onChange={(url) => setFormData({ ...formData, logo: url })}
+                    label="Partner Logo Image"
+                  />
+                </>
+              )}
+
+              {/* Training Workshop Form Fields */}
+              {modalType === 'training' && (
+                <>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Workshop Title</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.title || ''}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Badge Label</label>
+                      <input
+                        type="text"
+                        value={formData.badge || ''}
+                        onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
+                        className="w-full px-3 py-2 border rounded-xl text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Session Format / Duration</label>
+                      <input
+                        type="text"
+                        value={formData.duration || ''}
+                        onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                        className="w-full px-3 py-2 border rounded-xl text-xs"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Target Audience</label>
+                    <input
+                      type="text"
+                      value={formData.targetAudience || ''}
+                      onChange={(e) => setFormData({ ...formData, targetAudience: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Workshop Summary</label>
+                    <textarea
+                      rows={3}
+                      required
+                      value={formData.summary || ''}
+                      onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Learning Objectives (One per line)</label>
+                    <textarea
+                      rows={3}
+                      value={Array.isArray(formData.learningObjectives) ? formData.learningObjectives.join('\n') : (formData.learningObjectives || '')}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        learningObjectives: e.target.value.split('\n')
+                      })}
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Podcast & Media Episode Form Fields */}
+              {modalType === 'podcast' && (
+                <>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Episode Title <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.title || ''}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      placeholder="e.g. A Decade of Resilience"
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Episode #</label>
+                      <input
+                        type="number"
+                        value={formData.episodeNumber || 1}
+                        onChange={(e) => setFormData({ ...formData, episodeNumber: parseInt(e.target.value, 10) || 1 })}
+                        className="w-full px-3 py-2 border rounded-xl text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Duration</label>
+                      <input
+                        type="text"
+                        value={formData.duration || ''}
+                        onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                        placeholder="e.g. 35 min"
+                        className="w-full px-3 py-2 border rounded-xl text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Category / Topic</label>
+                      <input
+                        type="text"
+                        value={formData.category || ''}
+                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                        placeholder="e.g. Youth Voices"
+                        className="w-full px-3 py-2 border rounded-xl text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Host / Speaker</label>
+                      <input
+                        type="text"
+                        value={formData.host || ''}
+                        onChange={(e) => setFormData({ ...formData, host: e.target.value })}
+                        placeholder="e.g. DCVC Communications Team"
+                        className="w-full px-3 py-2 border rounded-xl text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Guest(s)</label>
+                      <input
+                        type="text"
+                        value={formData.guests || ''}
+                        onChange={(e) => setFormData({ ...formData, guests: e.target.value })}
+                        placeholder="e.g. Founding Members & Community Elders"
+                        className="w-full px-3 py-2 border rounded-xl text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  {/* PASTE LINK INPUT */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Podcast / Video Link (YouTube, Spotify, Apple Podcasts, Soundcloud, audio URL) <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="url"
+                      required
+                      value={formData.link || ''}
+                      onChange={(e) => setFormData({ ...formData, link: e.target.value })}
+                      placeholder="https://www.youtube.com/watch?v=... or https://open.spotify.com/..."
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      Paste the URL where visitors can listen or watch this episode.
+                    </p>
+                  </div>
+
+                  <ImagePicker
+                    value={formData.coverImage || '/images/community-gathering.jpg'}
+                    onChange={(url) => setFormData({ ...formData, coverImage: url })}
+                    label="Episode Cover Image"
+                  />
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Summary / Description</label>
+                    <textarea
+                      rows={3}
+                      value={formData.summary || formData.description || ''}
+                      onChange={(e) => setFormData({ ...formData, summary: e.target.value, description: e.target.value })}
+                      placeholder="Brief overview of the conversation and show notes..."
                       className="w-full px-3 py-2 border rounded-xl text-xs"
                     />
                   </div>

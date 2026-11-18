@@ -105,17 +105,31 @@ function mergeLiveSyncPrograms(incoming = [], existing = [], deleted = []) {
   const result = [];
   const seenKeys = new Set();
   for (const p of incoming) {
-    const key = p.slug || p.id;
-    if (key && !deletedSet.has(key) && !seenKeys.has(key)) {
+    if (!p || typeof p !== 'object') continue;
+    const titleSlug = p.title ? String(p.title).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : '';
+    const rawKey = p.slug || p.id || titleSlug;
+    const key = rawKey ? String(rawKey).trim() : '';
+    if (key && !deletedSet.has(key) && !deletedSet.has(p.slug) && !deletedSet.has(p.id) && !seenKeys.has(key)) {
       seenKeys.add(key);
-      result.push(p);
+      result.push({
+        ...p,
+        slug: p.slug || key,
+        id: p.id || `prog-${key}`
+      });
     }
   }
   for (const p of existing) {
-    const key = p.slug || p.id;
-    if (key && !deletedSet.has(key) && !seenKeys.has(key)) {
+    if (!p || typeof p !== 'object') continue;
+    const titleSlug = p.title ? String(p.title).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : '';
+    const rawKey = p.slug || p.id || titleSlug;
+    const key = rawKey ? String(rawKey).trim() : '';
+    if (key && !deletedSet.has(key) && !deletedSet.has(p.slug) && !deletedSet.has(p.id) && !seenKeys.has(key)) {
       seenKeys.add(key);
-      result.push(p);
+      result.push({
+        ...p,
+        slug: p.slug || key,
+        id: p.id || `prog-${key}`
+      });
     }
   }
   return result;

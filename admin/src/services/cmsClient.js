@@ -12,20 +12,32 @@ export function mergeProgramsWithDefaults(savedPrograms = [], defaultPrograms = 
 
   // 1. First, preserve all saved programs (including new additions and edits) in their exact saved order
   for (const prog of savedPrograms) {
-    const key = prog.slug || prog.id;
-    if (key && !deletedSet.has(key) && !seenKeys.has(key)) {
+    if (!prog || typeof prog !== 'object') continue;
+    const titleSlug = prog.title ? String(prog.title).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : '';
+    const rawKey = prog.slug || prog.id || titleSlug;
+    const key = rawKey ? String(rawKey).trim() : '';
+    if (key && !deletedSet.has(key) && !deletedSet.has(prog.slug) && !deletedSet.has(prog.id) && !seenKeys.has(key)) {
       seenKeys.add(key);
-      const seedMatch = seed.find(s => (s.slug && s.slug === key) || (s.id && s.id === key));
-      result.push({ ...(seedMatch || {}), ...prog });
+      const seedMatch = seed.find(s => (s.slug && s.slug === key) || (s.id && s.id === key) || (s.slug && prog.slug && s.slug === prog.slug));
+      result.push({
+        ...(seedMatch || {}),
+        ...prog,
+        slug: prog.slug || (seedMatch && seedMatch.slug) || key,
+        id: prog.id || (seedMatch && seedMatch.id) || `prog-${key}`
+      });
     }
   }
 
   // 2. Append any missing seed programs that have not been explicitly deleted
   for (const prog of seed) {
     const key = prog.slug || prog.id;
-    if (key && !deletedSet.has(key) && !seenKeys.has(key)) {
+    if (key && !deletedSet.has(key) && !deletedSet.has(prog.slug) && !deletedSet.has(prog.id) && !seenKeys.has(key)) {
       seenKeys.add(key);
-      result.push({ ...prog });
+      result.push({
+        ...prog,
+        slug: prog.slug || key,
+        id: prog.id || `prog-${key}`
+      });
     }
   }
 
@@ -490,15 +502,41 @@ export function resetCmsToDefault() {
 
 // Sub-entity update helpers
 export function saveCmsProgram(program) {
+  if (!program || typeof program !== 'object') return getLiveCmsData().programs;
   const data = getLiveCmsData();
-  const list = [...data.programs];
-  const idx = list.findIndex(p => p.id === program.id || p.slug === program.slug);
+  const list = mergeProgramsWithDefaults(data.programs, DEFAULT_CMS_SEED.programs, data.deletedPrograms || []);
+
+  const targetId = (program.id || program.originalId) ? String(program.id || program.originalId).trim() : null;
+  const targetSlug = (program.slug || program.originalSlug) ? String(program.slug || program.originalSlug).trim() : null;
+
+  const cleanTitle = (program.title || '').trim();
+  const fallbackSlug = cleanTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const progSlug = targetSlug || fallbackSlug || `program-${Date.now()}`;
+  const progId = targetId || (progSlug ? `prog-${progSlug}` : `prog-${Date.now()}`);
+
+  const normalizedProgram = {
+    ...program,
+    id: progId,
+    slug: progSlug,
+    title: cleanTitle || program.title || 'Untitled Program'
+  };
+
+  const idx = list.findIndex(p => {
+    if (targetId && p.id && String(p.id) === targetId) return true;
+    if (targetSlug && p.slug && String(p.slug) === targetSlug) return true;
+    if (cleanTitle && p.title && p.title.toLowerCase().trim() === cleanTitle.toLowerCase()) return true;
+    if (progSlug && p.slug && String(p.slug) === progSlug) return true;
+    return false;
+  });
+
   if (idx >= 0) {
-    list[idx] = { ...list[idx], ...program };
+    list[idx] = { ...list[idx], ...normalizedProgram };
   } else {
-    list.unshift({ ...program, id: program.id || `prog-${Date.now()}` });
+    list.unshift(normalizedProgram);
   }
-  saveLiveCmsData({ ...data, programs: list });
+
+  const deleted = (data.deletedPrograms || []).filter(s => s !== normalizedProgram.slug && s !== normalizedProgram.id && s !== targetSlug && s !== targetId);
+  saveLiveCmsData({ ...data, programs: list, deletedPrograms: deleted });
   return list;
 }
 

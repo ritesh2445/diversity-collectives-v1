@@ -12,20 +12,32 @@ export function mergeProgramsWithDefaults(savedPrograms = [], defaultPrograms = 
 
   // 1. First, preserve all saved programs (including new additions and edits) in their exact saved order
   for (const prog of savedPrograms) {
-    const key = prog.slug || prog.id;
-    if (key && !deletedSet.has(key) && !seenKeys.has(key)) {
+    if (!prog || typeof prog !== 'object') continue;
+    const titleSlug = prog.title ? String(prog.title).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : '';
+    const rawKey = prog.slug || prog.id || titleSlug;
+    const key = rawKey ? String(rawKey).trim() : '';
+    if (key && !deletedSet.has(key) && !deletedSet.has(prog.slug) && !deletedSet.has(prog.id) && !seenKeys.has(key)) {
       seenKeys.add(key);
-      const seedMatch = seed.find(s => (s.slug && s.slug === key) || (s.id && s.id === key));
-      result.push({ ...(seedMatch || {}), ...prog });
+      const seedMatch = seed.find(s => (s.slug && s.slug === key) || (s.id && s.id === key) || (s.slug && prog.slug && s.slug === prog.slug));
+      result.push({
+        ...(seedMatch || {}),
+        ...prog,
+        slug: prog.slug || (seedMatch && seedMatch.slug) || key,
+        id: prog.id || (seedMatch && seedMatch.id) || `prog-${key}`
+      });
     }
   }
 
   // 2. Append any missing seed programs that have not been explicitly deleted
   for (const prog of seed) {
     const key = prog.slug || prog.id;
-    if (key && !deletedSet.has(key) && !seenKeys.has(key)) {
+    if (key && !deletedSet.has(key) && !deletedSet.has(prog.slug) && !deletedSet.has(prog.id) && !seenKeys.has(key)) {
       seenKeys.add(key);
-      result.push({ ...prog });
+      result.push({
+        ...prog,
+        slug: prog.slug || key,
+        id: prog.id || `prog-${key}`
+      });
     }
   }
 
@@ -747,19 +759,60 @@ class CmsStoreEngine {
   }
 
   saveProgram(program) {
+    if (!program || typeof program !== 'object') return this.getPrograms();
+
     const existing = mergeProgramsWithDefaults(this.data.programs, INITIAL_CMS_DATA.programs, this.data.deletedPrograms || []);
-    const index = existing.findIndex(p => p.slug === program.slug || p.id === program.id);
+
+    const targetId = (program.id || program.originalId) ? String(program.id || program.originalId).trim() : null;
+    const targetSlug = (program.slug || program.originalSlug) ? String(program.slug || program.originalSlug).trim() : null;
+
+    const cleanTitle = (program.title || '').trim();
+    const fallbackSlug = cleanTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const progSlug = targetSlug || fallbackSlug || `program-${Date.now()}`;
+    const progId = targetId || (progSlug ? `prog-${progSlug}` : `prog-${Date.now()}`);
+
+    const normalizedProgram = {
+      ...program,
+      id: progId,
+      slug: progSlug,
+      title: cleanTitle || program.title || 'Untitled Program',
+      tagline: program.tagline || '',
+      chapter: program.chapter || `0${existing.length + 1}`,
+      heroImage: program.heroImage || '/images/crc-building.jpg',
+      imageFit: program.imageFit || 'contain',
+      accent: program.accent || '#5A1E65',
+      fontSize: program.fontSize || 'base',
+      fontColor: program.fontColor || '#5A1E65',
+      audience: program.audience || 'All LGBTQ+ community members and affirming allies',
+      audienceColor: program.audienceColor || program.accent || '#7E22CE',
+      schedule: program.schedule || 'Monday – Friday, 1:00 PM – 5:00 PM',
+      location: program.location || '2471 Portola Road, Suite 100, Ventura, CA 93003',
+      summary: program.summary || '',
+      description: program.description || program.summary || '',
+      amenities: Array.isArray(program.amenities) ? program.amenities : [],
+      contactEmail: program.contactEmail || 'info@diversitycollective.org',
+      contactPhone: program.contactPhone || '(805) 644-5428',
+      ctaText: program.ctaText || 'Learn More',
+      ctaLink: program.ctaLink || `/programs/${progSlug}`,
+      active: program.active !== false
+    };
+
+    // STRICT matching: NEVER compare empty strings or undefined!
+    const index = existing.findIndex(p => {
+      if (targetId && p.id && String(p.id) === targetId) return true;
+      if (targetSlug && p.slug && String(p.slug) === targetSlug) return true;
+      if (cleanTitle && p.title && p.title.toLowerCase().trim() === cleanTitle.toLowerCase()) return true;
+      if (progSlug && p.slug && String(p.slug) === progSlug) return true;
+      return false;
+    });
+
     if (index >= 0) {
-      existing[index] = { ...existing[index], ...program };
+      existing[index] = { ...existing[index], ...normalizedProgram };
     } else {
-      const newProgram = {
-        ...program,
-        id: program.id || `prog-${Date.now()}`,
-        slug: program.slug || (program.title || 'new-program').toLowerCase().replace(/[^a-z0-9]+/g, '-')
-      };
-      existing.unshift(newProgram);
+      existing.unshift(normalizedProgram);
     }
-    const deleted = (this.data.deletedPrograms || []).filter(s => s !== program.slug && s !== program.id);
+
+    const deleted = (this.data.deletedPrograms || []).filter(s => s !== normalizedProgram.slug && s !== normalizedProgram.id && s !== targetSlug && s !== targetId);
     this.saveData({ ...this.data, programs: existing, deletedPrograms: deleted });
     return existing;
   }
@@ -771,8 +824,9 @@ class CmsStoreEngine {
   }
 
   deleteProgram(slugOrId) {
-    const existing = (this.data.programs || []).filter(p => p.slug !== slugOrId && p.id !== slugOrId);
-    const deleted = [...(this.data.deletedPrograms || []), slugOrId];
+    if (!slugOrId) return this.getPrograms();
+    const existing = this.getPrograms().filter(p => p.slug !== slugOrId && p.id !== slugOrId);
+    const deleted = Array.from(new Set([...(this.data.deletedPrograms || []), slugOrId]));
     this.saveData({ ...this.data, programs: existing, deletedPrograms: deleted });
     return existing;
   }

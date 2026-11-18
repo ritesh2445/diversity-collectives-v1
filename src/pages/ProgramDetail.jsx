@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { 
   Clock, 
@@ -21,7 +21,16 @@ import CardSpotlight from '../components/CardSpotlight';
 export default function ProgramDetail() {
   const liveOrg = useLiveOrgInfo();
   const { slug } = useParams();
-  const program = programsList.find(p => p.slug === slug) || cmsStore.getPrograms().find(p => p.slug === slug || p.id === slug);
+  const [programs, setPrograms] = useState(() => cmsStore.getPrograms());
+
+  useEffect(() => {
+    const unsub = cmsStore.subscribe(() => {
+      setPrograms(cmsStore.getPrograms());
+    });
+    return unsub;
+  }, []);
+
+  const program = programs.find(p => p.slug === slug || p.id === slug) || programsList.find(p => p.slug === slug || p.id === slug);
 
   if (!program) {
     return <Navigate to="/programs" replace />;
@@ -75,7 +84,7 @@ export default function ProgramDetail() {
             </p>
 
             <p className="text-base md:text-lg text-slate-600 leading-relaxed font-medium">
-              {program.description}
+              {program.description || program.summary}
             </p>
 
             {/* Practical Logistics Quick Card in 3D */}
@@ -186,7 +195,7 @@ export default function ProgramDetail() {
       </section>
 
       {/* Program Amenities & Key Features */}
-      {program.amenities && (
+      {program.amenities && Array.isArray(program.amenities) && program.amenities.length > 0 && (
         <section className="container-clean py-16 border-b border-slate-100">
           <div className="max-w-2xl mb-10">
             <span className="glass-pill text-xs font-bold text-[#5A1E65] bg-purple-50 border-purple-200 mb-2 block">

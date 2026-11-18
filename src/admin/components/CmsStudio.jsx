@@ -369,12 +369,16 @@ export default function CmsStudio() {
     setModalType(type);
     setEditingItem(null);
     if (type === 'program') {
+      const progCount = (cmsData.programs?.length || 0) + 1;
+      const chapterStr = progCount < 10 ? `0${progCount}` : `${progCount}`;
       setFormData({
+        id: `prog-${Date.now()}`,
         title: '',
         tagline: '',
         slug: '',
-        chapter: `0${(cmsData.programs?.length || 0) + 1}`,
+        chapter: chapterStr,
         heroImage: '/images/crc-building.jpg',
+        imageFit: 'contain',
         accent: '#5A1E65',
         fontSize: 'base',
         fontColor: '#5A1E65',
@@ -383,6 +387,8 @@ export default function CmsStudio() {
         schedule: 'Monday – Friday, 1:00 PM – 5:00 PM',
         location: '2471 Portola Road, Suite 100, Ventura, CA 93003',
         summary: '',
+        description: '',
+        amenities: [],
         contactEmail: 'info@diversitycollective.org',
         contactPhone: '(805) 644-5428',
         active: true
@@ -531,6 +537,12 @@ export default function CmsStudio() {
         isoDate: parsed?.isoDate || item.isoDate || '',
         date: item.date || parsed?.displayDate || ''
       });
+    } else if (type === 'program') {
+      setFormData({
+        ...item,
+        originalId: item.id || item.slug,
+        originalSlug: item.slug
+      });
     } else {
       setFormData({ ...item });
     }
@@ -539,7 +551,16 @@ export default function CmsStudio() {
   const handleSaveModal = (e) => {
     e.preventDefault();
     if (modalType === 'program') {
-      saveCmsProgram(formData);
+      const cleanTitle = (formData.title || '').trim();
+      const fallbackSlug = cleanTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      const progSlug = (formData.slug || '').trim() || fallbackSlug || `program-${Date.now()}`;
+      const payload = {
+        ...formData,
+        slug: progSlug,
+        originalId: editingItem?.id || editingItem?.slug,
+        originalSlug: editingItem?.slug
+      };
+      saveCmsProgram(payload);
       showToast(`Program "${formData.title}" published live.`);
     } else if (modalType === 'event') {
       const normalizedEvent = normalizeCmsEvent(formData);
@@ -2001,14 +2022,22 @@ export default function CmsStudio() {
               {/* Program Form Fields */}
               {modalType === 'program' && (
                 <>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1">Title</label>
                       <input
                         type="text"
                         required
                         value={formData.title || ''}
-                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                        onChange={(e) => {
+                          const title = e.target.value;
+                          const autoSlug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+                          setFormData({
+                            ...formData,
+                            title,
+                            slug: (!editingItem || !formData.slug) ? autoSlug : formData.slug
+                          });
+                        }}
                         className="w-full px-3 py-2 border rounded-xl text-xs"
                       />
                     </div>
@@ -2024,7 +2053,22 @@ export default function CmsStudio() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="sm:col-span-1">
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        URL Slug <span className="font-normal text-slate-400">(/programs/...)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.slug || ''}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, '')
+                        })}
+                        placeholder="e.g. youth-art-circle"
+                        className="w-full px-3 py-2 border rounded-xl text-xs font-mono"
+                      />
+                    </div>
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1">Chapter</label>
                       <input
