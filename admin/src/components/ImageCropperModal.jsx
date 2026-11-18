@@ -3,52 +3,44 @@ import {
   Crop, 
   RotateCw, 
   RotateCcw, 
-  ZoomIn, 
-  ZoomOut, 
-  Move, 
   Check, 
   X, 
   Maximize2, 
-  Sliders, 
   Image as ImageIcon,
-  Sparkles,
   RefreshCw,
-  Sun
+  Move,
+  Minimize2,
+  CheckCircle2,
+  Sparkles
 } from 'lucide-react';
 
 const ASPECT_PRESETS = [
-  { id: '16:9', label: '16:9 Widescreen', ratio: 16 / 9 },
-  { id: '4:3', label: '4:3 Standard', ratio: 4 / 3 },
-  { id: '1:1', label: '1:1 Square (Logos)', ratio: 1 },
-  { id: 'contain', label: 'Fit Whole Image (No Crop)', ratio: null },
-  { id: 'free', label: 'Original Ratio', ratio: 0 }
+  { id: 'original', label: 'Full Image (No Crop)', description: 'Keep 100% original dimensions without cutting edges' },
+  { id: 'free', label: 'Free Crop (Custom)', description: 'Drag corners and edges freely to any custom rectangle' },
+  { id: '16:9', label: '16:9 Widescreen', ratio: 16 / 9, description: 'Standard banner & widescreen hero ratio' },
+  { id: '4:3', label: '4:3 Standard', ratio: 4 / 3, description: 'Classic photo ratio' },
+  { id: '1:1', label: '1:1 Square', ratio: 1, description: 'Best for badges, logos, and avatars' },
+  { id: 'contain', label: 'Fit Whole (Padded)', description: 'Center whole graphic on a clean tinted background' }
 ];
 
-/**
- * Interactive Client-Side Image Crop & Adjustment Studio
- * Allows admins to:
- * - Zoom (1x to 3x)
- * - Pan & Position with drag or nudge controls
- * - Rotate (90° steps)
- * - Choose Aspect Ratio (16:9, 4:3, 1:1 Square, Fit Whole Contain)
- * - Preview crop in real-time
- * - Render and export to optimized web-ready File
- */
 export default function ImageCropperModal({ 
   imageSrc, 
-  initialAspect = '16:9',
+  initialAspect = 'original',
   onApply, 
   onCancel 
 }) {
   const [selectedPreset, setSelectedPreset] = useState(initialAspect);
-  const [zoom, setZoom] = useState(1);
-  const [rotation, setRotation] = useState(0); // in degrees: 0, 90, 180, 270
-  const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [imageMeta, setImageMeta] = useState({ width: 0, height: 0, naturalRatio: 1 });
+  const [rotation, setRotation] = useState(0); // 0, 90, 180, 270
   const [bgColor, setBgColor] = useState('#FFFFFF');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [imageMeta, setImageMeta] = useState({ width: 0, height: 0, naturalRatio: 1 });
+
+  // Normalized crop rectangle: values from 0.0 to 1.0 relative to displayed image
+  const [crop, setCrop] = useState({ x: 0, y: 0, width: 1, height: 1 });
+  
+  // Dragging state
+  const [activeDrag, setActiveDrag] = useState(null); // 'move' | 'nw' | 'ne' | 'se' | 'sw' | 'n' | 's' | 'e' | 'w'
+  const dragStartRef = useRef({ mouseX: 0, mouseY: 0, crop: { x: 0, y: 0, width: 1, height: 1 } });
 
   const imageRef = useRef(null);
   const containerRef = useRef(null);
@@ -66,43 +58,181 @@ export default function ImageCropperModal({
     };
   }, [imageSrc]);
 
-  // Compute active target aspect ratio
-  const getActiveRatio = useCallback(() => {
-    if (selectedPreset === 'contain') return 16 / 9; // preview frame container
-    if (selectedPreset === 'free') return imageMeta.naturalRatio || (16 / 9);
-    const found = ASPECT_PRESETS.find(p => p.id === selectedPreset);
-    return found?.ratio || (16 / 9);
-  }, [selectedPreset, imageMeta]);
+  // Set initial crop based on preset
+  const applyPreset = useCallback((presetId) => {
+    setSelectedPreset(presetId);
+    if (!imageMeta.width || !imageMeta.height) return;
 
-  // Mouse / Touch Dragging to Pan Image
-  const handleMouseDown = (e) => {
-    e.preventDefault();
-    setIsDragging(true);
-    setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
-  };
+    if (presetId === 'original' || presetId === 'contain') {
+      setCrop({ x: 0, y: 0, width: 1, height: 1 });
+      return;
+    }
 
-  const handleMouseMove = useCallback((e) => {
-    if (!isDragging) return;
-    setPan({
-      x: e.clientX - dragStart.x,
-      y: e.clientY - dragStart.y
+    if (presetId === 'free') {
+      // If currently 100%, inset slightly to give user visible handles to grab immediately
+      setCrop(prev => {
+        if (prev.width === 1 && prev.height === 1) {
+          return { x: 0.05, y: 0.05, width: 0.9, height: 0.9 };
+        }
+        return prev;
+      });
+      return;
+    }
+
+    const preset = ASPECT_PRESETS.find(p => p.id === presetId);
+    if (!preset || !preset.ratio) return;
+
+    const targetRatio = preset.ratio;
+    const currentRatio = imageMeta.naturalRatio || 1;
+
+    let newW = 1;
+    let newH = 1;
+
+    if (currentRatio > targetRatio) {
+      // Image is wider than target ratio
+      newW = targetRatio / currentRatio;
+      newH = 1;
+    } else {
+      // Image is taller than target ratio
+      newW = 1;
+      newH = currentRatio / targetRatio;
+    }
+
+    // Center the crop box
+    const newX = (1 - newW) / 2;
+    const newY = (1 - newH) / 2;
+
+    setCrop({
+      x: Math.max(0, newX),
+      y: Math.max(0, newY),
+      width: Math.min(1, newW),
+      height: Math.min(1, newH)
     });
-  }, [isDragging, dragStart]);
+  }, [imageMeta]);
 
-  const handleMouseUp = () => {
-    setIsDragging(false);
+  // Synchronize when image loads or preset changes
+  useEffect(() => {
+    if (imageMeta.width > 0) {
+      applyPreset(initialAspect || 'original');
+    }
+  }, [imageMeta.width, imageMeta.height]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Mouse / Touch handlers for interactive crop box
+  const handlePointerDown = (e, handleType) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setActiveDrag(handleType);
+    const clientX = e.clientX || e.touches?.[0]?.clientX || 0;
+    const clientY = e.clientY || e.touches?.[0]?.clientY || 0;
+    dragStartRef.current = {
+      mouseX: clientX,
+      mouseY: clientY,
+      crop: { ...crop }
+    };
   };
 
-  // Reset Adjustments
-  const handleReset = () => {
-    setZoom(1);
+  const handlePointerMove = useCallback((e) => {
+    if (!activeDrag || !imageRef.current) return;
+    const clientX = e.clientX || e.touches?.[0]?.clientX || 0;
+    const clientY = e.clientY || e.touches?.[0]?.clientY || 0;
+
+    const imgRect = imageRef.current.getBoundingClientRect();
+    if (!imgRect.width || !imgRect.height) return;
+
+    const dx = (clientX - dragStartRef.current.mouseX) / imgRect.width;
+    const dy = (clientY - dragStartRef.current.mouseY) / imgRect.height;
+    const start = dragStartRef.current.crop;
+
+    const minSize = 0.05; // 5% minimum crop box size
+
+    if (activeDrag === 'move') {
+      const nextX = Math.max(0, Math.min(1 - start.width, start.x + dx));
+      const nextY = Math.max(0, Math.min(1 - start.height, start.y + dy));
+      setCrop(prev => ({ ...prev, x: nextX, y: nextY }));
+      return;
+    }
+
+    // Handle corner/edge resizing
+    let newX = start.x;
+    let newY = start.y;
+    let newW = start.width;
+    let newH = start.height;
+
+    // Right / East
+    if (activeDrag.includes('e')) {
+      newW = Math.max(minSize, Math.min(1 - start.x, start.width + dx));
+    }
+    // Left / West
+    if (activeDrag.includes('w')) {
+      const maxW = start.x + start.width;
+      newW = Math.max(minSize, Math.min(maxW, start.width - dx));
+      newX = start.x + (start.width - newW);
+    }
+    // Bottom / South
+    if (activeDrag.includes('s')) {
+      newH = Math.max(minSize, Math.min(1 - start.y, start.height + dy));
+    }
+    // Top / North
+    if (activeDrag.includes('n')) {
+      const maxH = start.y + start.height;
+      newH = Math.max(minSize, Math.min(maxH, start.height - dy));
+      newY = start.y + (start.height - newH);
+    }
+
+    // If locked to a ratio preset (not 'free' and not 'original')
+    const preset = ASPECT_PRESETS.find(p => p.id === selectedPreset);
+    if (preset && preset.ratio && imageMeta.naturalRatio) {
+      // Locked aspect ratio: targetRatio = (cropPixelW / cropPixelH)
+      // cropPixelW = newW * naturalWidth, cropPixelH = newH * naturalHeight
+      const targetRatio = preset.ratio;
+      const naturalRatio = imageMeta.naturalRatio;
+      
+      // Compute required height given width
+      const constrainedH = (newW * naturalRatio) / targetRatio;
+      if (newY + constrainedH <= 1) {
+        newH = constrainedH;
+      } else {
+        newH = 1 - newY;
+        newW = (newH * targetRatio) / naturalRatio;
+      }
+    }
+
+    setCrop({
+      x: Math.max(0, Math.min(1 - minSize, newX)),
+      y: Math.max(0, Math.min(1 - minSize, newY)),
+      width: Math.max(minSize, Math.min(1 - newX, newW)),
+      height: Math.max(minSize, Math.min(1 - newY, newH))
+    });
+  }, [activeDrag, selectedPreset, imageMeta]);
+
+  const handlePointerUp = useCallback(() => {
+    setActiveDrag(null);
+  }, []);
+
+  useEffect(() => {
+    if (activeDrag) {
+      window.addEventListener('mousemove', handlePointerMove);
+      window.addEventListener('mouseup', handlePointerUp);
+      window.addEventListener('touchmove', handlePointerMove);
+      window.addEventListener('touchend', handlePointerUp);
+      return () => {
+        window.removeEventListener('mousemove', handlePointerMove);
+        window.removeEventListener('mouseup', handlePointerUp);
+        window.removeEventListener('touchmove', handlePointerMove);
+        window.removeEventListener('touchend', handlePointerUp);
+      };
+    }
+  }, [activeDrag, handlePointerMove, handlePointerUp]);
+
+  // Reset to 100% full original image
+  const handleResetToFull = () => {
+    setSelectedPreset('original');
     setRotation(0);
-    setPan({ x: 0, y: 0 });
+    setCrop({ x: 0, y: 0, width: 1, height: 1 });
   };
 
-  // Perform Final Crop & Render on Canvas
+  // Perform Crop & Render on Canvas
   const handleApplyCrop = async () => {
-    if (!imageRef.current) return;
     setIsProcessing(true);
 
     try {
@@ -115,73 +245,102 @@ export default function ImageCropperModal({
         img.onerror = reject;
       });
 
+      const natW = img.naturalWidth || 800;
+      const natH = img.naturalHeight || 600;
+
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
 
-      const targetRatio = getActiveRatio();
-      
-      // Determine canvas resolution based on target aspect
-      let outWidth = 1200;
-      let outHeight = Math.round(outWidth / targetRatio);
+      // 1. FULL ORIGINAL MODE (Zero Cropping - 100% Untouched)
+      if (selectedPreset === 'original' && rotation === 0) {
+        let outW = natW;
+        let outH = natH;
+        const maxDim = 1600;
+        if (outW > maxDim || outH > maxDim) {
+          if (outW > outH) {
+            outH = Math.round((outH * maxDim) / outW);
+            outW = maxDim;
+          } else {
+            outW = Math.round((outW * maxDim) / outH);
+            outH = maxDim;
+          }
+        }
+        canvas.width = outW;
+        canvas.height = outH;
+        ctx.drawImage(img, 0, 0, outW, outH);
+      } 
+      // 2. CONTAIN PADDED MODE
+      else if (selectedPreset === 'contain') {
+        const outW = 1200;
+        const outH = 675; // 16:9 padded canvas
+        canvas.width = outW;
+        canvas.height = outH;
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, outW, outH);
 
-      if (selectedPreset === '1:1') {
-        outWidth = 800;
-        outHeight = 800;
-      } else if (selectedPreset === 'contain') {
-        outWidth = 1200;
-        outHeight = 675; // 16:9 contain canvas
-      }
+        const pad = 30;
+        const availW = outW - pad * 2;
+        const availH = outH - pad * 2;
+        const imgRatio = natW / natH;
 
-      canvas.width = outWidth;
-      canvas.height = outHeight;
-
-      // Fill canvas background
-      ctx.fillStyle = bgColor;
-      ctx.fillRect(0, 0, outWidth, outHeight);
-
-      ctx.save();
-      ctx.translate(outWidth / 2, outHeight / 2);
-      ctx.rotate((rotation * Math.PI) / 180);
-
-      if (selectedPreset === 'contain') {
-        // Mode: Fit Whole Image without cropping any edges
-        // Compute best fit within canvas with comfortable padding
-        const pad = 40;
-        const availW = outWidth - pad * 2;
-        const availH = outHeight - pad * 2;
-        const imgRatio = img.naturalWidth / img.naturalHeight;
-        
         let drawW, drawH;
         if (imgRatio > (availW / availH)) {
-          drawW = availW * zoom;
-          drawH = (availW / imgRatio) * zoom;
+          drawW = availW;
+          drawH = Math.round(availW / imgRatio);
         } else {
-          drawH = availH * zoom;
-          drawW = (availH * imgRatio) * zoom;
+          drawH = availH;
+          drawW = Math.round(availH * imgRatio);
         }
 
-        ctx.drawImage(img, -drawW / 2 + pan.x, -drawH / 2 + pan.y, drawW, drawH);
-      } else {
-        // Mode: Crop / Fill frame
-        const scaleBase = Math.max(outWidth / img.naturalWidth, outHeight / img.naturalHeight);
-        const finalScale = scaleBase * zoom;
-        const drawW = img.naturalWidth * finalScale;
-        const drawH = img.naturalHeight * finalScale;
+        ctx.save();
+        ctx.translate(outW / 2, outH / 2);
+        ctx.rotate((rotation * Math.PI) / 180);
+        ctx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH);
+        ctx.restore();
+      }
+      // 3. FREE CROP OR PRESET RATIO CROP
+      else {
+        // Calculate exact pixel source coordinates from normalized crop box
+        const sourceX = Math.max(0, Math.round(crop.x * natW));
+        const sourceY = Math.max(0, Math.round(crop.y * natH));
+        const sourceW = Math.min(natW - sourceX, Math.max(10, Math.round(crop.width * natW)));
+        const sourceH = Math.min(natH - sourceY, Math.max(10, Math.round(crop.height * natH)));
 
-        ctx.drawImage(img, -drawW / 2 + pan.x, -drawH / 2 + pan.y, drawW, drawH);
+        // Determine output resolution (max 1600px dimension)
+        let outW = sourceW;
+        let outH = sourceH;
+        const maxDim = 1600;
+        if (outW > maxDim || outH > maxDim) {
+          if (outW > outH) {
+            outH = Math.round((outH * maxDim) / outW);
+            outW = maxDim;
+          } else {
+            outW = Math.round((outW * maxDim) / outH);
+            outH = maxDim;
+          }
+        }
+
+        // Account for 90 / 270 deg rotations
+        const isPerpendicular = rotation === 90 || rotation === 270;
+        canvas.width = isPerpendicular ? outH : outW;
+        canvas.height = isPerpendicular ? outW : outH;
+
+        ctx.save();
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate((rotation * Math.PI) / 180);
+        ctx.drawImage(img, sourceX, sourceY, sourceW, sourceH, -outW / 2, -outH / 2, outW, outH);
+        ctx.restore();
       }
 
-      ctx.restore();
-
-      // Convert canvas to blob & File
+      // Convert canvas to File & Object URL
       canvas.toBlob((blob) => {
         if (!blob) {
-          alert('Failed to generate cropped image.');
+          alert('Failed to generate image from canvas.');
           setIsProcessing(false);
           return;
         }
 
-        const croppedFile = new File([blob], `cropped-${Date.now()}.jpg`, { type: 'image/jpeg' });
+        const croppedFile = new File([blob], `image-${Date.now()}.jpg`, { type: 'image/jpeg' });
         const localPreviewUrl = URL.createObjectURL(blob);
 
         onApply(croppedFile, localPreviewUrl);
@@ -189,31 +348,36 @@ export default function ImageCropperModal({
       }, 'image/jpeg', 0.92);
 
     } catch (err) {
-      alert('Error cropping image: ' + err.message);
+      alert('Error processing image crop: ' + err.message);
       setIsProcessing(false);
     }
   };
 
+  // Compute live pixel dimensions of the crop for admin visibility
+  const liveCropPixelW = Math.round(crop.width * (imageMeta.width || 1));
+  const liveCropPixelH = Math.round(crop.height * (imageMeta.height || 1));
+
   return (
     <div 
-      className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[99999] flex items-center justify-center p-4 overflow-y-auto select-none"
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
+      className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[99999] flex items-center justify-center p-3 sm:p-4 select-none overflow-y-auto"
     >
-      <div className="bg-white rounded-3xl max-w-3xl w-full shadow-2xl border border-purple-200 overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-200 font-sans">
+      <div className="bg-white rounded-3xl max-w-4xl w-full shadow-2xl border border-purple-200 overflow-hidden flex flex-col max-h-[94vh] animate-in zoom-in-95 duration-150 font-sans">
         
         {/* Header */}
-        <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+        <div className="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-[#5A1E65] text-white flex items-center justify-center shadow-xs">
               <Crop className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-display font-black text-slate-950 text-base tracking-tight">
-                Image Adjustment & Crop Studio
+              <h3 className="font-display font-black text-slate-950 text-sm sm:text-base tracking-tight flex items-center gap-2">
+                <span>Image Cropping & Framing Studio</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-[#5A1E65]">
+                  Free Crop Enabled
+                </span>
               </h3>
               <p className="text-[11px] text-slate-500 font-medium">
-                Drag to reposition · Zoom & rotate · Prevent awkward logo cut-offs
+                Drag corners or sides to crop freely · Preserves 100% full image unless explicitly cropped
               </p>
             </div>
           </div>
@@ -227,161 +391,207 @@ export default function ImageCropperModal({
           </button>
         </div>
 
-        {/* Aspect Ratio Tabs */}
-        <div className="px-6 py-2.5 bg-purple-50/60 border-b border-purple-100 flex flex-wrap items-center justify-between gap-2">
+        {/* Preset Selector Bar */}
+        <div className="px-5 py-2.5 bg-purple-50/70 border-b border-purple-100 flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="text-[11px] font-bold text-purple-950 uppercase tracking-wider mr-1">
-              Frame Aspect:
+              Framing Mode:
             </span>
-            {ASPECT_PRESETS.map((preset) => (
-              <button
-                key={preset.id}
-                type="button"
-                onClick={() => {
-                  setSelectedPreset(preset.id);
-                  setPan({ x: 0, y: 0 });
-                }}
-                className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                  selectedPreset === preset.id
-                    ? 'bg-[#5A1E65] text-white shadow-xs'
-                    : 'bg-white text-slate-700 border border-slate-200 hover:bg-purple-100/50'
-                }`}
-              >
-                {preset.label}
-              </button>
-            ))}
+            {ASPECT_PRESETS.map((preset) => {
+              const isSelected = selectedPreset === preset.id;
+              return (
+                <button
+                  key={preset.id}
+                  type="button"
+                  onClick={() => applyPreset(preset.id)}
+                  title={preset.description}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
+                    isSelected
+                      ? 'bg-[#5A1E65] text-white shadow-xs scale-102'
+                      : 'bg-white text-slate-700 border border-slate-200 hover:bg-purple-100/50'
+                  }`}
+                >
+                  {preset.id === 'original' && <Maximize2 className="w-3 h-3 text-emerald-400" />}
+                  {preset.id === 'free' && <Crop className="w-3 h-3 text-amber-300" />}
+                  <span>{preset.label}</span>
+                </button>
+              );
+            })}
           </div>
 
           <button
             type="button"
-            onClick={handleReset}
-            className="text-[11px] font-bold text-slate-600 hover:text-[#5A1E65] flex items-center gap-1 py-1 px-2 rounded-lg hover:bg-purple-100/50 transition-colors cursor-pointer"
+            onClick={handleResetToFull}
+            className="text-[11px] font-bold text-slate-600 hover:text-[#5A1E65] flex items-center gap-1 py-1 px-2.5 rounded-lg hover:bg-purple-100/60 transition-colors cursor-pointer"
           >
             <RefreshCw className="w-3 h-3" />
-            <span>Reset Framing</span>
+            <span>Reset to Full Image</span>
           </button>
         </div>
 
-        {/* Main Crop Viewport */}
-        <div className="p-6 bg-slate-900/95 flex-grow flex items-center justify-center overflow-hidden relative min-h-[340px]">
-          
-          {/* Framed Crop Box */}
-          <div 
-            ref={containerRef}
-            className="relative overflow-hidden shadow-2xl border-2 border-amber-300 rounded-2xl flex items-center justify-center cursor-move"
-            style={{
-              width: '100%',
-              maxWidth: '540px',
-              aspectRatio: `${getActiveRatio()}`,
-              backgroundColor: bgColor
-            }}
-            onMouseDown={handleMouseDown}
-          >
-            {/* Visual Guide Grid (Rule of Thirds) */}
-            <div className="absolute inset-0 pointer-events-none z-20 grid grid-cols-3 grid-rows-3 border border-white/20">
-              <div className="border-r border-b border-white/20" />
-              <div className="border-r border-b border-white/20" />
-              <div className="border-b border-white/20" />
-              <div className="border-r border-b border-white/20" />
-              <div className="border-r border-b border-white/20" />
-              <div className="border-b border-white/20" />
-              <div className="border-r border-white/20" />
-              <div className="border-r border-white/20" />
-              <div />
+        {/* Viewport Area */}
+        <div 
+          ref={containerRef}
+          className="p-4 sm:p-6 bg-slate-950/95 flex-grow flex items-center justify-center overflow-hidden relative min-h-[360px] max-h-[55vh]"
+        >
+          {imageSrc ? (
+            <div className="relative inline-block max-w-full max-h-full select-none">
+              
+              {/* Underlying Image */}
+              <img
+                ref={imageRef}
+                src={imageSrc}
+                alt="Crop Target"
+                draggable={false}
+                className="max-h-[50vh] max-w-[85vw] sm:max-w-[700px] object-contain rounded-lg block pointer-events-none select-none"
+                style={{
+                  transform: `rotate(${rotation}deg)`,
+                  transition: 'transform 0.15s ease'
+                }}
+              />
+
+              {/* Interactive Crop Box Overlay (Active in free and preset modes) */}
+              {selectedPreset !== 'contain' && (
+                <div
+                  className="absolute cursor-move select-none"
+                  style={{
+                    left: `${crop.x * 100}%`,
+                    top: `${crop.y * 100}%`,
+                    width: `${crop.width * 100}%`,
+                    height: `${crop.height * 100}%`,
+                    boxShadow: '0 0 0 9999px rgba(15, 23, 42, 0.65)',
+                    border: '2px solid #F59E0B',
+                    borderRadius: '4px'
+                  }}
+                  onMouseDown={(e) => handlePointerDown(e, 'move')}
+                  onTouchStart={(e) => handlePointerDown(e, 'move')}
+                >
+                  {/* Rule-of-Thirds Grid */}
+                  <div className="absolute inset-0 pointer-events-none grid grid-cols-3 grid-rows-3 opacity-60">
+                    <div className="border-r border-b border-white/40" />
+                    <div className="border-r border-b border-white/40" />
+                    <div className="border-b border-white/40" />
+                    <div className="border-r border-b border-white/40" />
+                    <div className="border-r border-b border-white/40" />
+                    <div className="border-b border-white/40" />
+                    <div className="border-r border-white/40" />
+                    <div className="border-r border-white/40" />
+                    <div />
+                  </div>
+
+                  {/* Move Helper Badge */}
+                  <div className="absolute top-2 left-2 z-20 pointer-events-none bg-slate-900/85 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-md border border-white/20 flex items-center gap-1 shadow-md">
+                    <Move className="w-3 h-3 text-amber-300" />
+                    <span>
+                      {selectedPreset === 'original' 
+                        ? '100% Full Image (No Cut)' 
+                        : `${liveCropPixelW} × ${liveCropPixelH} px`}
+                    </span>
+                  </div>
+
+                  {/* Corner Handles (Large & Easy to Drag) */}
+                  {/* Top-Left */}
+                  <div
+                    className="absolute -top-2.5 -left-2.5 w-5 h-5 bg-white border-2 border-[#5A1E65] rounded-full shadow-md cursor-nwse-resize z-30 hover:scale-125 transition-transform"
+                    onMouseDown={(e) => handlePointerDown(e, 'nw')}
+                    onTouchStart={(e) => handlePointerDown(e, 'nw')}
+                  />
+                  {/* Top-Right */}
+                  <div
+                    className="absolute -top-2.5 -right-2.5 w-5 h-5 bg-white border-2 border-[#5A1E65] rounded-full shadow-md cursor-nesw-resize z-30 hover:scale-125 transition-transform"
+                    onMouseDown={(e) => handlePointerDown(e, 'ne')}
+                    onTouchStart={(e) => handlePointerDown(e, 'ne')}
+                  />
+                  {/* Bottom-Left */}
+                  <div
+                    className="absolute -bottom-2.5 -left-2.5 w-5 h-5 bg-white border-2 border-[#5A1E65] rounded-full shadow-md cursor-nesw-resize z-30 hover:scale-125 transition-transform"
+                    onMouseDown={(e) => handlePointerDown(e, 'sw')}
+                    onTouchStart={(e) => handlePointerDown(e, 'sw')}
+                  />
+                  {/* Bottom-Right */}
+                  <div
+                    className="absolute -bottom-2.5 -right-2.5 w-5 h-5 bg-white border-2 border-[#5A1E65] rounded-full shadow-md cursor-nwse-resize z-30 hover:scale-125 transition-transform"
+                    onMouseDown={(e) => handlePointerDown(e, 'se')}
+                    onTouchStart={(e) => handlePointerDown(e, 'se')}
+                  />
+
+                  {/* Edge Handles for Free Crop */}
+                  {selectedPreset === 'free' && (
+                    <>
+                      {/* Top Edge */}
+                      <div
+                        className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-3.5 bg-amber-400 border border-slate-900 rounded-full shadow-md cursor-ns-resize z-30 hover:scale-115 transition-transform"
+                        onMouseDown={(e) => handlePointerDown(e, 'n')}
+                        onTouchStart={(e) => handlePointerDown(e, 'n')}
+                      />
+                      {/* Bottom Edge */}
+                      <div
+                        className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-8 h-3.5 bg-amber-400 border border-slate-900 rounded-full shadow-md cursor-ns-resize z-30 hover:scale-115 transition-transform"
+                        onMouseDown={(e) => handlePointerDown(e, 's')}
+                        onTouchStart={(e) => handlePointerDown(e, 's')}
+                      />
+                      {/* Left Edge */}
+                      <div
+                        className="absolute top-1/2 -translate-y-1/2 -left-2 w-3.5 h-8 bg-amber-400 border border-slate-900 rounded-full shadow-md cursor-ew-resize z-30 hover:scale-115 transition-transform"
+                        onMouseDown={(e) => handlePointerDown(e, 'w')}
+                        onTouchStart={(e) => handlePointerDown(e, 'w')}
+                      />
+                      {/* Right Edge */}
+                      <div
+                        className="absolute top-1/2 -translate-y-1/2 -right-2 w-3.5 h-8 bg-amber-400 border border-slate-900 rounded-full shadow-md cursor-ew-resize z-30 hover:scale-115 transition-transform"
+                        onMouseDown={(e) => handlePointerDown(e, 'e')}
+                        onTouchStart={(e) => handlePointerDown(e, 'e')}
+                      />
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Contain Mode Instruction */}
+              {selectedPreset === 'contain' && (
+                <div className="absolute inset-0 border-2 border-emerald-400 rounded-lg pointer-events-none flex items-center justify-center bg-black/30">
+                  <span className="bg-emerald-950/90 text-emerald-200 border border-emerald-400/40 text-xs font-bold px-3 py-1.5 rounded-xl shadow-lg">
+                    ✓ Full Image Preserved · Centered on {bgColor} canvas with zero cut-off
+                  </span>
+                </div>
+              )}
+
             </div>
-
-            {/* Rendered Image */}
-            <img
-              ref={imageRef}
-              src={imageSrc}
-              alt="Adjustment Target"
-              className="max-w-none pointer-events-none select-none transition-transform duration-75"
-              style={{
-                transform: `translate(${pan.x}px, ${pan.y}px) rotate(${rotation}deg) scale(${zoom})`,
-                transformOrigin: 'center center',
-                ...(selectedPreset === 'contain' 
-                  ? { maxHeight: '82%', maxWidth: '82%', objectFit: 'contain' } 
-                  : { width: '100%', height: '100%', objectFit: 'cover' })
-              }}
-            />
-
-            {/* Instruction Badge */}
-            <div className="absolute bottom-2 left-2 z-30 bg-black/75 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-1 rounded-md pointer-events-none flex items-center gap-1 border border-white/20">
-              <Move className="w-3 h-3 text-amber-300" />
-              <span>Click & Drag to reposition</span>
-            </div>
-          </div>
-
+          ) : (
+            <div className="text-white text-xs">No image to display</div>
+          )}
         </div>
 
-        {/* Toolbar Controls */}
-        <div className="p-5 bg-white border-t border-slate-200 space-y-4">
+        {/* Bottom Toolbar */}
+        <div className="p-4 sm:p-5 bg-white border-t border-slate-200 space-y-3.5">
           
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             
-            {/* Zoom Slider */}
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-xs font-bold text-slate-700">
-                <span className="flex items-center gap-1.5">
-                  <ZoomIn className="w-3.5 h-3.5 text-[#5A1E65]" />
-                  <span>Zoom / Scale</span>
-                </span>
-                <span className="text-[#5A1E65]">{Math.round(zoom * 100)}%</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setZoom(z => Math.max(1, +(z - 0.1).toFixed(2)))}
-                  className="p-1 rounded-md border border-slate-200 hover:bg-slate-100"
-                >
-                  <ZoomOut className="w-3 h-3" />
-                </button>
-                <input
-                  type="range"
-                  min="1"
-                  max="3"
-                  step="0.05"
-                  value={zoom}
-                  onChange={(e) => setZoom(parseFloat(e.target.value))}
-                  className="w-full accent-[#5A1E65] cursor-pointer"
-                />
-                <button
-                  type="button"
-                  onClick={() => setZoom(z => Math.min(3, +(z + 0.1).toFixed(2)))}
-                  className="p-1 rounded-md border border-slate-200 hover:bg-slate-100"
-                >
-                  <ZoomIn className="w-3 h-3" />
-                </button>
-              </div>
+            {/* Rotation Controls */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-700">Rotate:</span>
+              <button
+                type="button"
+                onClick={() => setRotation(r => (r - 90 + 360) % 360)}
+                className="py-1 px-2.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-xs font-bold text-slate-700 flex items-center gap-1 transition-colors cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5 text-purple-700" />
+                <span>-90°</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setRotation(r => (r + 90) % 360)}
+                className="py-1 px-2.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-xs font-bold text-slate-700 flex items-center gap-1 transition-colors cursor-pointer"
+              >
+                <RotateCw className="w-3.5 h-3.5 text-purple-700" />
+                <span>+90°</span>
+              </button>
             </div>
 
-            {/* Rotate Controls */}
-            <div className="space-y-1">
-              <span className="block text-xs font-bold text-slate-700">Rotate Orientation</span>
+            {/* Tint Chooser for Contain Mode */}
+            {selectedPreset === 'contain' && (
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setRotation(r => (r - 90 + 360) % 360)}
-                  className="flex-1 py-1.5 px-3 rounded-xl border border-slate-200 hover:bg-slate-100 text-xs font-bold text-slate-700 flex items-center justify-center gap-1 transition-colors"
-                >
-                  <RotateCcw className="w-3.5 h-3.5 text-purple-700" />
-                  <span>-90°</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRotation(r => (r + 90) % 360)}
-                  className="flex-1 py-1.5 px-3 rounded-xl border border-slate-200 hover:bg-slate-100 text-xs font-bold text-slate-700 flex items-center justify-center gap-1 transition-colors"
-                >
-                  <RotateCw className="w-3.5 h-3.5 text-purple-700" />
-                  <span>+90°</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Background Canvas Tint (For Contain mode) */}
-            <div className="space-y-1">
-              <span className="block text-xs font-bold text-slate-700">Canvas Fill Tint</span>
-              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-700">Canvas Fill Tint:</span>
                 {[
                   { name: 'White', color: '#FFFFFF' },
                   { name: 'Soft Gray', color: '#F8FAFC' },
@@ -393,29 +603,41 @@ export default function ImageCropperModal({
                     type="button"
                     title={bg.name}
                     onClick={() => setBgColor(bg.color)}
-                    className={`w-7 h-7 rounded-lg border-2 transition-transform ${
+                    className={`w-6 h-6 rounded-md border-2 transition-transform cursor-pointer ${
                       bgColor === bg.color ? 'border-[#5A1E65] scale-110 shadow-xs' : 'border-slate-300'
                     }`}
                     style={{ backgroundColor: bg.color }}
                   />
                 ))}
               </div>
+            )}
+
+            {/* Live Dimension & Mode Indicator */}
+            <div className="text-[11px] font-bold text-slate-600 bg-slate-100 px-3 py-1 rounded-full border border-slate-200 ml-auto flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span>
+                {selectedPreset === 'original' 
+                  ? 'No Crop: 100% Original Frame' 
+                  : selectedPreset === 'free'
+                  ? `Free Crop: ${liveCropPixelW} × ${liveCropPixelH} px (Drag Any Handle)`
+                  : `${selectedPreset} Locked Crop`}
+              </span>
             </div>
 
           </div>
 
           {/* Action Buttons */}
           <div className="pt-2 flex items-center justify-between border-t border-slate-100">
-            <span className="text-[11px] text-slate-500 font-medium">
-              Produces high-resolution, web-optimized JPEG with zero distortion.
+            <span className="text-[11px] text-slate-500 font-medium hidden sm:inline">
+              Zero random cropping: If ratio is not selected, full image is saved untouched.
             </span>
 
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 ml-auto">
               <button
                 type="button"
                 onClick={onCancel}
                 disabled={isProcessing}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors"
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
               >
                 Cancel
               </button>
@@ -429,12 +651,14 @@ export default function ImageCropperModal({
                 {isProcessing ? (
                   <>
                     <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    <span>Processing Crop...</span>
+                    <span>Processing Image...</span>
                   </>
                 ) : (
                   <>
                     <Check className="w-4 h-4 text-white" />
-                    <span>Apply Adjusted Crop</span>
+                    <span>
+                      {selectedPreset === 'original' ? 'Save Full Image (No Crop)' : 'Apply Crop & Save'}
+                    </span>
                   </>
                 )}
               </button>
@@ -447,4 +671,3 @@ export default function ImageCropperModal({
     </div>
   );
 }
-

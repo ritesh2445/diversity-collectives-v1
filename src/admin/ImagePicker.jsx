@@ -10,7 +10,8 @@ import {
   Eye,
   RefreshCw,
   Crop,
-  Sliders
+  Sliders,
+  Maximize2
 } from 'lucide-react';
 import { DCVC_IMAGE_LIBRARY, uploadAndStoreImage, optimizeImageFile } from '../services/imageService.js';
 import ImageCropperModal from './ImageCropperModal.jsx';
@@ -28,12 +29,20 @@ export default function ImagePicker({
   const [showDirectUrlInput, setShowDirectUrlInput] = useState(false);
   const [showCropper, setShowCropper] = useState(false);
   const [cropperSource, setCropperSource] = useState(null);
+  const [previewFit, setPreviewFit] = useState('contain'); // 'contain' prevents artificial clipping in admin preview
+  const [uploadMode, setUploadMode] = useState('crop'); // 'crop' | 'direct'
   const fileInputRef = useRef(null);
 
-  // When user selects a file from computer, load into Cropper Studio first
+  // When user selects a file from computer
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (uploadMode === 'direct') {
+      handleDirectUploadFile(file);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = () => {
@@ -42,6 +51,25 @@ export default function ImagePicker({
     };
     reader.readAsDataURL(file);
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  // Direct upload without cropping
+  const handleDirectUploadFile = async (file) => {
+    if (!file) return;
+    try {
+      setIsOptimizing(true);
+      setOptimizeStatus('Optimizing & uploading original image...');
+      const optimized = await optimizeImageFile(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.88 });
+      const result = await uploadAndStoreImage(optimized.file || file);
+      onChange(result.url);
+      setOptimizeStatus('✓ Uploaded full original image (no crop)');
+      setTimeout(() => setOptimizeStatus(''), 4000);
+    } catch (err) {
+      alert('Upload failed: ' + err.message);
+      setOptimizeStatus('');
+    } finally {
+      setIsOptimizing(false);
+    }
   };
 
   // Open cropper for currently selected image
@@ -54,6 +82,7 @@ export default function ImagePicker({
   // Handle Cropper Apply
   const handleCropperApply = async (croppedFile, previewUrl) => {
     setShowCropper(false);
+    setCropperSource(null);
     try {
       setIsOptimizing(true);
       setOptimizeStatus('Optimizing & storing cropped image...');
@@ -62,7 +91,7 @@ export default function ImagePicker({
       onChange(result.url);
 
       const kbSaved = ((result.sizeBytes || 0) / 1024).toFixed(0);
-      setOptimizeStatus(`✓ Cropped & saved (${kbSaved} KB)`);
+      setOptimizeStatus(`✓ Image saved (${kbSaved} KB)`);
       setTimeout(() => setOptimizeStatus(''), 4000);
     } catch (err) {
       alert('Failed to process cropped image: ' + err.message);
@@ -82,29 +111,55 @@ export default function ImagePicker({
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <label className="block text-xs font-bold text-slate-800">{label}</label>
-        <button
-          type="button"
-          onClick={() => setShowDirectUrlInput(!showDirectUrlInput)}
-          className="text-[11px] text-purple-700 hover:text-purple-900 font-semibold cursor-pointer underline"
-        >
-          {showDirectUrlInput ? 'Hide URL field' : 'Edit URL directly'}
-        </button>
+        
+        <div className="flex items-center gap-2">
+          {value && (
+            <button
+              type="button"
+              onClick={() => setPreviewFit(f => f === 'contain' ? 'cover' : 'contain')}
+              className="text-[11px] font-bold text-slate-600 hover:text-[#5A1E65] px-2 py-0.5 rounded-md border border-slate-200 bg-white shadow-2xs cursor-pointer flex items-center gap-1"
+              title="Toggle preview framing: Whole Image preserves uncropped edges; Fill Card covers frame"
+            >
+              <Eye className="w-3 h-3 text-purple-700" />
+              <span>Preview: {previewFit === 'contain' ? 'Whole Image' : 'Fill Card'}</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setShowDirectUrlInput(!showDirectUrlInput)}
+            className="text-[11px] text-purple-700 hover:text-purple-900 font-semibold cursor-pointer underline"
+          >
+            {showDirectUrlInput ? 'Hide URL field' : 'Edit URL directly'}
+          </button>
+        </div>
       </div>
 
       {/* Main Image Preview & Drop Target */}
       <div className="relative rounded-2xl overflow-hidden border-2 border-dashed border-slate-300 hover:border-[#5A1E65] bg-slate-50 transition-all group">
-        <div className={`w-full ${aspectRatio} relative flex items-center justify-center bg-slate-900/5`}>
+        <div className={`w-full ${aspectRatio} relative flex items-center justify-center bg-slate-900/5 overflow-hidden`}>
           {value ? (
-            <img
-              src={value}
-              alt="Preview"
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                // Defensive fallback: if relative path fails, try local placeholder
-                e.currentTarget.onerror = null;
-                e.currentTarget.src = '/images/community-gathering.jpg';
-              }}
-            />
+            <>
+              {previewFit === 'contain' && (
+                <img 
+                  src={value} 
+                  alt="" 
+                  aria-hidden="true" 
+                  className="absolute inset-0 w-full h-full object-cover blur-xl opacity-20 scale-125 pointer-events-none" 
+                />
+              )}
+              <img
+                src={value}
+                alt="Preview"
+                className={`w-full h-full relative z-10 transition-transform duration-200 ${
+                  previewFit === 'contain' ? 'object-contain p-2' : 'object-cover'
+                }`}
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = '/images/community-gathering.jpg';
+                }}
+              />
+            </>
           ) : (
             <div className="text-center p-6 text-slate-400 space-y-2">
               <ImageIcon className="w-10 h-10 mx-auto text-slate-300" />
@@ -113,14 +168,28 @@ export default function ImagePicker({
           )}
 
           {/* Quick Action Overlay */}
-          <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 p-4">
+          <div className="absolute inset-0 z-20 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-wrap items-center justify-center gap-2 p-4">
             <button
               type="button"
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => {
+                setUploadMode('crop');
+                fileInputRef.current?.click();
+              }}
               className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-900 text-xs font-bold shadow-md cursor-pointer flex items-center gap-1.5"
             >
-              <Upload className="w-3.5 h-3.5 text-purple-700" />
-              <span>Upload New Picture</span>
+              <Crop className="w-3.5 h-3.5 text-purple-700" />
+              <span>Upload & Crop</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setUploadMode('direct');
+                fileInputRef.current?.click();
+              }}
+              className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md cursor-pointer flex items-center gap-1.5"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-white" />
+              <span>Upload Original (No Crop)</span>
             </button>
             <button
               type="button"
@@ -128,7 +197,7 @@ export default function ImagePicker({
               className="px-3 py-2 rounded-xl bg-[#5A1E65] hover:bg-purple-900 text-white text-xs font-bold shadow-md cursor-pointer flex items-center gap-1.5"
             >
               <FolderOpen className="w-3.5 h-3.5 text-amber-300" />
-              <span>Choose from Library</span>
+              <span>Library</span>
             </button>
             {value && (
               <button
@@ -168,12 +237,29 @@ export default function ImagePicker({
       <div className="flex flex-wrap items-center gap-2 pt-1">
         <button
           type="button"
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => {
+            setUploadMode('crop');
+            fileInputRef.current?.click();
+          }}
           disabled={isOptimizing}
           className="px-3 py-1.5 rounded-xl border border-slate-300 bg-white hover:bg-purple-50 hover:border-purple-300 text-slate-700 text-xs font-bold cursor-pointer flex items-center gap-1.5 transition-colors disabled:opacity-50"
         >
-          {isOptimizing ? <RefreshCw className="w-3.5 h-3.5 animate-spin text-purple-700" /> : <Upload className="w-3.5 h-3.5 text-purple-700" />}
-          <span>{isOptimizing ? 'Optimizing...' : 'Upload Picture'}</span>
+          {isOptimizing ? <RefreshCw className="w-3.5 h-3.5 animate-spin text-purple-700" /> : <Crop className="w-3.5 h-3.5 text-purple-700" />}
+          <span>Upload & Crop</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setUploadMode('direct');
+            fileInputRef.current?.click();
+          }}
+          disabled={isOptimizing}
+          className="px-3 py-1.5 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-950 text-xs font-bold cursor-pointer flex items-center gap-1.5 transition-colors shadow-2xs disabled:opacity-50"
+          title="Upload full image directly without cropping"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+          <span>Upload Original (No Crop)</span>
         </button>
 
         <button
@@ -182,7 +268,7 @@ export default function ImagePicker({
           className="px-3 py-1.5 rounded-xl border border-slate-300 bg-white hover:bg-purple-50 hover:border-purple-300 text-slate-700 text-xs font-bold cursor-pointer flex items-center gap-1.5 transition-colors"
         >
           <FolderOpen className="w-3.5 h-3.5 text-amber-600" />
-          <span>Select from DCVC Photos</span>
+          <span>DCVC Photos</span>
         </button>
 
         {value && (
@@ -218,60 +304,53 @@ export default function ImagePicker({
 
       {helpText && <p className="text-[11px] text-slate-500">{helpText}</p>}
 
-      {/* DCVC Photo Library Modal */}
+      {/* Library Selection Modal */}
       {showLibrary && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white rounded-3xl max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl border border-slate-100 overflow-hidden">
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-[9999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[85vh] shadow-2xl border border-purple-200 overflow-hidden flex flex-col">
             <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-              <div>
-                <h3 className="font-extrabold text-slate-900 text-base flex items-center gap-2">
-                  <FolderOpen className="w-5 h-5 text-[#5A1E65]" />
-                  <span>DCVC Center Photo Library</span>
+              <div className="flex items-center gap-2">
+                <FolderOpen className="w-5 h-5 text-purple-700" />
+                <h3 className="font-display font-bold text-slate-900 text-base">
+                  DCVC Photography & Brand Library
                 </h3>
-                <p className="text-xs text-slate-500">
-                  Select an authentic, pre-optimized community photo to use for this item.
-                </p>
               </div>
               <button
                 type="button"
                 onClick={() => setShowLibrary(false)}
-                className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-200 cursor-pointer"
+                className="p-1 rounded-full hover:bg-slate-200 text-slate-500"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-6 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            <div className="p-6 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 gap-3.5">
               {DCVC_IMAGE_LIBRARY.map((item) => (
                 <div
                   key={item.id}
                   onClick={() => handleSelectFromLibrary(item.path)}
-                  className={`group relative rounded-2xl overflow-hidden border-2 cursor-pointer transition-all hover:scale-[1.02] shadow-xs hover:shadow-md ${
-                    value === item.path ? 'border-[#5A1E65] ring-2 ring-purple-300' : 'border-slate-200 hover:border-purple-300'
+                  className={`group relative rounded-2xl overflow-hidden border-2 cursor-pointer transition-all aspect-video ${
+                    value === item.path
+                      ? 'border-[#5A1E65] ring-2 ring-purple-300 shadow-md'
+                      : 'border-slate-200 hover:border-purple-400'
                   }`}
                 >
-                  <div className="aspect-[4/3] bg-slate-100 overflow-hidden">
-                    <img
-                      src={item.path}
-                      alt={item.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src = '/images/community-gathering.jpg';
-                      }}
-                    />
-                  </div>
-                  <div className="p-2 bg-white text-left">
-                    <span className="text-[9px] font-black uppercase tracking-wider text-purple-700 block">
+                  <img
+                    src={item.path}
+                    alt={item.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex flex-col justify-end p-2">
+                    <span className="text-[10px] text-purple-200 font-bold uppercase tracking-wider">
                       {item.category}
                     </span>
-                    <p className="text-xs font-bold text-slate-800 truncate" title={item.name}>
+                    <span className="text-xs text-white font-bold truncate">
                       {item.name}
-                    </p>
+                    </span>
                   </div>
                   {value === item.path && (
-                    <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-[#5A1E65] text-white flex items-center justify-center shadow-md">
-                      <Check className="w-3.5 h-3.5" />
+                    <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-[#5A1E65] text-white flex items-center justify-center shadow-md">
+                      <Check className="w-3 h-3 stroke-[3]" />
                     </div>
                   )}
                 </div>
@@ -298,7 +377,7 @@ export default function ImagePicker({
       {showCropper && cropperSource && (
         <ImageCropperModal
           imageSrc={cropperSource}
-          initialAspect={aspectRatio.includes('16/9') ? '16:9' : aspectRatio.includes('1/1') ? '1:1' : '16:9'}
+          initialAspect="original"
           onApply={handleCropperApply}
           onCancel={() => {
             setShowCropper(false);
@@ -309,4 +388,3 @@ export default function ImagePicker({
     </div>
   );
 }
-
