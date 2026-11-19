@@ -18,12 +18,22 @@ import { useLiveOrgInfo } from '../hooks/useCmsLive';
 import SendVoicemailButton from '../components/SendVoicemailButton';
 import CardSpotlight from '../components/CardSpotlight';
 import MobileCarousel from '../components/MobileCarousel';
+import { resolveCategoryTheme, loadCategoryThemes } from '../utils/cardGradients.js';
 
 export default function Resources() {
   const liveOrg = useLiveOrgInfo();
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [categoryThemes, setCategoryThemes] = useState(loadCategoryThemes);
   const [dirGroups, setDirGroups] = useState(() => cmsStore.getResources() || resourcesDirectory);
+
+  useEffect(() => {
+    const handleThemesUpdate = (e) => {
+      setCategoryThemes(e.detail || loadCategoryThemes());
+    };
+    window.addEventListener('dcvc:category-themes-updated', handleThemesUpdate);
+    return () => window.removeEventListener('dcvc:category-themes-updated', handleThemesUpdate);
+  }, []);
 
   useEffect(() => {
     return cmsStore.subscribe((data) => {
@@ -154,37 +164,78 @@ export default function Resources() {
           </div>
         ) : (
           <div className="space-y-16">
-            {filteredCategories.map((catGroup) => (
+            {filteredCategories.map((catGroup) => {
+              const groupTheme = resolveCategoryTheme(catGroup.category, null, categoryThemes);
+              return (
               <div key={catGroup.category} className="space-y-6">
                 
                 <div className="flex items-center gap-3 pb-3 border-b border-slate-200">
+                  <span
+                    className="w-3.5 h-3.5 rounded-full border shadow-2xs shrink-0"
+                    style={{ background: groupTheme.gradient || groupTheme.fromColor }}
+                  />
                   <h2 className="font-display text-2xl font-black text-slate-950">
                     {catGroup.category}
                   </h2>
-                  <span className="text-xs font-black text-[#5A1E65] bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-200">
+                  <span
+                    className="text-xs font-black px-2.5 py-0.5 rounded-full border"
+                    style={{
+                      backgroundColor: groupTheme.badgeBg,
+                      color: groupTheme.badgeText,
+                      borderColor: groupTheme.badgeBorder
+                    }}
+                  >
                     {catGroup.items.length} Providers
                   </span>
                 </div>
 
                 <MobileCarousel cols={2} autoScrollMs={0} className="perspective-1000" cardClassName="h-full flex flex-col">
-                  {catGroup.items.map((item) => (
+                  {catGroup.items.map((item) => {
+                    const itemTheme = resolveCategoryTheme(catGroup.category, item.cardTheme, categoryThemes);
+                    return (
                     <CardSpotlight 
                       key={item.name}
-                      className="glass-card p-6 sm:p-7 rounded-3xl border-2 border-slate-200/90 hover:border-[#5A1E65]/80 transition-all duration-300 shadow-sm hover:shadow-xl flex flex-col justify-between interactive-card-3d"
+                      className="p-6 sm:p-7 rounded-3xl transition-all duration-300 shadow-sm hover:shadow-xl flex flex-col justify-between interactive-card-3d relative overflow-hidden backdrop-blur-xs group"
+                      style={{
+                        background: itemTheme.gradient,
+                        border: `2px solid ${itemTheme.borderColor || '#cbd5e1'}`,
+                        boxShadow: `0 8px 24px -4px ${itemTheme.borderColor}35`
+                      }}
                       tilt={true}
-                      maxTilt={5}
+                      maxTilt={4.5}
                       glare={true}
                     >
-                      <div className="space-y-2.5 mb-4">
-                        <h3 className="font-display text-xl font-bold text-slate-950">
+                      <div className="space-y-3 mb-4">
+                        <div className="flex items-center justify-between">
+                          <span
+                            className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border shadow-2xs"
+                            style={{
+                              backgroundColor: itemTheme.badgeBg,
+                              color: itemTheme.badgeText,
+                              borderColor: itemTheme.badgeBorder
+                            }}
+                          >
+                            {catGroup.category}
+                          </span>
+                          {item.verified !== false && (
+                            <span className="text-[10px] font-bold text-slate-600 bg-white/70 px-2 py-0.5 rounded-full border border-white/80 shadow-2xs">
+                              ✓ Verified
+                            </span>
+                          )}
+                        </div>
+
+                        <h3
+                          className="font-display text-xl sm:text-2xl font-black tracking-tight"
+                          style={{ color: itemTheme.textColor }}
+                        >
                           {item.name}
                         </h3>
-                        <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-medium">
+                        <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-medium">
                           {item.notes}
                         </p>
                       </div>
 
-                      <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
+                      <div className="pt-4 border-t border-slate-900/10 flex flex-wrap items-center justify-between gap-3 text-xs">
                         {item.phone ? (
                           (item.voicemailOnly || liveOrg.voicemailOnly) ? (
                             <SendVoicemailButton
@@ -195,14 +246,20 @@ export default function Resources() {
                           ) : (
                             <a
                               href={`tel:${item.phone.replace(/[^0-9+]/g, '')}`}
-                              className="inline-flex items-center gap-1.5 font-bold text-[#5A1E65] hover:underline bg-purple-50/80 px-3 py-1.5 rounded-full border border-purple-200"
+                              className="inline-flex items-center gap-1.5 font-bold hover:underline bg-white/85 px-3 py-1.5 rounded-full border shadow-2xs transition-all hover:scale-102"
+                              style={{
+                                color: itemTheme.accentColor,
+                                borderColor: itemTheme.borderColor
+                              }}
                             >
                               <Phone className="w-3.5 h-3.5" />
                               <span>{item.phone}</span>
                             </a>
                           )
                         ) : (
-                          <span className="text-slate-400 italic font-medium">Verified Online Portal</span>
+                          <span className="text-slate-600 italic font-medium bg-white/60 px-2.5 py-1 rounded-full border border-white/70 text-[11px]">
+                            Verified Online Portal
+                          </span>
                         )}
 
                         {item.url && (
@@ -210,7 +267,10 @@ export default function Resources() {
                             href={item.url}
                             target={item.url.startsWith('http') ? '_blank' : '_self'}
                             rel="noopener noreferrer"
-                            className="btn-primary py-2 px-4 text-xs font-bold inline-flex items-center gap-1 shadow-sm"
+                            className="py-2.5 px-4 rounded-xl text-xs font-bold text-white shadow-md hover:shadow-lg transition-all hover:scale-102 inline-flex items-center gap-1"
+                            style={{
+                              backgroundColor: itemTheme.accentColor
+                            }}
                           >
                             <span>Access Service</span>
                             <ArrowUpRight className="w-3.5 h-3.5" />
@@ -218,11 +278,13 @@ export default function Resources() {
                         )}
                       </div>
                     </CardSpotlight>
-                  ))}
+                    );
+                  })}
                 </MobileCarousel>
 
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

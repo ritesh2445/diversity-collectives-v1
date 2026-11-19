@@ -26,10 +26,20 @@ import { submitInquiry } from '../services/api';
 import CardSpotlight from '../components/CardSpotlight';
 import MobileCarousel from '../components/MobileCarousel';
 import { useScrollLock } from '../utils/scrollLock';
+import { resolveCategoryTheme, loadCategoryThemes } from '../utils/cardGradients.js';
 
 export default function Community() {
   const communityGroups = useLiveCommunityGroups();
   const [selectedFilter, setSelectedFilter] = useState('All');
+  const [categoryThemes, setCategoryThemes] = useState(loadCategoryThemes);
+
+  useEffect(() => {
+    const handleThemesUpdate = (e) => {
+      setCategoryThemes(e.detail || loadCategoryThemes());
+    };
+    window.addEventListener('dcvc:category-themes-updated', handleThemesUpdate);
+    return () => window.removeEventListener('dcvc:category-themes-updated', handleThemesUpdate);
+  }, []);
   
   // Modals state
   const [activeGroupModal, setActiveGroupModal] = useState(null);
@@ -183,41 +193,68 @@ export default function Community() {
             const annCount = enriched?.announcements?.length || 0;
             const blogCount = enriched?.blogPosts?.length || 0;
 
+            const groupTheme = resolveCategoryTheme(group.category, group.cardTheme, categoryThemes);
+
             return (
               <CardSpotlight
                 key={group.name}
-                className="glass-card p-7 sm:p-8 rounded-3xl border-2 border-slate-200/90 hover:border-[#5A1E65]/80 shadow-sm hover:shadow-xl transition-all duration-200 flex flex-col justify-between"
-                tilt={false}
-                glare={false}
+                className="p-7 sm:p-8 rounded-3xl transition-all duration-300 shadow-md hover:shadow-2xl flex flex-col justify-between interactive-card-3d relative overflow-hidden backdrop-blur-xs group"
+                style={{
+                  background: groupTheme.gradient,
+                  border: `2px solid ${groupTheme.borderColor || '#cbd5e1'}`,
+                  boxShadow: `0 10px 25px -5px ${groupTheme.borderColor}35`
+                }}
+                tilt={true}
+                maxTilt={3.5}
+                glare={true}
               >
                 <div className="space-y-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-[#5A1E65] bg-purple-50 border border-purple-200/80 px-3 py-1 rounded-full shadow-xs">
+                    <span
+                      className="text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full border shadow-2xs"
+                      style={{
+                        backgroundColor: groupTheme.badgeBg,
+                        color: groupTheme.badgeText,
+                        borderColor: groupTheme.badgeBorder
+                      }}
+                    >
                       {group.category}
                     </span>
-                    <span className="text-xs text-slate-500 font-bold bg-slate-100 px-2.5 py-0.5 rounded-full">
+                    <span className="text-xs text-slate-700 font-bold bg-white/70 backdrop-blur-xs px-2.5 py-0.5 rounded-full border border-white/80">
                       {group.ages}
                     </span>
                   </div>
 
-                  <h2 className="font-display text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
+                  <h2
+                    className="font-display text-2xl sm:text-3xl font-black tracking-tight"
+                    style={{ color: groupTheme.textColor }}
+                  >
                     {group.name}
                   </h2>
 
-                  <p className="text-sm text-slate-600 leading-relaxed font-medium">
+                  <p className="text-sm text-slate-700 leading-relaxed font-medium">
                     {group.description}
                   </p>
 
-                  <div className="p-4 bg-slate-50/90 rounded-2xl border border-slate-200 space-y-2 text-xs">
+                  <div
+                    className="p-4 bg-white/75 backdrop-blur-xs rounded-2xl border space-y-2 text-xs"
+                    style={{ borderColor: groupTheme.badgeBorder }}
+                  >
                     <div className="flex items-center gap-2.5">
-                      <Clock className="w-4 h-4 text-[#5A1E65] flex-shrink-0" />
+                      <Clock
+                        className="w-4 h-4 flex-shrink-0"
+                        style={{ color: groupTheme.accentColor }}
+                      />
                       <span className="font-bold text-slate-900">Meets:</span>
-                      <span className="text-slate-600 font-medium">{group.frequency}</span>
+                      <span className="text-slate-700 font-medium">{group.frequency}</span>
                     </div>
                     <div className="flex items-center gap-2.5">
-                      <MapPin className="w-4 h-4 text-[#5A1E65] flex-shrink-0" />
+                      <MapPin
+                        className="w-4 h-4 flex-shrink-0"
+                        style={{ color: groupTheme.accentColor }}
+                      />
                       <span className="font-bold text-slate-900">Location:</span>
-                      <span className="text-slate-600 font-medium">{group.location}</span>
+                      <span className="text-slate-700 font-medium">{group.location}</span>
                     </div>
                   </div>
 
@@ -228,7 +265,7 @@ export default function Community() {
                         <button
                           type="button"
                           onClick={() => handleOpenDetails(group, 'announcements')}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100 transition-colors"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100 transition-colors cursor-pointer"
                         >
                           <Bell className="w-3 h-3 text-amber-700" />
                           <span>{annCount} Active {annCount === 1 ? 'Announcement' : 'Announcements'}</span>
@@ -238,9 +275,13 @@ export default function Community() {
                         <button
                           type="button"
                           onClick={() => handleOpenDetails(group, 'blog')}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-50 text-[#5A1E65] border border-purple-200 hover:bg-purple-100 transition-colors"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white text-slate-800 border hover:bg-white/90 transition-colors cursor-pointer"
+                          style={{
+                            borderColor: groupTheme.badgeBorder,
+                            color: groupTheme.accentColor
+                          }}
                         >
-                          <BookOpen className="w-3 h-3 text-purple-600" />
+                          <BookOpen className="w-3 h-3" />
                           <span>{blogCount} {blogCount === 1 ? 'Story' : 'Stories'} & Blog</span>
                         </button>
                       )}
@@ -249,15 +290,16 @@ export default function Community() {
                 </div>
 
                 {/* Primary Action Buttons: Read Details & Join Community */}
-                <div className="pt-6 mt-6 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 relative z-20">
+                <div className="pt-6 mt-6 border-t border-slate-900/10 flex flex-wrap items-center justify-between gap-3 relative z-20">
                   <div className="flex flex-wrap items-center gap-2.5">
                     {/* Read Details Button */}
                     <button
                       type="button"
                       onClick={() => handleOpenDetails(group, 'details')}
-                      className="btn-secondary py-2.5 px-4 text-xs font-bold inline-flex items-center gap-1.5 bg-white border border-slate-300 hover:border-purple-400 shadow-2xs hover:shadow-xs transition-all cursor-pointer"
+                      className="py-2.5 px-4 text-xs font-bold inline-flex items-center gap-1.5 bg-white/90 hover:bg-white border text-slate-800 rounded-xl shadow-2xs hover:shadow-xs transition-all cursor-pointer"
+                      style={{ borderColor: groupTheme.borderColor }}
                     >
-                      <Info className="w-3.5 h-3.5 text-[#5A1E65]" />
+                      <Info className="w-3.5 h-3.5" style={{ color: groupTheme.accentColor }} />
                       <span>Read Details</span>
                     </button>
 
@@ -265,7 +307,8 @@ export default function Community() {
                     <button
                       type="button"
                       onClick={() => handleOpenJoin(group)}
-                      className="btn-primary py-2.5 px-4 text-xs font-bold inline-flex items-center gap-1.5 shadow-sm hover:shadow-md transition-all cursor-pointer"
+                      className="py-2.5 px-4 text-xs font-bold inline-flex items-center gap-1.5 text-white rounded-xl shadow-md hover:shadow-lg hover:scale-102 transition-all cursor-pointer"
+                      style={{ backgroundColor: groupTheme.accentColor }}
                     >
                       <Users className="w-3.5 h-3.5 text-white" />
                       <span>Join Community</span>
@@ -275,10 +318,14 @@ export default function Community() {
                   {/* Direct Facilitator Email */}
                   <a
                     href={`mailto:${group.contact}?subject=Inquiry%20Regarding%20${encodeURIComponent(group.name)}`}
-                    className="text-xs font-bold text-[#5A1E65] hover:underline flex items-center gap-1 bg-purple-50/80 px-3 py-2 rounded-xl border border-purple-200"
+                    className="text-xs font-bold hover:underline flex items-center gap-1 bg-white/85 px-3 py-2 rounded-xl border shadow-2xs"
+                    style={{
+                      color: groupTheme.accentColor,
+                      borderColor: groupTheme.borderColor
+                    }}
                     title="Direct contact with facilitators"
                   >
-                    <Mail className="w-3.5 h-3.5 text-[#5A1E65]" />
+                    <Mail className="w-3.5 h-3.5" style={{ color: groupTheme.accentColor }} />
                     <span className="hidden sm:inline">Facilitators</span>
                   </a>
                 </div>

@@ -37,6 +37,7 @@ import {
 import ImagePicker from './ImagePicker.jsx';
 import MultiImagePicker from './MultiImagePicker.jsx';
 import AutoSlideImage from '../../components/AutoSlideImage.jsx';
+import CardGradientStudio from './CardGradientStudio.jsx';
 import PictureFolderManager from './PictureFolderManager.jsx';
 import StyleCustomizer from './StyleCustomizer.jsx';
 import NewsWritingPad from './NewsWritingPad.jsx';
@@ -69,6 +70,7 @@ import {
   DEFAULT_CMS_SEED
 } from '../services/cmsClient.js';
 import { parseEventDate, normalizeCmsEvent } from '../../utils/eventDates.js';
+import { resolveCategoryTheme } from '../../utils/cardGradients.js';
 import { SYNC_EVENTS } from '../../services/liveSync.js';
 
 export default function CmsStudio() {
@@ -699,6 +701,7 @@ export default function CmsStudio() {
     { id: 'resources', label: 'Community Resources', count: cmsData.resources?.length || 0, icon: BookOpen },
     { id: 'staff', label: 'Board & Staff', count: cmsData.staff?.length || 0, icon: Users },
     { id: 'gallery', label: 'Gallery & Memory Lane', count: (cmsData.gallery?.length || 0) + (cmsData.memoryLane?.length || 0), icon: Camera },
+    { id: 'cardGradients', label: 'Card Gradients & Colors', count: null, icon: Palette },
     { id: 'settings', label: 'Global Site Settings', count: null, icon: Settings }
   ];
 
@@ -1307,48 +1310,64 @@ export default function CmsStudio() {
             </button>
           </div>
 
+          {/* Interactive Card Gradient & Color Theme Studio */}
+          <CardGradientStudio onThemesChanged={refreshData} />
+
           <div className="space-y-3">
-            {cmsData.resources?.map((res) => (
-              <div
-                key={res.id}
-                className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-purple-300 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4"
-              >
-                <div className="space-y-1.5 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-900 font-black text-[10px] uppercase">
-                      {res.category}
-                    </span>
-                    {res.urgent && (
-                      <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-900 font-black text-[10px] animate-pulse">
-                        🚨 24/7 Crisis Hotline
+            {cmsData.resources?.map((res) => {
+              const resTheme = resolveCategoryTheme(res.category);
+              return (
+                <div
+                  key={res.id}
+                  className="p-5 rounded-2xl border shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all"
+                  style={{
+                    background: `linear-gradient(135deg, ${resTheme.gradientFrom}, ${resTheme.gradientVia || resTheme.gradientFrom}, ${resTheme.gradientTo})`,
+                    borderColor: resTheme.borderColor || '#e2e8f0'
+                  }}
+                >
+                  <div className="space-y-1.5 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="px-2.5 py-0.5 rounded-full font-black text-[10px] uppercase shadow-2xs"
+                        style={{
+                          backgroundColor: `${resTheme.accentColor}18`,
+                          color: resTheme.accentColor,
+                          border: `1px solid ${resTheme.accentColor}40`
+                        }}
+                      >
+                        {res.category}
                       </span>
-                    )}
-                    {res.verified && (
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">
-                        ✓ Verified Partner
+                      {res.urgent && (
+                        <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-900 font-black text-[10px] animate-pulse">
+                          🚨 24/7 Crisis Hotline
+                        </span>
+                      )}
+                      {res.verified && (
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">
+                          ✓ Verified Partner
+                        </span>
+                      )}
+                    </div>
+
+                    <h4 className="font-display text-base font-black text-slate-950">
+                      {res.name}
+                    </h4>
+
+                    <p className="text-xs text-slate-600 max-w-3xl leading-relaxed">
+                      {res.description}
+                    </p>
+
+                    <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-500 pt-1">
+                      <span className="flex items-center gap-1 font-bold" style={{ color: resTheme.accentColor }}>
+                        <Phone className="w-3.5 h-3.5" />
+                        <span>{res.phone}</span>
                       </span>
-                    )}
+                      <span className="flex items-center gap-1">
+                        <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                        <span>{res.address}</span>
+                      </span>
+                    </div>
                   </div>
-
-                  <h4 className="font-display text-base font-black text-slate-950">
-                    {res.name}
-                  </h4>
-
-                  <p className="text-xs text-slate-600 max-w-3xl leading-relaxed">
-                    {res.description}
-                  </p>
-
-                  <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-500 pt-1">
-                    <span className="flex items-center gap-1 text-purple-700">
-                      <Phone className="w-3.5 h-3.5" />
-                      <span>{res.phone}</span>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                      <span>{res.address}</span>
-                    </span>
-                  </div>
-                </div>
 
                 <div className="flex items-center gap-2 self-start md:self-center">
                   <button
@@ -1369,8 +1388,9 @@ export default function CmsStudio() {
                   </button>
                 </div>
               </div>
-            ))}
-          </div>
+            );
+          })}
+        </div>
         </div>
       )}
 
@@ -2019,6 +2039,15 @@ export default function CmsStudio() {
       )}
 
       {/* ======================================================================
+          SUB-TAB 8: CARD GRADIENTS & COLOR THEMES
+          ====================================================================== */}
+      {activeSubTab === 'cardGradients' && (
+        <div className="space-y-6">
+          <CardGradientStudio onThemesChanged={refreshData} />
+        </div>
+      )}
+
+      {/* ======================================================================
           CREATE / EDIT CONTENT MODAL
           ====================================================================== */}
       {modalType && (
@@ -2559,14 +2588,40 @@ export default function CmsStudio() {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">Category</label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-bold text-slate-700">Category</label>
+                        {formData.category && (
+                          <span
+                            className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full border shadow-2xs"
+                            style={{
+                              color: resolveCategoryTheme(formData.category).accentColor,
+                              backgroundColor: `${resolveCategoryTheme(formData.category).accentColor}15`,
+                              borderColor: `${resolveCategoryTheme(formData.category).accentColor}40`
+                            }}
+                          >
+                            Live Gradient Theme
+                          </span>
+                        )}
+                      </div>
                       <input
                         type="text"
                         required
+                        list="resource-categories-list"
                         value={formData.category || ''}
                         onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                        placeholder="e.g. Health & Wellness, Mental Health..."
                         className="w-full px-3 py-2 border rounded-xl text-xs"
                       />
+                      <datalist id="resource-categories-list">
+                        <option value="Health & Wellness" />
+                        <option value="Mental Health" />
+                        <option value="Housing & Shelter" />
+                        <option value="Legal & Advocacy" />
+                        <option value="Youth & Families" />
+                        <option value="Community & Social" />
+                        <option value="Crisis Support" />
+                        <option value="Harm Reduction" />
+                      </datalist>
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1">Phone</label>
