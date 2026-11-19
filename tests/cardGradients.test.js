@@ -110,4 +110,30 @@ test('Card Gradient & Category Theme Engine', async (t) => {
       delete globalThis.localStorage;
     }
   });
+
+  await t.test('P.R.I.D.E. Training categories have distinct aesthetic gradients & Clinical avoids green', () => {
+    // Clinical & Healthcare workshop
+    const clinical = resolveCategoryTheme('Clinical & Healthcare');
+    assert.ok(clinical.gradient, 'Clinical training must have a gradient');
+    const clinicalPalette = `${clinical.fromColor} ${clinical.viaColor} ${clinical.toColor} ${clinical.borderColor} ${clinical.accentColor}`.toLowerCase();
+    assert.strictEqual(clinicalPalette.includes('green'), false, 'Clinical training must not use green');
+    assert.strictEqual(clinical.accentColor, '#0284c7', 'Clinical training should use calming sky-blue accent');
+
+    // Foundational Certification
+    const foundational = resolveCategoryTheme('Foundational Certification');
+    assert.strictEqual(foundational.accentColor, '#7e22ce');
+
+    // Schools & Youth Groups
+    const schools = resolveCategoryTheme('Schools & Youth Groups');
+    assert.strictEqual(schools.accentColor, '#db2777');
+
+    // Corporate & Workplace Equity
+    const corporate = resolveCategoryTheme('Corporate & Workplace Equity');
+    assert.strictEqual(corporate.accentColor, '#4f46e5');
+
+    // Fuzzy matching on training course title
+    const fuzzyCourse = resolveCategoryTheme('P.R.I.D.E. Cultural Competency Workshop');
+    assert.ok(fuzzyCourse.gradient);
+    assert.strictEqual(fuzzyCourse.accentColor, '#7e22ce');
+  });
 });

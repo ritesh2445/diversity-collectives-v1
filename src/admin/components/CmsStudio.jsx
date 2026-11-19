@@ -1695,52 +1695,76 @@ export default function CmsStudio() {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {(cmsData.trainings || []).map((course) => (
-              <div
-                key={course.slug || course.id || course.title}
-                className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between gap-4"
-              >
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-purple-100 text-[#5A1E65]">
-                      {course.badge || 'P.R.I.D.E. Workshop'}
-                    </span>
-                    <span className="text-[11px] font-bold text-slate-600">
-                      {course.duration || 'Tailored Session'}
-                    </span>
-                  </div>
-                  <h4 className="font-display text-base font-extrabold text-slate-950">
-                    {course.title}
-                  </h4>
-                  <p className="text-xs text-slate-700 leading-relaxed line-clamp-3">
-                    {course.summary}
-                  </p>
-                  <p className="text-[11px] text-slate-600 font-semibold">
-                    Audience: {course.targetAudience || 'Organizations & Educators'}
-                  </p>
-                </div>
+          {/* Interactive Card Gradient & Color Theme Studio for Trainings */}
+          <CardGradientStudio onThemesChanged={refreshData} defaultSection="trainings" />
 
-                <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200">
-                  <button
-                    type="button"
-                    onClick={() => openEditModal('training', course)}
-                    className="px-3 py-1.5 rounded-xl text-purple-800 hover:bg-purple-50 border border-purple-200 text-xs font-bold inline-flex items-center gap-1 cursor-pointer"
-                  >
-                    <Edit className="w-3.5 h-3.5" />
-                    <span>Edit</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteItem('training', course.slug || course.id)}
-                    className="px-3 py-1.5 rounded-xl text-rose-700 hover:bg-rose-50 border border-rose-200 text-xs font-bold inline-flex items-center gap-1 cursor-pointer"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    <span>Delete</span>
-                  </button>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {(cmsData.trainings || []).map((course) => {
+              const courseTheme = resolveCategoryTheme(course.badge || course.title);
+              return (
+                <div
+                  key={course.slug || course.id || course.title}
+                  className="p-5 rounded-2xl border shadow-xs flex flex-col justify-between gap-4 transition-all"
+                  style={{
+                    background: courseTheme.gradient || `linear-gradient(135deg, ${courseTheme.fromColor} 0%, ${courseTheme.viaColor || courseTheme.fromColor} 50%, ${courseTheme.toColor} 100%)`,
+                    borderColor: courseTheme.borderColor || '#cbd5e1'
+                  }}
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span
+                        className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase shadow-2xs"
+                        style={{
+                          backgroundColor: `${courseTheme.accentColor}18`,
+                          color: courseTheme.accentColor,
+                          border: `1px solid ${courseTheme.accentColor}40`
+                        }}
+                      >
+                        {course.badge || 'P.R.I.D.E. Workshop'}
+                      </span>
+                      <span className="text-[11px] font-bold text-slate-600 bg-white/70 px-2.5 py-0.5 rounded-full">
+                        {course.duration || 'Tailored Session'}
+                      </span>
+                    </div>
+                    <h4
+                      className="font-display text-base font-extrabold tracking-tight"
+                      style={{ color: courseTheme.textColor || '#0f172a' }}
+                    >
+                      {course.title}
+                    </h4>
+                    <p className="text-xs text-slate-700 leading-relaxed line-clamp-3">
+                      {course.summary}
+                    </p>
+                    <p className="text-[11px] text-slate-600 font-semibold">
+                      Audience: {course.targetAudience || 'Organizations & Educators'}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-900/10">
+                    <button
+                      type="button"
+                      onClick={() => openEditModal('training', course)}
+                      className="px-3 py-1.5 rounded-xl bg-white/80 hover:bg-white border text-xs font-bold inline-flex items-center gap-1 cursor-pointer transition-colors"
+                      style={{
+                        color: courseTheme.accentColor,
+                        borderColor: `${courseTheme.accentColor}40`
+                      }}
+                    >
+                      <Edit className="w-3.5 h-3.5" />
+                      <span>Edit</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteItem('training', course.slug || course.id)}
+                      className="px-3 py-1.5 rounded-xl text-rose-700 hover:bg-rose-50 border border-rose-200 text-xs font-bold inline-flex items-center gap-1 cursor-pointer bg-white"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Delete</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -2991,13 +3015,37 @@ export default function CmsStudio() {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">Badge Label</label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-bold text-slate-700">Badge / Category</label>
+                        {formData.badge && (
+                          <span
+                            className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full border shadow-2xs"
+                            style={{
+                              color: resolveCategoryTheme(formData.badge).accentColor,
+                              backgroundColor: `${resolveCategoryTheme(formData.badge).accentColor}15`,
+                              borderColor: `${resolveCategoryTheme(formData.badge).accentColor}40`
+                            }}
+                          >
+                            Live Theme
+                          </span>
+                        )}
+                      </div>
                       <input
                         type="text"
+                        list="training-badges-list"
                         value={formData.badge || ''}
                         onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
+                        placeholder="e.g. Foundational Certification, Clinical & Healthcare..."
                         className="w-full px-3 py-2 border rounded-xl text-xs"
                       />
+                      <datalist id="training-badges-list">
+                        <option value="Foundational Certification" />
+                        <option value="Clinical & Healthcare" />
+                        <option value="Schools & Youth Groups" />
+                        <option value="Corporate & Workplace Equity" />
+                        <option value="Law Enforcement & First Responders" />
+                        <option value="Mental Health Providers" />
+                      </datalist>
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1">Session Format / Duration</label>

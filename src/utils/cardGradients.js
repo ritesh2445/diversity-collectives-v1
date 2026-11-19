@@ -161,8 +161,117 @@ export const DEFAULT_CATEGORY_THEMES = {
     badgeBg: '#ccfbf1',
     badgeText: '#0f766e',
     badgeBorder: '#99f6e4'
+  },
+
+  // P.R.I.D.E. Educational Training Categories
+  'Foundational Certification': {
+    name: 'Royal Plum & Orchid (Certification)',
+    fromColor: '#f5f3ff',
+    viaColor: '#ede9fe',
+    toColor: '#fae8ff',
+    gradient: 'linear-gradient(135deg, #f5f3ff 0%, #ede9fe 50%, #fae8ff 100%)',
+    borderColor: '#c084fc',
+    borderHoverColor: '#7e22ce',
+    textColor: '#3b0764',
+    accentColor: '#7e22ce',
+    badgeBg: '#f3e8ff',
+    badgeText: '#6b21a8',
+    badgeBorder: '#d8b4fe'
+  },
+  'Clinical & Healthcare': {
+    name: 'Ocean Cyan & Periwinkle (Clinical Affirmation)',
+    fromColor: '#e0f2fe', // soft sky
+    viaColor: '#ecfeff',  // soft cyan
+    toColor: '#e0e7ff',   // soft indigo/periwinkle
+    gradient: 'linear-gradient(135deg, #e0f2fe 0%, #ecfeff 50%, #e0e7ff 100%)',
+    borderColor: '#7dd3fc',
+    borderHoverColor: '#0284c7',
+    textColor: '#0c4a6e',
+    accentColor: '#0284c7',
+    badgeBg: '#e0f2fe',
+    badgeText: '#0369a1',
+    badgeBorder: '#bae6fd'
+  },
+  'Schools & Youth Groups': {
+    name: 'Lavender Sunset & Peach (Affirming Youth)',
+    fromColor: '#f3e8ff',
+    viaColor: '#ffedd5',
+    toColor: '#fdf2f8',
+    gradient: 'linear-gradient(135deg, #f3e8ff 0%, #ffedd5 50%, #fdf2f8 100%)',
+    borderColor: '#f472b6',
+    borderHoverColor: '#db2777',
+    textColor: '#831843',
+    accentColor: '#db2777',
+    badgeBg: '#fce7f3',
+    badgeText: '#be185d',
+    badgeBorder: '#fbcfe8'
+  },
+  'Corporate & Workplace Equity': {
+    name: 'Sapphire & Twilight (Corporate Inclusion)',
+    fromColor: '#e0e7ff',
+    viaColor: '#e0f2fe',
+    toColor: '#f1f5f9',
+    gradient: 'linear-gradient(135deg, #e0e7ff 0%, #e0f2fe 50%, #f1f5f9 100%)',
+    borderColor: '#818cf8',
+    borderHoverColor: '#4f46e5',
+    textColor: '#1e1b4b',
+    accentColor: '#4f46e5',
+    badgeBg: '#e0e7ff',
+    badgeText: '#3730a3',
+    badgeBorder: '#c7d2fe'
+  },
+  'Law Enforcement & First Responders': {
+    name: 'Slate Twilight & Blue (Public Safety)',
+    fromColor: '#f1f5f9',
+    viaColor: '#e2e8f0',
+    toColor: '#e0e7ff',
+    gradient: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 50%, #e0e7ff 100%)',
+    borderColor: '#94a3b8',
+    borderHoverColor: '#2563eb',
+    textColor: '#0f172a',
+    accentColor: '#2563eb',
+    badgeBg: '#f1f5f9',
+    badgeText: '#1e3a8a',
+    badgeBorder: '#cbd5e1'
   }
 };
+
+export const THEME_SECTIONS = [
+  {
+    id: 'trainings',
+    label: 'P.R.I.D.E. Trainings',
+    categories: [
+      'Foundational Certification',
+      'Clinical & Healthcare',
+      'Schools & Youth Groups',
+      'Corporate & Workplace Equity',
+      'Law Enforcement & First Responders'
+    ]
+  },
+  {
+    id: 'resources',
+    label: 'Community Resources',
+    categories: [
+      'Health & Sexual Wellness',
+      'Crisis & Immediate Helplines',
+      'Youth & Family Support',
+      'Senior & Community Resources'
+    ]
+  },
+  {
+    id: 'community',
+    label: 'Community Groups',
+    categories: [
+      'Youth Peer Support',
+      'Adult Peer Support',
+      'Trans & Non-Binary Support',
+      'Seniors / 55+',
+      'Professional & Personal Growth',
+      'Family & Ally Support',
+      'Recovery & Wellness'
+    ]
+  }
+];
 
 export const GRADIENT_PALETTE_PRESETS = [
   {
@@ -335,8 +444,23 @@ export function resolveCategoryTheme(category, customCardTheme = null, themesMap
     if (normalized.includes('recovery') || normalized.includes('sober')) {
       return allThemes['Recovery & Wellness'];
     }
+    if (normalized.includes('foundational') || normalized.includes('pride') || normalized.includes('competency')) {
+      return allThemes['Foundational Certification'] || allThemes['Youth Peer Support'];
+    }
+    if (normalized.includes('clinical') || normalized.includes('healthcare') || normalized.includes('intake')) {
+      return allThemes['Clinical & Healthcare'] || allThemes['Health & Sexual Wellness'];
+    }
+    if (normalized.includes('school') || normalized.includes('teacher') || normalized.includes('educator')) {
+      return allThemes['Schools & Youth Groups'] || allThemes['Youth & Family Support'];
+    }
+    if (normalized.includes('corporate') || normalized.includes('workplace') || normalized.includes('business')) {
+      return allThemes['Corporate & Workplace Equity'] || allThemes['Professional & Personal Growth'];
+    }
+    if (normalized.includes('police') || normalized.includes('law enforcement') || normalized.includes('responder')) {
+      return allThemes['Law Enforcement & First Responders'];
+    }
   }
 
   // Default fallback (DCVC Signature Plum)
-  return allThemes['Youth Peer Support'] || DEFAULT_CATEGORY_THEMES['Youth Peer Support'];
+  return allThemes['Foundational Certification'] || allThemes['Youth Peer Support'] || DEFAULT_CATEGORY_THEMES['Youth Peer Support'];
 }

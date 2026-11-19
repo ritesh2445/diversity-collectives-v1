@@ -15,12 +15,14 @@ import {
 } from 'lucide-react';
 import { useLiveOrgInfo, useLiveTrainings } from '../hooks/useCmsLive';
 import { usePageMeta } from '../utils/seo';
+import { resolveCategoryTheme } from '../utils/cardGradients';
 
 export default function TrainingDetail() {
   const { slug } = useParams();
   const orgInfo = useLiveOrgInfo();
   const trainingCourses = useLiveTrainings();
   const course = trainingCourses.find(c => c.slug === slug);
+  const theme = course ? resolveCategoryTheme(course.badge || course.title) : null;
 
   usePageMeta({
     title: course ? course.title : 'Training Course',
@@ -52,7 +54,14 @@ export default function TrainingDetail() {
           
           <div className="lg:col-span-8 space-y-6">
             <div className="flex flex-wrap items-center gap-2.5">
-              <span className="text-xs font-black uppercase tracking-wider text-[#5A1E65] bg-purple-50 px-3 py-1 rounded-full border border-purple-200">
+              <span
+                className="text-xs font-black uppercase tracking-wider px-3.5 py-1 rounded-full border shadow-2xs"
+                style={{
+                  backgroundColor: `${theme?.accentColor || '#7e22ce'}15`,
+                  color: theme?.accentColor || '#7e22ce',
+                  borderColor: `${theme?.accentColor || '#7e22ce'}35`
+                }}
+              >
                 {course.badge}
               </span>
               <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-full flex items-center gap-1.5">
@@ -73,11 +82,17 @@ export default function TrainingDetail() {
             </p>
 
             {/* Target Audience */}
-            <div className="p-5 rounded-2xl bg-purple-50/70 border border-purple-200 flex items-start gap-3 text-xs sm:text-sm">
-              <Users className="w-5 h-5 text-[#5A1E65] flex-shrink-0 mt-0.5" />
+            <div
+              className="p-5 rounded-2xl border flex items-start gap-3 text-xs sm:text-sm"
+              style={{
+                background: theme?.gradient || `linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)`,
+                borderColor: theme?.borderColor || '#e2e8f0'
+              }}
+            >
+              <Users className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: theme?.accentColor || '#5A1E65' }} />
               <div>
                 <span className="font-bold text-slate-900 block">Recommended For:</span>
-                <span className="text-slate-600 font-medium">{course.targetAudience}</span>
+                <span className="text-slate-700 font-medium">{course.targetAudience}</span>
               </div>
             </div>
 
