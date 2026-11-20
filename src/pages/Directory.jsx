@@ -21,7 +21,64 @@ import { businessDirectorySeed } from '../data/dcvcData';
 import CardSpotlight from '../components/CardSpotlight';
 import SendVoicemailButton from '../components/SendVoicemailButton';
 import MobileCarousel from '../components/MobileCarousel';
+import DcvcApprovedBadge from '../components/DcvcApprovedBadge';
 import { usePageMeta } from '../utils/seo';
+
+function getDirectoryCardGradient(category) {
+  const cat = (category || '').toLowerCase();
+  if (cat.includes('coffee') || cat.includes('dining') || cat.includes('food')) {
+    return {
+      from: '#FFF7ED',
+      via: '#FFFAF5',
+      to: '#FFFFFF',
+      accent: '#EA580C',
+      border: '#FED7AA'
+    };
+  }
+  if (cat.includes('health') || cat.includes('wellness') || cat.includes('therapy')) {
+    return {
+      from: '#FAF5FF',
+      via: '#FDFBFF',
+      to: '#FFFFFF',
+      accent: '#5A1E65',
+      border: '#DDD6FE'
+    };
+  }
+  if (cat.includes('legal') || cat.includes('financial') || cat.includes('law')) {
+    return {
+      from: '#F0F9FF',
+      via: '#F8FCFF',
+      to: '#FFFFFF',
+      accent: '#0284C7',
+      border: '#BAE6FD'
+    };
+  }
+  if (cat.includes('arts') || cat.includes('media') || cat.includes('culture')) {
+    return {
+      from: '#FDF2F8',
+      via: '#FEF9FC',
+      to: '#FFFFFF',
+      accent: '#DB2777',
+      border: '#FBCFE8'
+    };
+  }
+  if (cat.includes('retail') || cat.includes('shopping') || cat.includes('books')) {
+    return {
+      from: '#F5F3FF',
+      via: '#FAF9FF',
+      to: '#FFFFFF',
+      accent: '#4F46E5',
+      border: '#C7D2FE'
+    };
+  }
+  return {
+    from: '#FAF7FD',
+    via: '#FDFBFF',
+    to: '#FFFFFF',
+    accent: '#5A1E65',
+    border: '#E9D5FF'
+  };
+}
 
 const LOCAL_STORAGE_KEY = 'dcvc_live_directory_businesses';
 
@@ -359,125 +416,170 @@ export default function Directory() {
           </div>
         ) : (
           <MobileCarousel cols={3} autoScrollMs={0} cardClassName="h-full flex flex-col">
-            {paginatedBusinesses.map((biz) => (
-              <CardSpotlight
-                key={biz.id}
-                className="p-7 rounded-3xl bg-white border-2 border-slate-200 hover:border-purple-300 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between gap-6 group"
-                tilt={true}
-                maxTilt={4}
-                glare={true}
-              >
-                <div className="space-y-4">
-                  {/* Photo Thumbnail */}
-                  <div className="h-44 rounded-2xl overflow-hidden bg-slate-100 border border-slate-100 relative">
-                    <img
-                      src={biz.image || biz.cover_url || "/images/community-gathering.jpg"}
-                      alt={biz.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      onError={(e) => { e.target.src = "/images/community-gathering.jpg"; }}
-                    />
-                    <div className="absolute top-3 right-3 flex items-center gap-1.5">
-                      {(biz.isLGBTQOwned || biz.is_verified) && (
-                        <span className="glass-pill text-[10px] font-black uppercase tracking-wider text-purple-900 bg-white/95 border-purple-200 shadow-xs">
-                          🌈 LGBTQ+ Owned
-                        </span>
-                      )}
-                    </div>
-                  </div>
+            {paginatedBusinesses.map((biz) => {
+              const isApproved = biz.isVerifiedAffirming || biz.is_verified || biz.status === 'approved' || biz.affirmingPledgeSignedAt || Boolean(biz.ownerName);
+              const grad = getDirectoryCardGradient(biz.category);
 
-                  <div>
-                    <div className="flex items-center justify-between text-xs text-slate-500 font-bold mb-1">
-                      <span className="text-[#5A1E65]">{biz.category}</span>
-                      <span>{biz.city}, CA</span>
-                    </div>
+              const cardContent = (
+                <CardSpotlight
+                  key={biz.id}
+                  className={`p-6 sm:p-7 rounded-[23px] transition-all flex flex-col justify-between gap-6 group h-full w-full ${
+                    isApproved ? '' : 'border-2'
+                  }`}
+                  style={{
+                    background: `linear-gradient(155deg, ${grad.from} 0%, ${grad.via} 48%, ${grad.to} 100%)`,
+                    borderColor: isApproved ? 'transparent' : (grad.border || '#E2E8F0'),
+                    boxShadow: isApproved
+                      ? undefined
+                      : '0 4px 20px -2px rgba(90, 30, 101, 0.08), 0 2px 8px -1px rgba(0, 0, 0, 0.04), inset 0 1px 1px 0 rgba(255, 255, 255, 0.9)'
+                  }}
+                  tilt={true}
+                  maxTilt={3}
+                  glare={true}
+                >
+                  <div className="space-y-4">
+                    {/* Photo Thumbnail */}
+                    <div className="h-44 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200/80 relative shadow-inner">
+                      <img
+                        src={biz.image || biz.cover_url || "/images/community-gathering.jpg"}
+                        alt={biz.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        onError={(e) => { e.target.src = "/images/community-gathering.jpg"; }}
+                      />
 
-                    <h3 className="font-display text-xl sm:text-2xl font-black text-slate-950 tracking-tight group-hover:text-[#5A1E65] transition-colors">
-                      <Link to={`/directory/${biz.slug}`}>
-                        {biz.name}
-                      </Link>
-                    </h3>
+                      {/* Top-Left: DCVC Approved Flipping Badge with Glow */}
+                      <div className="absolute top-2.5 left-2.5 z-10">
+                        {isApproved && <DcvcApprovedBadge />}
+                      </div>
 
-                    {/* Owner / Launch Details */}
-                    {(biz.ownerName || biz.owner || biz.owner_name || biz.dateLaunched) && (
-                      <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500 font-medium mt-1">
-                        {(biz.ownerName || biz.owner || biz.owner_name) && (
-                          <span className="inline-flex items-center gap-1 text-slate-700 font-bold">
-                            <User className="w-3 h-3 text-[#5A1E65]" />
-                            <span>{biz.ownerName || biz.owner || biz.owner_name}</span>
-                          </span>
-                        )}
-                        {biz.dateLaunched && (
-                          <span className="inline-flex items-center gap-1 text-slate-500">
-                            <Calendar className="w-3 h-3 text-amber-600" />
-                            <span>Launched {biz.dateLaunched}</span>
+                      {/* Top-Right: LGBTQ+ Owned Badge */}
+                      <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 z-10">
+                        {biz.isLGBTQOwned && (
+                          <span className="glass-pill text-[10px] font-black uppercase tracking-wider text-purple-900 bg-white/95 border-purple-200 shadow-xs">
+                            🌈 LGBTQ+ Owned
                           </span>
                         )}
                       </div>
-                    )}
+                    </div>
 
-                    <p className="text-xs text-slate-600 leading-relaxed font-medium mt-2 line-clamp-3">
-                      {biz.description}
-                    </p>
+                    <div>
+                      <div className="flex items-center justify-between text-xs font-bold mb-1.5">
+                        <span
+                          className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider shadow-2xs"
+                          style={{
+                            backgroundColor: `${grad.accent}14`,
+                            color: grad.accent,
+                            border: `1px solid ${grad.border}`
+                          }}
+                        >
+                          {biz.category}
+                        </span>
+                        <span className="text-slate-600 font-bold">{biz.city}, CA</span>
+                      </div>
+
+                      <h3 className="font-display text-xl sm:text-2xl font-black text-slate-950 tracking-tight group-hover:text-[#5A1E65] transition-colors leading-snug">
+                        <Link to={`/directory/${biz.slug}`}>
+                          {biz.name}
+                        </Link>
+                      </h3>
+
+                      {/* Owner / Launch Details */}
+                      {(biz.ownerName || biz.owner || biz.owner_name || biz.dateLaunched) && (
+                        <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500 font-medium mt-1.5">
+                          {(biz.ownerName || biz.owner || biz.owner_name) && (
+                            <span className="inline-flex items-center gap-1 text-slate-700 font-bold">
+                              <User className="w-3 h-3 text-[#5A1E65]" />
+                              <span>{biz.ownerName || biz.owner || biz.owner_name}</span>
+                            </span>
+                          )}
+                          {biz.dateLaunched && (
+                            <span className="inline-flex items-center gap-1 text-slate-500">
+                              <Calendar className="w-3 h-3 text-amber-600" />
+                              <span>Launched {biz.dateLaunched}</span>
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Description in refined card container */}
+                      <div className="mt-2.5 p-3.5 rounded-2xl bg-white/90 border border-slate-200/80 shadow-2xs">
+                        <p className="text-xs text-slate-700 leading-relaxed font-serif italic line-clamp-3">
+                          &ldquo;{biz.description}&rdquo;
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Tags */}
+                    {Array.isArray(biz.tags) && biz.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {biz.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="px-2.5 py-0.5 rounded-lg text-[10px] font-bold text-slate-700 bg-white/90 border border-slate-200/80 shadow-2xs"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
-                  {/* Tags */}
-                  {Array.isArray(biz.tags) && biz.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {biz.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="px-2 py-0.5 rounded-md text-[10px] font-bold text-slate-600 bg-slate-100"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Bottom Actions */}
-                <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3 text-xs font-bold">
-                  <Link
-                    to={`/directory/${biz.slug}`}
-                    className="text-[#5A1E65] hover:underline inline-flex items-center gap-1"
-                  >
-                    <span>View Profile</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </Link>
-
-                  {biz.phone && (
-                    biz.voicemailOnly ? (
-                      <SendVoicemailButton
-                        label="Voicemail"
-                        subject={`Directory Inquiry: ${biz.name}`}
-                        compact
-                      />
-                    ) : (
-                      <a
-                        href={`tel:${biz.phone.replace(/[^0-9]/g, '')}`}
-                        className="text-slate-600 hover:text-slate-950 inline-flex items-center gap-1"
-                        title={biz.phone}
-                      >
-                        <Phone className="w-3.5 h-3.5" />
-                        <span>Call</span>
-                      </a>
-                    )
-                  )}
-
-                  {biz.website && (
-                    <a
-                      href={biz.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-slate-600 hover:text-slate-950 inline-flex items-center gap-1"
+                  {/* Bottom Actions */}
+                  <div className="pt-4 border-t border-slate-200/80 flex items-center justify-between gap-3 text-xs font-bold mt-auto">
+                    <Link
+                      to={`/directory/${biz.slug}`}
+                      className="text-[#5A1E65] hover:underline inline-flex items-center gap-1 font-extrabold"
                     >
-                      <Globe className="w-3.5 h-3.5" />
-                      <span>Web</span>
-                    </a>
+                      <span>View Profile</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </Link>
+
+                    {biz.phone && (
+                      biz.voicemailOnly ? (
+                        <SendVoicemailButton
+                          label="Voicemail"
+                          subject={`Directory Inquiry: ${biz.name}`}
+                          compact
+                        />
+                      ) : (
+                        <a
+                          href={`tel:${biz.phone.replace(/[^0-9]/g, '')}`}
+                          className="text-slate-700 hover:text-slate-950 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs transition-colors"
+                          title={biz.phone}
+                        >
+                          <Phone className="w-3.5 h-3.5 text-[#5A1E65]" />
+                          <span className="font-bold">{biz.phone}</span>
+                        </a>
+                      )
+                    )}
+
+                    {biz.website && (
+                      <a
+                        href={biz.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-slate-700 hover:text-slate-950 inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs transition-colors font-bold"
+                      >
+                        <Globe className="w-3.5 h-3.5 text-[#5A1E65]" />
+                        <span>Visit Web</span>
+                      </a>
+                    )}
+                  </div>
+                </CardSpotlight>
+              );
+
+              return (
+                <div key={biz.id} className="h-full flex flex-col">
+                  {isApproved ? (
+                    <div className="p-[2.5px] rounded-[26px] rainbow-edge-glow-wrapper transition-all duration-300 h-full flex flex-col">
+                      {cardContent}
+                    </div>
+                  ) : (
+                    cardContent
                   )}
                 </div>
-              </CardSpotlight>
-            ))}
+              );
+            })}
           </MobileCarousel>
         )}
 
