@@ -4,6 +4,7 @@ export default function CardSpotlight({
   children, 
   className = '', 
   contentClassName = '',
+  style: externalStyle = {},
   spotlightColor = 'rgba(147, 51, 234, 0.12)',
   tilt = true,
   maxTilt = 7,
@@ -63,6 +64,7 @@ export default function CardSpotlight({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       style={{
+        ...externalStyle,
         transform: transformStyle,
         transformStyle: isTouchDevice ? 'flat' : 'preserve-3d',
         transition: (!isTouchDevice && isHovered)
