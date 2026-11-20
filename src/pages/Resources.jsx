@@ -5,17 +5,14 @@ import {
   ArrowUpRight, 
   LifeBuoy, 
   Search, 
-  ExternalLink, 
   ShieldCheck, 
   Sparkles, 
-  Heart, 
-  Mail, 
   PlusCircle,
   Star,
   Check,
   Lock
 } from 'lucide-react';
-import { resourcesDirectory, orgInfo } from '../data/dcvcData';
+import { resourcesDirectory } from '../data/dcvcData';
 import { cmsStore } from '../services/cmsStore';
 import { useLiveOrgInfo } from '../hooks/useCmsLive';
 import { getResourceCardTheme, subscribeToCardThemes } from '../services/cardThemeStore.js';
@@ -48,44 +45,30 @@ export default function Resources() {
 
   const filteredCategories = dirGroups.map(cat => {
     let items = cat.items;
-    
-    if (selectedCategory !== 'All' && cat.category !== selectedCategory) {
-      return null;
-    }
-
+    if (selectedCategory !== 'All' && cat.category !== selectedCategory) return null;
     if (searchQuery.trim() !== '') {
       const q = searchQuery.toLowerCase();
-      items = items.filter(item => 
-        item.name.toLowerCase().includes(q) || 
+      items = items.filter(item =>
+        item.name.toLowerCase().includes(q) ||
         item.notes.toLowerCase().includes(q)
       );
     }
-
     if (items.length === 0) return null;
-
-    return {
-      ...cat,
-      items
-    };
+    return { ...cat, items };
   }).filter(Boolean);
 
   return (
     <div className="pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
-      
+
       {/* Editorial Header */}
       <section className="container-clean pb-14 border-b border-slate-100 relative overflow-hidden">
-        {/* Specular Ambient Glow */}
-        <div 
-          className="absolute -top-24 right-10 w-96 h-96 rounded-full bg-purple-200/25 blur-3xl pointer-events-none" 
-          aria-hidden="true" 
-        />
-
+        <div className="absolute -top-24 right-10 w-96 h-96 rounded-full bg-purple-200/25 blur-3xl pointer-events-none" aria-hidden="true" />
         <div className="max-w-3xl relative z-10 flex flex-col gap-4">
           <span className="glass-pill text-xs font-bold text-[#5A1E65] bg-purple-50 border-purple-200/90 shadow-xs">
-            VERIFIED DIRECTORY & COMMUNITY CARE
+            VERIFIED DIRECTORY &amp; COMMUNITY CARE
           </span>
           <h1 className="font-display text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-slate-950 leading-[1.05]">
-            Care & Crisis <br />
+            Care &amp; Crisis <br />
             <span className="font-serif italic font-normal text-[#5A1E65]">Resource Directory.</span>
           </h1>
           <p className="font-serif italic text-xl md:text-2xl text-slate-700 leading-relaxed pt-2">
@@ -94,7 +77,7 @@ export default function Resources() {
         </div>
       </section>
 
-      {/* Immediate Crisis Support Ribbon */}
+      {/* Crisis Ribbon */}
       <section className="bg-rose-50/80 border-b border-rose-200 py-6">
         <div className="container-clean flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-start gap-3">
@@ -102,30 +85,25 @@ export default function Resources() {
               <LifeBuoy className="w-5 h-5" />
             </div>
             <div>
-              <span className="text-xs font-black uppercase tracking-wider text-rose-800 block">
-                In Immediate Crisis or Distress?
-              </span>
+              <span className="text-xs font-black uppercase tracking-wider text-rose-800 block">In Immediate Crisis or Distress?</span>
               <p className="text-xs sm:text-sm text-slate-700 font-medium pt-0.5">
-                Call or text <a href="tel:988" className="font-black text-rose-700 underline hover:text-rose-900">988</a> for the 24/7 Suicide & Crisis Lifeline, or call The Trevor Project at <a href="tel:18664887386" className="font-black text-rose-700 underline hover:text-rose-900">1-866-488-7386</a>.
+                Call or text <a href="tel:988" className="font-black text-rose-700 underline hover:text-rose-900">988</a> for the 24/7 Suicide &amp; Crisis Lifeline, or call The Trevor Project at <a href="tel:18664887386" className="font-black text-rose-700 underline hover:text-rose-900">1-866-488-7386</a>.
               </p>
             </div>
           </div>
-          <a
-            href="tel:988"
-            className="px-6 py-2.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white font-black text-xs tracking-wider uppercase transition-colors shadow-sm flex-shrink-0 flex items-center gap-1.5"
-          >
+          <a href="tel:988" className="px-6 py-2.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white font-black text-xs tracking-wider uppercase transition-colors shadow-sm flex-shrink-0 flex items-center gap-1.5">
             <Phone className="w-3.5 h-3.5" />
             <span>Dial 988 Now</span>
           </a>
         </div>
       </section>
 
-      {/* Directory Controls: Search + Categories */}
+      {/* Directory Controls */}
       <section className="container-clean py-12">
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 mb-10">
           <div className="relative flex-grow max-w-md">
             <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
-            <input 
+            <input
               type="text"
               placeholder="Search resources by provider or keyword..."
               value={searchQuery}
@@ -133,16 +111,15 @@ export default function Resources() {
               className="w-full pl-11 pr-4 py-3 text-sm bg-slate-50 rounded-2xl border border-slate-200 focus:border-[#5A1E65] focus:bg-white focus:ring-2 focus:ring-purple-100 outline-none transition-all font-medium"
             />
           </div>
-
           <div className="flex flex-wrap items-center gap-2">
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-3.5 py-2 text-xs font-bold rounded-full transition-all cursor-pointer border-2 interactive-card-3d ${
+                className={`px-3.5 py-2 text-xs font-bold rounded-full transition-all cursor-pointer border-2 ${
                   selectedCategory === cat
-                    ? 'bg-slate-950 text-white border-purple-500 shadow-sm'
-                    : 'bg-white text-slate-700 border-slate-200 hover:border-purple-300 hover:bg-purple-50/40'
+                    ? 'bg-[#5A1E65] text-white border-[#5A1E65] shadow-sm'
+                    : 'bg-white text-slate-700 border-slate-200 hover:border-[#5A1E65]/40 hover:bg-purple-50/40'
                 }`}
               >
                 {cat}
@@ -151,15 +128,11 @@ export default function Resources() {
           </div>
         </div>
 
-        {/* Directory Results */}
         {filteredCategories.length === 0 ? (
           <div className="text-center py-16 bg-slate-50 rounded-3xl border border-slate-200 space-y-3">
             <p className="font-display text-xl font-bold text-slate-900">No resources found matching your filter.</p>
             <p className="text-xs text-slate-500">Try clearing your search query or selecting "All" categories.</p>
-            <button
-              onClick={() => { setSelectedCategory('All'); setSearchQuery(''); }}
-              className="btn-primary py-2 px-5 text-xs font-bold mt-2"
-            >
+            <button onClick={() => { setSelectedCategory('All'); setSearchQuery(''); }} className="btn-primary py-2 px-5 text-xs font-bold mt-2">
               Reset Filters
             </button>
           </div>
@@ -167,11 +140,9 @@ export default function Resources() {
           <div className="space-y-16">
             {filteredCategories.map((catGroup) => (
               <div key={catGroup.category} className="space-y-6">
-                
+
                 <div className="flex items-center gap-3 pb-3 border-b border-slate-200">
-                  <h2 className="font-display text-2xl font-black text-slate-950">
-                    {catGroup.category}
-                  </h2>
+                  <h2 className="font-display text-2xl font-black text-slate-950">{catGroup.category}</h2>
                   <span className="text-xs font-black text-[#5A1E65] bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-200">
                     {catGroup.items.length} Providers
                   </span>
@@ -180,124 +151,143 @@ export default function Resources() {
                 <MobileCarousel cols={2} autoScrollMs={0} className="perspective-1000" cardClassName="h-full flex flex-col">
                   {catGroup.items.map((item) => {
                     const theme = getResourceCardTheme(catGroup.category, item);
-                    const gradientBg = `linear-gradient(135deg, ${theme.gradientFrom || '#1e082b'} 0%, ${theme.gradientVia || '#3b0d46'} 50%, ${theme.gradientTo || '#160824'} 100%)`;
 
                     return (
-                      <CardSpotlight 
+                      <CardSpotlight
                         key={item.name}
-                        className="p-7 sm:p-8 rounded-3xl text-white shadow-2xl relative overflow-hidden transition-all duration-300 flex flex-col justify-between interactive-card-3d border"
+                        className="rounded-3xl overflow-hidden transition-all duration-300 flex flex-col border-2"
                         style={{
-                          background: gradientBg,
-                          borderColor: `${theme.accentColor || '#F59E0B'}40`,
-                          boxShadow: `0 20px 45px -15px ${theme.glowColor || 'rgba(0,0,0,0.5)'}`
+                          background: `linear-gradient(145deg, ${theme.bgFrom || '#FAF5FF'} 0%, ${theme.bgTo || '#F3E8FF'} 100%)`,
+                          borderColor: theme.borderColor || '#D8B4FE',
+                          boxShadow: `0 4px 20px -4px ${theme.borderColor || '#D8B4FE'}88`
                         }}
                         tilt={true}
-                        maxTilt={3.5}
-                        glare={true}
+                        maxTilt={2}
+                        glare={false}
                       >
-                        <div className="space-y-4">
+                        {/* Colored top accent bar */}
+                        <div
+                          className="h-1.5 w-full flex-shrink-0"
+                          style={{ background: theme.accentColor || '#7E22CE' }}
+                        />
+
+                        <div className="p-6 sm:p-7 flex flex-col flex-1 gap-4">
                           {/* Top Badges */}
                           <div className="flex items-center justify-between gap-2">
                             <span
-                              className="px-3.5 py-1 rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-wider backdrop-blur-md flex items-center gap-1.5 shadow-xs"
+                              className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5"
                               style={{
-                                backgroundColor: `${theme.badgeColor || '#FBBF24'}20`,
-                                color: theme.badgeColor || '#FBBF24',
-                                border: `1px solid ${theme.badgeColor || '#FBBF24'}50`
+                                background: theme.badgeBg || '#F3E8FF',
+                                color: theme.badgeText || '#6B21A8',
+                                border: `1.5px solid ${theme.borderColor || '#D8B4FE'}`
                               }}
                             >
                               <Sparkles className="w-3 h-3" />
                               <span>{catGroup.category}</span>
                             </span>
-                            <span className="text-xs font-bold text-white/80 flex items-center gap-1">
-                              <ShieldCheck className="w-3.5 h-3.5 text-teal-300" />
-                              <span>Verified Lifeline</span>
+                            <span
+                              className="text-[10px] font-bold flex items-center gap-1 px-2.5 py-1 rounded-full"
+                              style={{ background: `${theme.accentColor}18`, color: theme.accentColor }}
+                            >
+                              <ShieldCheck className="w-3 h-3" />
+                              <span>Verified</span>
                             </span>
                           </div>
 
-                          {/* Provider Title */}
+                          {/* Provider Name */}
                           <div>
-                            <span className="text-[10px] font-black uppercase tracking-wider text-white/60 block mb-1">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">
                               AFFIRMING COMMUNITY RESOURCE
                             </span>
-                            <h3 className="font-display text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight">
+                            <h3
+                              className="font-display text-xl sm:text-2xl font-black tracking-tight leading-tight"
+                              style={{ color: theme.textPrimary || '#1E293B' }}
+                            >
                               {item.name}
                             </h3>
                           </div>
 
-                          {/* Frosted Glass Description Container (Image 1 Style) */}
-                          <div className="rounded-2xl p-4 sm:p-5 bg-white/[0.08] backdrop-blur-md border border-white/15 shadow-inner space-y-2">
+                          {/* Description Box */}
+                          <div
+                            className="rounded-2xl p-4 border flex-1"
+                            style={{
+                              background: 'rgba(255,255,255,0.65)',
+                              borderColor: `${theme.borderColor || '#D8B4FE'}66`
+                            }}
+                          >
                             <div
-                              className="text-xs sm:text-sm font-bold flex items-center gap-1.5"
-                              style={{ color: theme.accentColor || '#F59E0B' }}
+                              className="text-xs font-bold flex items-center gap-1.5 mb-2"
+                              style={{ color: theme.accentColor }}
                             >
                               <Star className="w-3.5 h-3.5 fill-current" />
-                              <span>Confidential Health & Peer Navigation</span>
+                              <span>Confidential Health &amp; Peer Navigation</span>
                             </div>
-                            <p className="text-sm sm:text-base text-purple-100/95 font-serif italic leading-relaxed">
-                              "{item.notes}"
+                            <p
+                              className="text-sm font-serif italic leading-relaxed"
+                              style={{ color: theme.textSecondary || '#475569' }}
+                            >
+                              &ldquo;{item.notes}&rdquo;
                             </p>
                           </div>
 
-                          {/* Feature Checklist Bullets */}
-                          <div className="space-y-1.5 text-xs text-white/90 font-medium">
-                            <div className="flex items-center gap-2">
-                              <Check className="w-3.5 h-3.5 text-teal-300 shrink-0" />
-                              <span>100% Free, confidential & affirming community care</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Check className="w-3.5 h-3.5 text-teal-300 shrink-0" />
-                              <span>No insurance, ID, or referral required</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Check className="w-3.5 h-3.5 text-teal-300 shrink-0" />
-                              <span>Culturally competent trauma-informed support</span>
-                            </div>
+                          {/* Feature Checklist */}
+                          <div className="space-y-1.5 text-xs font-medium" style={{ color: theme.textSecondary || '#475569' }}>
+                            {['100% Free, confidential & affirming care', 'No insurance or referral required', 'Trauma-informed, culturally competent'].map((feat) => (
+                              <div key={feat} className="flex items-center gap-2">
+                                <Check className="w-3.5 h-3.5 shrink-0" style={{ color: theme.accentColor }} />
+                                <span>{feat}</span>
+                              </div>
+                            ))}
                           </div>
-                        </div>
 
-                        {/* Card Action Row */}
-                        <div className="pt-6 mt-6 border-t border-white/15 flex flex-wrap items-center justify-between gap-3">
-                          {item.phone ? (
-                            (item.voicemailOnly || liveOrg.voicemailOnly) ? (
-                              <SendVoicemailButton
-                                label="Send Voice Message"
-                                subject={`Resource Inquiry: ${item.name}`}
-                                compact
-                              />
+                          {/* Action Row */}
+                          <div
+                            className="pt-4 mt-auto border-t flex flex-wrap items-center justify-between gap-3"
+                            style={{ borderColor: `${theme.borderColor}55` }}
+                          >
+                            {item.phone ? (
+                              (item.voicemailOnly || liveOrg.voicemailOnly) ? (
+                                <SendVoicemailButton label="Send Voice Message" subject={`Resource Inquiry: ${item.name}`} compact />
+                              ) : (
+                                <a
+                                  href={`tel:${item.phone.replace(/[^0-9+]/g, '')}`}
+                                  className="py-2 px-4 rounded-xl font-bold text-xs border flex items-center gap-1.5 transition-all hover:opacity-80"
+                                  style={{
+                                    background: `${theme.accentColor}12`,
+                                    borderColor: `${theme.accentColor}40`,
+                                    color: theme.accentColor
+                                  }}
+                                >
+                                  <Phone className="w-3.5 h-3.5" />
+                                  <span>{item.phone}</span>
+                                </a>
+                              )
                             ) : (
+                              <span className="text-xs italic text-slate-400">Online Portal Only</span>
+                            )}
+
+                            {item.url && (
                               <a
-                                href={`tel:${item.phone.replace(/[^0-9+]/g, '')}`}
-                                className="py-2.5 px-4 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/25 backdrop-blur-md transition-all flex items-center justify-center gap-1.5 cursor-pointer hover:border-white/40"
+                                href={item.url}
+                                target={item.url.startsWith('http') ? '_blank' : '_self'}
+                                rel="noopener noreferrer"
+                                className="py-2.5 px-5 rounded-xl font-black text-xs flex items-center gap-1.5 transition-all hover:opacity-90 hover:shadow-md shadow-sm"
+                                style={{
+                                  background: theme.btnBg || theme.accentColor || '#5A1E65',
+                                  color: theme.btnText || '#FFFFFF'
+                                }}
                               >
-                                <Phone className="w-3.5 h-3.5" style={{ color: theme.accentColor || '#F59E0B' }} />
-                                <span>{item.phone}</span>
+                                <span>Access Service</span>
+                                <ArrowUpRight className="w-3.5 h-3.5 stroke-[2.5]" />
                               </a>
-                            )
-                          ) : (
-                            <span className="text-white/60 italic text-xs font-medium">Verified Online Portal</span>
-                          )}
+                            )}
+                          </div>
 
-                          {item.url && (
-                            <a
-                              href={item.url}
-                              target={item.url.startsWith('http') ? '_blank' : '_self'}
-                              rel="noopener noreferrer"
-                              className="py-3 px-6 rounded-2xl font-black text-xs sm:text-sm text-slate-950 flex items-center justify-center gap-2 shadow-[0_10px_25px_-5px_rgba(245,158,11,0.5)] hover:scale-[1.02] active:scale-[0.99] transition-all cursor-pointer"
-                              style={{
-                                background: 'linear-gradient(90deg, #F59E0B 0%, #FDE047 50%, #F59E0B 100%)'
-                              }}
-                            >
-                              <span>Access Service Online</span>
-                              <ArrowUpRight className="w-4 h-4 stroke-[2.5]" />
-                            </a>
-                          )}
-                        </div>
-
-                        {/* Privacy footnote */}
-                        <div className="pt-3 text-center text-[10px] text-white/50 flex items-center justify-center gap-1">
-                          <Lock className="w-2.5 h-2.5" />
-                          <span>Confidential Community Care • Diversity Collective Partner</span>
+                          {/* Footnote */}
+                          <div className="text-center text-[10px] flex items-center justify-center gap-1 text-slate-400">
+                            <Lock className="w-2.5 h-2.5" />
+                            <span>Confidential • Diversity Collective Partner</span>
+                          </div>
                         </div>
                       </CardSpotlight>
                     );
@@ -308,10 +298,9 @@ export default function Resources() {
             ))}
           </div>
         )}
-
       </section>
 
-      {/* Suggest a Resource Section */}
+      {/* Suggest a Resource */}
       <section className="container-clean pt-10">
         <div className="p-8 md:p-12 aurora-bg text-white rounded-3xl shadow-2xl flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden">
           <div className="space-y-2.5 relative z-10">
@@ -328,11 +317,11 @@ export default function Resources() {
           </div>
           <Link
             to="/resources/submit"
-            className="py-3.5 px-7 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-400 !text-slate-950 font-black text-sm shadow-[0_10px_25px_-5px_rgba(245,158,11,0.5)] hover:scale-103 transition-all flex-shrink-0 cursor-pointer flex items-center gap-2 relative z-10"
+            className="py-3.5 px-7 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-400 font-black text-sm text-slate-950 shadow-lg hover:scale-105 transition-all flex-shrink-0 flex items-center gap-2 relative z-10"
           >
-            <PlusCircle className="w-4 h-4 !text-slate-950 stroke-current" />
-            <span className="!text-slate-950 font-black">Submit a Resource</span>
-            <ArrowUpRight className="w-4 h-4 !text-slate-950 stroke-current" />
+            <PlusCircle className="w-4 h-4" />
+            <span>Submit a Resource</span>
+            <ArrowUpRight className="w-4 h-4" />
           </Link>
         </div>
       </section>
