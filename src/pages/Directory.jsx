@@ -417,7 +417,11 @@ export default function Directory() {
         ) : (
           <MobileCarousel cols={3} autoScrollMs={0} cardClassName="h-full flex flex-col">
             {paginatedBusinesses.map((biz) => {
-              const isApproved = biz.isVerifiedAffirming || biz.is_verified || biz.status === 'approved' || biz.affirmingPledgeSignedAt || Boolean(biz.ownerName);
+              const isApproved = biz.is_verified !== undefined
+                ? Boolean(biz.is_verified)
+                : (biz.isVerifiedAffirming !== undefined
+                    ? Boolean(biz.isVerifiedAffirming)
+                    : (biz.affirmingPledgeSignedAt || Boolean(biz.ownerName)));
               const grad = getDirectoryCardGradient(biz.category);
 
               const cardContent = (

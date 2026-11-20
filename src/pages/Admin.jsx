@@ -2138,6 +2138,38 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
     }
   };
 
+  const handleToggleDcvcVerified = async (biz) => {
+    const isCurrentlyVerified = biz.is_verified !== undefined
+      ? Boolean(biz.is_verified)
+      : (biz.isVerifiedAffirming !== undefined
+          ? Boolean(biz.isVerifiedAffirming)
+          : (biz.affirmingPledgeSignedAt || Boolean(biz.ownerName)));
+    const nextVerified = !isCurrentlyVerified;
+
+    setDirectoryBusinesses(prev => prev.map(b => b.id === biz.id ? { ...b, is_verified: nextVerified, isVerifiedAffirming: nextVerified } : b));
+    setDirectoryActionMsg({
+      type: 'success',
+      text: `"${biz.name}" DCVC Approval badge & rainbow edge lighting turned ${nextVerified ? 'ON' : 'OFF'}.`
+    });
+
+    try {
+      const stored = localStorage.getItem('dcvc_live_directory_businesses');
+      const list = stored ? JSON.parse(stored) : [...businessDirectorySeed];
+      const updated = list.map(b => b.id === biz.id ? { ...b, is_verified: nextVerified, isVerifiedAffirming: nextVerified } : b);
+      localStorage.setItem('dcvc_live_directory_businesses', JSON.stringify(updated));
+      window.dispatchEvent(new Event('dcvc-directory-updated'));
+    } catch (_) {}
+
+    try {
+      await fetch(`${API_BASE_URL}/admin/directory/${biz.id}`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ is_verified: nextVerified })
+      });
+    } catch (_) {}
+  };
+
   const handleDeleteBusiness = async (biz) => {
     if (!window.confirm(`Are you sure you want to permanently delete "${biz.name}" from the directory? This action cannot be undone.`)) {
       return;
@@ -2243,7 +2275,11 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
       owner_name: biz.owner_name || biz.ownerName || '',
       owner_email: biz.owner_email || biz.ownerEmail || '',
       is_featured: Boolean(biz.is_featured),
-      is_verified: biz.is_verified !== undefined ? Boolean(biz.is_verified) : true,
+      is_verified: biz.is_verified !== undefined
+        ? Boolean(biz.is_verified)
+        : (biz.isVerifiedAffirming !== undefined
+            ? Boolean(biz.isVerifiedAffirming)
+            : Boolean(biz.affirmingPledgeSignedAt || biz.ownerName)),
       status: biz.status || 'approved'
     });
     setShowBizModal(true);
@@ -3820,6 +3856,11 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                   const isRejected = biz.status === 'rejected' || biz.status === 'archived';
                   const isApproved = biz.status === 'approved' || (!biz.status && !isPending && !isRejected);
                   const isDeleting = directoryDeletingId === biz.id;
+                  const isDcvcApproved = biz.is_verified !== undefined
+                    ? Boolean(biz.is_verified)
+                    : (biz.isVerifiedAffirming !== undefined
+                        ? Boolean(biz.isVerifiedAffirming)
+                        : (biz.affirmingPledgeSignedAt || Boolean(biz.ownerName)));
 
                   return (
                     <div
@@ -3864,6 +3905,13 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                           {biz.is_featured ? (
                             <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">
                               Featured
+                            </span>
+                          ) : null}
+
+                          {isDcvcApproved ? (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-100 text-purple-900 border border-purple-300 flex items-center gap-1 shadow-2xs">
+                              <Sparkles className="w-2.5 h-2.5 text-purple-600" />
+                              <span>DCVC Approved</span>
                             </span>
                           ) : null}
                         </div>
@@ -3956,6 +4004,21 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                             <span>Re-Approve</span>
                           </button>
                         )}
+
+                        {/* One-Click DCVC Approved Badge Toggle */}
+                        <button
+                          type="button"
+                          onClick={() => handleToggleDcvcVerified(biz)}
+                          className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer border transition-all ${
+                            isDcvcApproved
+                              ? 'bg-purple-900 hover:bg-purple-950 text-white border-purple-700 shadow-xs'
+                              : 'bg-slate-100 hover:bg-slate-200 text-slate-600 border-slate-300'
+                          }`}
+                          title={isDcvcApproved ? 'Turn OFF DCVC Approved Badge & Rainbow Edge' : 'Turn ON DCVC Approved Badge & Rainbow Edge'}
+                        >
+                          <Sparkles className={`w-3.5 h-3.5 ${isDcvcApproved ? 'text-amber-300' : 'text-slate-400'}`} />
+                          <span className="whitespace-nowrap">{isDcvcApproved ? 'DCVC Badge: ON' : 'DCVC Badge: OFF'}</span>
+                        </button>
 
                         {/* Edit Button */}
                         <button
@@ -4186,7 +4249,7 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                           className="rounded border-slate-300 text-[#5A1E65] focus:ring-purple-400"
                         />
                         <label htmlFor="is_verified" className="text-xs font-bold text-slate-700 cursor-pointer">
-                          Verified Affirming Pledge
+                          DCVC Approved (Rainbow Glow & Flipping Badge)
                         </label>
                       </div>
 

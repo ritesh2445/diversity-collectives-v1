@@ -4926,6 +4926,7 @@ export default {
                     email = coalesce(?, email),
                     website = coalesce(?, website),
                     is_featured = coalesce(?, is_featured),
+                    is_verified = coalesce(?, is_verified),
                     updated_at = datetime('now')
                     WHERE id = ?`,
               args: [
@@ -4937,7 +4938,8 @@ export default {
                 body.phone || null,
                 body.email || null,
                 body.website || null,
-                body.isFeatured !== undefined ? (body.isFeatured ? 1 : 0) : null,
+                body.isFeatured !== undefined ? (body.isFeatured ? 1 : 0) : (body.is_featured !== undefined ? (body.is_featured ? 1 : 0) : null),
+                body.isVerified !== undefined ? (body.isVerified ? 1 : 0) : (body.is_verified !== undefined ? (body.is_verified ? 1 : 0) : null),
                 bizId
               ]
             });
