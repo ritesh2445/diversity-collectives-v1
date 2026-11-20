@@ -1,7 +1,7 @@
 /**
  * DCVC Card Gradient & Category Theme Engine
- * Provides deep, luxurious jewel-toned gradient styling for Resources and Community cards.
- * All category gradients are 100% editable from the Admin Studio and sync live in real-time.
+ * Provides aesthetic, cool-calm atmospheric gradient styling for Resources and Community cards.
+ * All category palettes are 100% editable from the Admin Studio and sync live in real-time.
  */
 
 const STORAGE_KEY = 'dcvc_card_category_themes';
@@ -10,376 +10,290 @@ const BROADCAST_CHANNEL = 'dcvc_card_themes_sync';
 export const LUXURY_GRADIENT_PRESETS = [
   {
     id: 'velvet-plum',
-    name: 'Velvet Plum & Gold',
-    gradientFrom: '#1e082b',
-    gradientVia: '#3b0d46',
-    gradientTo: '#160824',
-    accentColor: '#F59E0B',
-    badgeColor: '#FBBF24',
-    glowColor: 'rgba(217, 70, 239, 0.35)'
-  },
-  {
-    id: 'midnight-indigo',
-    name: 'Midnight Indigo & Cyan',
-    gradientFrom: '#120f38',
-    gradientVia: '#22165c',
-    gradientTo: '#0d0b2b',
-    accentColor: '#38BDF8',
-    badgeColor: '#7DD3FC',
-    glowColor: 'rgba(99, 102, 241, 0.35)'
-  },
-  {
-    id: 'ruby-wine',
-    name: 'Ruby Wine & Amber',
-    gradientFrom: '#2e091a',
-    gradientVia: '#52102f',
-    gradientTo: '#1f0612',
-    accentColor: '#F59E0B',
-    badgeColor: '#FBBF24',
-    glowColor: 'rgba(244, 63, 94, 0.35)'
+    name: 'Twilight Indigo & Azure',
+    gradientFrom: '#101a36',
+    gradientVia: '#1b2a54',
+    gradientTo: '#0b1124',
+    accentColor: '#60A5FA',
+    badgeColor: '#93C5FD',
+    btnBg: '#2563EB',
+    btnText: '#FFFFFF',
+    glowColor: 'rgba(96, 165, 250, 0.2)'
   },
   {
     id: 'celestial-sapphire',
-    name: 'Celestial Sapphire & Gold',
-    gradientFrom: '#0a1838',
-    gradientVia: '#132c66',
-    gradientTo: '#071026',
-    accentColor: '#FACC15',
-    badgeColor: '#FDE047',
-    glowColor: 'rgba(56, 189, 248, 0.35)'
+    name: 'Celestial Sapphire & Cyan',
+    gradientFrom: '#0c1d33',
+    gradientVia: '#142e4f',
+    gradientTo: '#081424',
+    accentColor: '#38BDF8',
+    badgeColor: '#7DD3FC',
+    btnBg: '#0284C7',
+    btnText: '#FFFFFF',
+    glowColor: 'rgba(56, 189, 248, 0.2)'
   },
   {
-    id: 'dark-amethyst',
-    name: 'Dark Amethyst & Lavender',
-    gradientFrom: '#260a3a',
-    gradientVia: '#47136c',
-    gradientTo: '#1a0729',
-    accentColor: '#E879F9',
-    badgeColor: '#F0ABFC',
-    glowColor: 'rgba(168, 85, 247, 0.35)'
-  },
-  {
-    id: 'warm-espresso',
-    name: 'Warm Espresso & Amber Gold',
-    gradientFrom: '#2e1508',
-    gradientVia: '#54280e',
-    gradientTo: '#210f05',
-    accentColor: '#F59E0B',
-    badgeColor: '#FBBF24',
-    glowColor: 'rgba(245, 158, 11, 0.35)'
+    id: 'ruby-wine',
+    name: 'Calming Ruby Dusk & Rose',
+    gradientFrom: '#24121b',
+    gradientVia: '#361928',
+    gradientTo: '#180c12',
+    accentColor: '#FB7185',
+    badgeColor: '#FDA4AF',
+    btnBg: '#E11D48',
+    btnText: '#FFFFFF',
+    glowColor: 'rgba(244, 63, 94, 0.2)'
   },
   {
     id: 'obsidian-teal',
-    name: 'Obsidian Teal & Sunbeam',
-    gradientFrom: '#082129',
-    gradientVia: '#0e3e4d',
-    gradientTo: '#06181e',
+    name: 'Coastal Teal & Seafoam',
+    gradientFrom: '#0c2124',
+    gradientVia: '#123338',
+    gradientTo: '#081618',
     accentColor: '#2DD4BF',
     badgeColor: '#5EEAD4',
-    glowColor: 'rgba(45, 212, 191, 0.35)'
+    btnBg: '#0D9488',
+    btnText: '#FFFFFF',
+    glowColor: 'rgba(45, 212, 191, 0.2)'
+  },
+  {
+    id: 'warm-espresso',
+    name: 'Calm Terracotta Dusk & Peach',
+    gradientFrom: '#261814',
+    gradientVia: '#3b251e',
+    gradientTo: '#19100d',
+    accentColor: '#FB923C',
+    badgeColor: '#FDBA74',
+    btnBg: '#EA580C',
+    btnText: '#FFFFFF',
+    glowColor: 'rgba(251, 146, 60, 0.2)'
+  },
+  {
+    id: 'midnight-indigo',
+    name: 'Nordic Slate & Periwinkle',
+    gradientFrom: '#141b29',
+    gradientVia: '#1e293d',
+    gradientTo: '#0d121c',
+    accentColor: '#818CF8',
+    badgeColor: '#A5B4FC',
+    btnBg: '#4F46E5',
+    btnText: '#FFFFFF',
+    glowColor: 'rgba(129, 140, 248, 0.2)'
   },
   {
     id: 'trans-orchid',
-    name: 'Trans Affirming Orchid & Rose',
-    gradientFrom: '#2f0827',
-    gradientVia: '#541245',
-    gradientTo: '#1e0519',
+    name: 'Cool Orchid Dusk & Rose',
+    gradientFrom: '#271228',
+    gradientVia: '#3d1a3e',
+    gradientTo: '#190b1a',
     accentColor: '#F472B6',
     badgeColor: '#F9A8D4',
-    glowColor: 'rgba(244, 114, 182, 0.35)'
+    btnBg: '#DB2777',
+    btnText: '#FFFFFF',
+    glowColor: 'rgba(244, 114, 182, 0.2)'
+  },
+  {
+    id: 'pine-emerald',
+    name: 'Deep Pine & Soothing Mint',
+    gradientFrom: '#0c211b',
+    gradientVia: '#13332a',
+    gradientTo: '#081612',
+    accentColor: '#34D399',
+    badgeColor: '#6EE7B7',
+    btnBg: '#059669',
+    btnText: '#FFFFFF',
+    glowColor: 'rgba(52, 211, 153, 0.2)'
   },
   {
     id: 'sunset-dusk',
-    name: 'Sunset Dusk & Peach Gold',
-    gradientFrom: '#330c2d',
-    gradientVia: '#5e163d',
-    gradientTo: '#21081d',
-    accentColor: '#FB923C',
-    badgeColor: '#FDBA74',
-    glowColor: 'rgba(251, 146, 60, 0.35)'
+    name: 'Cool Twilight Dusk & Coral',
+    gradientFrom: '#241421',
+    gradientVia: '#361c2e',
+    gradientTo: '#170c15',
+    accentColor: '#FB7185',
+    badgeColor: '#FDA4AF',
+    btnBg: '#E11D48',
+    btnText: '#FFFFFF',
+    glowColor: 'rgba(251, 113, 133, 0.2)'
   },
   {
     id: 'midnight-eclipse',
-    name: 'Midnight Eclipse & Platinum',
-    gradientFrom: '#0f172a',
-    gradientVia: '#1e293b',
-    gradientTo: '#020617',
-    accentColor: '#FACC15',
-    badgeColor: '#FDE047',
-    glowColor: 'rgba(148, 163, 184, 0.35)'
+    name: 'Midnight Eclipse & Ice Azure',
+    gradientFrom: '#0b1329',
+    gradientVia: '#122042',
+    gradientTo: '#070c1a',
+    accentColor: '#38BDF8',
+    badgeColor: '#7DD3FC',
+    btnBg: '#0284C7',
+    btnText: '#FFFFFF',
+    glowColor: 'rgba(56, 189, 248, 0.2)'
   }
 ];
 
 export const DEFAULT_RESOURCE_THEMES = {
   'Crisis & Immediate Helplines': {
-    gradientFrom: '#BE123C',
-    gradientVia: '#9F1239',
-    gradientTo: '#881337',
-    accentColor: '#BE123C',
-    badgeColor: '#E11D48',
-    glowColor: 'rgba(190, 18, 60, 0.15)',
+    // Calming ruby dusk / wine slate (soothing, reassuring)
+    gradientFrom: '#24121b',
+    gradientVia: '#361928',
+    gradientTo: '#180c12',
+    accentColor: '#FB7185',
+    badgeColor: '#FDA4AF',
+    glowColor: 'rgba(244, 63, 94, 0.2)',
     presetId: 'ruby-wine',
-    bgFrom: '#FFF1F2',
-    bgTo: '#FFF5F5',
-    borderColor: '#FDA4AF',
-    badgeText: '#9F1239',
-    badgeBg: '#FFE4E6',
-    textPrimary: '#0F172A',
-    textSecondary: '#475569',
-    btnBg: '#BE123C',
-    btnText: '#FFFFFF',
-    iconColor: '#BE123C'
+    btnBg: '#E11D48',
+    btnText: '#FFFFFF'
   },
   'Health & Sexual Wellness': {
-    // Rich royal plum & gold (no green per request)
-    gradientFrom: '#5A1E65',
-    gradientVia: '#45124E',
-    gradientTo: '#2E0B35',
-    accentColor: '#5A1E65',
-    badgeColor: '#7E22CE',
-    glowColor: 'rgba(90, 30, 101, 0.15)',
+    // Cool calm midnight indigo & azure (reassuring, medical, trusted — NO green, not purple!)
+    gradientFrom: '#101a36',
+    gradientVia: '#1b2a54',
+    gradientTo: '#0b1124',
+    accentColor: '#60A5FA',
+    badgeColor: '#93C5FD',
+    glowColor: 'rgba(96, 165, 250, 0.2)',
     presetId: 'velvet-plum',
-    bgFrom: '#FAF5FF',
-    bgTo: '#F3E8FF',
-    borderColor: '#D8B4FE',
-    badgeText: '#5A1E65',
-    badgeBg: '#F3E8FF',
-    textPrimary: '#0F172A',
-    textSecondary: '#475569',
-    btnBg: '#5A1E65',
-    btnText: '#FFFFFF',
-    iconColor: '#5A1E65'
+    btnBg: '#2563EB',
+    btnText: '#FFFFFF'
   },
   'Legal & Civil Advocacy': {
-    gradientFrom: '#1E40AF',
-    gradientVia: '#1E3A8A',
-    gradientTo: '#172554',
-    accentColor: '#1E40AF',
-    badgeColor: '#2563EB',
-    glowColor: 'rgba(30, 64, 175, 0.15)',
+    // Deep oceanic sapphire & cool sky cyan
+    gradientFrom: '#0c1d33',
+    gradientVia: '#142e4f',
+    gradientTo: '#081424',
+    accentColor: '#38BDF8',
+    badgeColor: '#7DD3FC',
+    glowColor: 'rgba(56, 189, 248, 0.2)',
     presetId: 'celestial-sapphire',
-    bgFrom: '#EFF6FF',
-    bgTo: '#DBEAFE',
-    borderColor: '#93C5FD',
-    badgeText: '#1E40AF',
-    badgeBg: '#DBEAFE',
-    textPrimary: '#0F172A',
-    textSecondary: '#475569',
-    btnBg: '#1E40AF',
-    btnText: '#FFFFFF',
-    iconColor: '#2563EB'
+    btnBg: '#0284C7',
+    btnText: '#FFFFFF'
   },
   'Youth & Family Support': {
-    gradientFrom: '#B45309',
-    gradientVia: '#92400E',
-    gradientTo: '#78350F',
-    accentColor: '#B45309',
-    badgeColor: '#D97706',
-    glowColor: 'rgba(180, 83, 9, 0.15)',
+    // Calm terracotta dusk & warm peach
+    gradientFrom: '#261814',
+    gradientVia: '#3b251e',
+    gradientTo: '#19100d',
+    accentColor: '#FB923C',
+    badgeColor: '#FDBA74',
+    glowColor: 'rgba(251, 146, 60, 0.2)',
     presetId: 'warm-espresso',
-    bgFrom: '#FFFBEB',
-    bgTo: '#FEF3C7',
-    borderColor: '#FCD34D',
-    badgeText: '#92400E',
-    badgeBg: '#FEF3C7',
-    textPrimary: '#0F172A',
-    textSecondary: '#475569',
-    btnBg: '#B45309',
-    btnText: '#FFFFFF',
-    iconColor: '#B45309'
+    btnBg: '#EA580C',
+    btnText: '#FFFFFF'
   },
   'Senior & Community Resources': {
-    gradientFrom: '#0F766E',
-    gradientVia: '#115E59',
-    gradientTo: '#134E4A',
-    accentColor: '#0F766E',
-    badgeColor: '#0D9488',
-    glowColor: 'rgba(15, 118, 110, 0.15)',
+    // Calming coastal teal & seafoam
+    gradientFrom: '#0c2124',
+    gradientVia: '#123338',
+    gradientTo: '#081618',
+    accentColor: '#2DD4BF',
+    badgeColor: '#5EEAD4',
+    glowColor: 'rgba(45, 212, 191, 0.2)',
     presetId: 'obsidian-teal',
-    bgFrom: '#F0FDFA',
-    bgTo: '#CCFBF1',
-    borderColor: '#5EEAD4',
-    badgeText: '#115E59',
-    badgeBg: '#CCFBF1',
-    textPrimary: '#0F172A',
-    textSecondary: '#475569',
-    btnBg: '#0F766E',
-    btnText: '#FFFFFF',
-    iconColor: '#0D9488'
+    btnBg: '#0D9488',
+    btnText: '#FFFFFF'
   },
   'Housing & Essential Living': {
-    gradientFrom: '#3730A3',
-    gradientVia: '#312E81',
-    gradientTo: '#1E1B4B',
-    accentColor: '#3730A3',
-    badgeColor: '#4338CA',
-    glowColor: 'rgba(55, 48, 163, 0.15)',
+    // Nordic slate & periwinkle
+    gradientFrom: '#141b29',
+    gradientVia: '#1e293d',
+    gradientTo: '#0d121c',
+    accentColor: '#818CF8',
+    badgeColor: '#A5B4FC',
+    glowColor: 'rgba(129, 140, 248, 0.2)',
     presetId: 'midnight-indigo',
-    bgFrom: '#F5F3FF',
-    bgTo: '#EDE9FE',
-    borderColor: '#C4B5FD',
-    badgeText: '#3730A3',
-    badgeBg: '#EDE9FE',
-    textPrimary: '#0F172A',
-    textSecondary: '#475569',
-    btnBg: '#3730A3',
-    btnText: '#FFFFFF',
-    iconColor: '#4338CA'
+    btnBg: '#4F46E5',
+    btnText: '#FFFFFF'
   },
   'Addiction & Recovery Navigation': {
-    gradientFrom: '#15803D',
-    gradientVia: '#166534',
-    gradientTo: '#14532D',
-    accentColor: '#15803D',
-    badgeColor: '#16A34A',
-    glowColor: 'rgba(21, 128, 61, 0.15)',
+    // Deep pine & soothing mint
+    gradientFrom: '#0c211b',
+    gradientVia: '#13332a',
+    gradientTo: '#081612',
+    accentColor: '#34D399',
+    badgeColor: '#6EE7B7',
+    glowColor: 'rgba(52, 211, 153, 0.2)',
     presetId: 'obsidian-teal',
-    bgFrom: '#F0FDF4',
-    bgTo: '#DCFCE7',
-    borderColor: '#86EFAC',
-    badgeText: '#166534',
-    badgeBg: '#DCFCE7',
-    textPrimary: '#0F172A',
-    textSecondary: '#475569',
-    btnBg: '#15803D',
-    btnText: '#FFFFFF',
-    iconColor: '#15803D'
+    btnBg: '#059669',
+    btnText: '#FFFFFF'
   }
 };
 
 export const DEFAULT_COMMUNITY_THEMES = {
   'Youth Peer Support': {
-    gradientFrom: '#B45309',
-    gradientVia: '#92400E',
-    gradientTo: '#78350F',
-    accentColor: '#B45309',
-    badgeColor: '#D97706',
-    glowColor: 'rgba(180, 83, 9, 0.15)',
+    gradientFrom: '#261814',
+    gradientVia: '#3b251e',
+    gradientTo: '#19100d',
+    accentColor: '#FB923C',
+    badgeColor: '#FDBA74',
+    glowColor: 'rgba(251, 146, 60, 0.2)',
     presetId: 'warm-espresso',
-    bgFrom: '#FFFBEB',
-    bgTo: '#FEF3C7',
-    borderColor: '#FCD34D',
-    badgeText: '#92400E',
-    badgeBg: '#FEF3C7',
-    textPrimary: '#0F172A',
-    textSecondary: '#475569',
-    btnBg: '#B45309',
-    btnText: '#FFFFFF',
-    iconColor: '#B45309'
+    btnBg: '#EA580C',
+    btnText: '#FFFFFF'
   },
   'Adult Peer Support': {
-    gradientFrom: '#1D4ED8',
-    gradientVia: '#1E40AF',
-    gradientTo: '#172554',
-    accentColor: '#1D4ED8',
-    badgeColor: '#2563EB',
-    glowColor: 'rgba(29, 78, 216, 0.15)',
-    presetId: 'celestial-sapphire',
-    bgFrom: '#EFF6FF',
-    bgTo: '#DBEAFE',
-    borderColor: '#93C5FD',
-    badgeText: '#1E40AF',
-    badgeBg: '#DBEAFE',
-    textPrimary: '#0F172A',
-    textSecondary: '#475569',
-    btnBg: '#1D4ED8',
-    btnText: '#FFFFFF',
-    iconColor: '#2563EB'
+    gradientFrom: '#101a36',
+    gradientVia: '#1b2a54',
+    gradientTo: '#0b1124',
+    accentColor: '#60A5FA',
+    badgeColor: '#93C5FD',
+    glowColor: 'rgba(96, 165, 250, 0.2)',
+    presetId: 'midnight-indigo',
+    btnBg: '#2563EB',
+    btnText: '#FFFFFF'
   },
   'Trans & Non-Binary Support': {
-    gradientFrom: '#BE185D',
-    gradientVia: '#9D174D',
-    gradientTo: '#831843',
-    accentColor: '#BE185D',
-    badgeColor: '#DB2777',
-    glowColor: 'rgba(190, 24, 93, 0.15)',
+    gradientFrom: '#271228',
+    gradientVia: '#3d1a3e',
+    gradientTo: '#190b1a',
+    accentColor: '#F472B6',
+    badgeColor: '#F9A8D4',
+    glowColor: 'rgba(244, 114, 182, 0.2)',
     presetId: 'trans-orchid',
-    bgFrom: '#FDF2F8',
-    bgTo: '#FCE7F3',
-    borderColor: '#F472B6',
-    badgeText: '#9D174D',
-    badgeBg: '#FCE7F3',
-    textPrimary: '#0F172A',
-    textSecondary: '#475569',
-    btnBg: '#BE185D',
-    btnText: '#FFFFFF',
-    iconColor: '#BE185D'
+    btnBg: '#DB2777',
+    btnText: '#FFFFFF'
   },
   'Seniors / 55+': {
-    gradientFrom: '#0F766E',
-    gradientVia: '#115E59',
-    gradientTo: '#134E4A',
-    accentColor: '#0F766E',
-    badgeColor: '#0D9488',
-    glowColor: 'rgba(15, 118, 110, 0.15)',
+    gradientFrom: '#0c2124',
+    gradientVia: '#123338',
+    gradientTo: '#081618',
+    accentColor: '#2DD4BF',
+    badgeColor: '#5EEAD4',
+    glowColor: 'rgba(45, 212, 191, 0.2)',
     presetId: 'obsidian-teal',
-    bgFrom: '#F0FDFA',
-    bgTo: '#CCFBF1',
-    borderColor: '#5EEAD4',
-    badgeText: '#115E59',
-    badgeBg: '#CCFBF1',
-    textPrimary: '#0F172A',
-    textSecondary: '#475569',
-    btnBg: '#0F766E',
-    btnText: '#FFFFFF',
-    iconColor: '#0D9488'
+    btnBg: '#0D9488',
+    btnText: '#FFFFFF'
   },
   'Professional & Personal Growth': {
-    gradientFrom: '#5A1E65',
-    gradientVia: '#45124E',
-    gradientTo: '#2E0B35',
-    accentColor: '#5A1E65',
-    badgeColor: '#7E22CE',
-    glowColor: 'rgba(90, 30, 101, 0.15)',
-    presetId: 'velvet-plum',
-    bgFrom: '#FAF5FF',
-    bgTo: '#F3E8FF',
-    borderColor: '#D8B4FE',
-    badgeText: '#5A1E65',
-    badgeBg: '#F3E8FF',
-    textPrimary: '#0F172A',
-    textSecondary: '#475569',
-    btnBg: '#5A1E65',
-    btnText: '#FFFFFF',
-    iconColor: '#5A1E65'
+    gradientFrom: '#0c1d33',
+    gradientVia: '#142e4f',
+    gradientTo: '#081424',
+    accentColor: '#38BDF8',
+    badgeColor: '#7DD3FC',
+    glowColor: 'rgba(56, 189, 248, 0.2)',
+    presetId: 'celestial-sapphire',
+    btnBg: '#0284C7',
+    btnText: '#FFFFFF'
   },
   'Family & Ally Support': {
-    gradientFrom: '#BE123C',
-    gradientVia: '#9F1239',
-    gradientTo: '#881337',
-    accentColor: '#BE123C',
-    badgeColor: '#E11D48',
-    glowColor: 'rgba(190, 18, 60, 0.15)',
+    gradientFrom: '#24121b',
+    gradientVia: '#361928',
+    gradientTo: '#180c12',
+    accentColor: '#FB7185',
+    badgeColor: '#FDA4AF',
+    glowColor: 'rgba(244, 63, 94, 0.2)',
     presetId: 'ruby-wine',
-    bgFrom: '#FFF1F2',
-    bgTo: '#FFE4E6',
-    borderColor: '#FDA4AF',
-    badgeText: '#9F1239',
-    badgeBg: '#FFE4E6',
-    textPrimary: '#0F172A',
-    textSecondary: '#475569',
-    btnBg: '#BE123C',
-    btnText: '#FFFFFF',
-    iconColor: '#BE123C'
+    btnBg: '#E11D48',
+    btnText: '#FFFFFF'
   },
   'Recovery & Wellness': {
-    gradientFrom: '#15803D',
-    gradientVia: '#166534',
-    gradientTo: '#14532D',
-    accentColor: '#15803D',
-    badgeColor: '#16A34A',
-    glowColor: 'rgba(21, 128, 61, 0.15)',
+    gradientFrom: '#0c211b',
+    gradientVia: '#13332a',
+    gradientTo: '#081612',
+    accentColor: '#34D399',
+    badgeColor: '#6EE7B7',
+    glowColor: 'rgba(52, 211, 153, 0.2)',
     presetId: 'obsidian-teal',
-    bgFrom: '#F0FDF4',
-    bgTo: '#DCFCE7',
-    borderColor: '#86EFAC',
-    badgeText: '#166534',
-    badgeBg: '#DCFCE7',
-    textPrimary: '#0F172A',
-    textSecondary: '#475569',
-    btnBg: '#15803D',
-    btnText: '#FFFFFF',
-    iconColor: '#15803D'
+    btnBg: '#059669',
+    btnText: '#FFFFFF'
   }
 };
 
@@ -459,7 +373,7 @@ export function resetCardThemes() {
 export function getResourceCardTheme(category, itemOverride = null) {
   const all = getAllCardThemes();
   const base = all.resources[category] || DEFAULT_RESOURCE_THEMES[category] || DEFAULT_RESOURCE_THEMES['Health & Sexual Wellness'];
-  if (itemOverride && (itemOverride.bgFrom || itemOverride.gradientFrom || itemOverride.cardTheme)) {
+  if (itemOverride && (itemOverride.gradientFrom || itemOverride.cardTheme)) {
     return { ...base, ...itemOverride };
   }
   return base;
@@ -471,7 +385,7 @@ export function getResourceCardTheme(category, itemOverride = null) {
 export function getCommunityCardTheme(category, itemOverride = null) {
   const all = getAllCardThemes();
   const base = all.community[category] || DEFAULT_COMMUNITY_THEMES[category] || DEFAULT_COMMUNITY_THEMES['Youth Peer Support'];
-  if (itemOverride && (itemOverride.bgFrom || itemOverride.gradientFrom || itemOverride.cardTheme)) {
+  if (itemOverride && (itemOverride.gradientFrom || itemOverride.cardTheme)) {
     return { ...base, ...itemOverride };
   }
   return base;

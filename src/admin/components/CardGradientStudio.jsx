@@ -71,6 +71,8 @@ export default function CardGradientStudio() {
       gradientTo: preset.gradientTo,
       accentColor: preset.accentColor,
       badgeColor: preset.badgeColor,
+      btnBg: preset.btnBg || preset.accentColor,
+      btnText: preset.btnText || '#FFFFFF',
       glowColor: preset.glowColor,
       presetId: preset.id
     };
@@ -460,17 +462,18 @@ export default function CardGradientStudio() {
                 </div>
               </div>
 
-              {/* Radiant Golden Action Button */}
+              {/* Action Button Preview */}
               <div className="pt-2 flex flex-col sm:flex-row items-center gap-2.5">
                 <button
                   type="button"
-                  className="w-full py-3 px-6 rounded-2xl font-black text-xs sm:text-sm text-slate-950 flex items-center justify-center gap-2 shadow-lg transition-transform hover:scale-[1.02] cursor-pointer"
+                  className="w-full py-3 px-6 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all hover:opacity-95 cursor-pointer"
                   style={{
-                    background: 'linear-gradient(90deg, #F59E0B 0%, #FDE047 50%, #F59E0B 100%)'
+                    backgroundColor: currentTheme.btnBg || currentTheme.accentColor || '#2563EB',
+                    color: '#FFFFFF'
                   }}
                 >
-                  <Heart className="w-4 h-4 fill-slate-950 text-slate-950" />
-                  <span>
+                  <Heart className="w-4 h-4 fill-white text-white" />
+                  <span className="font-bold text-white">
                     {activeTab === 'resources' ? 'Access Service Online ↗' : 'Join Community Circle ↗'}
                   </span>
                 </button>

@@ -193,183 +193,164 @@ export default function Community() {
             const annCount = enriched?.announcements?.length || 0;
             const blogCount = enriched?.blogPosts?.length || 0;
             const theme = getCommunityCardTheme(group.category, group);
+            const gradientBg = `linear-gradient(145deg, ${theme.gradientFrom} 0%, ${theme.gradientVia || theme.gradientFrom} 50%, ${theme.gradientTo} 100%)`;
 
             return (
               <CardSpotlight
                 key={group.name}
-                className="rounded-3xl overflow-hidden transition-all duration-300 flex flex-col border-2"
+                className="rounded-3xl relative overflow-hidden transition-all duration-300 flex flex-col justify-between border"
                 style={{
-                  background: `linear-gradient(145deg, ${theme.bgFrom || '#FAF5FF'} 0%, ${theme.bgTo || '#F3E8FF'} 100%)`,
-                  borderColor: theme.borderColor || '#D8B4FE',
-                  boxShadow: `0 4px 20px -4px ${theme.borderColor || '#D8B4FE'}88`
+                  background: gradientBg,
+                  borderColor: `${theme.accentColor || '#38BDF8'}33`,
+                  boxShadow: `0 14px 34px -10px ${theme.glowColor || 'rgba(0,0,0,0.4)'}`
                 }}
                 tilt={true}
                 maxTilt={2}
                 glare={false}
               >
-                {/* Colored top accent bar */}
+                {/* Subtle top category glow accent line */}
                 <div
-                  className="h-1.5 w-full flex-shrink-0"
-                  style={{ background: theme.accentColor || '#7E22CE' }}
+                  className="h-[2px] w-full"
+                  style={{
+                    background: `linear-gradient(90deg, transparent 0%, ${theme.accentColor || '#38BDF8'} 50%, transparent 100%)`
+                  }}
                 />
 
-                <div className="p-6 sm:p-7 flex flex-col flex-1 gap-4">
-                  {/* Top Badges */}
+                <div className="p-6 sm:p-7 flex flex-col flex-1 justify-between gap-4">
+                  {/* Top Header Badges */}
                   <div className="flex items-center justify-between gap-2">
                     <span
-                      className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5"
+                      className="px-3.5 py-1 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 backdrop-blur-md"
                       style={{
-                        background: theme.badgeBg || '#F3E8FF',
-                        color: theme.badgeText || '#6B21A8',
-                        border: `1.5px solid ${theme.borderColor || '#D8B4FE'}`
+                        backgroundColor: `${theme.accentColor || '#38BDF8'}1f`,
+                        color: theme.badgeColor || theme.accentColor || '#38BDF8',
+                        border: `1px solid ${theme.accentColor || '#38BDF8'}40`
                       }}
                     >
                       <Sparkles className="w-3 h-3" />
                       <span>{group.category}</span>
                     </span>
-                    <span
-                      className="text-[10px] font-bold px-2.5 py-1 rounded-full"
-                      style={{ background: `${theme.accentColor}18`, color: theme.accentColor }}
-                    >
+                    <span className="text-xs font-semibold text-slate-300 bg-white/10 px-3 py-1 rounded-full border border-white/15 backdrop-blur-xs">
                       {group.ages}
                     </span>
                   </div>
 
-                  {/* Group Name */}
+                  {/* Title */}
                   <div>
-                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
                       AFFIRMING PEER GATHERING
                     </span>
-                    <h2
-                      className="font-display text-xl sm:text-2xl font-black tracking-tight leading-tight"
-                      style={{ color: theme.textPrimary || '#1E293B' }}
-                    >
+                    <h2 className="font-display text-2xl sm:text-3xl font-black text-white tracking-tight leading-snug">
                       {group.name}
                     </h2>
                   </div>
 
-                  {/* Description */}
-                  <div
-                    className="rounded-2xl p-4 border flex-1"
-                    style={{ background: 'rgba(255,255,255,0.65)', borderColor: `${theme.borderColor || '#D8B4FE'}66` }}
-                  >
-                    <div className="text-xs font-bold flex items-center gap-1.5 mb-2" style={{ color: theme.accentColor }}>
+                  {/* Frosted Glass Description Container */}
+                  <div className="rounded-2xl p-4 sm:p-5 bg-white/[0.07] backdrop-blur-md border border-white/10 space-y-2">
+                    <div
+                      className="text-xs sm:text-sm font-bold flex items-center gap-1.5"
+                      style={{ color: theme.accentColor || '#38BDF8' }}
+                    >
                       <Heart className="w-3.5 h-3.5 fill-current" />
                       <span>Safe, Affirming &amp; Facilitated Community Space</span>
                     </div>
-                    <p className="text-sm font-serif italic leading-relaxed" style={{ color: theme.textSecondary || '#475569' }}>
+                    <p className="text-sm sm:text-base text-slate-200 font-serif italic leading-relaxed">
                       &ldquo;{group.description}&rdquo;
                     </p>
                   </div>
 
-                  {/* Schedule & Location */}
-                  <div
-                    className="p-4 rounded-2xl border space-y-2 text-xs"
-                    style={{ background: `${theme.accentColor}0a`, borderColor: `${theme.borderColor}55` }}
-                  >
+                  {/* Meeting Schedule & Location Pill Container */}
+                  <div className="p-4 bg-black/25 backdrop-blur-md rounded-2xl border border-white/10 space-y-2 text-xs text-slate-200">
                     <div className="flex items-center gap-2.5">
-                      <Clock className="w-3.5 h-3.5 shrink-0" style={{ color: theme.accentColor }} />
-                      <span className="font-bold" style={{ color: theme.textPrimary }}>Meets:</span>
-                      <span className="font-medium" style={{ color: theme.textSecondary }}>{group.frequency}</span>
+                      <Clock className="w-4 h-4 shrink-0" style={{ color: theme.accentColor || '#38BDF8' }} />
+                      <span className="font-bold text-white">Meets:</span>
+                      <span className="text-slate-300 font-medium">{group.frequency}</span>
                     </div>
                     <div className="flex items-center gap-2.5">
-                      <MapPin className="w-3.5 h-3.5 shrink-0" style={{ color: theme.accentColor }} />
-                      <span className="font-bold" style={{ color: theme.textPrimary }}>Location:</span>
-                      <span className="font-medium" style={{ color: theme.textSecondary }}>{group.location}</span>
+                      <MapPin className="w-4 h-4 shrink-0" style={{ color: theme.accentColor || '#38BDF8' }} />
+                      <span className="font-bold text-white">Location:</span>
+                      <span className="text-slate-300 font-medium">{group.location}</span>
                     </div>
                   </div>
 
-                  {/* Checklist */}
-                  <div className="space-y-1.5 text-xs font-medium" style={{ color: theme.textSecondary || '#475569' }}>
-                    {['Free drop-in, no RSVP required', 'Trauma-informed, trained facilitators'].map((f) => (
-                      <div key={f} className="flex items-center gap-2">
-                        <Check className="w-3.5 h-3.5 shrink-0" style={{ color: theme.accentColor }} />
-                        <span>{f}</span>
-                      </div>
-                    ))}
+                  {/* Feature Checklist Bullets */}
+                  <div className="space-y-1.5 text-xs text-slate-300 font-medium my-1">
+                    <div className="flex items-center gap-2">
+                      <Check className="w-3.5 h-3.5 shrink-0" style={{ color: theme.accentColor || '#38BDF8' }} />
+                      <span>Zero cost, drop-in attendance unconditionally affirmed</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Check className="w-3.5 h-3.5 shrink-0" style={{ color: theme.accentColor || '#38BDF8' }} />
+                      <span>Trauma-informed peer space guided by trained facilitators</span>
+                    </div>
                   </div>
 
-                  {/* Announcement/Blog quick links */}
+                  {/* Sub-page quick indicators */}
                   {(annCount > 0 || blogCount > 0) && (
-                    <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold">
+                    <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] font-bold">
                       {annCount > 0 && (
                         <button
                           type="button"
                           onClick={() => handleOpenDetails(group, 'announcements')}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border transition-colors cursor-pointer"
-                          style={{ background: `${theme.accentColor}12`, borderColor: `${theme.accentColor}30`, color: theme.accentColor }}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 text-white border border-white/20 hover:bg-white/20 transition-colors backdrop-blur-md cursor-pointer"
                         >
-                          <Bell className="w-3 h-3" />
-                          <span>{annCount} {annCount === 1 ? 'Announcement' : 'Announcements'}</span>
+                          <Bell className="w-3 h-3 text-amber-300" />
+                          <span>{annCount} Active {annCount === 1 ? 'Announcement' : 'Announcements'}</span>
                         </button>
                       )}
                       {blogCount > 0 && (
                         <button
                           type="button"
                           onClick={() => handleOpenDetails(group, 'blog')}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border transition-colors cursor-pointer"
-                          style={{ background: `${theme.accentColor}10`, borderColor: `${theme.accentColor}25`, color: theme.textSecondary }}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 text-white border border-white/20 hover:bg-white/20 transition-colors backdrop-blur-md cursor-pointer"
                         >
-                          <BookOpen className="w-3 h-3" />
-                          <span>{blogCount} {blogCount === 1 ? 'Story' : 'Stories'}</span>
+                          <BookOpen className="w-3 h-3 text-sky-300" />
+                          <span>{blogCount} {blogCount === 1 ? 'Story' : 'Stories'} &amp; Blog</span>
                         </button>
                       )}
                     </div>
                   )}
 
-                  {/* Action Row */}
-                  <div
-                    className="pt-4 mt-auto border-t flex flex-wrap items-center justify-between gap-3 relative z-20"
-                    style={{ borderColor: `${theme.borderColor}55` }}
-                  >
-                    <div className="flex flex-wrap items-center gap-2">
+                  {/* Primary Action Buttons */}
+                  <div className="pt-5 mt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3 relative z-20">
+                    <div className="flex flex-wrap items-center gap-2.5">
                       <button
                         type="button"
                         onClick={() => handleOpenDetails(group, 'details')}
-                        className="py-2 px-4 text-xs font-bold inline-flex items-center gap-1.5 rounded-xl border transition-all cursor-pointer"
-                        style={{
-                          background: `${theme.accentColor}10`,
-                          borderColor: `${theme.accentColor}35`,
-                          color: theme.accentColor
-                        }}
+                        className="py-2.5 px-4 text-xs font-bold inline-flex items-center gap-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-md transition-all cursor-pointer"
                       >
-                        <Info className="w-3.5 h-3.5" />
-                        <span>Details</span>
+                        <Info className="w-3.5 h-3.5" style={{ color: theme.accentColor || '#38BDF8' }} />
+                        <span>Explore Details</span>
                       </button>
 
                       <button
                         type="button"
                         onClick={() => handleOpenJoin(group)}
-                        className="py-2.5 px-5 rounded-xl font-black text-xs inline-flex items-center gap-1.5 shadow-sm hover:opacity-90 transition-all cursor-pointer"
+                        className="py-3 px-6 rounded-xl font-bold text-xs sm:text-sm inline-flex items-center gap-2 transition-all hover:opacity-95 active:scale-[0.98] shadow-md cursor-pointer"
                         style={{
-                          background: theme.btnBg || theme.accentColor || '#5A1E65',
-                          color: theme.btnText || '#FFFFFF'
+                          backgroundColor: theme.btnBg || theme.accentColor || '#2563EB',
+                          color: '#FFFFFF'
                         }}
                       >
-                        <Users className="w-3.5 h-3.5" />
-                        <span>Join Circle</span>
+                        <Users className="w-4 h-4 text-white" />
+                        <span className="font-bold text-white">Join Circle Online</span>
                       </button>
                     </div>
 
                     <a
                       href={`mailto:${group.contact}?subject=Inquiry%20Regarding%20${encodeURIComponent(group.name)}`}
-                      className="py-2 px-3 rounded-xl font-bold text-xs border flex items-center gap-1.5 transition-all"
-                      style={{
-                        background: `${theme.accentColor}0d`,
-                        borderColor: `${theme.accentColor}30`,
-                        color: theme.textSecondary
-                      }}
-                      title="Contact facilitator"
+                      className="py-2.5 px-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs border border-white/20 backdrop-blur-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                      title="Direct contact with facilitators"
                     >
-                      <Mail className="w-3.5 h-3.5" style={{ color: theme.accentColor }} />
+                      <Mail className="w-3.5 h-3.5" style={{ color: theme.accentColor || '#38BDF8' }} />
                       <span className="hidden sm:inline">Facilitator</span>
                     </a>
                   </div>
 
-                  {/* Footnote */}
-                  <div className="text-center text-[10px] flex items-center justify-center gap-1 text-slate-400">
+                  {/* Community footnote */}
+                  <div className="text-center text-[10px] text-slate-400 flex items-center justify-center gap-1 pt-1">
                     <Lock className="w-2.5 h-2.5" />
-                    <span>Affirming LGBTQ+ Circle &bull; Drop-in Welcomed</span>
+                    <span>Affirming LGBTQ+ Community Circle • Drop-in Welcomed</span>
                   </div>
                 </div>
               </CardSpotlight>
