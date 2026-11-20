@@ -34,10 +34,10 @@ export default function DcvcApprovedBadge({ className = '' }) {
       }}
       title="DCVC Verified & Affirming Partner — Hover or tap to toggle status"
     >
-      <div className={`grid grid-cols-1 grid-rows-1 w-max badge-3d-card ${flippedState ? 'is-flipped' : ''}`}>
+      <div className={`grid grid-cols-1 grid-rows-1 w-max min-w-[104px] badge-3d-card ${flippedState ? 'is-flipped' : ''}`}>
         {/* FRONT FACE: Official DCVC Logo + Holographic Sheen + Amethyst Glow */}
         <div
-          className="col-start-1 row-start-1 w-full h-[26px] flex items-center justify-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/95 dark:bg-slate-900/90 backdrop-blur-md border border-purple-200/90 dark:border-purple-500/40 badge-violet-glow transition-all duration-300 relative select-none"
+          className="col-start-1 row-start-1 w-full min-w-[104px] h-[26px] flex items-center justify-center gap-1.5 px-3 py-0.5 rounded-full bg-white/95 dark:bg-slate-900/90 backdrop-blur-md border border-purple-200/90 dark:border-purple-500/40 badge-violet-glow transition-all duration-300 relative select-none"
           style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
         >
           {/* Prismatic Holographic Sweep */}
@@ -75,7 +75,7 @@ export default function DcvcApprovedBadge({ className = '' }) {
 
         {/* BACK FACE: Emerald Neon Approved Checkmark + Prism Sheen */}
         <div
-          className="col-start-1 row-start-1 w-full h-[26px] flex items-center justify-center gap-1.5 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-emerald-600 via-emerald-500 to-green-600 text-white border border-emerald-300/80 badge-emerald-glow transition-all duration-300 relative select-none"
+          className="col-start-1 row-start-1 w-full min-w-[104px] h-[26px] flex items-center justify-center gap-1.5 px-3 py-0.5 rounded-full bg-gradient-to-r from-emerald-600 via-emerald-500 to-green-600 text-white border border-emerald-300/80 badge-emerald-glow transition-all duration-300 relative select-none"
           style={{
             transform: 'rotateY(180deg)',
             backfaceVisibility: 'hidden',

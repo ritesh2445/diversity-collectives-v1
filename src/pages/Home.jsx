@@ -369,12 +369,15 @@ export default function Home() {
 
   const inferProgramGroup = (prog) => {
     if (prog.programGroup) return prog.programGroup;
-    const text = `${prog.category || ''} ${prog.audience || ''} ${prog.title || ''} ${prog.tagline || ''} ${prog.summary || ''}`.toLowerCase();
+    const text = `${prog.category || ''} ${prog.audience || ''} ${prog.title || ''} ${prog.tagline || ''} ${prog.summary || ''} ${prog.slug || ''}`.toLowerCase();
     if (text.includes('youth') || text.includes('unicorn') || text.includes('umbrella') || text.includes('kid') || text.includes('teen') || text.includes('child') || text.includes('family') || text.includes('families')) {
       return 'youth';
     }
-    if (text.includes('recovery') || text.includes('sober') || text.includes('narcotics') || text.includes('health') || text.includes('wellness') || text.includes('hiv') || text.includes('testing') || text.includes('shines') || text.includes('growth')) {
-      return 'recovery';
+    if (text.includes('health') || text.includes('wellness') || text.includes('hiv') || text.includes('testing') || text.includes('shines') || text.includes('recovery') || text.includes('sober')) {
+      return 'health';
+    }
+    if (text.includes('train') || text.includes('educat') || text.includes('workshop')) {
+      return 'education';
     }
     return 'adults';
   };
@@ -384,7 +387,8 @@ export default function Home() {
     let group = p.programGroup;
     if (!group) {
       if (slug.includes('little-unicorns') || slug.includes('rainbow-umbrella')) group = 'youth';
-      else if (slug.includes('diversity-shines')) group = 'recovery';
+      else if (slug.includes('diversity-shines')) group = 'health';
+      else if (slug.includes('pride-training') || slug.includes('training')) group = 'education';
       else if (slug.includes('community-resource-center')) group = 'adults';
       else group = inferProgramGroup(p);
     }
@@ -409,65 +413,64 @@ export default function Home() {
     };
   };
 
-  // Exact 9 foundational Home Programs — preserves pristine homepage sequence
-  const base9Programs = useMemo(() => [
-    findGroup('Queer Adulting', '/images/community-gathering.jpg', 'adults'),
-    (() => {
-      const lu = findProg('little-unicorns');
-      return lu ? { ...lu, programGroup: 'youth', ctaLink: `/programs/${lu.slug}` } : findGroup('Little Unicorns', '/images/little-unicorns.png', 'youth');
-    })(),
-    (() => {
-      const ru = findProg('rainbow-umbrella');
-      return ru ? { ...ru, programGroup: 'youth', ctaLink: `/programs/${ru.slug}` } : findGroup('Rainbow Umbrella', '/images/youth-umbrella.jpg', 'youth');
-    })(),
-    findGroup('PFLAG', '/images/volunteers.jpg', 'youth'),
-    findGroup('Narcotics Anonymous', '/images/crc-building.jpg', 'recovery'),
-    findGroup('Transverse', '/images/hero-community.jpg', 'adults'),
-    findGroup('Toastmasters', '/images/community-gathering.jpg', 'recovery'),
-    findGroup("Men's Collective", '/images/volunteers.jpg', 'adults'),
-    findGroup('Silver Collective', '/images/community-gathering.jpg', 'adults')
-  ].filter(Boolean), [allSourcePrograms, communityGroups]);
-
-  // Combined Home Programs: Base 9 remain identical; new CMS additions are dynamically appended
+  // Official Programs matching dedicated /programs page directly from CMS
   const orderedAllPrograms = useMemo(() => {
-    const existingSlugs = new Set(base9Programs.map((p) => (p.slug || '').toLowerCase()));
-    const existingTitles = new Set(base9Programs.map((p) => (p.title || p.name || '').toLowerCase().trim()));
-
-    // Any newly added program in CMS Studio outside the base 9 is seamlessly appended to the Home Page
-    const customCmsCards = (cmsPrograms || [])
-      .filter((p) => p && p.active !== false && !existingSlugs.has((p.slug || '').toLowerCase()) && !existingTitles.has((p.title || '').toLowerCase().trim()))
+    return (cmsPrograms || programsList)
+      .filter((p) => p && p.active !== false)
       .map(mapProgramToCard);
-
-    return [...base9Programs, ...customCmsCards];
-  }, [base9Programs, cmsPrograms]);
+  }, [cmsPrograms]);
 
   const programCategories = useMemo(() => [
-    { id: 'all', label: orderedAllPrograms.length === 9 ? 'All 9 Featured Programs' : `All (${orderedAllPrograms.length}) Featured Programs` },
+    { id: 'all', label: `All Programs (${orderedAllPrograms.length})` },
     { id: 'youth', label: 'Youth & Families' },
-    { id: 'adults', label: 'Adults & 55+' },
-    { id: 'recovery', label: 'Recovery & Growth' }
+    { id: 'adults', label: 'Adults & Community' },
+    { id: 'health', label: 'Health & Wellness' },
+    { id: 'education', label: 'Training & Education' }
   ], [orderedAllPrograms.length]);
 
-  const filteredPrograms = orderedAllPrograms.filter((program) => {
-    if (selectedCategory === 'all') return true;
-    return program.programGroup === selectedCategory;
-  });
+  const filteredPrograms = useMemo(() => {
+    if (selectedCategory === 'all') return orderedAllPrograms;
+    return orderedAllPrograms.filter((program) => {
+      const g = (program.programGroup || '').toLowerCase();
+      const cat = (program.category || '').toLowerCase();
+      const aud = (program.audience || '').toLowerCase();
+      const slug = (program.slug || '').toLowerCase();
 
-  const eventCategories = [
-    { id: 'all', label: 'All Gatherings' },
-    { id: 'youth', label: 'Youth Circles' },
-    { id: 'health', label: 'Health & Wellness' },
-    { id: 'culture', label: 'Social & Cultural' }
-  ];
+      if (selectedCategory === 'youth') {
+        return g === 'youth' || cat.includes('youth') || cat.includes('kid') || aud.includes('youth') || aud.includes('9') || slug.includes('unicorns') || slug.includes('umbrella');
+      }
+      if (selectedCategory === 'adults') {
+        return g === 'adults' || cat.includes('adult') || cat.includes('center') || aud.includes('adult') || aud.includes('all ages') || aud.includes('all lgbtq') || slug.includes('resource-center');
+      }
+      if (selectedCategory === 'health') {
+        return g === 'health' || g === 'recovery' || cat.includes('health') || cat.includes('wellness') || cat.includes('screening') || cat.includes('recovery') || slug.includes('shines');
+      }
+      if (selectedCategory === 'education') {
+        return g === 'education' || cat.includes('train') || cat.includes('educat') || aud.includes('educat') || slug.includes('pride-training') || slug.includes('training');
+      }
+      return g === selectedCategory || cat === selectedCategory;
+    });
+  }, [orderedAllPrograms, selectedCategory]);
 
-  const filteredEvents = (cmsEvents || liveEvents).filter(evt => {
-    if (selectedEventCategory === 'all') return true;
-    const cat = (evt.category || '').toLowerCase();
-    if (selectedEventCategory === 'youth') return cat.includes('youth') || cat.includes('umbrella');
-    if (selectedEventCategory === 'health') return cat.includes('health') || cat.includes('wellness');
-    if (selectedEventCategory === 'culture') return cat.includes('cultural') || cat.includes('social') || cat.includes('pride') || cat.includes('culture');
-    return true;
-  });
+  const eventCategories = useMemo(() => [
+    { id: 'all', label: 'All Events' },
+    { id: 'Health & Wellness', label: 'Health & Wellness' },
+    { id: 'Youth', label: 'Youth' },
+    { id: 'Adult Support', label: 'Adult Support' },
+    { id: 'Seniors', label: 'Seniors' },
+    { id: 'Professional Growth', label: 'Professional Growth' },
+    { id: 'Signature Event', label: 'Signature Event' }
+  ], []);
+
+  const filteredEvents = useMemo(() => {
+    const list = cmsEvents || liveEvents || [];
+    if (selectedEventCategory === 'all') return list;
+    return list.filter(evt => {
+      const cat = (evt.category || '').toLowerCase();
+      const target = selectedEventCategory.toLowerCase();
+      return cat === target || cat.includes(target) || target.includes(cat);
+    });
+  }, [cmsEvents, selectedEventCategory]);
 
   const activeTierObj = donationTiers.find(t => t.amount === selectedDonationTier) || donationTiers[1];
 
@@ -827,11 +830,12 @@ export default function Home() {
             </Link>
           </div>
 
-          <MobileCarousel cols={3} autoScrollMs={5000}>
-            {annualSignatureEvents.slice(0, 3).map((sigEvt, idx) => (
+          <MobileCarousel cols={3} autoScrollMs={5000} className="items-stretch" cardClassName="h-full flex flex-col">
+            {annualSignatureEvents.map((sigEvt, idx) => (
               <CardSpotlight
                 key={sigEvt.id || sigEvt.title}
-                className={`${['card-vibrant-rose', 'card-vibrant-purple', 'card-vibrant-amber'][idx % 3]} overflow-hidden flex flex-col justify-between shadow-md hover:shadow-xl`}
+                className={`${['card-vibrant-rose', 'card-vibrant-purple', 'card-vibrant-amber', 'card-vibrant-teal', 'card-vibrant-indigo'][idx % 5]} overflow-hidden flex flex-col justify-between shadow-md hover:shadow-xl`}
+                contentClassName="flex flex-col justify-between h-full"
                 tilt={true}
                 maxTilt={5}
                 scale={1.015}
@@ -1366,19 +1370,25 @@ export default function Home() {
           </div>
 
           {/* Events List in 3D Perspective */}
-          <MobileCarousel cols={3} autoScrollMs={5000} className="perspective-1000">
-            {filteredEvents.slice(0, 4).map((evt, idx) => {
+          <MobileCarousel cols={3} autoScrollMs={5000} className="perspective-1000 items-stretch" cardClassName="h-full flex flex-col">
+            {filteredEvents.map((evt, idx) => {
               const dateGradients = [
                 'from-purple-800 via-[#5A1E65] to-indigo-900 text-white shadow-purple-500/25',
                 'from-amber-500 via-orange-500 to-rose-600 text-white shadow-amber-500/25',
                 'from-emerald-600 via-teal-600 to-cyan-700 text-white shadow-teal-500/25',
-                'from-rose-600 via-pink-600 to-purple-800 text-white shadow-rose-500/25'
+                'from-rose-600 via-pink-600 to-purple-800 text-white shadow-rose-500/25',
+                'from-blue-600 via-indigo-600 to-purple-700 text-white shadow-blue-500/25',
+                'from-violet-600 via-purple-700 to-fuchsia-800 text-white shadow-violet-500/25',
+                'from-emerald-700 via-teal-700 to-slate-900 text-white shadow-emerald-500/25'
               ];
 
               let catBadge = "text-purple-800 bg-purple-100/70 border-purple-200";
-              if (evt.category?.toLowerCase().includes('youth')) catBadge = "text-amber-800 bg-amber-100/70 border-amber-200";
-              if (evt.category?.toLowerCase().includes('health')) catBadge = "text-teal-800 bg-teal-100/70 border-teal-200";
-              if (evt.category?.toLowerCase().includes('pride') || evt.category?.toLowerCase().includes('gala')) catBadge = "text-rose-800 bg-rose-100/70 border-rose-200";
+              const catLower = (evt.category || '').toLowerCase();
+              if (catLower.includes('youth')) catBadge = "text-amber-800 bg-amber-100/70 border-amber-200";
+              else if (catLower.includes('health') || catLower.includes('screen')) catBadge = "text-teal-800 bg-teal-100/70 border-teal-200";
+              else if (catLower.includes('senior') || catLower.includes('55')) catBadge = "text-emerald-800 bg-emerald-100/70 border-emerald-200";
+              else if (catLower.includes('growth') || catLower.includes('toastmaster')) catBadge = "text-indigo-800 bg-indigo-100/70 border-indigo-200";
+              else if (catLower.includes('pride') || catLower.includes('signature') || catLower.includes('walk') || catLower.includes('gala')) catBadge = "text-rose-800 bg-rose-100/70 border-rose-200";
 
               return (
                 <CardSpotlight

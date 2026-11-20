@@ -33,7 +33,8 @@ const AGE_FILTERS = [
   'Kids & Pre-Teens (Ages 9–13)',
   'Youth & Teens (Ages 13–23)',
   'Young Adults & Adults',
-  'All Ages Center'
+  'All Ages Center',
+  'Training & Education'
 ];
 
 export default function Programs() {
@@ -61,18 +62,25 @@ export default function Programs() {
     if (selectedAgeFilter === 'All Age Groups') return list;
 
     return list.filter(prog => {
-      const slug = prog.slug;
+      const slug = (prog.slug || '').toLowerCase();
+      const cat = (prog.category || '').toLowerCase();
+      const aud = (prog.audience || '').toLowerCase();
+      const title = (prog.title || '').toLowerCase();
+
       if (selectedAgeFilter === 'Kids & Pre-Teens (Ages 9–13)') {
-        return slug === 'little-unicorns';
+        return slug === 'little-unicorns' || cat.includes('kid') || cat.includes('pre-teen') || aud.includes('9');
       }
       if (selectedAgeFilter === 'Youth & Teens (Ages 13–23)') {
-        return slug === 'rainbow-umbrella' || slug === 'trans-affinity';
+        return slug === 'rainbow-umbrella' || slug === 'trans-affinity' || cat.includes('youth') || cat.includes('teen') || aud.includes('13');
       }
       if (selectedAgeFilter === 'Young Adults & Adults') {
-        return slug === 'diversity-shines' || slug === 'trans-affinity';
+        return slug === 'diversity-shines' || slug === 'trans-affinity' || cat.includes('adult') || aud.includes('adult');
       }
       if (selectedAgeFilter === 'All Ages Center') {
-        return slug === 'community-resource-center';
+        return slug === 'community-resource-center' || cat.includes('center') || aud.includes('all ages');
+      }
+      if (selectedAgeFilter === 'Training & Education') {
+        return slug === 'pride-training' || slug.includes('training') || cat.includes('train') || cat.includes('educat') || title.includes('training');
       }
       return true;
     });
