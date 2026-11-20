@@ -11,11 +11,26 @@ import {
   CheckCircle2,
   Calendar,
   Share2,
-  RefreshCw
+  RefreshCw,
+  Star,
+  Flame,
+  Clock,
+  Heart,
+  Navigation,
+  ChevronDown,
+  ChevronUp,
+  Sparkles,
+  Building2,
+  Check
 } from 'lucide-react';
 import { businessDirectorySeed } from '../data/dcvcData';
 import { usePageMeta } from '../utils/seo';
 import SendVoicemailButton from '../components/SendVoicemailButton';
+import DcvcApprovedBadge from '../components/DcvcApprovedBadge';
+import AirDropPulseWaves from '../components/AirDropPulseWaves';
+import DirectoryRateModal from '../components/DirectoryRateModal';
+import DirectoryClaimModal from '../components/DirectoryClaimModal';
+import { directoryService } from '../services/directoryService';
 
 const LOCAL_STORAGE_KEY = 'dcvc_live_directory_businesses';
 
@@ -39,6 +54,15 @@ export default function DirectoryProfile() {
   });
   const [loading, setLoading] = useState(!business);
 
+  // Yelp-Style Interactive States
+  const [stats, setStats] = useState(() => directoryService.getBusinessStats(business));
+  const [openStatus, setOpenStatus] = useState(() => directoryService.getOpenStatus(business));
+  const [showWeeklyHours, setShowWeeklyHours] = useState(false);
+  const [isRateModalOpen, setIsRateModalOpen] = useState(false);
+  const [isClaimModalOpen, setIsClaimModalOpen] = useState(false);
+  const [hypeWaveActive, setHypeWaveActive] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState(null);
+
   useEffect(() => {
     if (!business) {
       let isMounted = true;
@@ -50,6 +74,8 @@ export default function DirectoryProfile() {
         .then(data => {
           if (isMounted && data?.business) {
             setBusiness(data.business);
+            setStats(directoryService.getBusinessStats(data.business));
+            setOpenStatus(directoryService.getOpenStatus(data.business));
           }
         })
         .catch(() => {})
@@ -59,6 +85,21 @@ export default function DirectoryProfile() {
       return () => { isMounted = false; };
     }
   }, [slug, business]);
+
+  useEffect(() => {
+    const handleSync = () => {
+      if (business) {
+        setStats(directoryService.getBusinessStats(business));
+        setOpenStatus(directoryService.getOpenStatus(business));
+      }
+    };
+    window.addEventListener('storage', handleSync);
+    window.addEventListener('dcvc-directory-updated', handleSync);
+    return () => {
+      window.removeEventListener('storage', handleSync);
+      window.removeEventListener('dcvc-directory-updated', handleSync);
+    };
+  }, [business]);
 
   usePageMeta({
     title: business ? `${business.name} — Affirming Business Directory` : 'Business Profile',
@@ -82,11 +123,36 @@ export default function DirectoryProfile() {
     return <Navigate to="/directory" replace />;
   }
 
+  const isApproved = Boolean(business.is_verified || business.isVerifiedAffirming || business.verified);
+  const weeklyHours = directoryService.getWeeklyHours(business);
+  const amenities = directoryService.getAmenities(business);
+  const directionsUrl = directoryService.getDirectionsUrl(business);
+
+  const galleryPhotos = [
+    business.image || business.cover_url || '/images/community-gathering.jpg',
+    '/images/hero-community.jpg',
+    '/images/crc-building.jpg'
+  ];
+
+  const handleTriggerHype = async () => {
+    if (stats.isHyped) return;
+    setHypeWaveActive(true);
+    await directoryService.hypeBusiness(business.id || business.slug);
+    setTimeout(() => {
+      setHypeWaveActive(false);
+    }, 2200);
+  };
+
+  const handleToggleFavorite = () => {
+    directoryService.toggleFavorite(business.id || business.slug);
+    setStats(prev => ({ ...prev, isSaved: !prev.isSaved }));
+  };
+
   return (
-    <div className="pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
+    <div className="pt-8 md:pt-14 pb-20 bg-transparent text-slate-800 relative">
       
-      {/* Back button */}
-      <div className="container-clean mb-6">
+      {/* Back button & Action Header Bar */}
+      <div className="container-clean mb-6 flex flex-wrap items-center justify-between gap-3">
         <Link 
           to="/directory" 
           className="inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-[#5A1E65] transition-colors py-1.5 px-3.5 rounded-full bg-slate-100 hover:bg-purple-50"
@@ -94,6 +160,31 @@ export default function DirectoryProfile() {
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Back to Business Directory</span>
         </Link>
+
+        {/* Favorite & Share Buttons */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleToggleFavorite}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold border transition-all cursor-pointer ${
+              stats.isSaved
+                ? 'bg-rose-50 text-rose-700 border-rose-200 shadow-xs'
+                : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
+            }`}
+          >
+            <Heart className={`w-3.5 h-3.5 ${stats.isSaved ? 'fill-rose-500 text-rose-500' : 'text-slate-400'}`} />
+            <span>{stats.isSaved ? 'Saved in Favorites' : 'Save to Favorites'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsClaimModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-white hover:bg-purple-50 text-slate-700 border border-slate-200 transition-colors cursor-pointer"
+          >
+            <Building2 className="w-3.5 h-3.5 text-[#5A1E65]" />
+            <span>Claim or Suggest Edit</span>
+          </button>
+        </div>
       </div>
 
       <article className="container-clean">
@@ -106,12 +197,16 @@ export default function DirectoryProfile() {
                 <span className="text-xs font-black uppercase tracking-wider px-3 py-1 rounded-full bg-purple-50 text-[#5A1E65] border border-purple-200">
                   {business.category}
                 </span>
+                <span className="text-xs font-black px-2.5 py-1 rounded-full bg-slate-100 text-slate-800 border border-slate-200">
+                  {stats.price}
+                </span>
                 <span className="text-xs font-bold text-slate-500 flex items-center gap-1">
                   <MapPin className="w-3.5 h-3.5 text-amber-500" />
                   <span>{business.city}, CA</span>
                 </span>
-                {(business.isLGBTQOwned || business.is_verified) && (
-                  <span className="text-xs font-bold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
+                {isApproved && <DcvcApprovedBadge />}
+                {business.isLGBTQOwned && (
+                  <span className="text-xs font-bold text-purple-900 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-200">
                     🌈 LGBTQ+ Owned Enterprise
                   </span>
                 )}
@@ -120,10 +215,56 @@ export default function DirectoryProfile() {
               <h1 className="font-display text-3xl sm:text-5xl font-black tracking-tight text-slate-950 leading-[1.08]">
                 {business.name}
               </h1>
+
+              {/* Yelp-Style Ratings, Hype & Live Status Header */}
+              <div className="flex flex-wrap items-center gap-3 pt-1">
+                {/* 5-Star Rating Pill */}
+                <button
+                  type="button"
+                  onClick={() => setIsRateModalOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-950 font-black text-xs transition-colors cursor-pointer shadow-xs group"
+                  title="Click to submit an authentic community rating"
+                >
+                  <Star className="w-4 h-4 fill-amber-400 text-amber-500 group-hover:scale-110 transition-transform" />
+                  <span className="text-sm">{stats.rating}</span>
+                  <span className="text-slate-500 font-semibold text-xs">({stats.ratingCount} ratings)</span>
+                  <span className="text-[10px] text-purple-700 font-bold ml-1 hover:underline">Rate</span>
+                </button>
+
+                {/* Live AirDrop Hype Button */}
+                <button
+                  type="button"
+                  onClick={handleTriggerHype}
+                  disabled={stats.isHyped}
+                  className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                    stats.isHyped
+                      ? 'bg-purple-100 text-purple-900 border border-purple-300 opacity-90 cursor-default'
+                      : 'bg-gradient-to-r from-purple-700 via-pink-600 to-amber-500 text-white shadow-md hover:shadow-lg hover:scale-102 active:scale-95'
+                  }`}
+                  title={stats.isHyped ? 'Already hyped from this IP' : 'Tap to Hype this affirming business!'}
+                >
+                  <Flame className={`w-4 h-4 ${stats.isHyped ? 'text-orange-500 fill-orange-400' : 'text-amber-200 fill-amber-200 animate-pulse'}`} />
+                  <span className="text-sm">{stats.hypes}</span>
+                  <span>{stats.isHyped ? 'Hyped! 🔥' : 'HYPE'}</span>
+                </button>
+
+                {/* Live Open / Closed Pill */}
+                <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${
+                  openStatus.isOpen 
+                    ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' 
+                    : 'bg-rose-50 text-rose-800 border border-rose-200'
+                }`}>
+                  <span className={`h-2 w-2 rounded-full ${openStatus.isOpen ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
+                  <span>{openStatus.statusText}</span>
+                  <span className="text-slate-400 font-normal">·</span>
+                  <span className="text-slate-600 font-medium">{openStatus.detailText}</span>
+                </div>
+              </div>
             </div>
 
-            {/* Profile Hero Photo */}
-            <div className="rounded-3xl overflow-hidden aspect-[16/9] shadow-xl border-2 border-slate-200">
+            {/* Profile Hero Photo Showcase with AirDrop radar wave overlay */}
+            <div className="rounded-3xl overflow-hidden aspect-[16/9] shadow-xl border-2 border-slate-200 relative">
+              <AirDropPulseWaves active={hypeWaveActive} />
               <img
                 src={business.image || business.cover_url || "/images/community-gathering.jpg"}
                 alt={business.name}
@@ -132,12 +273,52 @@ export default function DirectoryProfile() {
               />
             </div>
 
+            {/* Multi-Photo Gallery Showcase (Yelp Standard) */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black uppercase tracking-wider text-slate-500">
+                  Photo Showcase & Atmosphere
+                </span>
+                <span className="text-xs text-slate-400">3 Verified Photos</span>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                {galleryPhotos.map((photo, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setSelectedPhoto(photo)}
+                    className="h-28 rounded-2xl overflow-hidden border border-slate-200 shadow-xs hover:border-purple-400 hover:scale-102 transition-all cursor-pointer relative group"
+                  >
+                    <img src={photo} alt="" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-slate-950/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold">
+                      View
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Business Description */}
             <div className="space-y-4 text-base text-slate-600 leading-relaxed font-medium">
               <h2 className="font-display text-2xl font-black text-slate-950">
                 About {business.name}
               </h2>
               <p>{business.description}</p>
+            </div>
+
+            {/* Yelp-Style Amenities & More Business Info Checklist */}
+            <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-4">
+              <h3 className="font-display text-lg font-black text-slate-950">
+                More Business Info & Affirming Amenities
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-800 font-bold">
+                {amenities.map((item, i) => (
+                  <div key={i} className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200/60">
+                    <Check className="w-4 h-4 text-emerald-600 flex-shrink-0 stroke-[3]" />
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* Affirming Standards Checklist */}
@@ -172,7 +353,7 @@ export default function DirectoryProfile() {
             {/* Tags */}
             {business.tags && (
               <div className="space-y-2 pt-2">
-                <span className="text-xs font-bold text-slate-500 uppercase">Tags & Amenities:</span>
+                <span className="text-xs font-bold text-slate-500 uppercase">Tags:</span>
                 <div className="flex flex-wrap gap-2">
                   {business.tags.map((tag) => (
                     <span key={tag} className="text-xs font-medium text-slate-700 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
@@ -184,16 +365,57 @@ export default function DirectoryProfile() {
             )}
           </div>
 
-          {/* Logistics & Contact Card */}
+          {/* Logistics & Contact Card (Yelp Right Rail) */}
           <div className="lg:col-span-4 sticky top-28 space-y-6">
-            <div className="p-8 rounded-3xl bg-white border-2 border-purple-200 shadow-xl space-y-6">
+            <div className="p-7 sm:p-8 rounded-3xl bg-white border-2 border-purple-200 shadow-xl space-y-6">
               <div>
                 <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">
-                  LOCATION & CONTACT
+                  LOCATION & HOURS
                 </span>
                 <h3 className="font-display text-xl font-black text-slate-950">
-                  Connect Directly
+                  Connect & Visit
                 </h3>
+              </div>
+
+              {/* Operating Hours Accordion */}
+              <div className="p-4 rounded-2xl bg-purple-50/50 border border-purple-100 space-y-2">
+                <div 
+                  className="flex items-center justify-between cursor-pointer select-none"
+                  onClick={() => setShowWeeklyHours(prev => !prev)}
+                >
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-[#5A1E65]" />
+                    <span className="text-xs font-black text-slate-950">Operating Hours</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-[11px] font-bold text-[#5A1E65]">
+                    <span>{openStatus.statusText}</span>
+                    {showWeeklyHours ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </div>
+                </div>
+
+                <div className="text-xs text-slate-600 font-medium pt-1">
+                  Today: <strong className="text-slate-900">{openStatus.todayHours}</strong>
+                </div>
+
+                {/* Expandable Mon-Sun Table */}
+                {showWeeklyHours && (
+                  <div className="pt-3 border-t border-purple-200/60 space-y-1.5 text-xs">
+                    {[
+                      { day: 'Monday', val: weeklyHours.mon },
+                      { day: 'Tuesday', val: weeklyHours.tue },
+                      { day: 'Wednesday', val: weeklyHours.wed },
+                      { day: 'Thursday', val: weeklyHours.thu },
+                      { day: 'Friday', val: weeklyHours.fri },
+                      { day: 'Saturday', val: weeklyHours.sat },
+                      { day: 'Sunday', val: weeklyHours.sun }
+                    ].map(h => (
+                      <div key={h.day} className="flex items-center justify-between py-0.5">
+                        <span className="text-slate-600">{h.day}</span>
+                        <span className="font-bold text-slate-900">{h.val || 'Closed'}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="space-y-4 text-xs font-medium">
@@ -204,12 +426,13 @@ export default function DirectoryProfile() {
                       <span className="font-bold text-slate-900 block">Address</span>
                       <span className="text-slate-600">{business.address}</span>
                       <a
-                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(business.address)}`}
+                        href={directionsUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[#5A1E65] font-bold hover:underline block pt-1 flex items-center gap-1"
+                        className="text-[#5A1E65] font-bold hover:underline block pt-1 inline-flex items-center gap-1"
                       >
-                        <span>Directions on Google Maps</span>
+                        <Navigation className="w-3 h-3" />
+                        <span>Get Directions on Google Maps</span>
                         <ArrowUpRight className="w-3 h-3" />
                       </a>
                     </div>
@@ -271,23 +494,39 @@ export default function DirectoryProfile() {
                 )}
               </div>
 
-              {business.website && (
-                <div className="pt-2">
+              {/* Action Buttons */}
+              <div className="pt-2 flex flex-col gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsRateModalOpen(true)}
+                  className="w-full py-3 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs inline-flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer"
+                >
+                  <Star className="w-4 h-4 fill-current" />
+                  <span>Rate This Business (★ {stats.rating})</span>
+                </button>
+
+                {business.website && (
                   <a
                     href={business.website}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="btn-primary w-full py-3.5 text-center text-xs font-bold inline-flex items-center justify-center gap-2 shadow-md hover:shadow-xl"
+                    className="btn-primary w-full py-3 text-center text-xs font-bold inline-flex items-center justify-center gap-2 shadow-md hover:shadow-xl"
                   >
                     <span>Visit Business Website</span>
                     <ArrowUpRight className="w-4 h-4" />
                   </a>
-                </div>
-              )}
+                )}
+              </div>
 
               <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
                 <span>Verified in Ventura County</span>
-                <Link to="/contact" className="hover:underline">Report an Update</Link>
+                <button 
+                  type="button" 
+                  onClick={() => setIsClaimModalOpen(true)}
+                  className="hover:underline text-[#5A1E65] font-bold cursor-pointer"
+                >
+                  Claim or Suggest Edit
+                </button>
               </div>
             </div>
           </div>
@@ -295,7 +534,32 @@ export default function DirectoryProfile() {
         </div>
       </article>
 
+      {/* Modals & Photo Lightbox */}
+      <DirectoryRateModal
+        business={business}
+        isOpen={isRateModalOpen}
+        onClose={() => setIsRateModalOpen(false)}
+        onRated={(res) => setStats(prev => ({ ...prev, rating: res.rating, ratingCount: res.ratingCount }))}
+      />
+
+      <DirectoryClaimModal
+        business={business}
+        isOpen={isClaimModalOpen}
+        onClose={() => setIsClaimModalOpen(false)}
+      />
+
+      {/* Photo Lightbox */}
+      {selectedPhoto && (
+        <div 
+          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 cursor-pointer"
+          onClick={() => setSelectedPhoto(null)}
+        >
+          <div className="max-w-4xl max-h-[85vh] rounded-3xl overflow-hidden border-2 border-white/20 shadow-2xl relative">
+            <img src={selectedPhoto} alt="Showcase" className="w-full h-full object-contain" />
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
-

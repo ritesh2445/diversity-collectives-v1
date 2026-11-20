@@ -2389,6 +2389,119 @@ html[data-admin-preview="true"] body::-webkit-scrollbar-thumb {
   animation: badge-violet-pulse 2.6s ease-in-out infinite;
 }
 
+/* ==========================================================================
+   AIRDROP-STYLE PAIRING & HYPE PULSE RADAR WAVES
+   Soft, ethereal expanding concentric radiant waves with soft light glow
+   like iPhone AirDrop device pairing radar.
+   ========================================================================== */
+
+@keyframes airdrop-radar-pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.2);
+    opacity: 0.95;
+    filter: blur(0px);
+  }
+  40% {
+    opacity: 0.75;
+  }
+  80% {
+    opacity: 0.25;
+    filter: blur(2px);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2.8);
+    opacity: 0;
+    filter: blur(5px);
+  }
+}
+
+@keyframes airdrop-card-sheen {
+  0% {
+    opacity: 0;
+    transform: scale(0.99);
+  }
+  30% {
+    opacity: 0.85;
+    transform: scale(1.008);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+@keyframes hype-float-badge {
+  0% {
+    transform: translateY(0px) scale(0.7);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(-10px) scale(1.1);
+  }
+  80% {
+    opacity: 1;
+    transform: translateY(-35px) scale(1);
+  }
+  100% {
+    transform: translateY(-55px) scale(0.9);
+    opacity: 0;
+  }
+}
+
+.airdrop-pulse-wrapper {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: inherit;
+  z-index: 35;
+}
+
+.airdrop-wave-circle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 200px;
+  height: 200px;
+  border-radius: 9999px;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  border: 2px solid rgba(168, 85, 247, 0.75);
+  box-shadow: 
+    0 0 30px rgba(168, 85, 247, 0.5),
+    inset 0 0 25px rgba(236, 72, 153, 0.4);
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.22) 0%, rgba(236, 72, 153, 0.12) 50%, transparent 75%);
+}
+
+.airdrop-wave-1 {
+  animation: airdrop-radar-pulse 1.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.airdrop-wave-2 {
+  animation: airdrop-radar-pulse 1.8s cubic-bezier(0.16, 1, 0.3, 1) 0.22s forwards;
+}
+
+.airdrop-wave-3 {
+  animation: airdrop-radar-pulse 1.8s cubic-bezier(0.16, 1, 0.3, 1) 0.44s forwards;
+}
+
+.airdrop-ambient-flash {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at center, rgba(168, 85, 247, 0.35) 0%, rgba(236, 72, 153, 0.2) 40%, rgba(59, 130, 246, 0.1) 70%, transparent 100%);
+  animation: airdrop-card-sheen 1.5s ease-out forwards;
+  pointer-events: none;
+  z-index: 32;
+}
+
+.hype-float-badge {
+  animation: hype-float-badge 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  pointer-events: none;
+}
+
+
 
 
 

@@ -12,16 +12,29 @@ import {
   ChevronRight, 
   Heart, 
   ExternalLink,
-  ShieldCheck,
-  Calendar,
-  User,
-  Filter
+  ShieldCheck, 
+  Calendar, 
+  User, 
+  Filter,
+  Star,
+  Flame,
+  Clock,
+  Navigation,
+  LayoutGrid,
+  Map as MapIcon,
+  SlidersHorizontal,
+  Building2
 } from 'lucide-react';
 import { businessDirectorySeed } from '../data/dcvcData';
 import CardSpotlight from '../components/CardSpotlight';
 import SendVoicemailButton from '../components/SendVoicemailButton';
 import MobileCarousel from '../components/MobileCarousel';
 import DcvcApprovedBadge from '../components/DcvcApprovedBadge';
+import AirDropPulseWaves from '../components/AirDropPulseWaves';
+import DirectoryRateModal from '../components/DirectoryRateModal';
+import DirectoryClaimModal from '../components/DirectoryClaimModal';
+import DirectoryMapView from '../components/DirectoryMapView';
+import { directoryService } from '../services/directoryService';
 import { usePageMeta } from '../utils/seo';
 
 function getDirectoryCardGradient(category) {
@@ -110,13 +123,27 @@ export default function Directory() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedCity, setSelectedCity] = useState('All');
-  const [selectedDateFilter, setSelectedDateFilter] = useState('All'); // 'All' | '2025-2026' | '2020-2024' | 'pre-2020'
+  const [selectedDateFilter, setSelectedDateFilter] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 6;
 
+  // Yelp-Style View Modes & Filters
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'map'
+  const [quickFilter, setQuickFilter] = useState('all'); // 'all' | 'open_now' | 'approved' | 'lgbtq_owned' | 'top_rated' | 'most_hyped' | 'saved'
+  const [sortBy, setSortBy] = useState('featured'); // 'featured' | 'rating' | 'hypes' | 'newest' | 'alphabetical'
+  const [savedCount, setSavedCount] = useState(() => directoryService.getSavedBusinesses().length);
+
+  // Modals & AirDrop Hype State
+  const [ratingModalBiz, setRatingModalBiz] = useState(null);
+  const [claimModalBiz, setClaimModalBiz] = useState(null);
+  const [activeHypeId, setActiveHypeId] = useState(null);
+
   useEffect(() => {
     let isMounted = true;
-    const handleSync = () => setBusinessesList(getLiveBusinesses());
+    const handleSync = () => {
+      setBusinessesList(getLiveBusinesses());
+      setSavedCount(directoryService.getSavedBusinesses().length);
+    };
     window.addEventListener('storage', handleSync);
     window.addEventListener('dcvc-directory-updated', handleSync);
 
@@ -182,8 +209,20 @@ export default function Directory() {
     setCurrentPage(1);
   };
 
+  // Trigger AirDrop Radar Animation & Record Hype
+  const handleTriggerHype = async (biz) => {
+    const id = biz.id || biz.slug;
+    setActiveHypeId(id);
+    await directoryService.hypeBusiness(id);
+    setTimeout(() => {
+      setActiveHypeId(null);
+    }, 2200);
+  };
+
   const filteredBusinesses = useMemo(() => {
-    return businessesList.filter((biz) => {
+    const savedIds = new Set(directoryService.getSavedBusinesses());
+
+    const result = businessesList.filter((biz) => {
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch = !q ||
         (biz.name && biz.name.toLowerCase().includes(q)) ||
@@ -209,9 +248,56 @@ export default function Directory() {
         matchesDate = launchYear < 2020;
       }
 
-      return matchesSearch && matchesCat && matchesCity && matchesDate;
+      // Yelp Quick Filter Pill matching
+      let matchesQuick = true;
+      const isApproved = Boolean(biz.is_verified || biz.isVerifiedAffirming || biz.verified);
+      const stats = directoryService.getBusinessStats(biz);
+
+      if (quickFilter === 'open_now') {
+        matchesQuick = directoryService.getOpenStatus(biz).isOpen;
+      } else if (quickFilter === 'approved') {
+        matchesQuick = isApproved;
+      } else if (quickFilter === 'lgbtq_owned') {
+        matchesQuick = Boolean(biz.isLGBTQOwned);
+      } else if (quickFilter === 'top_rated') {
+        matchesQuick = stats.rating >= 4.8;
+      } else if (quickFilter === 'most_hyped') {
+        matchesQuick = stats.hypes >= 100;
+      } else if (quickFilter === 'saved') {
+        matchesQuick = savedIds.has(biz.id || biz.slug);
+      }
+
+      return matchesSearch && matchesCat && matchesCity && matchesDate && matchesQuick;
     });
-  }, [businessesList, searchQuery, selectedCategory, selectedCity, selectedDateFilter]);
+
+    // Yelp-Style Sorting
+    return result.sort((a, b) => {
+      const statsA = directoryService.getBusinessStats(a);
+      const statsB = directoryService.getBusinessStats(b);
+
+      if (sortBy === 'rating') {
+        return statsB.rating - statsA.rating || statsB.ratingCount - statsA.ratingCount;
+      }
+      if (sortBy === 'hypes') {
+        return statsB.hypes - statsA.hypes;
+      }
+      if (sortBy === 'newest') {
+        const yearA = parseInt(a.dateLaunched || a.yearEstablished || '2020', 10);
+        const yearB = parseInt(b.dateLaunched || b.yearEstablished || '2020', 10);
+        return yearB - yearA;
+      }
+      if (sortBy === 'alphabetical') {
+        return (a.name || '').localeCompare(b.name || '');
+      }
+
+      // Default: Featured / DCVC Approved first
+      const appA = Boolean(a.is_verified || a.isVerifiedAffirming || a.verified);
+      const appB = Boolean(b.is_verified || b.isVerifiedAffirming || b.verified);
+      if (appA && !appB) return -1;
+      if (!appA && appB) return 1;
+      return statsB.hypes - statsA.hypes;
+    });
+  }, [businessesList, searchQuery, selectedCategory, selectedCity, selectedDateFilter, quickFilter, sortBy]);
 
   // Pagination calculation
   const totalPages = Math.ceil(filteredBusinesses.length / pageSize) || 1;
@@ -230,7 +316,7 @@ export default function Directory() {
           aria-hidden="true" 
         />
 
-        {/* Mobile-Friendly Action Header: Guaranteed zero cutoff in mobile view */}
+        {/* Mobile-Friendly Action Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 relative z-10">
           <div className="max-w-2xl flex flex-col gap-3">
             <div className="flex flex-wrap items-center gap-2">
@@ -250,86 +336,123 @@ export default function Directory() {
             </p>
           </div>
 
-          {/* Submit Your Business CTA - Prominent & Fully Visible on Mobile Screens */}
-          <div className="w-full sm:w-auto flex-shrink-0">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+            {/* View Mode Toggle: Grid vs Map */}
+            <div className="inline-flex items-center gap-1 bg-white p-1 rounded-2xl border border-slate-200 shadow-xs">
+              <button
+                type="button"
+                onClick={() => setViewMode('grid')}
+                className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  viewMode === 'grid'
+                    ? 'bg-[#5A1E65] text-white shadow-xs font-black'
+                    : 'text-slate-600 hover:text-slate-950'
+                }`}
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span>Card Grid</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('map')}
+                className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  viewMode === 'map'
+                    ? 'bg-[#5A1E65] text-white shadow-xs font-black'
+                    : 'text-slate-600 hover:text-slate-950'
+                }`}
+              >
+                <MapIcon className="w-3.5 h-3.5" />
+                <span>Regional Map</span>
+              </button>
+            </div>
+
             <Link
               to="/directory/submit"
-              className="btn-primary py-3.5 px-6 text-xs sm:text-sm font-extrabold inline-flex items-center justify-center gap-2 shadow-lg hover:shadow-xl w-full sm:w-auto text-center cursor-pointer"
+              className="btn-primary py-3.5 px-6 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-purple-900/10 hover:shadow-purple-900/20 text-center"
             >
-              <PlusCircle className="w-4 h-4 text-amber-300 flex-shrink-0" />
-              <span>Submit Your Business</span>
+              <PlusCircle className="w-4 h-4 text-amber-300" />
+              <span>List Your Business</span>
             </Link>
           </div>
         </div>
 
-        {/* Filter & Search Bar */}
-        <div className="mt-8 pt-6 border-t border-slate-100 space-y-4">
-          
-          {/* Search Box with Search Business Button */}
-          <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <div className="relative flex-1">
-              <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Search by business name, category, owner name, or city..."
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                className="w-full pl-11 pr-4 py-3 text-sm bg-slate-50 border border-slate-200 focus:border-[#5A1E65] focus:bg-white focus:ring-2 focus:ring-purple-100 rounded-2xl outline-none font-medium text-slate-900"
-              />
-            </div>
-            
+        {/* Filter Toolbar & Yelp Search Bar */}
+        <div className="mt-8 pt-8 border-t border-slate-100 flex flex-col gap-5">
+          {/* Main Search Input */}
+          <form onSubmit={handleSearchSubmit} className="relative w-full">
+            <Search className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search by business name, category, owner, tags, or keywords (e.g. coffee, therapy, books)..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="w-full pl-12 pr-28 py-3.5 text-xs sm:text-sm bg-white border border-slate-200 focus:border-[#5A1E65] rounded-2xl shadow-sm outline-none font-medium text-slate-900 placeholder:text-slate-400 transition-all"
+            />
             <button
               type="submit"
-              className="btn-primary py-3 px-6 text-xs font-extrabold shadow-md hover:shadow-lg inline-flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer"
+              className="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-2 bg-slate-900 hover:bg-[#5A1E65] text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
             >
-              <Search className="w-4 h-4" />
-              <span>Search Business</span>
+              Search
             </button>
-
-            {(searchQuery || selectedCategory !== 'All' || selectedCity !== 'All' || selectedDateFilter !== 'All') && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchInput('');
-                  setSearchQuery('');
-                  setSelectedCategory('All');
-                  setSelectedCity('All');
-                  setSelectedDateFilter('All');
-                  setCurrentPage(1);
-                }}
-                className="py-3 px-4 rounded-2xl border border-slate-200 text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer text-center"
-              >
-                Reset Filters
-              </button>
-            )}
           </form>
 
-          {/* Secondary Filter Dropdowns (Category, City, Date Launched) */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-            
-            {/* Category Dropdown */}
-            <div>
-              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                Category
-              </label>
-              <select
-                value={selectedCategory}
-                onChange={(e) => {
-                  setSelectedCategory(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="w-full px-4 py-2.5 text-xs bg-slate-50 border border-slate-200 focus:border-[#5A1E65] focus:bg-white rounded-xl outline-none font-medium text-slate-800"
-              >
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>Category: {cat}</option>
-                ))}
-              </select>
+          {/* Yelp-Style Quick Filter Pills & Sorting Bar */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            {/* Quick Filter Pills */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1 mr-1">
+                <SlidersHorizontal className="w-3 h-3 text-[#5A1E65]" />
+                <span>Filter:</span>
+              </span>
+              {[
+                { id: 'all', label: 'All Listings' },
+                { id: 'open_now', label: '🟢 Open Now' },
+                { id: 'approved', label: '✨ DCVC Approved' },
+                { id: 'lgbtq_owned', label: '🌈 LGBTQ+ Owned' },
+                { id: 'top_rated', label: '★ Top Rated (4.8+)' },
+                { id: 'most_hyped', label: '🔥 Most Hyped' },
+                { id: 'saved', label: `❤️ Saved (${savedCount})` }
+              ].map(pill => (
+                <button
+                  key={pill.id}
+                  type="button"
+                  onClick={() => {
+                    setQuickFilter(pill.id);
+                    setCurrentPage(1);
+                  }}
+                  className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border cursor-pointer ${
+                    quickFilter === pill.id
+                      ? 'bg-slate-950 text-white border-slate-950 shadow-xs'
+                      : 'bg-white hover:bg-purple-50 text-slate-700 border-slate-200'
+                  }`}
+                >
+                  {pill.label}
+                </button>
+              ))}
             </div>
 
+            {/* Sort Dropdown */}
+            <div className="flex items-center gap-2 self-start lg:self-auto shrink-0">
+              <span className="text-xs font-bold text-slate-500 whitespace-nowrap">Sort By:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="px-3 py-1.5 text-xs bg-white border border-slate-200 focus:border-[#5A1E65] rounded-xl outline-none font-bold text-slate-900 cursor-pointer shadow-2xs"
+              >
+                <option value="featured">Featured & Approved</option>
+                <option value="rating">Highest Rated (★)</option>
+                <option value="hypes">Most Hyped (🔥)</option>
+                <option value="newest">Newest Launched</option>
+                <option value="alphabetical">Alphabetical (A–Z)</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Secondary Filters: City, Category & Launch Date */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
             {/* City Dropdown */}
             <div>
               <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                City / Region
+                Filter by City
               </label>
               <select
                 value={selectedCity}
@@ -337,18 +460,37 @@ export default function Directory() {
                   setSelectedCity(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full px-4 py-2.5 text-xs bg-slate-50 border border-slate-200 focus:border-[#5A1E65] focus:bg-white rounded-xl outline-none font-medium text-slate-800"
+                className="w-full px-4 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-[#5A1E65] focus:bg-white rounded-xl outline-none font-medium text-slate-800 shadow-2xs"
               >
                 {cities.map((city) => (
-                  <option key={city} value={city}>City: {city}</option>
+                  <option key={city} value={city}>{city === 'All' ? 'All Cities' : `${city}, CA`}</option>
                 ))}
               </select>
             </div>
 
-            {/* Date Launched / Added Dropdown */}
+            {/* Category Dropdown */}
             <div>
               <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                Date Launched / Added
+                Filter by Category
+              </label>
+              <select
+                value={selectedCategory}
+                onChange={(e) => {
+                  setSelectedCategory(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full px-4 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-[#5A1E65] focus:bg-white rounded-xl outline-none font-medium text-slate-800 shadow-2xs"
+              >
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>{cat === 'All' ? 'All Categories' : cat}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Date Launched Dropdown */}
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                Date Launched / Heritage
               </label>
               <select
                 value={selectedDateFilter}
@@ -356,65 +498,59 @@ export default function Directory() {
                   setSelectedDateFilter(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full px-4 py-2.5 text-xs bg-slate-50 border border-slate-200 focus:border-[#5A1E65] focus:bg-white rounded-xl outline-none font-medium text-slate-800"
+                className="w-full px-4 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-[#5A1E65] focus:bg-white rounded-xl outline-none font-medium text-slate-800 shadow-2xs"
               >
                 {dateFilters.map((df) => (
                   <option key={df.value} value={df.value}>{df.label}</option>
                 ))}
               </select>
             </div>
-
           </div>
-
-          {/* Category Quick Pills */}
-          <div className="flex flex-wrap items-center gap-2 overflow-x-auto pt-2">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => {
-                  setSelectedCategory(cat);
-                  setCurrentPage(1);
-                }}
-                className={`px-3.5 py-1.5 text-xs font-bold rounded-full transition-all cursor-pointer border ${
-                  selectedCategory === cat
-                    ? 'bg-slate-900 text-white border-purple-500 shadow-xs'
-                    : 'bg-white text-slate-700 border-slate-200 hover:border-purple-300'
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-
         </div>
       </section>
 
-      {/* Directory Grid */}
-      <section className="container-clean py-16 space-y-12">
+      {/* Directory Content Section (Cards Grid or Regional Map) */}
+      <section className="container-clean py-14 space-y-10">
         <div className="flex items-center justify-between text-xs text-slate-500 font-bold">
           <span>Showing {filteredBusinesses.length} Verified Affirming Listings</span>
-          <span>Page {currentPage} of {totalPages}</span>
+          {viewMode === 'grid' && <span>Page {currentPage} of {totalPages}</span>}
         </div>
 
-        {paginatedBusinesses.length === 0 ? (
-          <div className="p-16 text-center bg-slate-50 rounded-3xl border border-slate-200 space-y-4">
-            <h3 className="font-display text-xl font-bold text-slate-900">No businesses match your current search.</h3>
-            <p className="text-xs text-slate-500">Try adjusting your search terms or clearing your city, category, or launch date filters.</p>
+        {viewMode === 'map' ? (
+          /* ================================================================
+             1. INTERACTIVE REGIONAL MAP VIEW
+             ================================================================ */
+          <DirectoryMapView
+            businesses={filteredBusinesses}
+            onHype={handleTriggerHype}
+            activeHypeId={activeHypeId}
+          />
+        ) : filteredBusinesses.length === 0 ? (
+          /* Empty State */
+          <div className="p-16 text-center bg-white rounded-3xl border border-slate-200 shadow-sm space-y-4">
+            <h3 className="font-display text-xl font-bold text-slate-900">No businesses match your current filters.</h3>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">Try clearing your filters or selecting a different city to discover more affirming spaces.</p>
             <button
+              type="button"
               onClick={() => {
                 setSearchInput('');
                 setSearchQuery('');
                 setSelectedCategory('All');
                 setSelectedCity('All');
                 setSelectedDateFilter('All');
+                setQuickFilter('all');
                 setCurrentPage(1);
               }}
-              className="btn-primary py-2.5 px-5 text-xs font-bold cursor-pointer"
+              className="btn-primary py-2.5 px-5 text-xs font-bold cursor-pointer inline-flex items-center gap-1.5"
             >
-              Reset Filters
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Reset All Filters</span>
             </button>
           </div>
         ) : (
+          /* ================================================================
+             2. YELP-STYLE CARDS GRID WITH AIRDROP PULSE & LIVE METRICS
+             ================================================================ */
           <MobileCarousel cols={3} autoScrollMs={0} cardClassName="h-full flex flex-col">
             {paginatedBusinesses.map((biz) => {
               const isApproved = biz.is_verified !== undefined
@@ -424,10 +560,15 @@ export default function Directory() {
                     : (biz.affirmingPledgeSignedAt || Boolean(biz.ownerName)));
               const grad = getDirectoryCardGradient(biz.category);
 
+              const stats = directoryService.getBusinessStats(biz);
+              const openStatus = directoryService.getOpenStatus(biz);
+              const directionsUrl = directoryService.getDirectionsUrl(biz);
+              const isCardHyped = activeHypeId === (biz.id || biz.slug);
+
               const cardContent = (
                 <CardSpotlight
                   key={biz.id}
-                  className={`p-6 sm:p-7 rounded-[23px] transition-all flex flex-col justify-between gap-6 group h-full w-full ${
+                  className={`p-6 sm:p-7 rounded-[23px] transition-all flex flex-col justify-between gap-5 group h-full w-full relative overflow-hidden ${
                     isApproved ? '' : 'border-2'
                   }`}
                   style={{
@@ -438,9 +579,12 @@ export default function Directory() {
                       : '0 4px 20px -2px rgba(90, 30, 101, 0.08), 0 2px 8px -1px rgba(0, 0, 0, 0.04), inset 0 1px 1px 0 rgba(255, 255, 255, 0.9)'
                   }}
                   tilt={true}
-                  maxTilt={3}
+                  maxTilt={2.8}
                   glare={true}
                 >
+                  {/* AirDrop Pulse Radar Wave Overlay (soft light waves on hype) */}
+                  <AirDropPulseWaves active={isCardHyped} />
+
                   <div className="space-y-4">
                     {/* Photo Thumbnail */}
                     <div className="h-44 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200/80 relative shadow-inner">
@@ -456,28 +600,45 @@ export default function Directory() {
                         {isApproved && <DcvcApprovedBadge />}
                       </div>
 
-                      {/* Top-Right: LGBTQ+ Owned Badge */}
+                      {/* Top-Right: Favorite Heart Button & LGBTQ+ Owned Pill */}
                       <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 z-10">
                         {biz.isLGBTQOwned && (
                           <span className="glass-pill text-[10px] font-black uppercase tracking-wider text-purple-900 bg-white/95 border-purple-200 shadow-xs">
                             🌈 LGBTQ+ Owned
                           </span>
                         )}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            directoryService.toggleFavorite(biz.id || biz.slug);
+                          }}
+                          className="p-1.5 rounded-full bg-white/95 backdrop-blur-sm border border-slate-200 shadow-xs hover:scale-110 active:scale-95 transition-transform cursor-pointer"
+                          title={stats.isSaved ? 'Remove from favorites' : 'Save to favorites'}
+                        >
+                          <Heart className={`w-3.5 h-3.5 ${stats.isSaved ? 'fill-rose-500 text-rose-500' : 'text-slate-400 hover:text-rose-500'}`} />
+                        </button>
                       </div>
                     </div>
 
                     <div>
+                      {/* Category, Price & City Bar */}
                       <div className="flex items-center justify-between text-xs font-bold mb-1.5">
-                        <span
-                          className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider shadow-2xs"
-                          style={{
-                            backgroundColor: `${grad.accent}14`,
-                            color: grad.accent,
-                            border: `1px solid ${grad.border}`
-                          }}
-                        >
-                          {biz.category}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider shadow-2xs"
+                            style={{
+                              backgroundColor: `${grad.accent}14`,
+                              color: grad.accent,
+                              border: `1px solid ${grad.border}`
+                            }}
+                          >
+                            {biz.category}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-white text-slate-700 border border-slate-200 shadow-2xs">
+                            {stats.price}
+                          </span>
+                        </div>
                         <span className="text-slate-600 font-bold">{biz.city}, CA</span>
                       </div>
 
@@ -487,9 +648,56 @@ export default function Directory() {
                         </Link>
                       </h3>
 
+                      {/* Yelp-Style Star Rating & Hype Action Bar */}
+                      <div className="flex items-center justify-between gap-2 mt-2 pt-1 border-t border-slate-200/50">
+                        {/* Rating Pill */}
+                        <button
+                          type="button"
+                          onClick={() => setRatingModalBiz(biz)}
+                          className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-50/90 hover:bg-amber-100 border border-amber-200 text-amber-950 font-black text-xs transition-colors cursor-pointer group/rate shadow-2xs"
+                          title="Click to rate this business"
+                        >
+                          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500 group-hover/rate:scale-110 transition-transform" />
+                          <span>{stats.rating}</span>
+                          <span className="text-[10px] text-slate-500 font-semibold">({stats.ratingCount})</span>
+                        </button>
+
+                        {/* Hype Button with AirDrop Wave Trigger */}
+                        <button
+                          type="button"
+                          onClick={() => handleTriggerHype(biz)}
+                          disabled={stats.isHyped}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                            stats.isHyped
+                              ? 'bg-purple-100 text-purple-900 border border-purple-300 opacity-90 cursor-default'
+                              : 'bg-gradient-to-r from-purple-700 via-pink-600 to-amber-500 text-white shadow-xs hover:shadow-md hover:scale-102 active:scale-95'
+                          }`}
+                          title={stats.isHyped ? 'Already hyped from this IP' : 'Tap to Hype this affirming business!'}
+                        >
+                          <Flame className={`w-3.5 h-3.5 ${stats.isHyped ? 'text-orange-500 fill-orange-400' : 'text-amber-200 fill-amber-200'}`} />
+                          <span>{stats.hypes}</span>
+                          <span className="text-[10px] opacity-90">{stats.isHyped ? 'Hyped!' : 'Hype'}</span>
+                        </button>
+                      </div>
+
+                      {/* Real-time Open / Closed Status Badge */}
+                      <div className="flex items-center gap-2 mt-2 text-[11px]">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-bold ${
+                          openStatus.isOpen 
+                            ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' 
+                            : 'bg-rose-50 text-rose-800 border border-rose-200'
+                        }`}>
+                          <span className={`h-1.5 w-1.5 rounded-full ${openStatus.isOpen ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
+                          <span>{openStatus.statusText}</span>
+                        </span>
+                        <span className="text-slate-500 text-[10.5px]">
+                          {openStatus.detailText}
+                        </span>
+                      </div>
+
                       {/* Owner / Launch Details */}
                       {(biz.ownerName || biz.owner || biz.owner_name || biz.dateLaunched) && (
-                        <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500 font-medium mt-1.5">
+                        <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500 font-medium mt-2">
                           {(biz.ownerName || biz.owner || biz.owner_name) && (
                             <span className="inline-flex items-center gap-1 text-slate-700 font-bold">
                               <User className="w-3 h-3 text-[#5A1E65]" />
@@ -529,7 +737,7 @@ export default function Directory() {
                   </div>
 
                   {/* Bottom Actions */}
-                  <div className="pt-4 border-t border-slate-200/80 flex items-center justify-between gap-3 text-xs font-bold mt-auto">
+                  <div className="pt-4 border-t border-slate-200/80 flex items-center justify-between gap-2 text-xs font-bold mt-auto">
                     <Link
                       to={`/directory/${biz.slug}`}
                       className="text-[#5A1E65] hover:underline inline-flex items-center gap-1 font-extrabold"
@@ -538,36 +746,48 @@ export default function Directory() {
                       <ExternalLink className="w-3.5 h-3.5" />
                     </Link>
 
-                    {biz.phone && (
-                      biz.voicemailOnly ? (
-                        <SendVoicemailButton
-                          label="Voicemail"
-                          subject={`Directory Inquiry: ${biz.name}`}
-                          compact
-                        />
-                      ) : (
-                        <a
-                          href={`tel:${biz.phone.replace(/[^0-9]/g, '')}`}
-                          className="text-slate-700 hover:text-slate-950 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs transition-colors"
-                          title={biz.phone}
-                        >
-                          <Phone className="w-3.5 h-3.5 text-[#5A1E65]" />
-                          <span className="font-bold">{biz.phone}</span>
-                        </a>
-                      )
-                    )}
-
-                    {biz.website && (
+                    <div className="flex items-center gap-1.5">
                       <a
-                        href={biz.website}
+                        href={directionsUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-slate-700 hover:text-slate-950 inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs transition-colors font-bold"
+                        className="p-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs text-slate-700 hover:text-[#5A1E65] transition-colors"
+                        title="Get Directions on Google Maps"
                       >
-                        <Globe className="w-3.5 h-3.5 text-[#5A1E65]" />
-                        <span>Visit Web</span>
+                        <Navigation className="w-3.5 h-3.5" />
                       </a>
-                    )}
+
+                      {biz.phone && (
+                        biz.voicemailOnly ? (
+                          <SendVoicemailButton
+                            label="Voicemail"
+                            subject={`Directory Inquiry: ${biz.name}`}
+                            compact
+                          />
+                        ) : (
+                          <a
+                            href={`tel:${biz.phone.replace(/[^0-9]/g, '')}`}
+                            className="text-slate-700 hover:text-slate-950 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs transition-colors"
+                            title={biz.phone}
+                          >
+                            <Phone className="w-3.5 h-3.5 text-[#5A1E65]" />
+                            <span className="font-bold">{biz.phone}</span>
+                          </a>
+                        )
+                      )}
+
+                      {biz.website && (
+                        <a
+                          href={biz.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-slate-700 hover:text-slate-950 inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs transition-colors font-bold"
+                        >
+                          <Globe className="w-3.5 h-3.5 text-[#5A1E65]" />
+                          <span>Web</span>
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </CardSpotlight>
               );
@@ -587,32 +807,81 @@ export default function Directory() {
           </MobileCarousel>
         )}
 
-        {/* Pagination Controls */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-3 pt-6">
+        {/* Pagination Controls (Grid View only) */}
+        {viewMode === 'grid' && totalPages > 1 && (
+          <div className="pt-8 border-t border-slate-100 flex items-center justify-between">
             <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
               disabled={currentPage === 1}
-              className="p-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-purple-50 disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer"
-              aria-label="Previous Page"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:pointer-events-none transition-all shadow-2xs"
             >
               <ChevronLeft className="w-4 h-4" />
+              <span>Previous</span>
             </button>
-            <span className="text-xs font-bold text-slate-700">
-              Page {currentPage} of {totalPages}
-            </span>
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalPages }).map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentPage(idx + 1)}
+                  className={`w-8 h-8 rounded-xl text-xs font-bold transition-all ${
+                    currentPage === idx + 1
+                      ? 'bg-slate-900 text-white shadow-xs font-black'
+                      : 'bg-white text-slate-600 hover:bg-purple-50 border border-slate-200'
+                  }`}
+                >
+                  {idx + 1}
+                </button>
+              ))}
+            </div>
             <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
               disabled={currentPage === totalPages}
-              className="p-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-purple-50 disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer"
-              aria-label="Next Page"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:pointer-events-none transition-all shadow-2xs"
             >
+              <span>Next</span>
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         )}
-
       </section>
+
+      {/* Community Stewardship & Affirming Standards Banner */}
+      <section className="container-clean pt-6">
+        <div className="p-8 sm:p-10 rounded-3xl bg-gradient-to-r from-purple-900 via-indigo-950 to-slate-900 text-white shadow-2xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="space-y-2 max-w-xl relative z-10">
+            <span className="glass-pill text-[10px] font-black uppercase tracking-wider text-amber-300 bg-white/10 border-white/20">
+              Community Standard & Pledge
+            </span>
+            <h2 className="font-display text-2xl sm:text-3xl font-black tracking-tight text-white">
+              Every business verified affirming.
+            </h2>
+            <p className="text-xs sm:text-sm text-purple-200 leading-relaxed font-medium">
+              Every partner pledges zero-tolerance for discrimination, all-gender facility access, and respectful affirmation of all gender identities and orientations.
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0 relative z-10 w-full sm:w-auto">
+            <Link
+              to="/directory/submit"
+              className="w-full sm:w-auto py-3 px-6 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-black shadow-lg transition-all text-center cursor-pointer"
+            >
+              Apply to Be Listed
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Modals */}
+      <DirectoryRateModal
+        business={ratingModalBiz}
+        isOpen={Boolean(ratingModalBiz)}
+        onClose={() => setRatingModalBiz(null)}
+      />
+
+      <DirectoryClaimModal
+        business={claimModalBiz}
+        isOpen={Boolean(claimModalBiz)}
+        onClose={() => setClaimModalBiz(null)}
+      />
 
     </div>
   );
