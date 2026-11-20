@@ -8,7 +8,7 @@
 //   cardClassName — classes for each card wrapper
 //   showDots — show dot indicators below (default true)
 
-import { useRef, useState, useEffect, Children } from 'react';
+import { useRef, useState, useEffect, Children, useCallback } from 'react';
 
 export default function MobileCarousel({
   children,
@@ -20,12 +20,25 @@ export default function MobileCarousel({
 }) {
   const scrollRef = useRef(null);
   const [activeIdx, setActiveIdx] = useState(0);
+  const [userInteracted, setUserInteracted] = useState(false);
+  const userInteractedRef = useRef(false);
+
   const validChildren = Children.toArray(children).filter(Boolean);
   const childCount = validChildren.length;
 
-  // Auto-scroll on mobile and tablet (< 1024px)
+  // Stops auto-swiping when user interacts on mobile screens (< 1024px)
+  const stopAutoScrollOnMobile = useCallback(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      if (!userInteractedRef.current) {
+        userInteractedRef.current = true;
+        setUserInteracted(true);
+      }
+    }
+  }, []);
+
+  // Auto-scroll on mobile and tablet (< 1024px) until user interacts
   useEffect(() => {
-    if (!autoScrollMs || typeof window === 'undefined') return;
+    if (!autoScrollMs || userInteracted || typeof window === 'undefined') return;
     const isSwipable = () => window.innerWidth < 1024;
     if (!isSwipable()) return;
 
@@ -33,7 +46,11 @@ export default function MobileCarousel({
     if (!container) return;
 
     const timer = setInterval(() => {
-      if (window.innerWidth >= 1024) return;
+      // If user has swiped or interacted on mobile, stop immediately
+      if (userInteractedRef.current || window.innerWidth >= 1024) {
+        clearInterval(timer);
+        return;
+      }
       const cards = container.querySelectorAll(':scope > *');
       if (!cards.length) return;
       const cardW = cards[0].offsetWidth + parseInt(getComputedStyle(container).gap || '16', 10);
@@ -43,7 +60,32 @@ export default function MobileCarousel({
     }, autoScrollMs);
 
     return () => clearInterval(timer);
-  }, [autoScrollMs]);
+  }, [autoScrollMs, userInteracted]);
+
+  // Capture user touch, swipe, pointer, wheel, and focus interactions on mobile
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || typeof window === 'undefined') return;
+
+    const handleUserInteraction = () => {
+      stopAutoScrollOnMobile();
+    };
+
+    // Use capture phase so we catch swipe/touch even if child cards handle events
+    el.addEventListener('touchstart', handleUserInteraction, { passive: true, capture: true });
+    el.addEventListener('touchmove', handleUserInteraction, { passive: true, capture: true });
+    el.addEventListener('pointerdown', handleUserInteraction, { passive: true, capture: true });
+    el.addEventListener('wheel', handleUserInteraction, { passive: true, capture: true });
+    el.addEventListener('focusin', handleUserInteraction, { capture: true });
+
+    return () => {
+      el.removeEventListener('touchstart', handleUserInteraction, { capture: true });
+      el.removeEventListener('touchmove', handleUserInteraction, { capture: true });
+      el.removeEventListener('pointerdown', handleUserInteraction, { capture: true });
+      el.removeEventListener('wheel', handleUserInteraction, { capture: true });
+      el.removeEventListener('focusin', handleUserInteraction, { capture: true });
+    };
+  }, [stopAutoScrollOnMobile]);
 
   // Track active dot
   useEffect(() => {
@@ -71,6 +113,7 @@ export default function MobileCarousel({
 
     const onMouseDown = (e) => {
       if (window.innerWidth >= 1024) return;
+      stopAutoScrollOnMobile();
       // Don't drag if clicking directly on a button or link
       if (e.target.closest('button, a, input, select')) return;
       isDown = true;
@@ -98,7 +141,7 @@ export default function MobileCarousel({
       el.removeEventListener('mouseup', onMouseUp);
       el.removeEventListener('mousemove', onMouseMove);
     };
-  }, []);
+  }, [stopAutoScrollOnMobile]);
 
   const colsClass = {
     1: 'lg:grid-cols-1',
@@ -111,6 +154,9 @@ export default function MobileCarousel({
     <div className="w-full">
       <div
         ref={scrollRef}
+        onTouchStart={stopAutoScrollOnMobile}
+        onTouchMove={stopAutoScrollOnMobile}
+        onPointerDown={stopAutoScrollOnMobile}
         className={`flex items-stretch overflow-x-auto gap-4 sm:gap-6 snap-x snap-mandatory pb-3 scroll-smooth mobile-card-scroll -mx-4 px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 lg:grid ${colsClass} lg:auto-rows-fr lg:overflow-visible ${className}`}
         style={{ touchAction: 'pan-y pan-x', overscrollBehaviorX: 'contain' }}
       >
@@ -131,6 +177,7 @@ export default function MobileCarousel({
               type="button"
               className={`carousel-dot${i === activeIdx ? ' active' : ''}`}
               onClick={() => {
+                stopAutoScrollOnMobile();
                 const container = scrollRef.current;
                 const cards = container?.querySelectorAll(':scope > *');
                 if (!cards?.[i]) return;
