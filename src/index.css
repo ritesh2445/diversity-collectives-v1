@@ -2305,11 +2305,11 @@ html[data-admin-preview="true"] body::-webkit-scrollbar-thumb {
 }
 
 .badge-3d-card.is-flipped {
-  transform: rotateY(180deg) rotateZ(2deg) scale(1.04);
+  transform: rotateY(180deg) rotateX(4deg) translateZ(8px) scale(1.04);
 }
 
 .badge-3d-card:not(.is-flipped) {
-  transform: rotateY(0deg) rotateZ(0deg) scale(1);
+  transform: rotateY(0deg) rotateX(0deg) translateZ(0px) scale(1);
 }
 
 @keyframes badge-holo-sweep {

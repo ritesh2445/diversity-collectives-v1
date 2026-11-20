@@ -3,13 +3,9 @@ import { Check } from 'lucide-react';
 
 /**
  * DcvcApprovedBadge
- * Sleek, compact micro-capsule badge for DCVC Verified & Approved Businesses.
- * Features:
- * - 3D Gyroscopic Tumbler flip with spring physics and depth pop
- * - Holographic laser-prism sweep reflection
- * - Dynamic dual-aura glow (Amethyst Violet for DCVC, Radiant Emerald for Approved)
- * - Ultra-compact, unobtrusive footprint (24-25px height, micro typography)
- * - Auto-flips periodically and responds instantly to hover/tap
+ * Compact micro-capsule badge for DCVC Verified & Approved Businesses.
+ * Uses a unified CSS Grid stack so front and back faces have perfectly matched widths,
+ * ensuring "APPROVED" and "DCVC" both have comfortable padding with zero truncation.
  */
 export default function DcvcApprovedBadge({ className = '' }) {
   const [isFlipped, setIsFlipped] = useState(false);
@@ -38,10 +34,10 @@ export default function DcvcApprovedBadge({ className = '' }) {
       }}
       title="DCVC Verified & Affirming Partner — Hover or tap to toggle status"
     >
-      <div className={`relative badge-3d-card ${flippedState ? 'is-flipped' : ''}`}>
+      <div className={`grid grid-cols-1 grid-rows-1 w-max badge-3d-card ${flippedState ? 'is-flipped' : ''}`}>
         {/* FRONT FACE: Official DCVC Logo + Holographic Sheen + Amethyst Glow */}
         <div
-          className="relative flex items-center gap-1.5 h-[25px] px-2 py-0.5 rounded-full bg-white/95 dark:bg-slate-900/90 backdrop-blur-md border border-purple-200/90 dark:border-purple-500/40 badge-violet-glow transition-all duration-300 shrink-0 overflow-hidden"
+          className="col-start-1 row-start-1 w-full h-[26px] flex items-center justify-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/95 dark:bg-slate-900/90 backdrop-blur-md border border-purple-200/90 dark:border-purple-500/40 badge-violet-glow transition-all duration-300 relative select-none"
           style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
         >
           {/* Prismatic Holographic Sweep */}
@@ -70,7 +66,7 @@ export default function DcvcApprovedBadge({ className = '' }) {
             <span className="text-[10px] font-black tracking-wider text-[#5A1E65] dark:text-purple-200">
               DCVC
             </span>
-            <span className="relative flex h-1.5 w-1.5">
+            <span className="relative flex h-1.5 w-1.5 ml-0.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-purple-600" />
             </span>
@@ -79,7 +75,7 @@ export default function DcvcApprovedBadge({ className = '' }) {
 
         {/* BACK FACE: Emerald Neon Approved Checkmark + Prism Sheen */}
         <div
-          className="absolute inset-0 flex items-center gap-1.5 h-[25px] px-2 py-0.5 rounded-full bg-gradient-to-r from-emerald-600 via-teal-500 to-green-600 text-white border border-emerald-300/80 badge-emerald-glow transition-all duration-300 shrink-0 overflow-hidden"
+          className="col-start-1 row-start-1 w-full h-[26px] flex items-center justify-center gap-1.5 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-emerald-600 via-emerald-500 to-green-600 text-white border border-emerald-300/80 badge-emerald-glow transition-all duration-300 relative select-none"
           style={{
             transform: 'rotateY(180deg)',
             backfaceVisibility: 'hidden',
@@ -99,7 +95,7 @@ export default function DcvcApprovedBadge({ className = '' }) {
             <span className="text-[10px] font-black tracking-wider text-white drop-shadow-xs">
               APPROVED
             </span>
-            <span className="relative flex h-1.5 w-1.5">
+            <span className="relative flex h-1.5 w-1.5 ml-0.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-200" />
             </span>
