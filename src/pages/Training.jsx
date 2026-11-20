@@ -16,7 +16,6 @@ import { cmsStore } from '../services/cmsStore';
 import CardSpotlight from '../components/CardSpotlight';
 import MobileCarousel from '../components/MobileCarousel';
 import { usePageMeta } from '../utils/seo';
-import { resolveCategoryTheme, loadCategoryThemes } from '../utils/cardGradients';
 
 export default function Training() {
   usePageMeta({
@@ -26,16 +25,6 @@ export default function Training() {
   });
 
   const [courses, setCourses] = useState(() => cmsStore.getTrainings?.() || trainingCourses);
-  const [themes, setThemes] = useState(loadCategoryThemes);
-
-  useEffect(() => {
-    const handleThemeUpdate = (e) => {
-      if (e?.detail) setThemes(e.detail);
-      else setThemes(loadCategoryThemes());
-    };
-    window.addEventListener('dcvc:category-themes-updated', handleThemeUpdate);
-    return () => window.removeEventListener('dcvc:category-themes-updated', handleThemeUpdate);
-  }, []);
 
   useEffect(() => {
     return cmsStore.subscribe(() => {
@@ -102,87 +91,63 @@ export default function Training() {
         </div>
 
         <MobileCarousel cols={3} autoScrollMs={0} cardClassName="h-full flex flex-col">
-          {courses.map((course) => {
-            const courseTheme = resolveCategoryTheme(course.badge || course.title, null, themes);
-            return (
-              <CardSpotlight
-                key={course.slug || course.id || course.title}
-                className="p-8 rounded-3xl border-2 shadow-md flex flex-col justify-between gap-6 h-full transition-all duration-300"
-                style={{
-                  background: courseTheme.gradient || `linear-gradient(135deg, ${courseTheme.fromColor} 0%, ${courseTheme.viaColor || courseTheme.fromColor} 50%, ${courseTheme.toColor} 100%)`,
-                  borderColor: courseTheme.borderColor || '#cbd5e1'
-                }}
-                tilt={true}
-                maxTilt={4}
-                glare={true}
-              >
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between gap-2">
-                    <span
-                      className="text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full border shadow-2xs transition-colors"
-                      style={{
-                        backgroundColor: `${courseTheme.accentColor}18`,
-                        color: courseTheme.accentColor,
-                        borderColor: `${courseTheme.accentColor}35`
-                      }}
-                    >
-                      {course.badge}
-                    </span>
-                    <span className="text-xs font-bold text-slate-600 flex items-center gap-1 bg-white/75 backdrop-blur-xs px-2.5 py-0.5 rounded-full border border-white/80">
-                      <Clock className="w-3.5 h-3.5 text-amber-500" />
-                      <span>{course.duration}</span>
-                    </span>
-                  </div>
-
-                  <h3
-                    className="font-display text-xl sm:text-2xl font-black tracking-tight leading-tight"
-                    style={{ color: courseTheme.textColor || '#0f172a' }}
-                  >
-                    {course.title}
-                  </h3>
-
-                  <p className="text-xs text-slate-700 leading-relaxed font-medium">
-                    {course.summary}
-                  </p>
-
-                  <div className="space-y-2 pt-2 border-t border-slate-900/10 text-xs">
-                    <span className="font-bold text-slate-900 block">Key Topics Covered:</span>
-                    <ul className="space-y-1.5 text-slate-700">
-                      {course.learningObjectives.slice(0, 3).map((obj, i) => (
-                        <li key={i} className="flex items-start gap-2">
-                          <CheckCircle2
-                            className="w-3.5 h-3.5 flex-shrink-0 mt-0.5"
-                            style={{ color: courseTheme.accentColor }}
-                          />
-                          <span className="line-clamp-2">{obj}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+          {courses.map((course) => (
+            <CardSpotlight
+              key={course.slug}
+              className="p-8 rounded-3xl bg-white border-2 border-slate-200 hover:border-purple-300 shadow-md flex flex-col justify-between gap-6 h-full"
+              tilt={true}
+              maxTilt={4}
+              glare={true}
+            >
+              <div className="space-y-4">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-[#5A1E65] bg-purple-50 px-3 py-1 rounded-full border border-purple-200">
+                    {course.badge}
+                  </span>
+                  <span className="text-xs font-bold text-slate-500 flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5 text-amber-500" />
+                    <span>{course.duration}</span>
+                  </span>
                 </div>
 
-                <div className="pt-4 border-t border-slate-900/10 flex items-center justify-between gap-3">
-                  <Link
-                    to={`/training/${course.slug}`}
-                    className="py-2.5 px-5 text-xs font-bold flex-1 text-center justify-center inline-flex items-center gap-1.5 shadow-sm text-white rounded-xl transition-all hover:brightness-110 active:scale-95"
-                    style={{
-                      backgroundColor: courseTheme.accentColor,
-                      boxShadow: `0 4px 12px ${courseTheme.accentColor}33`
-                    }}
-                  >
-                    <span>View Syllabus</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
-                  <Link
-                    to={`/training/${course.slug}/book`}
-                    className="py-2.5 px-4 text-xs font-bold bg-white/90 hover:bg-white text-slate-800 rounded-xl border border-slate-200 shadow-2xs transition-all hover:border-purple-300"
-                  >
-                    <span>Book</span>
-                  </Link>
+                <h3 className="font-display text-xl sm:text-2xl font-black text-slate-950 tracking-tight leading-tight">
+                  {course.title}
+                </h3>
+
+                <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                  {course.summary}
+                </p>
+
+                <div className="space-y-2 pt-2 border-t border-slate-100 text-xs">
+                  <span className="font-bold text-slate-900 block">Key Topics Covered:</span>
+                  <ul className="space-y-1.5 text-slate-600">
+                    {course.learningObjectives.slice(0, 3).map((obj, i) => (
+                      <li key={i} className="flex items-start gap-2">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                        <span className="line-clamp-2">{obj}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-              </CardSpotlight>
-            );
-          })}
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
+                <Link
+                  to={`/training/${course.slug}`}
+                  className="btn-primary py-2.5 px-5 text-xs font-bold flex-1 text-center justify-center inline-flex items-center gap-1.5 shadow-sm"
+                >
+                  <span>View Syllabus</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+                <Link
+                  to={`/training/${course.slug}/book`}
+                  className="btn-secondary py-2.5 px-4 text-xs font-bold bg-white text-slate-700"
+                >
+                  <span>Book</span>
+                </Link>
+              </div>
+            </CardSpotlight>
+          ))}
         </MobileCarousel>
       </section>
 

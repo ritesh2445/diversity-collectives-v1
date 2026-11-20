@@ -37,10 +37,10 @@ import {
 import ImagePicker from './ImagePicker.jsx';
 import MultiImagePicker from './MultiImagePicker.jsx';
 import AutoSlideImage from '../../components/AutoSlideImage.jsx';
-import CardGradientStudio from './CardGradientStudio.jsx';
 import PictureFolderManager from './PictureFolderManager.jsx';
 import StyleCustomizer from './StyleCustomizer.jsx';
 import NewsWritingPad from './NewsWritingPad.jsx';
+import CardGradientStudio from './CardGradientStudio.jsx';
 import {
   getLiveCmsData,
   saveLiveCmsData,
@@ -70,7 +70,6 @@ import {
   DEFAULT_CMS_SEED
 } from '../services/cmsClient.js';
 import { parseEventDate, normalizeCmsEvent } from '../../utils/eventDates.js';
-import { resolveCategoryTheme } from '../../utils/cardGradients.js';
 import { SYNC_EVENTS } from '../../services/liveSync.js';
 
 export default function CmsStudio() {
@@ -699,9 +698,9 @@ export default function CmsStudio() {
     { id: 'podcasts', label: 'Podcasts & Media', count: cmsData.podcasts?.length || 0, icon: Mic },
     { id: 'news', label: 'News & Articles', count: cmsData.news?.length || 0, icon: FileText },
     { id: 'resources', label: 'Community Resources', count: cmsData.resources?.length || 0, icon: BookOpen },
+    { id: 'cardThemes', label: 'Card Gradients & Themes', count: null, icon: Palette },
     { id: 'staff', label: 'Board & Staff', count: cmsData.staff?.length || 0, icon: Users },
     { id: 'gallery', label: 'Gallery & Memory Lane', count: (cmsData.gallery?.length || 0) + (cmsData.memoryLane?.length || 0), icon: Camera },
-    { id: 'cardGradients', label: 'Card Gradients & Colors', count: null, icon: Palette },
     { id: 'settings', label: 'Global Site Settings', count: null, icon: Settings }
   ];
 
@@ -1310,64 +1309,48 @@ export default function CmsStudio() {
             </button>
           </div>
 
-          {/* Interactive Card Gradient & Color Theme Studio */}
-          <CardGradientStudio onThemesChanged={refreshData} />
-
           <div className="space-y-3">
-            {cmsData.resources?.map((res) => {
-              const resTheme = resolveCategoryTheme(res.category);
-              return (
-                <div
-                  key={res.id}
-                  className="p-5 rounded-2xl border shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all"
-                  style={{
-                    background: `linear-gradient(135deg, ${resTheme.gradientFrom}, ${resTheme.gradientVia || resTheme.gradientFrom}, ${resTheme.gradientTo})`,
-                    borderColor: resTheme.borderColor || '#e2e8f0'
-                  }}
-                >
-                  <div className="space-y-1.5 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="px-2.5 py-0.5 rounded-full font-black text-[10px] uppercase shadow-2xs"
-                        style={{
-                          backgroundColor: `${resTheme.accentColor}18`,
-                          color: resTheme.accentColor,
-                          border: `1px solid ${resTheme.accentColor}40`
-                        }}
-                      >
-                        {res.category}
+            {cmsData.resources?.map((res) => (
+              <div
+                key={res.id}
+                className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-purple-300 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4"
+              >
+                <div className="space-y-1.5 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-900 font-black text-[10px] uppercase">
+                      {res.category}
+                    </span>
+                    {res.urgent && (
+                      <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-900 font-black text-[10px] animate-pulse">
+                        🚨 24/7 Crisis Hotline
                       </span>
-                      {res.urgent && (
-                        <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-900 font-black text-[10px] animate-pulse">
-                          🚨 24/7 Crisis Hotline
-                        </span>
-                      )}
-                      {res.verified && (
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">
-                          ✓ Verified Partner
-                        </span>
-                      )}
-                    </div>
-
-                    <h4 className="font-display text-base font-black text-slate-950">
-                      {res.name}
-                    </h4>
-
-                    <p className="text-xs text-slate-600 max-w-3xl leading-relaxed">
-                      {res.description}
-                    </p>
-
-                    <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-500 pt-1">
-                      <span className="flex items-center gap-1 font-bold" style={{ color: resTheme.accentColor }}>
-                        <Phone className="w-3.5 h-3.5" />
-                        <span>{res.phone}</span>
+                    )}
+                    {res.verified && (
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">
+                        ✓ Verified Partner
                       </span>
-                      <span className="flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                        <span>{res.address}</span>
-                      </span>
-                    </div>
+                    )}
                   </div>
+
+                  <h4 className="font-display text-base font-black text-slate-950">
+                    {res.name}
+                  </h4>
+
+                  <p className="text-xs text-slate-600 max-w-3xl leading-relaxed">
+                    {res.description}
+                  </p>
+
+                  <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-500 pt-1">
+                    <span className="flex items-center gap-1 text-purple-700">
+                      <Phone className="w-3.5 h-3.5" />
+                      <span>{res.phone}</span>
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                      <span>{res.address}</span>
+                    </span>
+                  </div>
+                </div>
 
                 <div className="flex items-center gap-2 self-start md:self-center">
                   <button
@@ -1388,9 +1371,8 @@ export default function CmsStudio() {
                   </button>
                 </div>
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -1695,76 +1677,52 @@ export default function CmsStudio() {
             </button>
           </div>
 
-          {/* Interactive Card Gradient & Color Theme Studio for Trainings */}
-          <CardGradientStudio onThemesChanged={refreshData} defaultSection="trainings" />
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {(cmsData.trainings || []).map((course) => {
-              const courseTheme = resolveCategoryTheme(course.badge || course.title);
-              return (
-                <div
-                  key={course.slug || course.id || course.title}
-                  className="p-5 rounded-2xl border shadow-xs flex flex-col justify-between gap-4 transition-all"
-                  style={{
-                    background: courseTheme.gradient || `linear-gradient(135deg, ${courseTheme.fromColor} 0%, ${courseTheme.viaColor || courseTheme.fromColor} 50%, ${courseTheme.toColor} 100%)`,
-                    borderColor: courseTheme.borderColor || '#cbd5e1'
-                  }}
-                >
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <span
-                        className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase shadow-2xs"
-                        style={{
-                          backgroundColor: `${courseTheme.accentColor}18`,
-                          color: courseTheme.accentColor,
-                          border: `1px solid ${courseTheme.accentColor}40`
-                        }}
-                      >
-                        {course.badge || 'P.R.I.D.E. Workshop'}
-                      </span>
-                      <span className="text-[11px] font-bold text-slate-600 bg-white/70 px-2.5 py-0.5 rounded-full">
-                        {course.duration || 'Tailored Session'}
-                      </span>
-                    </div>
-                    <h4
-                      className="font-display text-base font-extrabold tracking-tight"
-                      style={{ color: courseTheme.textColor || '#0f172a' }}
-                    >
-                      {course.title}
-                    </h4>
-                    <p className="text-xs text-slate-700 leading-relaxed line-clamp-3">
-                      {course.summary}
-                    </p>
-                    <p className="text-[11px] text-slate-600 font-semibold">
-                      Audience: {course.targetAudience || 'Organizations & Educators'}
-                    </p>
+            {(cmsData.trainings || []).map((course) => (
+              <div
+                key={course.slug || course.id || course.title}
+                className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between gap-4"
+              >
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-purple-100 text-[#5A1E65]">
+                      {course.badge || 'P.R.I.D.E. Workshop'}
+                    </span>
+                    <span className="text-[11px] font-bold text-slate-600">
+                      {course.duration || 'Tailored Session'}
+                    </span>
                   </div>
-
-                  <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-900/10">
-                    <button
-                      type="button"
-                      onClick={() => openEditModal('training', course)}
-                      className="px-3 py-1.5 rounded-xl bg-white/80 hover:bg-white border text-xs font-bold inline-flex items-center gap-1 cursor-pointer transition-colors"
-                      style={{
-                        color: courseTheme.accentColor,
-                        borderColor: `${courseTheme.accentColor}40`
-                      }}
-                    >
-                      <Edit className="w-3.5 h-3.5" />
-                      <span>Edit</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteItem('training', course.slug || course.id)}
-                      className="px-3 py-1.5 rounded-xl text-rose-700 hover:bg-rose-50 border border-rose-200 text-xs font-bold inline-flex items-center gap-1 cursor-pointer bg-white"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      <span>Delete</span>
-                    </button>
-                  </div>
+                  <h4 className="font-display text-base font-extrabold text-slate-950">
+                    {course.title}
+                  </h4>
+                  <p className="text-xs text-slate-700 leading-relaxed line-clamp-3">
+                    {course.summary}
+                  </p>
+                  <p className="text-[11px] text-slate-600 font-semibold">
+                    Audience: {course.targetAudience || 'Organizations & Educators'}
+                  </p>
                 </div>
-              );
-            })}
+
+                <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200">
+                  <button
+                    type="button"
+                    onClick={() => openEditModal('training', course)}
+                    className="px-3 py-1.5 rounded-xl text-purple-800 hover:bg-purple-50 border border-purple-200 text-xs font-bold inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    <Edit className="w-3.5 h-3.5" />
+                    <span>Edit</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteItem('training', course.slug || course.id)}
+                    className="px-3 py-1.5 rounded-xl text-rose-700 hover:bg-rose-50 border border-rose-200 text-xs font-bold inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete</span>
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -2063,12 +2021,10 @@ export default function CmsStudio() {
       )}
 
       {/* ======================================================================
-          SUB-TAB 8: CARD GRADIENTS & COLOR THEMES
+          SUB-TAB: CARD GRADIENTS & CATEGORY THEMES STUDIO
           ====================================================================== */}
-      {activeSubTab === 'cardGradients' && (
-        <div className="space-y-6">
-          <CardGradientStudio onThemesChanged={refreshData} />
-        </div>
+      {activeSubTab === 'cardThemes' && (
+        <CardGradientStudio />
       )}
 
       {/* ======================================================================
@@ -2612,40 +2568,14 @@ export default function CmsStudio() {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="block text-xs font-bold text-slate-700">Category</label>
-                        {formData.category && (
-                          <span
-                            className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full border shadow-2xs"
-                            style={{
-                              color: resolveCategoryTheme(formData.category).accentColor,
-                              backgroundColor: `${resolveCategoryTheme(formData.category).accentColor}15`,
-                              borderColor: `${resolveCategoryTheme(formData.category).accentColor}40`
-                            }}
-                          >
-                            Live Gradient Theme
-                          </span>
-                        )}
-                      </div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Category</label>
                       <input
                         type="text"
                         required
-                        list="resource-categories-list"
                         value={formData.category || ''}
                         onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                        placeholder="e.g. Health & Wellness, Mental Health..."
                         className="w-full px-3 py-2 border rounded-xl text-xs"
                       />
-                      <datalist id="resource-categories-list">
-                        <option value="Health & Wellness" />
-                        <option value="Mental Health" />
-                        <option value="Housing & Shelter" />
-                        <option value="Legal & Advocacy" />
-                        <option value="Youth & Families" />
-                        <option value="Community & Social" />
-                        <option value="Crisis Support" />
-                        <option value="Harm Reduction" />
-                      </datalist>
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1">Phone</label>
@@ -3015,37 +2945,13 @@ export default function CmsStudio() {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="block text-xs font-bold text-slate-700">Badge / Category</label>
-                        {formData.badge && (
-                          <span
-                            className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full border shadow-2xs"
-                            style={{
-                              color: resolveCategoryTheme(formData.badge).accentColor,
-                              backgroundColor: `${resolveCategoryTheme(formData.badge).accentColor}15`,
-                              borderColor: `${resolveCategoryTheme(formData.badge).accentColor}40`
-                            }}
-                          >
-                            Live Theme
-                          </span>
-                        )}
-                      </div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Badge Label</label>
                       <input
                         type="text"
-                        list="training-badges-list"
                         value={formData.badge || ''}
                         onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
-                        placeholder="e.g. Foundational Certification, Clinical & Healthcare..."
                         className="w-full px-3 py-2 border rounded-xl text-xs"
                       />
-                      <datalist id="training-badges-list">
-                        <option value="Foundational Certification" />
-                        <option value="Clinical & Healthcare" />
-                        <option value="Schools & Youth Groups" />
-                        <option value="Corporate & Workplace Equity" />
-                        <option value="Law Enforcement & First Responders" />
-                        <option value="Mental Health Providers" />
-                      </datalist>
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1">Session Format / Duration</label>

@@ -4,201 +4,206 @@ import {
   Sparkles,
   Check,
   RotateCcw,
-  Sliders,
   Eye,
-  Save,
-  HelpCircle,
-  Clock,
-  CheckCircle2,
-  BookOpen,
+  Sliders,
+  Layers,
+  Phone,
+  ArrowUpRight,
+  ShieldCheck,
+  Star,
   Users,
-  GraduationCap
+  Clock,
+  MapPin,
+  Lock,
+  Heart
 } from 'lucide-react';
 import {
-  DEFAULT_CATEGORY_THEMES,
-  GRADIENT_PALETTE_PRESETS,
-  THEME_SECTIONS,
-  loadCategoryThemes,
-  saveCategoryThemesToStorage
-} from '../../utils/cardGradients.js';
+  getAllCardThemes,
+  updateCategoryTheme,
+  resetCardThemes,
+  subscribeToCardThemes,
+  LUXURY_GRADIENT_PRESETS,
+  DEFAULT_RESOURCE_THEMES,
+  DEFAULT_COMMUNITY_THEMES
+} from '../../services/cardThemeStore.js';
+import CardSpotlight from '../../components/CardSpotlight.jsx';
 
-export default function CardGradientStudio({ onThemesChanged, defaultSection = 'all' }) {
-  const [themes, setThemes] = useState(loadCategoryThemes);
-  const [activeCategory, setActiveCategory] = useState('Foundational Certification');
-  const [sectionFilter, setSectionFilter] = useState(defaultSection); // 'all' | 'trainings' | 'resources' | 'community'
-  const [previewMode, setPreviewMode] = useState('training'); // 'training' | 'resource' | 'community'
-  const [saveStatus, setSaveStatus] = useState('');
+export default function CardGradientStudio() {
+  const [themes, setThemes] = useState(getAllCardThemes());
+  const [activeTab, setActiveTab] = useState('resources'); // 'resources' | 'community'
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
-  const currentTheme = themes[activeCategory] || DEFAULT_CATEGORY_THEMES[activeCategory] || {
-    name: 'Custom Theme',
-    fromColor: '#f5f3ff',
-    viaColor: '#ede9fe',
-    toColor: '#fae8ff',
-    gradient: 'linear-gradient(135deg, #f5f3ff 0%, #ede9fe 50%, #fae8ff 100%)',
-    borderColor: '#c084fc',
-    borderHoverColor: '#7e22ce',
-    textColor: '#3b0764',
-    accentColor: '#7e22ce'
-  };
+  // Sync on updates
+  useEffect(() => {
+    return subscribeToCardThemes((newThemes) => {
+      setThemes(newThemes);
+    });
+  }, []);
 
-  const handleUpdateCurrentTheme = (updates) => {
-    const updatedTheme = { ...currentTheme, ...updates };
-    // Recalculate gradient if from/via/to colors changed
-    if (updates.fromColor || updates.viaColor || updates.toColor) {
-      const from = updates.fromColor || currentTheme.fromColor;
-      const via = updates.viaColor || currentTheme.viaColor || from;
-      const to = updates.toColor || currentTheme.toColor;
-      updatedTheme.gradient = `linear-gradient(135deg, ${from} 0%, ${via} 50%, ${to} 100%)`;
-      updatedTheme.badgeBg = from;
+  const resourceCategories = Object.keys(themes.resources);
+  const communityCategories = Object.keys(themes.community);
+
+  const currentCategories = activeTab === 'resources' ? resourceCategories : communityCategories;
+
+  // Set default selected category if none or not in current tab
+  useEffect(() => {
+    if (!currentCategories.includes(selectedCategory)) {
+      setSelectedCategory(currentCategories[0] || '');
     }
-    const newThemes = {
-      ...themes,
-      [activeCategory]: updatedTheme
-    };
-    setThemes(newThemes);
-    saveCategoryThemesToStorage(newThemes);
-    if (onThemesChanged) onThemesChanged(newThemes);
-    setSaveStatus('✓ Changes saved live');
-    setTimeout(() => setSaveStatus(''), 2500);
+  }, [activeTab, currentCategories, selectedCategory]);
+
+  const currentTheme =
+    activeTab === 'resources'
+      ? themes.resources[selectedCategory] || DEFAULT_RESOURCE_THEMES[selectedCategory] || {}
+      : themes.community[selectedCategory] || DEFAULT_COMMUNITY_THEMES[selectedCategory] || {};
+
+  const handleColorChange = (key, value) => {
+    const updated = { ...currentTheme, [key]: value };
+    updateCategoryTheme(activeTab, selectedCategory, updated);
   };
 
   const handleApplyPreset = (preset) => {
-    handleUpdateCurrentTheme({
-      fromColor: preset.fromColor,
-      viaColor: preset.viaColor,
-      toColor: preset.toColor,
-      gradient: preset.gradient,
-      borderColor: preset.borderColor,
-      borderHoverColor: preset.accentColor,
-      textColor: preset.textColor,
+    const updated = {
+      ...currentTheme,
+      gradientFrom: preset.gradientFrom,
+      gradientVia: preset.gradientVia,
+      gradientTo: preset.gradientTo,
       accentColor: preset.accentColor,
-      badgeBg: preset.fromColor,
-      badgeText: preset.accentColor,
-      badgeBorder: preset.borderColor
-    });
+      badgeColor: preset.badgeColor,
+      glowColor: preset.glowColor,
+      presetId: preset.id
+    };
+    updateCategoryTheme(activeTab, selectedCategory, updated);
   };
 
-  const handleResetToDefaults = () => {
-    if (!window.confirm('Reset all card gradients to original curated styles?')) return;
-    setThemes(DEFAULT_CATEGORY_THEMES);
-    saveCategoryThemesToStorage(DEFAULT_CATEGORY_THEMES);
-    if (onThemesChanged) onThemesChanged(DEFAULT_CATEGORY_THEMES);
-    setSaveStatus('✓ Reset all card gradients to default');
-    setTimeout(() => setSaveStatus(''), 2500);
+  const handleSave = () => {
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 3000);
   };
 
-  // Determine categories to show based on sectionFilter
-  const allCategories = Object.keys(DEFAULT_CATEGORY_THEMES);
-  const filteredCategories = sectionFilter === 'all'
-    ? allCategories
-    : (THEME_SECTIONS.find(s => s.id === sectionFilter)?.categories || allCategories);
+  const handleReset = () => {
+    if (!window.confirm('Reset all card gradients to original factory luxury themes?')) return;
+    resetCardThemes();
+    setThemes(getAllCardThemes());
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 3000);
+  };
 
-  // Automatically switch previewMode when category changes if appropriate
-  const handleCategorySelect = (cat) => {
-    setActiveCategory(cat);
-    const isTraining = THEME_SECTIONS.find(s => s.id === 'trainings')?.categories.includes(cat);
-    const isResource = THEME_SECTIONS.find(s => s.id === 'resources')?.categories.includes(cat);
-    if (isTraining) setPreviewMode('training');
-    else if (isResource) setPreviewMode('resource');
-    else setPreviewMode('community');
+  const gradientStyle = {
+    background: `linear-gradient(135deg, ${currentTheme.gradientFrom || '#1e082b'} 0%, ${currentTheme.gradientVia || '#3b0d46'} 50%, ${currentTheme.gradientTo || '#160824'} 100%)`
   };
 
   return (
-    <div className="bg-white rounded-3xl border-2 border-purple-200/90 shadow-sm p-6 sm:p-7 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
-        <div>
+    <div className="space-y-6">
+      {/* Top Banner */}
+      <div className="bg-gradient-to-r from-purple-950 via-slate-950 to-indigo-950 p-6 sm:p-8 rounded-3xl border border-purple-500/30 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-purple-100 text-[#5A1E65]">
-              <Palette className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="font-display text-lg font-black text-slate-900">
-                Card Gradient & Color Customizer
-              </h3>
-              <p className="text-xs text-slate-500">
-                Customize category gradient colors, border tones, and accent highlights for Trainings, Resources, and Community cards.
-              </p>
-            </div>
+            <span className="px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 text-xs font-black uppercase tracking-wider border border-amber-400/30 flex items-center gap-1.5">
+              <Palette className="w-3.5 h-3.5 text-amber-300" />
+              <span>Card Gradient & Theme Studio</span>
+            </span>
+            <span className="text-xs text-purple-200">0ms Real-Time Sync</span>
           </div>
+          <h2 className="font-display text-2xl sm:text-3xl font-black text-white">
+            Resource & Community Card Styling
+          </h2>
+          <p className="text-xs sm:text-sm text-purple-200/90 max-w-2xl leading-relaxed">
+            Customize the deep luxury gradients, glass containers, gold accents, and glowing badges for every Resource and Community category. Changes reflect immediately on public cards.
+          </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          {saveStatus && (
-            <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 flex items-center gap-1 animate-fadeIn">
-              <Check className="w-3.5 h-3.5" />
-              {saveStatus}
-            </span>
-          )}
+        <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={handleResetToDefaults}
-            className="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 transition-colors flex items-center gap-1 cursor-pointer"
+            onClick={handleReset}
+            className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold flex items-center gap-1.5 transition-colors border border-white/20 cursor-pointer"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
+            <RotateCcw className="w-4 h-4 text-rose-300" />
             <span>Reset Defaults</span>
           </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black text-xs flex items-center gap-1.5 transition-all shadow-md cursor-pointer"
+          >
+            <Check className="w-4 h-4 text-slate-950" />
+            <span>Save Themes</span>
+          </button>
         </div>
       </div>
 
-      {/* Section Filter Pills */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 pb-3">
-        <span className="text-xs font-black text-slate-400 uppercase tracking-wider mr-1">Section:</span>
+      {saveSuccess && (
+        <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold flex items-center gap-2 animate-fadeIn">
+          <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+          <span>Card category gradients successfully saved and synced live!</span>
+        </div>
+      )}
+
+      {/* Section Switcher Tabs */}
+      <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
         <button
           type="button"
-          onClick={() => setSectionFilter('all')}
-          className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-            sectionFilter === 'all'
-              ? 'bg-slate-900 text-white shadow-xs'
-              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          onClick={() => setActiveTab('resources')}
+          className={`px-5 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 border ${
+            activeTab === 'resources'
+              ? 'bg-[#5A1E65] text-white border-purple-800 shadow-md ring-2 ring-purple-300/40'
+              : 'bg-white text-slate-700 hover:text-slate-950 border-slate-200'
           }`}
         >
-          All Categories ({allCategories.length})
+          <Layers className="w-4 h-4" />
+          <span>Resource Directory Cards</span>
+          <span className="px-2 py-0.5 rounded-full text-[10px] bg-purple-900 text-purple-100">
+            {resourceCategories.length}
+          </span>
         </button>
-        {THEME_SECTIONS.map((sec) => (
-          <button
-            key={sec.id}
-            type="button"
-            onClick={() => {
-              setSectionFilter(sec.id);
-              if (sec.categories[0] && !sec.categories.includes(activeCategory)) {
-                handleCategorySelect(sec.categories[0]);
-              }
-            }}
-            className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              sectionFilter === sec.id
-                ? 'bg-[#5A1E65] text-white shadow-xs'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            {sec.label}
-          </button>
-        ))}
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('community')}
+          className={`px-5 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 border ${
+            activeTab === 'community'
+              ? 'bg-[#5A1E65] text-white border-purple-800 shadow-md ring-2 ring-purple-300/40'
+              : 'bg-white text-slate-700 hover:text-slate-950 border-slate-200'
+          }`}
+        >
+          <Users className="w-4 h-4" />
+          <span>Community Circle Cards</span>
+          <span className="px-2 py-0.5 rounded-full text-[10px] bg-purple-900 text-purple-100">
+            {communityCategories.length}
+          </span>
+        </button>
       </div>
 
-      {/* Category Selection Tabs */}
+      {/* Category Pills Selector */}
       <div className="space-y-2">
-        <label className="text-[11px] font-black uppercase tracking-wider text-slate-600 block">
+        <label className="text-xs font-black uppercase tracking-wider text-slate-500 block">
           Select Category to Customize
         </label>
-        <div className="flex flex-wrap gap-2">
-          {filteredCategories.map((cat) => {
-            const isActive = activeCategory === cat;
-            const theme = themes[cat] || DEFAULT_CATEGORY_THEMES[cat] || {};
+        <div className="flex flex-wrap items-center gap-2">
+          {currentCategories.map((cat) => {
+            const isSelected = selectedCategory === cat;
+            const catTheme =
+              activeTab === 'resources'
+                ? themes.resources[cat] || {}
+                : themes.community[cat] || {};
             return (
               <button
                 key={cat}
                 type="button"
-                onClick={() => handleCategorySelect(cat)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 border ${
-                  isActive
-                    ? 'bg-[#5A1E65] text-white border-[#5A1E65] shadow-xs scale-105'
-                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-purple-300'
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 border ${
+                  isSelected
+                    ? 'bg-slate-950 text-white border-purple-500 shadow-md ring-2 ring-purple-400/40'
+                    : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-200'
                 }`}
               >
                 <span
-                  className="w-3 h-3 rounded-full border border-white/50 shadow-2xs shrink-0"
-                  style={{ background: theme.gradient || theme.fromColor || '#cbd5e1' }}
+                  className="w-3 h-3 rounded-full shrink-0 shadow-xs border border-white/30"
+                  style={{
+                    background: `linear-gradient(135deg, ${catTheme.gradientFrom || '#333'}, ${catTheme.gradientTo || '#111'})`
+                  }}
                 />
                 <span>{cat}</span>
               </button>
@@ -207,344 +212,282 @@ export default function CardGradientStudio({ onThemesChanged, defaultSection = '
         </div>
       </div>
 
-      {/* Live Preview & Color Controls Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start pt-2">
-        {/* Left Column: Live Card Preview */}
-        <div className="lg:col-span-5 space-y-3">
-          <div className="flex items-center justify-between text-xs font-bold text-slate-700">
-            <span className="flex items-center gap-1">
-              <Eye className="w-3.5 h-3.5 text-[#5A1E65]" />
-              <span>Live Card Preview ({activeCategory})</span>
+      {/* Editor & Live Preview Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Controls Column (7 cols) */}
+        <div className="lg:col-span-7 space-y-6 bg-white p-6 sm:p-7 rounded-3xl border border-slate-200 shadow-xs">
+          <div>
+            <h3 className="font-display text-lg font-black text-slate-950">
+              {selectedCategory}
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Choose a curated luxury gradient preset or fine-tune exact hex color stops.
+            </p>
+          </div>
+
+          {/* 1-Click Luxury Presets */}
+          <div className="space-y-3">
+            <span className="text-xs font-black uppercase tracking-wider text-slate-700 block flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              <span>1-Click Luxury Gradient Presets</span>
             </span>
-            <div className="flex items-center gap-1 text-[10px]">
-              <button
-                type="button"
-                onClick={() => setPreviewMode('training')}
-                className={`px-2 py-0.5 rounded-md font-bold transition-all ${
-                  previewMode === 'training' ? 'bg-[#5A1E65] text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                Training
-              </button>
-              <button
-                type="button"
-                onClick={() => setPreviewMode('resource')}
-                className={`px-2 py-0.5 rounded-md font-bold transition-all ${
-                  previewMode === 'resource' ? 'bg-[#5A1E65] text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                Resource
-              </button>
-              <button
-                type="button"
-                onClick={() => setPreviewMode('community')}
-                className={`px-2 py-0.5 rounded-md font-bold transition-all ${
-                  previewMode === 'community' ? 'bg-[#5A1E65] text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                Group
-              </button>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+              {LUXURY_GRADIENT_PRESETS.map((preset) => {
+                const isActive = currentTheme.presetId === preset.id;
+                return (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => handleApplyPreset(preset)}
+                    className={`p-3 rounded-2xl text-left border transition-all cursor-pointer flex flex-col gap-2 group ${
+                      isActive
+                        ? 'border-purple-600 ring-2 ring-purple-400 bg-purple-50/40'
+                        : 'border-slate-200 hover:border-purple-300 bg-white hover:bg-slate-50/60'
+                    }`}
+                  >
+                    <div
+                      className="w-full h-8 rounded-xl shadow-inner border border-white/20"
+                      style={{
+                        background: `linear-gradient(135deg, ${preset.gradientFrom} 0%, ${preset.gradientVia} 50%, ${preset.gradientTo} 100%)`
+                      }}
+                    />
+                    <div className="flex items-center justify-between text-xs font-bold text-slate-800">
+                      <span className="truncate">{preset.name}</span>
+                      {isActive && <Check className="w-3.5 h-3.5 text-purple-700 shrink-0" />}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {/* Interactive Simulated Preview Card */}
-          <div
-            className="p-6 sm:p-7 rounded-3xl transition-all duration-300 shadow-md space-y-4"
-            style={{
-              background: currentTheme.gradient,
-              border: `2px solid ${currentTheme.borderColor || '#cbd5e1'}`
-            }}
-          >
-            {/* PREVIEW: Training Card */}
-            {previewMode === 'training' && (
-              <>
-                <div className="flex items-center justify-between">
-                  <span
-                    className="text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full border shadow-2xs"
-                    style={{
-                      backgroundColor: `${currentTheme.accentColor}18`,
-                      color: currentTheme.accentColor,
-                      borderColor: `${currentTheme.accentColor}35`
-                    }}
-                  >
-                    {activeCategory}
-                  </span>
-                  <span className="text-xs font-bold text-slate-600 flex items-center gap-1 bg-white/70 backdrop-blur-xs px-2.5 py-0.5 rounded-full border border-white/60">
-                    <Clock className="w-3 h-3 text-amber-500" />
-                    <span>2.5 Hours</span>
-                  </span>
-                </div>
+          {/* Fine-Tuning Color Stops */}
+          <div className="space-y-4 pt-4 border-t border-slate-100">
+            <span className="text-xs font-black uppercase tracking-wider text-slate-700 block flex items-center gap-1.5">
+              <Sliders className="w-3.5 h-3.5 text-purple-700" />
+              <span>Fine-Tune Gradient Stops & Accents</span>
+            </span>
 
-                <div className="space-y-1.5">
-                  <h4
-                    className="font-display text-lg sm:text-xl font-black tracking-tight"
-                    style={{ color: currentTheme.textColor || '#0f172a' }}
-                  >
-                    {activeCategory.includes('Clinical') ? 'Status-Neutral Healthcare & Clinical Affirmation' : `${activeCategory} Workshop`}
-                  </h4>
-                  <p className="text-xs text-slate-700 leading-relaxed font-medium">
-                    Evidence-based cultural competency, affirming language protocols, and localized Ventura County resources.
-                  </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                  Gradient Start (Top-Left)
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={currentTheme.gradientFrom || '#1e082b'}
+                    onChange={(e) => handleColorChange('gradientFrom', e.target.value)}
+                    className="w-9 h-9 rounded-xl border border-slate-300 cursor-pointer p-0.5 bg-white"
+                  />
+                  <input
+                    type="text"
+                    value={currentTheme.gradientFrom || '#1e082b'}
+                    onChange={(e) => handleColorChange('gradientFrom', e.target.value)}
+                    className="w-full px-2.5 py-1.5 text-xs font-mono border rounded-xl"
+                  />
                 </div>
+              </div>
 
-                <div className="space-y-1.5 pt-2 border-t border-slate-900/10 text-xs">
-                  <span className="font-bold text-slate-900 block text-[11px]">Key Learning Topics:</span>
-                  <div className="space-y-1 text-slate-700 text-[11px]">
-                    <div className="flex items-start gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style={{ color: currentTheme.accentColor }} />
-                      <span>Trauma-informed affirming communication</span>
-                    </div>
-                    <div className="flex items-start gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style={{ color: currentTheme.accentColor }} />
-                      <span>Local public health data and California compliance</span>
-                    </div>
-                  </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                  Gradient Mid (Atmospheric)
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={currentTheme.gradientVia || '#3b0d46'}
+                    onChange={(e) => handleColorChange('gradientVia', e.target.value)}
+                    className="w-9 h-9 rounded-xl border border-slate-300 cursor-pointer p-0.5 bg-white"
+                  />
+                  <input
+                    type="text"
+                    value={currentTheme.gradientVia || '#3b0d46'}
+                    onChange={(e) => handleColorChange('gradientVia', e.target.value)}
+                    className="w-full px-2.5 py-1.5 text-xs font-mono border rounded-xl"
+                  />
                 </div>
+              </div>
 
-                <div className="pt-3 border-t border-slate-900/10 flex items-center justify-between gap-3 text-xs">
-                  <span
-                    className="py-2 px-4 rounded-xl font-bold text-white shadow-2xs text-center flex-1"
-                    style={{ backgroundColor: currentTheme.accentColor }}
-                  >
-                    View Syllabus →
-                  </span>
-                  <span className="py-2 px-3 rounded-xl font-bold text-slate-700 bg-white/80 border border-slate-200">
-                    Book
-                  </span>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                  Gradient End (Bottom-Right)
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={currentTheme.gradientTo || '#160824'}
+                    onChange={(e) => handleColorChange('gradientTo', e.target.value)}
+                    className="w-9 h-9 rounded-xl border border-slate-300 cursor-pointer p-0.5 bg-white"
+                  />
+                  <input
+                    type="text"
+                    value={currentTheme.gradientTo || '#160824'}
+                    onChange={(e) => handleColorChange('gradientTo', e.target.value)}
+                    className="w-full px-2.5 py-1.5 text-xs font-mono border rounded-xl"
+                  />
                 </div>
-              </>
-            )}
+              </div>
+            </div>
 
-            {/* PREVIEW: Resource Card */}
-            {previewMode === 'resource' && (
-              <>
-                <div className="flex items-center justify-between">
-                  <span
-                    className="text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full border shadow-2xs"
-                    style={{
-                      backgroundColor: `${currentTheme.accentColor}18`,
-                      color: currentTheme.accentColor,
-                      borderColor: `${currentTheme.accentColor}35`
-                    }}
-                  >
-                    {activeCategory}
-                  </span>
-                  <span className="text-[11px] font-bold text-slate-600 bg-white/70 backdrop-blur-xs px-2.5 py-0.5 rounded-full border border-white/60">
-                    ✓ Verified Partner
-                  </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                  Golden Highlight & Accent
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={currentTheme.accentColor || '#F59E0B'}
+                    onChange={(e) => handleColorChange('accentColor', e.target.value)}
+                    className="w-9 h-9 rounded-xl border border-slate-300 cursor-pointer p-0.5 bg-white"
+                  />
+                  <input
+                    type="text"
+                    value={currentTheme.accentColor || '#F59E0B'}
+                    onChange={(e) => handleColorChange('accentColor', e.target.value)}
+                    className="w-full px-2.5 py-1.5 text-xs font-mono border rounded-xl"
+                  />
                 </div>
+              </div>
 
-                <div className="space-y-1.5">
-                  <h4
-                    className="font-display text-xl font-bold tracking-tight"
-                    style={{ color: currentTheme.textColor || '#0f172a' }}
-                  >
-                    Example Community Provider
-                  </h4>
-                  <p className="text-xs text-slate-700 leading-relaxed font-medium">
-                    Affirming, culturally competent support, rapid wellness navigation, and drop-in peer resources for Ventura County.
-                  </p>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                  Category Tag Badge Color
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={currentTheme.badgeColor || '#FBBF24'}
+                    onChange={(e) => handleColorChange('badgeColor', e.target.value)}
+                    className="w-9 h-9 rounded-xl border border-slate-300 cursor-pointer p-0.5 bg-white"
+                  />
+                  <input
+                    type="text"
+                    value={currentTheme.badgeColor || '#FBBF24'}
+                    onChange={(e) => handleColorChange('badgeColor', e.target.value)}
+                    className="w-full px-2.5 py-1.5 text-xs font-mono border rounded-xl"
+                  />
                 </div>
-
-                <div className="pt-3 border-t border-slate-900/10 flex items-center justify-between text-xs">
-                  <span
-                    className="font-bold flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/80 border"
-                    style={{
-                      color: currentTheme.accentColor,
-                      borderColor: currentTheme.borderColor
-                    }}
-                  >
-                    📞 (805) 644-5428
-                  </span>
-                  <span
-                    className="px-3 py-1 rounded-xl font-bold text-white shadow-2xs"
-                    style={{ backgroundColor: currentTheme.accentColor }}
-                  >
-                    Access Service →
-                  </span>
-                </div>
-              </>
-            )}
-
-            {/* PREVIEW: Community Group Card */}
-            {previewMode === 'community' && (
-              <>
-                <div className="flex items-center justify-between">
-                  <span
-                    className="text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full border shadow-2xs"
-                    style={{
-                      backgroundColor: `${currentTheme.accentColor}18`,
-                      color: currentTheme.accentColor,
-                      borderColor: `${currentTheme.accentColor}35`
-                    }}
-                  >
-                    {activeCategory}
-                  </span>
-                  <span className="text-[11px] font-bold text-slate-600 bg-white/70 backdrop-blur-xs px-2.5 py-0.5 rounded-full border border-white/60">
-                    Weekly Support Circle
-                  </span>
-                </div>
-
-                <div className="space-y-1.5">
-                  <h4
-                    className="font-display text-xl font-bold tracking-tight"
-                    style={{ color: currentTheme.textColor || '#0f172a' }}
-                  >
-                    {activeCategory} Circle
-                  </h4>
-                  <p className="text-xs text-slate-700 leading-relaxed font-medium">
-                    Safe, confidential peer circles offering connection, lived-experience sharing, and mutual community aid.
-                  </p>
-                </div>
-
-                <div className="p-3 rounded-2xl bg-white/75 border border-white/80 text-xs space-y-1">
-                  <div className="font-bold text-slate-900">Every Tuesday at 6:30 PM</div>
-                  <div className="text-slate-600">Portola Road Resource Center & Virtual Option</div>
-                </div>
-
-                <div className="pt-2 flex items-center justify-end">
-                  <span
-                    className="px-4 py-1.5 rounded-xl font-bold text-white text-xs shadow-2xs"
-                    style={{ backgroundColor: currentTheme.accentColor }}
-                  >
-                    Join Support Circle →
-                  </span>
-                </div>
-              </>
-            )}
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Right Column: Gradient Preset Selector & Custom Inputs */}
-        <div className="lg:col-span-7 space-y-5 bg-slate-50 p-5 rounded-3xl border border-slate-200">
-          {/* Quick Presets */}
-          <div className="space-y-2">
-            <span className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1">
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              <span>1-Click Curated Presets</span>
+        {/* Live Preview Column (5 cols) */}
+        <div className="lg:col-span-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+              <Eye className="w-3.5 h-3.5 text-amber-500" />
+              <span>Live Public Card Preview</span>
             </span>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {GRADIENT_PALETTE_PRESETS.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => handleApplyPreset(p)}
-                  className="p-2.5 rounded-xl border border-slate-200 bg-white hover:border-purple-400 hover:scale-[1.02] transition-all text-left shadow-2xs cursor-pointer flex flex-col justify-between h-16 group"
-                >
-                  <span
-                    className="w-full h-3.5 rounded-md border border-black/10 group-hover:shadow-xs transition-shadow"
-                    style={{ background: p.gradient }}
-                  />
-                  <span className="text-[10px] font-bold text-slate-800 truncate mt-1">
-                    {p.name.split(' (')[0]}
-                  </span>
-                </button>
-              ))}
-            </div>
+            <span className="text-[11px] text-slate-400">Exact visitor rendering</span>
           </div>
 
-          {/* Granular Color Controls */}
-          <div className="space-y-3 pt-2 border-t border-slate-200">
-            <span className="text-xs font-black uppercase tracking-wider text-slate-700 block">
-              Granular Hex Color Customization
-            </span>
+          {/* Interactive Card Preview */}
+          <div className="relative">
+            <div
+              className="p-6 sm:p-8 rounded-3xl text-white shadow-2xl relative overflow-hidden transition-all duration-300 space-y-5 border"
+              style={{
+                ...gradientStyle,
+                borderColor: `${currentTheme.accentColor || '#F59E0B'}40`,
+                boxShadow: `0 20px 40px -15px ${currentTheme.glowColor || 'rgba(0,0,0,0.5)'}`
+              }}
+            >
+              {/* Header Badges */}
+              <div className="flex items-center justify-between gap-2">
+                <span
+                  className="px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-wider backdrop-blur-md flex items-center gap-1.5"
+                  style={{
+                    backgroundColor: `${currentTheme.badgeColor || '#FBBF24'}20`,
+                    color: currentTheme.badgeColor || '#FBBF24',
+                    border: `1px solid ${currentTheme.badgeColor || '#FBBF24'}50`
+                  }}
+                >
+                  <Sparkles className="w-3 h-3" />
+                  <span>{selectedCategory}</span>
+                </span>
+                <span className="text-xs font-bold text-white/70">
+                  {activeTab === 'resources' ? 'Verified Lifeline' : 'Affirming Circle'}
+                </span>
+              </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {/* From Color */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-bold text-slate-600 block">Start Gradient</label>
-                <div className="flex items-center gap-2 bg-white p-1.5 rounded-xl border border-slate-200">
-                  <input
-                    type="color"
-                    value={currentTheme.fromColor || '#f5f3ff'}
-                    onChange={(e) => handleUpdateCurrentTheme({ fromColor: e.target.value })}
-                    className="w-7 h-7 rounded-lg border-0 cursor-pointer"
-                  />
-                  <input
-                    type="text"
-                    value={currentTheme.fromColor || '#f5f3ff'}
-                    onChange={(e) => handleUpdateCurrentTheme({ fromColor: e.target.value })}
-                    className="w-full text-xs font-mono font-bold uppercase focus:outline-none"
-                  />
+              {/* Title */}
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-white/60 block mb-1">
+                  {activeTab === 'resources' ? 'COMMUNITY LIFELINE PROVIDER' : 'COMMUNITY GATHERING'}
+                </span>
+                <h3 className="font-display text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight">
+                  {activeTab === 'resources'
+                    ? '988 Suicide & Crisis Lifeline'
+                    : 'Rainbow Umbrella Youth Circle'}
+                </h3>
+              </div>
+
+              {/* Frosted Glass Inner Container (styled like image 1) */}
+              <div className="rounded-2xl p-4 bg-white/[0.08] backdrop-blur-md border border-white/15 shadow-inner space-y-2">
+                <div
+                  className="text-xs font-bold flex items-center gap-1.5"
+                  style={{ color: currentTheme.accentColor || '#F59E0B' }}
+                >
+                  <Star className="w-3.5 h-3.5 fill-current" />
+                  <span>
+                    {activeTab === 'resources'
+                      ? 'Confidential 24/7 Crisis Support'
+                      : 'Weekly Peer Circle for Youth'}
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm text-purple-100/90 italic font-serif leading-relaxed">
+                  {activeTab === 'resources'
+                    ? '"Free, confidential 24/7 support across the US for distress or mental health crisis. Call or text 988."'
+                    : '"Weekly youth peer group providing check-ins, discussions, and creative workshops supporting authentic self-expression."'}
+                </p>
+              </div>
+
+              {/* Feature Checklist Bullets */}
+              <div className="space-y-1.5 text-xs text-white/90 font-medium">
+                <div className="flex items-center gap-2">
+                  <Check className="w-3.5 h-3.5 text-teal-300 shrink-0" />
+                  <span>100% Free & Confidential Community Care</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="w-3.5 h-3.5 text-teal-300 shrink-0" />
+                  <span>No insurance, ID, or referral required</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="w-3.5 h-3.5 text-teal-300 shrink-0" />
+                  <span>Culturally competent affirming staff</span>
                 </div>
               </div>
 
-              {/* Via Color */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-bold text-slate-600 block">Middle Tone</label>
-                <div className="flex items-center gap-2 bg-white p-1.5 rounded-xl border border-slate-200">
-                  <input
-                    type="color"
-                    value={currentTheme.viaColor || currentTheme.fromColor || '#ede9fe'}
-                    onChange={(e) => handleUpdateCurrentTheme({ viaColor: e.target.value })}
-                    className="w-7 h-7 rounded-lg border-0 cursor-pointer"
-                  />
-                  <input
-                    type="text"
-                    value={currentTheme.viaColor || currentTheme.fromColor || '#ede9fe'}
-                    onChange={(e) => handleUpdateCurrentTheme({ viaColor: e.target.value })}
-                    className="w-full text-xs font-mono font-bold uppercase focus:outline-none"
-                  />
-                </div>
+              {/* Radiant Golden Action Button */}
+              <div className="pt-2 flex flex-col sm:flex-row items-center gap-2.5">
+                <button
+                  type="button"
+                  className="w-full py-3 px-6 rounded-2xl font-black text-xs sm:text-sm text-slate-950 flex items-center justify-center gap-2 shadow-lg transition-transform hover:scale-[1.02] cursor-pointer"
+                  style={{
+                    background: 'linear-gradient(90deg, #F59E0B 0%, #FDE047 50%, #F59E0B 100%)'
+                  }}
+                >
+                  <Heart className="w-4 h-4 fill-slate-950 text-slate-950" />
+                  <span>
+                    {activeTab === 'resources' ? 'Access Service Online ↗' : 'Join Community Circle ↗'}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  className="w-full sm:w-auto py-2.5 px-4 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 backdrop-blur-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Phone className="w-3.5 h-3.5 text-amber-300" />
+                  <span>Call 988</span>
+                </button>
               </div>
 
-              {/* To Color */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-bold text-slate-600 block">End Gradient</label>
-                <div className="flex items-center gap-2 bg-white p-1.5 rounded-xl border border-slate-200">
-                  <input
-                    type="color"
-                    value={currentTheme.toColor || '#fae8ff'}
-                    onChange={(e) => handleUpdateCurrentTheme({ toColor: e.target.value })}
-                    className="w-7 h-7 rounded-lg border-0 cursor-pointer"
-                  />
-                  <input
-                    type="text"
-                    value={currentTheme.toColor || '#fae8ff'}
-                    onChange={(e) => handleUpdateCurrentTheme({ toColor: e.target.value })}
-                    className="w-full text-xs font-mono font-bold uppercase focus:outline-none"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-              {/* Border Color */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-bold text-slate-600 block">Card Border Color</label>
-                <div className="flex items-center gap-2 bg-white p-1.5 rounded-xl border border-slate-200">
-                  <input
-                    type="color"
-                    value={currentTheme.borderColor || '#c084fc'}
-                    onChange={(e) => handleUpdateCurrentTheme({ borderColor: e.target.value })}
-                    className="w-7 h-7 rounded-lg border-0 cursor-pointer"
-                  />
-                  <input
-                    type="text"
-                    value={currentTheme.borderColor || '#c084fc'}
-                    onChange={(e) => handleUpdateCurrentTheme({ borderColor: e.target.value })}
-                    className="w-full text-xs font-mono font-bold uppercase focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Accent Color */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-bold text-slate-600 block">Accent & Button Color</label>
-                <div className="flex items-center gap-2 bg-white p-1.5 rounded-xl border border-slate-200">
-                  <input
-                    type="color"
-                    value={currentTheme.accentColor || '#7e22ce'}
-                    onChange={(e) => handleUpdateCurrentTheme({ accentColor: e.target.value })}
-                    className="w-7 h-7 rounded-lg border-0 cursor-pointer"
-                  />
-                  <input
-                    type="text"
-                    value={currentTheme.accentColor || '#7e22ce'}
-                    onChange={(e) => handleUpdateCurrentTheme({ accentColor: e.target.value })}
-                    className="w-full text-xs font-mono font-bold uppercase focus:outline-none"
-                  />
-                </div>
+              {/* Bottom Footnote */}
+              <div className="pt-2 text-center text-[11px] text-white/60 flex items-center justify-center gap-1">
+                <Lock className="w-3 h-3 text-white/50" />
+                <span>Verified LGBTQ+ Affirming Community Resource</span>
               </div>
             </div>
           </div>

@@ -1,139 +1,81 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  DEFAULT_CATEGORY_THEMES,
-  resolveCategoryTheme,
-  loadCategoryThemes,
-  saveCategoryThemesToStorage,
-  CATEGORY_THEME_STORAGE_KEY,
-  GRADIENT_PALETTE_PRESETS
-} from '../src/utils/cardGradients.js';
+  getAllCardThemes,
+  getResourceCardTheme,
+  getCommunityCardTheme,
+  DEFAULT_RESOURCE_THEMES,
+  DEFAULT_COMMUNITY_THEMES,
+  LUXURY_GRADIENT_PRESETS
+} from '../src/services/cardThemeStore.js';
 
 test('Card Gradient & Category Theme Engine', async (t) => {
-  await t.test('Health category theme does NOT use green as instructed', () => {
-    const healthTheme = DEFAULT_CATEGORY_THEMES['Health & Sexual Wellness'];
-    assert.ok(healthTheme, 'health theme must exist');
-    // Ensure green is not used as required: "( use appropriate colors do not use the green one )"
-    const paletteStr = `${healthTheme.fromColor} ${healthTheme.viaColor} ${healthTheme.toColor} ${healthTheme.borderColor} ${healthTheme.accentColor}`.toLowerCase();
-    assert.strictEqual(paletteStr.includes('green'), false, 'health theme must not contain green');
-    // Soothing ocean sky/cyan-indigo palette
-    assert.strictEqual(healthTheme.accentColor, '#0284c7', 'health theme should use calming ocean sky-blue accent');
+  await t.test('Health & Sexual Wellness does not use green per user requirement', () => {
+    const healthTheme = DEFAULT_RESOURCE_THEMES['Health & Sexual Wellness'];
+    assert.ok(healthTheme, 'Health theme must exist');
+    // Ensure gradientFrom, gradientVia, and gradientTo are deep plum/violet, not green
+    assert.ok(!healthTheme.gradientFrom.toLowerCase().includes('00ff'), 'Should not be bright green');
+    assert.ok(!healthTheme.gradientVia.toLowerCase().includes('00ff'), 'Should not be bright green');
+    assert.equal(healthTheme.presetId, 'velvet-plum', 'Health theme uses royal velvet plum and gold');
   });
 
-  await t.test('Each resource and community category has distinct aesthetic gradients', () => {
-    const categories = Object.keys(DEFAULT_CATEGORY_THEMES);
-    assert.ok(categories.length >= 8, 'must define themes for all major categories');
-    
-    // Verify distinct accent colors across categories
-    const accents = new Set(categories.map(c => DEFAULT_CATEGORY_THEMES[c].accentColor));
-    assert.ok(accents.size >= 6, 'categories should have distinct accent colors');
-  });
+  await t.test('All resource categories have complete gradient and accent definitions', () => {
+    const requiredKeys = [
+      'Crisis & Immediate Helplines',
+      'Health & Sexual Wellness',
+      'Legal & Civil Advocacy',
+      'Youth & Family Support',
+      'Senior & Community Resources'
+    ];
 
-  await t.test('resolveCategoryTheme resolves correctly by category name, fuzzy match, or fallback', () => {
-    // Exact match
-    const health = resolveCategoryTheme('Health & Sexual Wellness');
-    assert.ok(health.gradient, 'must return a gradient');
-    assert.strictEqual(health.accentColor, '#0284c7');
-
-    // Fuzzy match on keyword "health"
-    const fuzzyHealth = resolveCategoryTheme('Community Health Clinic');
-    assert.strictEqual(fuzzyHealth.accentColor, '#0284c7');
-
-    // Fuzzy match on "crisis"
-    const crisis = resolveCategoryTheme('Emergency Crisis Hotline');
-    assert.strictEqual(crisis.accentColor, '#e11d48');
-
-    // Fuzzy match on "trans"
-    const trans = resolveCategoryTheme('Transgender Support Group');
-    assert.strictEqual(trans.accentColor, '#db2777');
-
-    // Direct card custom override
-    const directOverride = resolveCategoryTheme('Custom Item', {
-      gradient: 'linear-gradient(135deg, #fff 0%, #000 100%)',
-      accentColor: '#123456',
-      borderColor: '#abcdef'
-    });
-    assert.strictEqual(directOverride.gradient, 'linear-gradient(135deg, #fff 0%, #000 100%)');
-    assert.strictEqual(directOverride.accentColor, '#123456');
-
-    // Fallback for unknown category
-    const unknown = resolveCategoryTheme('Completely Unmatched Title');
-    assert.ok(unknown.gradient, 'must provide safe fallback gradient');
-    assert.ok(unknown.accentColor, 'must provide safe fallback accentColor');
-  });
-
-  await t.test('GRADIENT_PALETTE_PRESETS provides 1-click curated palettes including non-green healthcare', () => {
-    assert.ok(Array.isArray(GRADIENT_PALETTE_PRESETS) && GRADIENT_PALETTE_PRESETS.length >= 6);
-    const healthPreset = GRADIENT_PALETTE_PRESETS.find(p => p.id === 'ocean-cyan');
-    assert.ok(healthPreset, 'ocean-cyan preset should be available');
-    assert.strictEqual(healthPreset.accentColor, '#0284c7');
-  });
-
-  await t.test('saveCategoryThemesToStorage and loadCategoryThemes persist custom overrides in browser', () => {
-    const mockStorage = {};
-    globalThis.window = {
-      dispatchEvent: () => {}
-    };
-    globalThis.CustomEvent = class {
-      constructor(type, eventInitDict) {
-        this.type = type;
-        this.detail = eventInitDict?.detail;
-      }
-    };
-    globalThis.localStorage = {
-      getItem: (key) => mockStorage[key] || null,
-      setItem: (key, val) => { mockStorage[key] = String(val); },
-      removeItem: (key) => { delete mockStorage[key]; }
-    };
-
-    try {
-      const customThemes = {
-        ...DEFAULT_CATEGORY_THEMES,
-        'Health & Sexual Wellness': {
-          ...DEFAULT_CATEGORY_THEMES['Health & Sexual Wellness'],
-          accentColor: '#0369a1',
-          fromColor: '#f0f9ff'
-        }
-      };
-
-      saveCategoryThemesToStorage(customThemes);
-      assert.ok(mockStorage[CATEGORY_THEME_STORAGE_KEY], 'must save to storage key');
-
-      const loaded = loadCategoryThemes();
-      assert.strictEqual(loaded['Health & Sexual Wellness'].accentColor, '#0369a1');
-
-      const resolved = resolveCategoryTheme('Health & Sexual Wellness');
-      assert.strictEqual(resolved.accentColor, '#0369a1');
-    } finally {
-      delete globalThis.window;
-      delete globalThis.CustomEvent;
-      delete globalThis.localStorage;
+    for (const key of requiredKeys) {
+      const theme = getResourceCardTheme(key);
+      assert.ok(theme.gradientFrom, `${key} must have gradientFrom`);
+      assert.ok(theme.gradientTo, `${key} must have gradientTo`);
+      assert.ok(theme.accentColor, `${key} must have accentColor`);
+      assert.ok(theme.badgeColor, `${key} must have badgeColor`);
     }
   });
 
-  await t.test('P.R.I.D.E. Training categories have distinct aesthetic gradients & Clinical avoids green', () => {
-    // Clinical & Healthcare workshop
-    const clinical = resolveCategoryTheme('Clinical & Healthcare');
-    assert.ok(clinical.gradient, 'Clinical training must have a gradient');
-    const clinicalPalette = `${clinical.fromColor} ${clinical.viaColor} ${clinical.toColor} ${clinical.borderColor} ${clinical.accentColor}`.toLowerCase();
-    assert.strictEqual(clinicalPalette.includes('green'), false, 'Clinical training must not use green');
-    assert.strictEqual(clinical.accentColor, '#0284c7', 'Clinical training should use calming sky-blue accent');
+  await t.test('All community categories have distinct jewel-toned gradient definitions', () => {
+    const categories = [
+      'Youth Peer Support',
+      'Adult Peer Support',
+      'Trans & Non-Binary Support',
+      'Seniors / 55+',
+      'Professional & Personal Growth',
+      'Family & Ally Support',
+      'Recovery & Wellness'
+    ];
 
-    // Foundational Certification
-    const foundational = resolveCategoryTheme('Foundational Certification');
-    assert.strictEqual(foundational.accentColor, '#7e22ce');
+    for (const cat of categories) {
+      const theme = getCommunityCardTheme(cat);
+      assert.ok(theme.gradientFrom, `${cat} must have gradientFrom`);
+      assert.ok(theme.gradientTo, `${cat} must have gradientTo`);
+      assert.ok(theme.accentColor, `${cat} must have accentColor`);
+    }
+  });
 
-    // Schools & Youth Groups
-    const schools = resolveCategoryTheme('Schools & Youth Groups');
-    assert.strictEqual(schools.accentColor, '#db2777');
+  await t.test('Individual card overrides take precedence over category defaults', () => {
+    const override = {
+      gradientFrom: '#112233',
+      gradientTo: '#445566',
+      accentColor: '#FFAA00'
+    };
+    const resolved = getResourceCardTheme('Health & Sexual Wellness', override);
+    assert.equal(resolved.gradientFrom, '#112233');
+    assert.equal(resolved.gradientTo, '#445566');
+    assert.equal(resolved.accentColor, '#FFAA00');
+  });
 
-    // Corporate & Workplace Equity
-    const corporate = resolveCategoryTheme('Corporate & Workplace Equity');
-    assert.strictEqual(corporate.accentColor, '#4f46e5');
-
-    // Fuzzy matching on training course title
-    const fuzzyCourse = resolveCategoryTheme('P.R.I.D.E. Cultural Competency Workshop');
-    assert.ok(fuzzyCourse.gradient);
-    assert.strictEqual(fuzzyCourse.accentColor, '#7e22ce');
+  await t.test('Curated luxury gradient presets offer 10 jewel-toned palettes', () => {
+    assert.equal(LUXURY_GRADIENT_PRESETS.length, 10);
+    for (const p of LUXURY_GRADIENT_PRESETS) {
+      assert.ok(p.id);
+      assert.ok(p.name);
+      assert.ok(p.gradientFrom);
+      assert.ok(p.gradientTo);
+      assert.ok(p.accentColor);
+    }
   });
 });

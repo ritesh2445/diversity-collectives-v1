@@ -10,29 +10,30 @@ import {
   Sparkles, 
   Heart, 
   Mail, 
-  PlusCircle 
+  PlusCircle,
+  Star,
+  Check,
+  Lock
 } from 'lucide-react';
 import { resourcesDirectory, orgInfo } from '../data/dcvcData';
 import { cmsStore } from '../services/cmsStore';
 import { useLiveOrgInfo } from '../hooks/useCmsLive';
+import { getResourceCardTheme, subscribeToCardThemes } from '../services/cardThemeStore.js';
 import SendVoicemailButton from '../components/SendVoicemailButton';
 import CardSpotlight from '../components/CardSpotlight';
 import MobileCarousel from '../components/MobileCarousel';
-import { resolveCategoryTheme, loadCategoryThemes } from '../utils/cardGradients.js';
 
 export default function Resources() {
   const liveOrg = useLiveOrgInfo();
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
-  const [categoryThemes, setCategoryThemes] = useState(loadCategoryThemes);
   const [dirGroups, setDirGroups] = useState(() => cmsStore.getResources() || resourcesDirectory);
+  const [, setCardThemeVersion] = useState(0);
 
   useEffect(() => {
-    const handleThemesUpdate = (e) => {
-      setCategoryThemes(e.detail || loadCategoryThemes());
-    };
-    window.addEventListener('dcvc:category-themes-updated', handleThemesUpdate);
-    return () => window.removeEventListener('dcvc:category-themes-updated', handleThemesUpdate);
+    return subscribeToCardThemes(() => {
+      setCardThemeVersion((v) => v + 1);
+    });
   }, []);
 
   useEffect(() => {
@@ -164,127 +165,147 @@ export default function Resources() {
           </div>
         ) : (
           <div className="space-y-16">
-            {filteredCategories.map((catGroup) => {
-              const groupTheme = resolveCategoryTheme(catGroup.category, null, categoryThemes);
-              return (
+            {filteredCategories.map((catGroup) => (
               <div key={catGroup.category} className="space-y-6">
                 
                 <div className="flex items-center gap-3 pb-3 border-b border-slate-200">
-                  <span
-                    className="w-3.5 h-3.5 rounded-full border shadow-2xs shrink-0"
-                    style={{ background: groupTheme.gradient || groupTheme.fromColor }}
-                  />
                   <h2 className="font-display text-2xl font-black text-slate-950">
                     {catGroup.category}
                   </h2>
-                  <span
-                    className="text-xs font-black px-2.5 py-0.5 rounded-full border"
-                    style={{
-                      backgroundColor: groupTheme.badgeBg,
-                      color: groupTheme.badgeText,
-                      borderColor: groupTheme.badgeBorder
-                    }}
-                  >
+                  <span className="text-xs font-black text-[#5A1E65] bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-200">
                     {catGroup.items.length} Providers
                   </span>
                 </div>
 
                 <MobileCarousel cols={2} autoScrollMs={0} className="perspective-1000" cardClassName="h-full flex flex-col">
                   {catGroup.items.map((item) => {
-                    const itemTheme = resolveCategoryTheme(catGroup.category, item.cardTheme, categoryThemes);
+                    const theme = getResourceCardTheme(catGroup.category, item);
+                    const gradientBg = `linear-gradient(135deg, ${theme.gradientFrom || '#1e082b'} 0%, ${theme.gradientVia || '#3b0d46'} 50%, ${theme.gradientTo || '#160824'} 100%)`;
+
                     return (
-                    <CardSpotlight 
-                      key={item.name}
-                      className="p-6 sm:p-7 rounded-3xl transition-all duration-300 shadow-sm hover:shadow-xl flex flex-col justify-between interactive-card-3d relative overflow-hidden backdrop-blur-xs group"
-                      style={{
-                        background: itemTheme.gradient,
-                        border: `2px solid ${itemTheme.borderColor || '#cbd5e1'}`,
-                        boxShadow: `0 8px 24px -4px ${itemTheme.borderColor}35`
-                      }}
-                      tilt={true}
-                      maxTilt={4.5}
-                      glare={true}
-                    >
-                      <div className="space-y-3 mb-4">
-                        <div className="flex items-center justify-between">
-                          <span
-                            className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border shadow-2xs"
-                            style={{
-                              backgroundColor: itemTheme.badgeBg,
-                              color: itemTheme.badgeText,
-                              borderColor: itemTheme.badgeBorder
-                            }}
-                          >
-                            {catGroup.category}
-                          </span>
-                          {item.verified !== false && (
-                            <span className="text-[10px] font-bold text-slate-600 bg-white/70 px-2 py-0.5 rounded-full border border-white/80 shadow-2xs">
-                              ✓ Verified
+                      <CardSpotlight 
+                        key={item.name}
+                        className="p-7 sm:p-8 rounded-3xl text-white shadow-2xl relative overflow-hidden transition-all duration-300 flex flex-col justify-between interactive-card-3d border"
+                        style={{
+                          background: gradientBg,
+                          borderColor: `${theme.accentColor || '#F59E0B'}40`,
+                          boxShadow: `0 20px 45px -15px ${theme.glowColor || 'rgba(0,0,0,0.5)'}`
+                        }}
+                        tilt={true}
+                        maxTilt={3.5}
+                        glare={true}
+                      >
+                        <div className="space-y-4">
+                          {/* Top Badges */}
+                          <div className="flex items-center justify-between gap-2">
+                            <span
+                              className="px-3.5 py-1 rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-wider backdrop-blur-md flex items-center gap-1.5 shadow-xs"
+                              style={{
+                                backgroundColor: `${theme.badgeColor || '#FBBF24'}20`,
+                                color: theme.badgeColor || '#FBBF24',
+                                border: `1px solid ${theme.badgeColor || '#FBBF24'}50`
+                              }}
+                            >
+                              <Sparkles className="w-3 h-3" />
+                              <span>{catGroup.category}</span>
                             </span>
+                            <span className="text-xs font-bold text-white/80 flex items-center gap-1">
+                              <ShieldCheck className="w-3.5 h-3.5 text-teal-300" />
+                              <span>Verified Lifeline</span>
+                            </span>
+                          </div>
+
+                          {/* Provider Title */}
+                          <div>
+                            <span className="text-[10px] font-black uppercase tracking-wider text-white/60 block mb-1">
+                              AFFIRMING COMMUNITY RESOURCE
+                            </span>
+                            <h3 className="font-display text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight">
+                              {item.name}
+                            </h3>
+                          </div>
+
+                          {/* Frosted Glass Description Container (Image 1 Style) */}
+                          <div className="rounded-2xl p-4 sm:p-5 bg-white/[0.08] backdrop-blur-md border border-white/15 shadow-inner space-y-2">
+                            <div
+                              className="text-xs sm:text-sm font-bold flex items-center gap-1.5"
+                              style={{ color: theme.accentColor || '#F59E0B' }}
+                            >
+                              <Star className="w-3.5 h-3.5 fill-current" />
+                              <span>Confidential Health & Peer Navigation</span>
+                            </div>
+                            <p className="text-sm sm:text-base text-purple-100/95 font-serif italic leading-relaxed">
+                              "{item.notes}"
+                            </p>
+                          </div>
+
+                          {/* Feature Checklist Bullets */}
+                          <div className="space-y-1.5 text-xs text-white/90 font-medium">
+                            <div className="flex items-center gap-2">
+                              <Check className="w-3.5 h-3.5 text-teal-300 shrink-0" />
+                              <span>100% Free, confidential & affirming community care</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Check className="w-3.5 h-3.5 text-teal-300 shrink-0" />
+                              <span>No insurance, ID, or referral required</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Check className="w-3.5 h-3.5 text-teal-300 shrink-0" />
+                              <span>Culturally competent trauma-informed support</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Card Action Row */}
+                        <div className="pt-6 mt-6 border-t border-white/15 flex flex-wrap items-center justify-between gap-3">
+                          {item.phone ? (
+                            (item.voicemailOnly || liveOrg.voicemailOnly) ? (
+                              <SendVoicemailButton
+                                label="Send Voice Message"
+                                subject={`Resource Inquiry: ${item.name}`}
+                                compact
+                              />
+                            ) : (
+                              <a
+                                href={`tel:${item.phone.replace(/[^0-9+]/g, '')}`}
+                                className="py-2.5 px-4 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/25 backdrop-blur-md transition-all flex items-center justify-center gap-1.5 cursor-pointer hover:border-white/40"
+                              >
+                                <Phone className="w-3.5 h-3.5" style={{ color: theme.accentColor || '#F59E0B' }} />
+                                <span>{item.phone}</span>
+                              </a>
+                            )
+                          ) : (
+                            <span className="text-white/60 italic text-xs font-medium">Verified Online Portal</span>
+                          )}
+
+                          {item.url && (
+                            <a
+                              href={item.url}
+                              target={item.url.startsWith('http') ? '_blank' : '_self'}
+                              rel="noopener noreferrer"
+                              className="py-3 px-6 rounded-2xl font-black text-xs sm:text-sm text-slate-950 flex items-center justify-center gap-2 shadow-[0_10px_25px_-5px_rgba(245,158,11,0.5)] hover:scale-[1.02] active:scale-[0.99] transition-all cursor-pointer"
+                              style={{
+                                background: 'linear-gradient(90deg, #F59E0B 0%, #FDE047 50%, #F59E0B 100%)'
+                              }}
+                            >
+                              <span>Access Service Online</span>
+                              <ArrowUpRight className="w-4 h-4 stroke-[2.5]" />
+                            </a>
                           )}
                         </div>
 
-                        <h3
-                          className="font-display text-xl sm:text-2xl font-black tracking-tight"
-                          style={{ color: itemTheme.textColor }}
-                        >
-                          {item.name}
-                        </h3>
-                        <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-medium">
-                          {item.notes}
-                        </p>
-                      </div>
-
-                      <div className="pt-4 border-t border-slate-900/10 flex flex-wrap items-center justify-between gap-3 text-xs">
-                        {item.phone ? (
-                          (item.voicemailOnly || liveOrg.voicemailOnly) ? (
-                            <SendVoicemailButton
-                              label="Send Voice Message"
-                              subject={`Resource Inquiry: ${item.name}`}
-                              compact
-                            />
-                          ) : (
-                            <a
-                              href={`tel:${item.phone.replace(/[^0-9+]/g, '')}`}
-                              className="inline-flex items-center gap-1.5 font-bold hover:underline bg-white/85 px-3 py-1.5 rounded-full border shadow-2xs transition-all hover:scale-102"
-                              style={{
-                                color: itemTheme.accentColor,
-                                borderColor: itemTheme.borderColor
-                              }}
-                            >
-                              <Phone className="w-3.5 h-3.5" />
-                              <span>{item.phone}</span>
-                            </a>
-                          )
-                        ) : (
-                          <span className="text-slate-600 italic font-medium bg-white/60 px-2.5 py-1 rounded-full border border-white/70 text-[11px]">
-                            Verified Online Portal
-                          </span>
-                        )}
-
-                        {item.url && (
-                          <a
-                            href={item.url}
-                            target={item.url.startsWith('http') ? '_blank' : '_self'}
-                            rel="noopener noreferrer"
-                            className="py-2.5 px-4 rounded-xl text-xs font-bold text-white shadow-md hover:shadow-lg transition-all hover:scale-102 inline-flex items-center gap-1"
-                            style={{
-                              backgroundColor: itemTheme.accentColor
-                            }}
-                          >
-                            <span>Access Service</span>
-                            <ArrowUpRight className="w-3.5 h-3.5" />
-                          </a>
-                        )}
-                      </div>
-                    </CardSpotlight>
+                        {/* Privacy footnote */}
+                        <div className="pt-3 text-center text-[10px] text-white/50 flex items-center justify-center gap-1">
+                          <Lock className="w-2.5 h-2.5" />
+                          <span>Confidential Community Care • Diversity Collective Partner</span>
+                        </div>
+                      </CardSpotlight>
                     );
                   })}
                 </MobileCarousel>
 
               </div>
-              );
-            })}
+            ))}
           </div>
         )}
 
