@@ -156,131 +156,157 @@ export default function Resources() {
                 <MobileCarousel cols={2} autoScrollMs={0} className="perspective-1000" cardClassName="h-full flex flex-col">
                   {catGroup.items.map((item) => {
                     const theme = getResourceCardTheme(catGroup.category, item);
-                    const gradientBg = `linear-gradient(145deg, ${theme.gradientFrom} 0%, ${theme.gradientVia || theme.gradientFrom} 50%, ${theme.gradientTo} 100%)`;
+                    const softGradientBg = `linear-gradient(145deg, ${theme.gradientFrom || '#FAF5FF'} 0%, ${theme.gradientVia || theme.gradientFrom || '#FAF5FF'} 50%, ${theme.gradientTo || '#FFFFFF'} 100%)`;
 
                     return (
                       <CardSpotlight
                         key={item.name}
-                        className="rounded-3xl relative overflow-hidden transition-all duration-300 flex flex-col justify-between border"
+                        className="rounded-3xl relative overflow-hidden transition-all duration-300 flex flex-col justify-between border-2"
                         style={{
-                          background: gradientBg,
-                          borderColor: `${theme.accentColor || '#38BDF8'}33`,
-                          boxShadow: `0 14px 34px -10px ${theme.glowColor || 'rgba(0,0,0,0.4)'}`
+                          background: softGradientBg,
+                          borderColor: theme.borderColor || `${theme.accentColor || '#5A1E65'}40`,
+                          boxShadow: `0 10px 30px -10px ${theme.glowColor || 'rgba(0,0,0,0.06)'}, 0 2px 6px rgba(0,0,0,0.03)`
                         }}
                         tilt={true}
                         maxTilt={2}
                         glare={false}
                       >
-                        {/* Subtle top category glow accent line */}
+                        {/* Top decorative category accent line */}
                         <div
-                          className="h-[2px] w-full"
+                          className="h-[3px] w-full"
                           style={{
-                            background: `linear-gradient(90deg, transparent 0%, ${theme.accentColor || '#38BDF8'} 50%, transparent 100%)`
+                            background: `linear-gradient(90deg, transparent 0%, ${theme.accentColor || '#5A1E65'} 50%, transparent 100%)`
                           }}
                         />
 
-                        <div className="p-6 sm:p-7 flex flex-col flex-1 justify-between gap-4">
+                        <div className="p-6 sm:p-7 flex flex-col flex-1 justify-between gap-5">
                           {/* Top Badges */}
                           <div className="flex items-center justify-between gap-2">
                             <span
-                              className="px-3.5 py-1 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 backdrop-blur-md"
+                              className="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-2xs"
                               style={{
-                                backgroundColor: `${theme.accentColor || '#38BDF8'}1f`,
-                                color: theme.badgeColor || theme.accentColor || '#38BDF8',
-                                border: `1px solid ${theme.accentColor || '#38BDF8'}40`
+                                backgroundColor: theme.badgeBg || '#F3E8FF',
+                                color: theme.badgeColor || theme.accentColor || '#5A1E65',
+                                border: `1.5px solid ${theme.borderColor || theme.accentColor || '#DDD6FE'}`
                               }}
                             >
                               <Sparkles className="w-3 h-3" />
                               <span>{catGroup.category}</span>
                             </span>
-                            <span className="text-xs font-semibold text-slate-300 flex items-center gap-1">
-                              <ShieldCheck className="w-3.5 h-3.5" style={{ color: theme.accentColor || '#38BDF8' }} />
+                            <span
+                              className="text-xs font-bold flex items-center gap-1 px-2.5 py-0.5 rounded-full"
+                              style={{
+                                backgroundColor: `${theme.accentColor || '#5A1E65'}12`,
+                                color: theme.accentColor || '#5A1E65'
+                              }}
+                            >
+                              <ShieldCheck className="w-3.5 h-3.5" />
                               <span>Verified Lifeline</span>
                             </span>
                           </div>
 
                           {/* Provider Title */}
                           <div>
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                            <span
+                              className="text-[11px] font-black uppercase tracking-wider block mb-1"
+                              style={{ color: theme.accentColor || '#5A1E65' }}
+                            >
                               AFFIRMING COMMUNITY RESOURCE
                             </span>
-                            <h3 className="font-display text-2xl sm:text-3xl font-black text-white tracking-tight leading-snug">
+                            <h3 className="font-display text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-snug">
                               {item.name}
                             </h3>
                           </div>
 
-                          {/* Frosted Glass Description Container */}
-                          <div className="rounded-2xl p-4 sm:p-5 bg-white/[0.07] backdrop-blur-md border border-white/10 space-y-2">
+                          {/* Description Container with clean background */}
+                          <div
+                            className="rounded-2xl p-4 sm:p-5 bg-white/90 border shadow-xs space-y-2"
+                            style={{ borderColor: `${theme.borderColor || '#E2E8F0'}` }}
+                          >
                             <div
                               className="text-xs sm:text-sm font-bold flex items-center gap-1.5"
-                              style={{ color: theme.accentColor || '#38BDF8' }}
+                              style={{ color: theme.accentColor || '#5A1E65' }}
                             >
                               <Star className="w-3.5 h-3.5 fill-current" />
                               <span>Confidential Health &amp; Peer Navigation</span>
                             </div>
-                            <p className="text-sm sm:text-base text-slate-200 font-serif italic leading-relaxed">
+                            <p className="text-sm sm:text-base text-slate-800 font-serif italic leading-relaxed">
                               &ldquo;{item.notes}&rdquo;
                             </p>
                           </div>
 
                           {/* Feature Checklist Bullets */}
-                          <div className="space-y-1.5 text-xs text-slate-300 font-medium">
+                          <div className="space-y-2 text-xs sm:text-sm text-slate-800 font-semibold">
                             <div className="flex items-center gap-2">
-                              <Check className="w-3.5 h-3.5 shrink-0" style={{ color: theme.accentColor || '#38BDF8' }} />
+                              <Check className="w-4 h-4 shrink-0" style={{ color: theme.accentColor || '#5A1E65' }} />
                               <span>100% Free, confidential &amp; affirming community care</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <Check className="w-3.5 h-3.5 shrink-0" style={{ color: theme.accentColor || '#38BDF8' }} />
+                              <Check className="w-4 h-4 shrink-0" style={{ color: theme.accentColor || '#5A1E65' }} />
                               <span>No insurance, ID, or referral required</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <Check className="w-3.5 h-3.5 shrink-0" style={{ color: theme.accentColor || '#38BDF8' }} />
+                              <Check className="w-4 h-4 shrink-0" style={{ color: theme.accentColor || '#5A1E65' }} />
                               <span>Culturally competent trauma-informed support</span>
                             </div>
                           </div>
 
-                          {/* Card Action Row */}
-                          <div className="pt-5 mt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
+                          {/* Card Action Row: Prominent Phone & High-Contrast Button */}
+                          <div
+                            className="pt-5 mt-auto border-t flex flex-wrap items-center justify-between gap-3"
+                            style={{ borderColor: `${theme.borderColor || '#E2E8F0'}` }}
+                          >
+                            {/* Prominent High-Contrast Phone Number */}
                             {item.phone ? (
                               (item.voicemailOnly || liveOrg.voicemailOnly) ? (
                                 <SendVoicemailButton
                                   label="Send Voice Message"
                                   subject={`Resource Inquiry: ${item.name}`}
+                                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 border-2 text-slate-900 font-bold text-xs sm:text-sm shadow-xs transition-all cursor-pointer"
+                                  style={{ borderColor: theme.accentColor || '#5A1E65' }}
                                   compact
                                 />
                               ) : (
                                 <a
                                   href={`tel:${item.phone.replace(/[^0-9+]/g, '')}`}
-                                  className="py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs border border-white/20 backdrop-blur-md transition-all flex items-center gap-1.5 cursor-pointer"
+                                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 border-2 shadow-xs transition-all hover:scale-[1.02] cursor-pointer"
+                                  style={{
+                                    borderColor: theme.accentColor || '#5A1E65',
+                                    color: '#0F172A'
+                                  }}
+                                  title={`Call ${item.phone}`}
                                 >
-                                  <Phone className="w-3.5 h-3.5" style={{ color: theme.accentColor || '#38BDF8' }} />
-                                  <span>{item.phone}</span>
+                                  <Phone className="w-4 h-4 shrink-0" style={{ color: theme.accentColor || '#5A1E65' }} />
+                                  <span className="font-bold text-slate-900 text-xs sm:text-sm tracking-wide">
+                                    {item.phone}
+                                  </span>
                                 </a>
                               )
                             ) : (
-                              <span className="text-slate-400 italic text-xs font-medium">Verified Online Portal</span>
+                              <span className="text-slate-600 font-semibold italic text-xs">Verified Online Portal</span>
                             )}
 
+                            {/* Solid Primary Action Button with White Text */}
                             {item.url && (
                               <a
                                 href={item.url}
                                 target={item.url.startsWith('http') ? '_blank' : '_self'}
                                 rel="noopener noreferrer"
-                                className="py-3 px-6 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all hover:opacity-95 active:scale-[0.98] shadow-md cursor-pointer"
+                                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-xs sm:text-sm shadow-md hover:shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
                                 style={{
-                                  backgroundColor: theme.btnBg || theme.accentColor || '#2563EB',
+                                  backgroundColor: theme.btnBg || theme.accentColor || '#5A1E65',
                                   color: '#FFFFFF'
                                 }}
                               >
-                                <span className="font-bold text-white">Access Service Online</span>
+                                <span className="font-bold text-white text-xs sm:text-sm tracking-wide">Access Service Online</span>
                                 <ArrowUpRight className="w-4 h-4 stroke-[2.5] text-white" />
                               </a>
                             )}
                           </div>
 
                           {/* Privacy footnote */}
-                          <div className="text-center text-[10px] text-slate-400 flex items-center justify-center gap-1 pt-1">
-                            <Lock className="w-2.5 h-2.5" />
+                          <div className="text-center text-xs text-slate-600 font-medium flex items-center justify-center gap-1.5 pt-1">
+                            <Lock className="w-3 h-3 text-slate-500" />
                             <span>Confidential Community Care • Diversity Collective Partner</span>
                           </div>
                         </div>
