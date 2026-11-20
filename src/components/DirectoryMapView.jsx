@@ -186,7 +186,11 @@ export default function DirectoryMapView({ businesses = [], onHype, activeHypeId
 
             return (
               <div className="h-full rounded-3xl bg-white border border-purple-200/80 shadow-xl p-5 sm:p-6 flex flex-col justify-between relative overflow-hidden">
-                <AirDropPulseWaves active={activeHypeId === (selectedBiz.id || selectedBiz.slug)} />
+                <AirDropPulseWaves
+                  active={activeHypeId === (selectedBiz.id || selectedBiz.slug)}
+                  bizId={selectedBiz.id || selectedBiz.slug}
+                  category={selectedBiz.category}
+                />
 
                 <div className="space-y-4">
                   {/* Photo Header with Badges */}

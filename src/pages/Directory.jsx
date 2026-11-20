@@ -137,6 +137,7 @@ export default function Directory() {
   const [ratingModalBiz, setRatingModalBiz] = useState(null);
   const [claimModalBiz, setClaimModalBiz] = useState(null);
   const [activeHypeId, setActiveHypeId] = useState(null);
+  const [hypeRandomSeed, setHypeRandomSeed] = useState(0);
 
   useEffect(() => {
     let isMounted = true;
@@ -212,6 +213,7 @@ export default function Directory() {
   // Trigger AirDrop Radar Animation & Record Hype
   const handleTriggerHype = async (biz) => {
     const id = biz.id || biz.slug;
+    setHypeRandomSeed(Math.floor(Math.random() * 1000) + 1);
     setActiveHypeId(id);
     await directoryService.hypeBusiness(id);
     setTimeout(() => {
@@ -582,8 +584,13 @@ export default function Directory() {
                   maxTilt={2.8}
                   glare={true}
                 >
-                  {/* AirDrop Pulse Radar Wave Overlay (soft light waves on hype) */}
-                  <AirDropPulseWaves active={isCardHyped} />
+                  {/* AirDrop Soft Ambient Light Wave Overlay (borderless diffuse glow, GPU-composited) */}
+                  <AirDropPulseWaves 
+                    active={isCardHyped} 
+                    bizId={biz.id || biz.slug}
+                    category={biz.category}
+                    seed={hypeRandomSeed}
+                  />
 
                   <div className="space-y-4">
                     {/* Photo Thumbnail */}

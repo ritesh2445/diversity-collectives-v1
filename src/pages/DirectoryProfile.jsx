@@ -61,6 +61,7 @@ export default function DirectoryProfile() {
   const [isRateModalOpen, setIsRateModalOpen] = useState(false);
   const [isClaimModalOpen, setIsClaimModalOpen] = useState(false);
   const [hypeWaveActive, setHypeWaveActive] = useState(false);
+  const [hypeRandomSeed, setHypeRandomSeed] = useState(0);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
 
   useEffect(() => {
@@ -136,6 +137,7 @@ export default function DirectoryProfile() {
 
   const handleTriggerHype = async () => {
     if (stats.isHyped) return;
+    setHypeRandomSeed(Math.floor(Math.random() * 1000) + 1);
     setHypeWaveActive(true);
     await directoryService.hypeBusiness(business.id || business.slug);
     setTimeout(() => {
@@ -262,9 +264,14 @@ export default function DirectoryProfile() {
               </div>
             </div>
 
-            {/* Profile Hero Photo Showcase with AirDrop radar wave overlay */}
+            {/* Profile Hero Photo Showcase with AirDrop soft ambient light wave overlay */}
             <div className="rounded-3xl overflow-hidden aspect-[16/9] shadow-xl border-2 border-slate-200 relative">
-              <AirDropPulseWaves active={hypeWaveActive} />
+              <AirDropPulseWaves 
+                active={hypeWaveActive} 
+                bizId={business.id || business.slug}
+                category={business.category}
+                seed={hypeRandomSeed}
+              />
               <img
                 src={business.image || business.cover_url || "/images/community-gathering.jpg"}
                 alt={business.name}
