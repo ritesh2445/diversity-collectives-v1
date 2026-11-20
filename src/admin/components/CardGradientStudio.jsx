@@ -93,7 +93,7 @@ export default function CardGradientStudio() {
   };
 
   const gradientStyle = {
-    background: `linear-gradient(135deg, ${currentTheme.gradientFrom || '#1e082b'} 0%, ${currentTheme.gradientVia || '#3b0d46'} 50%, ${currentTheme.gradientTo || '#160824'} 100%)`
+    background: `linear-gradient(145deg, ${currentTheme.gradientFrom || '#FAF5FF'} 0%, ${currentTheme.gradientVia || '#FDFBFF'} 50%, ${currentTheme.gradientTo || '#FFFFFF'} 100%)`
   };
 
   return (
@@ -112,7 +112,7 @@ export default function CardGradientStudio() {
             Resource & Community Card Styling
           </h2>
           <p className="text-xs sm:text-sm text-purple-200/90 max-w-2xl leading-relaxed">
-            Customize the deep luxury gradients, glass containers, gold accents, and glowing badges for every Resource and Community category. Changes reflect immediately on public cards.
+            Customize the calm soft gradients, accents, borders, and buttons for every Resource and Community category. Changes reflect immediately on public cards.
           </p>
         </div>
 
@@ -278,13 +278,13 @@ export default function CardGradientStudio() {
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
-                    value={currentTheme.gradientFrom || '#1e082b'}
+                    value={currentTheme.gradientFrom || '#FAF5FF'}
                     onChange={(e) => handleColorChange('gradientFrom', e.target.value)}
                     className="w-9 h-9 rounded-xl border border-slate-300 cursor-pointer p-0.5 bg-white"
                   />
                   <input
                     type="text"
-                    value={currentTheme.gradientFrom || '#1e082b'}
+                    value={currentTheme.gradientFrom || '#FAF5FF'}
                     onChange={(e) => handleColorChange('gradientFrom', e.target.value)}
                     className="w-full px-2.5 py-1.5 text-xs font-mono border rounded-xl"
                   />
@@ -298,13 +298,13 @@ export default function CardGradientStudio() {
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
-                    value={currentTheme.gradientVia || '#3b0d46'}
+                    value={currentTheme.gradientVia || '#FDFBFF'}
                     onChange={(e) => handleColorChange('gradientVia', e.target.value)}
                     className="w-9 h-9 rounded-xl border border-slate-300 cursor-pointer p-0.5 bg-white"
                   />
                   <input
                     type="text"
-                    value={currentTheme.gradientVia || '#3b0d46'}
+                    value={currentTheme.gradientVia || '#FDFBFF'}
                     onChange={(e) => handleColorChange('gradientVia', e.target.value)}
                     className="w-full px-2.5 py-1.5 text-xs font-mono border rounded-xl"
                   />
@@ -318,13 +318,13 @@ export default function CardGradientStudio() {
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
-                    value={currentTheme.gradientTo || '#160824'}
+                    value={currentTheme.gradientTo || '#FFFFFF'}
                     onChange={(e) => handleColorChange('gradientTo', e.target.value)}
                     className="w-9 h-9 rounded-xl border border-slate-300 cursor-pointer p-0.5 bg-white"
                   />
                   <input
                     type="text"
-                    value={currentTheme.gradientTo || '#160824'}
+                    value={currentTheme.gradientTo || '#FFFFFF'}
                     onChange={(e) => handleColorChange('gradientTo', e.target.value)}
                     className="w-full px-2.5 py-1.5 text-xs font-mono border rounded-xl"
                   />
@@ -335,18 +335,18 @@ export default function CardGradientStudio() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
               <div>
                 <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                  Golden Highlight & Accent
+                  Category Accent &amp; Button Color
                 </label>
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
-                    value={currentTheme.accentColor || '#F59E0B'}
+                    value={currentTheme.accentColor || '#5A1E65'}
                     onChange={(e) => handleColorChange('accentColor', e.target.value)}
                     className="w-9 h-9 rounded-xl border border-slate-300 cursor-pointer p-0.5 bg-white"
                   />
                   <input
                     type="text"
-                    value={currentTheme.accentColor || '#F59E0B'}
+                    value={currentTheme.accentColor || '#5A1E65'}
                     onChange={(e) => handleColorChange('accentColor', e.target.value)}
                     className="w-full px-2.5 py-1.5 text-xs font-mono border rounded-xl"
                   />
@@ -360,13 +360,13 @@ export default function CardGradientStudio() {
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
-                    value={currentTheme.badgeColor || '#FBBF24'}
+                    value={currentTheme.badgeColor || '#45124E'}
                     onChange={(e) => handleColorChange('badgeColor', e.target.value)}
                     className="w-9 h-9 rounded-xl border border-slate-300 cursor-pointer p-0.5 bg-white"
                   />
                   <input
                     type="text"
-                    value={currentTheme.badgeColor || '#FBBF24'}
+                    value={currentTheme.badgeColor || '#45124E'}
                     onChange={(e) => handleColorChange('badgeColor', e.target.value)}
                     className="w-full px-2.5 py-1.5 text-xs font-mono border rounded-xl"
                   />
