@@ -3,10 +3,13 @@ import { Check } from 'lucide-react';
 
 /**
  * DcvcApprovedBadge
- * Interactive 3D flipping corner badge for DCVC Approved Businesses.
- * Front face: Official DCVC Logo with subtle aura glow.
- * Back face: Vibrant emerald approved tick that glows green.
- * Automatically flips periodically and smoothly flips on user hover/tap.
+ * Sleek, compact micro-capsule badge for DCVC Verified & Approved Businesses.
+ * Features:
+ * - 3D Gyroscopic Tumbler flip with spring physics and depth pop
+ * - Holographic laser-prism sweep reflection
+ * - Dynamic dual-aura glow (Amethyst Violet for DCVC, Radiant Emerald for Approved)
+ * - Ultra-compact, unobtrusive footprint (24-25px height, micro typography)
+ * - Auto-flips periodically and responds instantly to hover/tap
  */
 export default function DcvcApprovedBadge({ className = '' }) {
   const [isFlipped, setIsFlipped] = useState(false);
@@ -26,32 +29,29 @@ export default function DcvcApprovedBadge({ className = '' }) {
 
   return (
     <div
-      className={`relative inline-block cursor-pointer select-none group/flip ${className}`}
+      className={`relative inline-block cursor-pointer select-none badge-3d-wrapper group/badge ${className}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={(e) => {
         e.stopPropagation();
         setIsFlipped((prev) => !prev);
       }}
-      title="DCVC Verified & Affirming Partner — Hover or click to inspect approval status"
-      style={{ perspective: '800px' }}
+      title="DCVC Verified & Affirming Partner — Hover or tap to toggle status"
     >
-      <div
-        className="relative transition-transform duration-700 ease-out preserve-3d"
-        style={{
-          transform: flippedState ? 'rotateY(180deg)' : 'rotateY(0deg)',
-          transformStyle: 'preserve-3d'
-        }}
-      >
-        {/* FRONT FACE: Official DCVC Logo with Glow */}
+      <div className={`relative badge-3d-card ${flippedState ? 'is-flipped' : ''}`}>
+        {/* FRONT FACE: Official DCVC Logo + Holographic Sheen + Amethyst Glow */}
         <div
-          className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/95 backdrop-blur-md border border-purple-200/90 shadow-[0_0_15px_rgba(90,30,101,0.3)] transition-all duration-300 hover:shadow-[0_0_20px_rgba(90,30,101,0.48)] shrink-0"
+          className="relative flex items-center gap-1.5 h-[25px] px-2 py-0.5 rounded-full bg-white/95 dark:bg-slate-900/90 backdrop-blur-md border border-purple-200/90 dark:border-purple-500/40 badge-violet-glow transition-all duration-300 shrink-0 overflow-hidden"
           style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
         >
-          <div className="relative flex items-center justify-center w-5 h-5 rounded-md overflow-hidden bg-white shadow-2xs border border-purple-100 shrink-0">
+          {/* Prismatic Holographic Sweep */}
+          <div className="badge-holo-shimmer" />
+
+          {/* DCVC Logo Coin */}
+          <div className="relative z-10 flex items-center justify-center w-4 h-4 rounded-full overflow-hidden bg-white shadow-2xs border border-purple-200/80 shrink-0">
             <img
               src="/images/logo-square.png"
-              alt="DCVC Official Logo"
+              alt="DCVC Logo"
               className="w-full h-full object-contain"
               onError={(e) => {
                 e.target.style.display = 'none';
@@ -60,32 +60,50 @@ export default function DcvcApprovedBadge({ className = '' }) {
                 }
               }}
             />
-            <div className="hidden w-full h-full bg-[#5A1E65] text-white font-black text-[9px] items-center justify-center">
+            <div className="hidden w-full h-full bg-[#5A1E65] text-white font-black text-[7.5px] items-center justify-center">
               DC
             </div>
           </div>
-          <span className="text-[11px] font-black uppercase tracking-wider text-[#5A1E65] flex items-center gap-1.5 whitespace-nowrap">
-            <span>DCVC Verified</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-purple-600 animate-pulse" />
-          </span>
+
+          {/* Micro Typography */}
+          <div className="relative z-10 flex items-center gap-1 whitespace-nowrap">
+            <span className="text-[10px] font-black tracking-wider text-[#5A1E65] dark:text-purple-200">
+              DCVC
+            </span>
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-purple-600" />
+            </span>
+          </div>
         </div>
 
-        {/* BACK FACE: DCVC Green Approved Tick with Emerald Glow */}
+        {/* BACK FACE: Emerald Neon Approved Checkmark + Prism Sheen */}
         <div
-          className="absolute inset-0 flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-emerald-600 via-emerald-500 to-green-600 text-white border border-emerald-300 shadow-[0_0_18px_rgba(16,185,129,0.65)] transition-all duration-300 shrink-0"
+          className="absolute inset-0 flex items-center gap-1.5 h-[25px] px-2 py-0.5 rounded-full bg-gradient-to-r from-emerald-600 via-teal-500 to-green-600 text-white border border-emerald-300/80 badge-emerald-glow transition-all duration-300 shrink-0 overflow-hidden"
           style={{
             transform: 'rotateY(180deg)',
             backfaceVisibility: 'hidden',
             WebkitBackfaceVisibility: 'hidden'
           }}
         >
-          <div className="w-5 h-5 rounded-full bg-white/25 backdrop-blur-xs flex items-center justify-center shrink-0 border border-white/50 shadow-xs">
-            <Check className="w-3.5 h-3.5 text-white stroke-[3.5]" />
+          {/* Prismatic Holographic Sweep */}
+          <div className="badge-holo-shimmer" />
+
+          {/* Emerald Checkmark Coin */}
+          <div className="relative z-10 w-4 h-4 rounded-full bg-white/25 backdrop-blur-xs flex items-center justify-center shrink-0 border border-white/60 shadow-xs">
+            <Check className="w-2.5 h-2.5 text-white stroke-[3.5]" />
           </div>
-          <span className="text-[11px] font-black uppercase tracking-wider text-white drop-shadow-xs flex items-center gap-1.5 whitespace-nowrap">
-            <span>Approved</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-          </span>
+
+          {/* Micro Typography */}
+          <div className="relative z-10 flex items-center gap-1 whitespace-nowrap">
+            <span className="text-[10px] font-black tracking-wider text-white drop-shadow-xs">
+              APPROVED
+            </span>
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-200" />
+            </span>
+          </div>
         </div>
       </div>
     </div>
