@@ -1,4 +1,178 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+/* Custom Luxury Leaflet Map Overrides */
+.leaflet-container {
+  font-family: inherit;
+  background-color: #0f172a !important;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.leaflet-popup-content-wrapper {
+  padding: 0 !important;
+  border-radius: 1.25rem !important;
+  background: rgba(255, 255, 255, 0.98) !important;
+  backdrop-filter: blur(12px) !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.15) !important;
+  border: 1px solid rgba(168, 85, 247, 0.35) !important;
+  overflow: hidden !important;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+  line-height: inherit !important;
+}
+
+.leaflet-popup-tip {
+  background: rgba(255, 255, 255, 0.98) !important;
+}
+
+.leaflet-bar {
+  border: 1px solid rgba(168, 85, 247, 0.3) !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+.leaflet-bar a {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  color: #0f172a !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  font-weight: 800 !important;
+  transition: all 0.2s ease !important;
+}
+
+.leaflet-bar a:hover {
+  background-color: #5A1E65 !important;
+  color: #ffffff !important;
+}
+
+/* ==========================================================================
+   PROFESSIONAL LEAFLET DIRECTORY MAP STYLING & CUSTOM MARKERS
+   ========================================================================== */
+.custom-leaflet-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+.dcvc-map-marker-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  will-change: transform;
+}
+
+.dcvc-map-marker-wrapper:hover {
+  transform: translateY(-4px) scale(1.12);
+  z-index: 9999 !important;
+}
+
+.dcvc-map-marker-wrapper.is-selected {
+  transform: translateY(-6px) scale(1.24);
+  z-index: 10000 !important;
+}
+
+.marker-pin-outer {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.2);
+}
+
+.marker-rainbow-ring {
+  position: absolute;
+  inset: -3px;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #FF0055, #FFAA00, #00CC66, #0099FF, #7700FF);
+  background-size: 200% 200%;
+  animation: rainbow-edge-flow 4s ease infinite;
+  z-index: 1;
+}
+
+.marker-pin-core {
+  position: relative;
+  z-index: 2;
+  width: 34px;
+  height: 34px;
+  border-radius: 9999px;
+  background: #5A1E65;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #ffffff;
+  font-weight: 900;
+  font-size: 11px;
+  letter-spacing: -0.5px;
+}
+
+.dcvc-map-marker-wrapper:not(.is-approved) .marker-pin-core {
+  background: #1E293B;
+  border-color: #CBD5E1;
+}
+
+.marker-verified-dot {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: #10B981;
+  color: #ffffff;
+  font-size: 8px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid #ffffff;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.marker-rating-badge {
+  margin-top: -3px;
+  padding: 1px 6px;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 9999px;
+  font-size: 9.5px;
+  font-weight: 900;
+  color: #0F172A;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.12);
+  white-space: nowrap;
+  letter-spacing: -0.2px;
+  z-index: 3;
+}
+
+.dcvc-map-marker-wrapper.is-selected .marker-rating-badge {
+  background: #F59E0B;
+  color: #0F172A;
+  border-color: #D97706;
+}
+
+.marker-arrow {
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid #5A1E65;
+  margin-top: -2px;
+}
+
+.dcvc-map-marker-wrapper:not(.is-approved) .marker-arrow {
+  border-top-color: #1E293B;
+}
+
+.dcvc-map-marker-wrapper.is-selected .marker-pin-outer {
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.4), 0 12px 20px -3px rgba(0, 0, 0, 0.35);
+}
 
 /* ==========================================================================
    DIVERSITY COLLECTIVE VENTURA COUNTY — EDITORIAL LUXURY DESIGN SYSTEM
