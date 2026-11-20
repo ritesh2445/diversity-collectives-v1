@@ -117,7 +117,7 @@ export default function MobileCarousel({
         {validChildren.map((child, i) => (
           <div
             key={child.key ?? i}
-            className={`shrink-0 snap-center w-[85vw] sm:w-[50vw] md:w-[44vw] lg:w-auto flex flex-col ${cardClassName}`}
+            className={`shrink-0 snap-center w-[85vw] sm:w-[50vw] md:w-[44vw] lg:w-auto flex flex-col h-full ${cardClassName}`}
           >
             {child}
           </div>

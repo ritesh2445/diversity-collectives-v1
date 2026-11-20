@@ -153,7 +153,7 @@ export default function Resources() {
                   </span>
                 </div>
 
-                <MobileCarousel cols={2} autoScrollMs={0} className="perspective-1000" cardClassName="h-full flex flex-col">
+                <MobileCarousel cols={2} autoScrollMs={0} className="perspective-1000 items-stretch" cardClassName="h-full flex flex-col">
                   {catGroup.items.map((item) => {
                     const theme = getResourceCardTheme(catGroup.category, item);
                     const softGradientBg = `linear-gradient(145deg, ${theme.gradientFrom || '#FAF5FF'} 0%, ${theme.gradientVia || theme.gradientFrom || '#FAF5FF'} 50%, ${theme.gradientTo || '#FFFFFF'} 100%)`;
@@ -161,7 +161,7 @@ export default function Resources() {
                     return (
                       <CardSpotlight
                         key={item.name}
-                        className="rounded-3xl relative overflow-hidden transition-all duration-300 flex flex-col justify-between border-2"
+                        className="rounded-3xl relative overflow-hidden transition-all duration-300 flex flex-col h-full w-full min-h-[500px] border-2"
                         style={{
                           background: softGradientBg,
                           borderColor: theme.borderColor || `${theme.accentColor || '#5A1E65'}40`,
@@ -173,15 +173,15 @@ export default function Resources() {
                       >
                         {/* Top decorative category accent line */}
                         <div
-                          className="h-[3px] w-full"
+                          className="h-[3px] w-full shrink-0"
                           style={{
                             background: `linear-gradient(90deg, transparent 0%, ${theme.accentColor || '#5A1E65'} 50%, transparent 100%)`
                           }}
                         />
 
-                        <div className="p-6 sm:p-7 flex flex-col flex-1 justify-between gap-5">
+                        <div className="p-6 sm:p-7 flex flex-col flex-1 gap-5">
                           {/* Top Badges */}
-                          <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center justify-between gap-2 shrink-0">
                             <span
                               className="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-2xs"
                               style={{
@@ -205,38 +205,38 @@ export default function Resources() {
                             </span>
                           </div>
 
-                          {/* Provider Title */}
-                          <div>
+                          {/* Provider Title with fixed reserved height for 100% uniformity */}
+                          <div className="min-h-[4.25rem] sm:min-h-[4.75rem] flex flex-col justify-center shrink-0">
                             <span
                               className="text-[11px] font-black uppercase tracking-wider block mb-1"
                               style={{ color: theme.accentColor || '#5A1E65' }}
                             >
                               AFFIRMING COMMUNITY RESOURCE
                             </span>
-                            <h3 className="font-display text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-snug">
+                            <h3 className="font-display text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-snug line-clamp-2">
                               {item.name}
                             </h3>
                           </div>
 
-                          {/* Description Container with clean background */}
+                          {/* Description Container with uniform height across all cards */}
                           <div
-                            className="rounded-2xl p-4 sm:p-5 bg-white/90 border shadow-xs space-y-2"
+                            className="rounded-2xl p-4 sm:p-5 bg-white/90 border shadow-xs space-y-2 min-h-[6.5rem] sm:min-h-[7rem] flex flex-col justify-center shrink-0"
                             style={{ borderColor: `${theme.borderColor || '#E2E8F0'}` }}
                           >
                             <div
-                              className="text-xs sm:text-sm font-bold flex items-center gap-1.5"
+                              className="text-xs sm:text-sm font-bold flex items-center gap-1.5 shrink-0"
                               style={{ color: theme.accentColor || '#5A1E65' }}
                             >
                               <Star className="w-3.5 h-3.5 fill-current" />
                               <span>Confidential Health &amp; Peer Navigation</span>
                             </div>
-                            <p className="text-sm sm:text-base text-slate-800 font-serif italic leading-relaxed">
+                            <p className="text-sm sm:text-base text-slate-800 font-serif italic leading-relaxed line-clamp-3">
                               &ldquo;{item.notes}&rdquo;
                             </p>
                           </div>
 
-                          {/* Feature Checklist Bullets */}
-                          <div className="space-y-2 text-xs sm:text-sm text-slate-800 font-semibold">
+                          {/* Feature Checklist Bullets with uniform spacing and alignment */}
+                          <div className="space-y-2 text-xs sm:text-sm text-slate-800 font-semibold min-h-[5.5rem] flex flex-col justify-center shrink-0">
                             <div className="flex items-center gap-2">
                               <Check className="w-4 h-4 shrink-0" style={{ color: theme.accentColor || '#5A1E65' }} />
                               <span>100% Free, confidential &amp; affirming community care</span>
@@ -251,9 +251,9 @@ export default function Resources() {
                             </div>
                           </div>
 
-                          {/* Card Action Row: Prominent Phone & High-Contrast Button */}
+                          {/* Card Action Row: Prominent Phone & High-Contrast Button, pinned to bottom */}
                           <div
-                            className="pt-5 mt-auto border-t flex flex-wrap items-center justify-between gap-3"
+                            className="pt-5 mt-auto border-t flex flex-wrap items-center justify-between gap-3 min-h-[4rem] shrink-0"
                             style={{ borderColor: `${theme.borderColor || '#E2E8F0'}` }}
                           >
                             {/* Prominent High-Contrast Phone Number */}
@@ -283,7 +283,13 @@ export default function Resources() {
                                 </a>
                               )
                             ) : (
-                              <span className="text-slate-600 font-semibold italic text-xs">Verified Online Portal</span>
+                              <div
+                                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/90 border-2 text-slate-700 font-bold text-xs sm:text-sm shadow-2xs"
+                                style={{ borderColor: theme.borderColor || '#CBD5E1' }}
+                              >
+                                <ShieldCheck className="w-4 h-4" style={{ color: theme.accentColor || '#5A1E65' }} />
+                                <span>Verified Online Portal</span>
+                              </div>
                             )}
 
                             {/* Solid Primary Action Button with White Text */}
@@ -305,7 +311,7 @@ export default function Resources() {
                           </div>
 
                           {/* Privacy footnote */}
-                          <div className="text-center text-xs text-slate-600 font-medium flex items-center justify-center gap-1.5 pt-1">
+                          <div className="text-center text-xs text-slate-600 font-medium flex items-center justify-center gap-1.5 pt-1 shrink-0">
                             <Lock className="w-3 h-3 text-slate-500" />
                             <span>Confidential Community Care • Diversity Collective Partner</span>
                           </div>

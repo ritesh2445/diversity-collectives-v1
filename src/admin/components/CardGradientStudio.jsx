@@ -389,7 +389,7 @@ export default function CardGradientStudio() {
           {/* Interactive Card Preview */}
           <div className="relative">
             <div
-              className="p-6 sm:p-7 rounded-3xl relative overflow-hidden transition-all duration-300 space-y-4 border-2"
+              className="p-6 sm:p-7 rounded-3xl relative overflow-hidden transition-all duration-300 space-y-4 border-2 min-h-[500px] flex flex-col justify-between"
               style={{
                 ...gradientStyle,
                 borderColor: currentTheme.borderColor || `${currentTheme.accentColor || '#5A1E65'}40`,
@@ -397,7 +397,7 @@ export default function CardGradientStudio() {
               }}
             >
               {/* Header Badges */}
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center justify-between gap-2 shrink-0">
                 <span
                   className="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-2xs"
                   style={{
@@ -421,7 +421,7 @@ export default function CardGradientStudio() {
               </div>
 
               {/* Title */}
-              <div>
+              <div className="min-h-[4.25rem] sm:min-h-[4.75rem] flex flex-col justify-center shrink-0">
                 <span
                   className="text-[11px] font-black uppercase tracking-wider block mb-1"
                   style={{ color: currentTheme.accentColor || '#5A1E65' }}
@@ -437,7 +437,7 @@ export default function CardGradientStudio() {
 
               {/* Description Box */}
               <div
-                className="rounded-2xl p-4 bg-white/90 border shadow-xs space-y-2"
+                className="rounded-2xl p-4 bg-white/90 border shadow-xs space-y-2 min-h-[6.5rem] sm:min-h-[7rem] flex flex-col justify-center shrink-0"
                 style={{ borderColor: currentTheme.borderColor || '#E2E8F0' }}
               >
                 <div
@@ -451,7 +451,7 @@ export default function CardGradientStudio() {
                       : 'Weekly Peer Circle for Youth'}
                   </span>
                 </div>
-                <p className="text-sm text-slate-800 italic font-serif leading-relaxed">
+                <p className="text-sm text-slate-800 italic font-serif leading-relaxed line-clamp-3">
                   {activeTab === 'resources'
                     ? '"Free, confidential 24/7 support across the US for distress or mental health crisis. Call or text 988."'
                     : '"Weekly youth peer group providing check-ins, discussions, and creative workshops supporting authentic self-expression."'}

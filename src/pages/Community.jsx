@@ -187,7 +187,7 @@ export default function Community() {
 
       {/* Community Groups Grid in Stable Spotlight Cards */}
       <section className="container-clean py-16">
-        <MobileCarousel cols={2} autoScrollMs={0} cardClassName="h-full flex flex-col">
+        <MobileCarousel cols={2} autoScrollMs={0} className="items-stretch" cardClassName="h-full flex flex-col">
           {filteredGroups.map((group) => {
             const enriched = getCommunityGroupData(group.name);
             const annCount = enriched?.announcements?.length || 0;
@@ -198,7 +198,7 @@ export default function Community() {
             return (
               <CardSpotlight
                 key={group.name}
-                className="rounded-3xl relative overflow-hidden transition-all duration-300 flex flex-col justify-between border-2"
+                className="rounded-3xl relative overflow-hidden transition-all duration-300 flex flex-col h-full w-full min-h-[660px] border-2"
                 style={{
                   background: softGradientBg,
                   borderColor: theme.borderColor || `${theme.accentColor || '#5A1E65'}40`,
@@ -210,15 +210,15 @@ export default function Community() {
               >
                 {/* Top decorative category accent line */}
                 <div
-                  className="h-[3px] w-full"
+                  className="h-[3px] w-full shrink-0"
                   style={{
                     background: `linear-gradient(90deg, transparent 0%, ${theme.accentColor || '#5A1E65'} 50%, transparent 100%)`
                   }}
                 />
 
-                <div className="p-6 sm:p-7 flex flex-col flex-1 justify-between gap-5">
+                <div className="p-6 sm:p-7 flex flex-col flex-1 gap-5">
                   {/* Top Header Badges */}
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center justify-between gap-2 shrink-0">
                     <span
                       className="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-2xs"
                       style={{
@@ -241,39 +241,39 @@ export default function Community() {
                     </span>
                   </div>
 
-                  {/* Title */}
-                  <div>
+                  {/* Title with uniform reserved height */}
+                  <div className="min-h-[4.25rem] sm:min-h-[4.75rem] flex flex-col justify-center shrink-0">
                     <span
                       className="text-[11px] font-black uppercase tracking-wider block mb-1"
                       style={{ color: theme.accentColor || '#5A1E65' }}
                     >
                       AFFIRMING PEER GATHERING
                     </span>
-                    <h2 className="font-display text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-snug">
+                    <h2 className="font-display text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-snug line-clamp-2">
                       {group.name}
                     </h2>
                   </div>
 
-                  {/* Frosted Glass Description Container */}
+                  {/* Frosted Glass Description Container with uniform height */}
                   <div
-                    className="rounded-2xl p-4 sm:p-5 bg-white/90 border shadow-xs space-y-2"
+                    className="rounded-2xl p-4 sm:p-5 bg-white/90 border shadow-xs space-y-2 min-h-[6.5rem] sm:min-h-[7rem] flex flex-col justify-center shrink-0"
                     style={{ borderColor: `${theme.borderColor || '#E2E8F0'}` }}
                   >
                     <div
-                      className="text-xs sm:text-sm font-bold flex items-center gap-1.5"
+                      className="text-xs sm:text-sm font-bold flex items-center gap-1.5 shrink-0"
                       style={{ color: theme.accentColor || '#5A1E65' }}
                     >
                       <Heart className="w-3.5 h-3.5 fill-current" />
                       <span>Safe, Affirming &amp; Facilitated Community Space</span>
                     </div>
-                    <p className="text-sm sm:text-base text-slate-800 font-serif italic leading-relaxed">
+                    <p className="text-sm sm:text-base text-slate-800 font-serif italic leading-relaxed line-clamp-3">
                       &ldquo;{group.description}&rdquo;
                     </p>
                   </div>
 
-                  {/* Meeting Schedule & Location Pill Container */}
+                  {/* Meeting Schedule & Location Pill Container with uniform height */}
                   <div
-                    className="p-4 bg-white/95 rounded-2xl border space-y-2 text-xs sm:text-sm shadow-xs"
+                    className="p-4 bg-white/95 rounded-2xl border space-y-2 text-xs sm:text-sm shadow-xs min-h-[5.5rem] sm:min-h-[6rem] flex flex-col justify-center shrink-0"
                     style={{ borderColor: `${theme.borderColor || '#E2E8F0'}` }}
                   >
                     <div className="flex items-center gap-2.5">
@@ -288,8 +288,8 @@ export default function Community() {
                     </div>
                   </div>
 
-                  {/* Feature Checklist Bullets */}
-                  <div className="space-y-2 text-xs sm:text-sm text-slate-800 font-semibold">
+                  {/* Feature Checklist Bullets with uniform height */}
+                  <div className="space-y-2 text-xs sm:text-sm text-slate-800 font-semibold min-h-[3.75rem] flex flex-col justify-center shrink-0">
                     <div className="flex items-center gap-2">
                       <Check className="w-4 h-4 shrink-0" style={{ color: theme.accentColor || '#5A1E65' }} />
                       <span>Zero cost, drop-in attendance unconditionally affirmed</span>
@@ -300,43 +300,56 @@ export default function Community() {
                     </div>
                   </div>
 
-                  {/* Sub-page quick indicators */}
-                  {(annCount > 0 || blogCount > 0) && (
-                    <div className="flex flex-wrap items-center gap-2 pt-1 text-xs font-bold">
-                      {annCount > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => handleOpenDetails(group, 'announcements')}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border shadow-2xs transition-colors cursor-pointer"
-                          style={{
-                            borderColor: theme.borderColor || '#E2E8F0',
-                            color: theme.accentColor || '#5A1E65'
-                          }}
-                        >
-                          <Bell className="w-3.5 h-3.5" />
-                          <span>{annCount} Active {annCount === 1 ? 'Announcement' : 'Announcements'}</span>
-                        </button>
-                      )}
-                      {blogCount > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => handleOpenDetails(group, 'blog')}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border shadow-2xs transition-colors cursor-pointer"
-                          style={{
-                            borderColor: theme.borderColor || '#E2E8F0',
-                            color: theme.accentColor || '#5A1E65'
-                          }}
-                        >
-                          <BookOpen className="w-3.5 h-3.5" />
-                          <span>{blogCount} {blogCount === 1 ? 'Story' : 'Stories'} &amp; Blog</span>
-                        </button>
-                      )}
-                    </div>
-                  )}
+                  {/* Sub-page quick indicators with guaranteed slot height */}
+                  <div className="min-h-[2.5rem] flex items-center shrink-0">
+                    {(annCount > 0 || blogCount > 0) ? (
+                      <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
+                        {annCount > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenDetails(group, 'announcements')}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border shadow-2xs transition-colors cursor-pointer"
+                            style={{
+                              borderColor: theme.borderColor || '#E2E8F0',
+                              color: theme.accentColor || '#5A1E65'
+                            }}
+                          >
+                            <Bell className="w-3.5 h-3.5" />
+                            <span>{annCount} Active {annCount === 1 ? 'Announcement' : 'Announcements'}</span>
+                          </button>
+                        )}
+                        {blogCount > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenDetails(group, 'blog')}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border shadow-2xs transition-colors cursor-pointer"
+                            style={{
+                              borderColor: theme.borderColor || '#E2E8F0',
+                              color: theme.accentColor || '#5A1E65'
+                            }}
+                          >
+                            <BookOpen className="w-3.5 h-3.5" />
+                            <span>{blogCount} {blogCount === 1 ? 'Story' : 'Stories'} &amp; Blog</span>
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <div
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/80 border shadow-2xs text-xs font-semibold"
+                        style={{
+                          borderColor: theme.borderColor || '#E2E8F0',
+                          color: theme.accentColor || '#5A1E65'
+                        }}
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Affirming Community Circle</span>
+                      </div>
+                    )}
+                  </div>
 
-                  {/* Primary Action Buttons */}
+                  {/* Primary Action Buttons pinned to bottom with mt-auto */}
                   <div
-                    className="pt-5 mt-auto border-t flex flex-wrap items-center justify-between gap-3 relative z-20"
+                    className="pt-5 mt-auto border-t flex flex-wrap items-center justify-between gap-3 relative z-20 min-h-[4rem] shrink-0"
                     style={{ borderColor: `${theme.borderColor || '#E2E8F0'}` }}
                   >
                     <div className="flex flex-wrap items-center gap-2.5">
@@ -376,7 +389,7 @@ export default function Community() {
                   </div>
 
                   {/* Community footnote */}
-                  <div className="text-center text-xs text-slate-600 font-medium flex items-center justify-center gap-1.5 pt-1">
+                  <div className="text-center text-xs text-slate-600 font-medium flex items-center justify-center gap-1.5 pt-1 shrink-0">
                     <Lock className="w-3 h-3 text-slate-500" />
                     <span>Affirming LGBTQ+ Community Circle • Drop-in Welcomed</span>
                   </div>
