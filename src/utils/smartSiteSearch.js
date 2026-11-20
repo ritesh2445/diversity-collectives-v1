@@ -278,6 +278,33 @@ export function buildLiveSiteIndex(customSnapshot = null) {
       keywords: ['directory', 'business', 'doctor', 'therapist', 'provider', 'affirming pledge', 'dentist', 'shop']
     },
     {
+      id: 'page-directory-submit',
+      type: 'Directory',
+      title: 'Submit an Affirming Business to the DCVC Directory',
+      subtitle: 'Apply for Affirming Verification & Directory Listing',
+      snippet: 'Local business owners and medical/professional providers can submit their listing to the DCVC LGBTQ+ Affirming Business Directory and sign the Affirming Pledge.',
+      url: '/directory/submit',
+      keywords: ['submit business', 'add business', 'list business', 'register business', 'directory submit', 'business application', 'affirming pledge submit', 'how do i submit a business', 'how to submit a business']
+    },
+    {
+      id: 'page-resource-submit',
+      type: 'Resource',
+      title: 'Submit a Community Resource or Support Service',
+      subtitle: 'Recommend Local Healthcare, Housing, or Legal Lifelines',
+      snippet: 'Suggest a local or regional crisis hotline, housing support, legal aid, or healthcare provider for inclusion in the countywide DCVC Community Resources Directory.',
+      url: '/resources/submit',
+      keywords: ['submit resource', 'add resource', 'suggest resource', 'resource submission', 'recommend helpline', 'how to submit a resource']
+    },
+    {
+      id: 'page-training-booking',
+      type: 'Training',
+      title: 'Book P.R.I.D.E. Workplace Inclusion & Training Inquiry',
+      subtitle: 'Customized Cultural Humility Workshops for Teams & Clinics',
+      snippet: 'Request a customized cultural competency and workplace inclusion training proposal for your business, civic agency, school, or healthcare team.',
+      url: '/training/booking',
+      keywords: ['book training', 'request training', 'training booking', 'schedule workshop', 'training inquiry', 'pricing proposal', 'how do i book training']
+    },
+    {
       id: 'page-appointments',
       type: 'Wellness',
       title: 'Schedule Confidential Health or Intake Appointment',

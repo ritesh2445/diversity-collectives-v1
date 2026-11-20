@@ -181,11 +181,28 @@ export function synthesizeVerifiedAnswer(bestMatch, query) {
     };
   }
 
-  // 4. Specific Program Priority: Affirming Business Directory
+  // 4. Action & Procedural Workflows: Business Directory Submission
+  if (
+    (q.includes("submit") || q.includes("add") || q.includes("list") || q.includes("register") || q.includes("how do i") || q.includes("application")) &&
+    (q.includes("business") || q.includes("directory") || q.includes("shop") || q.includes("practice") || q.includes("provider") || q.includes("listing"))
+  ) {
+    return {
+      answer: `Local business owners, medical providers, and professional services can submit their listing to the **DCVC LGBTQ+ Affirming Business Directory** at [Directory Submission](/directory/submit). All submissions sign our Affirming Pledge to ensure a safe, inclusive space for LGBTQ+ community members. Once verified by our team, your listing appears live on the site with official verified status!`,
+      citations: [
+        { title: "Submit a Business", url: "/directory/submit" },
+        { title: "Affirming Directory", url: "/directory" }
+      ]
+    };
+  }
+
+  // 4b. Specific Program Priority: Affirming Business Directory
   if (q.includes("doctor") || q.includes("shop") || q.includes("store") || q.includes("business") || q.includes("directory") || bestMatch.id === "directory") {
     return {
       answer: `You can find affirming, LGBTQ+-friendly doctors, medical providers, shops, and professional services across Ventura County in our searchable [Affirming Business Directory](/directory). All listed businesses have signed the DCVC LGBTQ+ Affirming Pledge. Local business owners can submit listings at [Directory Submission](/directory/submit).`,
-      citations: [{ title: "Affirming Directory", url: "/directory" }]
+      citations: [
+        { title: "Affirming Directory", url: "/directory" },
+        { title: "Directory Submission", url: "/directory/submit" }
+      ]
     };
   }
 

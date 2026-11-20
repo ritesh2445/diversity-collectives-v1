@@ -153,12 +153,21 @@ export class LunaLearningEngine {
         }
       });
 
-      // Custom app live-sync event
-      window.addEventListener('dcvc:cms-updated', () => {
-        this.learnFromSite();
-      });
-      window.addEventListener('dcvc:luna-relearn', () => {
-        this.learnFromSite();
+      // Custom app live-sync events across all admin workflows
+      const liveSyncEvents = [
+        'dcvc:cms-updated',
+        'dcvc:luna-relearn',
+        'dcvc-directory-updated',
+        'dcvc-event-updated',
+        'dcvc-news-updated',
+        'dcvc-resource-updated',
+        'dcvc-reviews-updated',
+        'dcvc-training-updated'
+      ];
+      liveSyncEvents.forEach((evt) => {
+        window.addEventListener(evt, () => {
+          this.learnFromSite();
+        });
       });
     }
   }
@@ -915,6 +924,20 @@ export class LunaLearningEngine {
       this.learnFromSite(customSnapshot);
     }
 
+    // Auto-detect dynamic storage changes in browser and re-learn on demand
+    if (typeof window !== 'undefined') {
+      try {
+        const currentCms = localStorage.getItem('dcvc_live_cms_data');
+        const currentDir = localStorage.getItem(DIRECTORY_STORAGE_KEY);
+        const currentCustom = localStorage.getItem(CUSTOM_KNOWLEDGE_STORAGE_KEY);
+        const sig = `${currentCms ? currentCms.length : 0}-${currentDir ? currentDir.length : 0}-${currentCustom ? currentCustom.length : 0}`;
+        if (this._lastStorageSig && this._lastStorageSig !== sig) {
+          this.learnFromSite();
+        }
+        this._lastStorageSig = sig;
+      } catch (_) {}
+    }
+
     const rawTrimmed = (userQuery || '').trim();
     if (!rawTrimmed) {
       return {
@@ -1048,6 +1071,135 @@ export class LunaLearningEngine {
       }
     }
 
+    // 4c. Action & Procedural Workflows (How to Submit, Book, Volunteer, Donate, Contact)
+    // 1. Business Directory Submission
+    if (
+      (/\b(submit|add|list|register|application|apply|how do i get listed|how to get listed)\b/i.test(rawLower) &&
+       /\b(business|directory|vendor|shop|practice|clinic|provider|company)\b/i.test(rawLower)) ||
+      /\bhow (do|can) i submit (a|my) business\b/i.test(rawLower) ||
+      /\bbusiness submission\b/i.test(rawLower) ||
+      /\badd (my|a) business\b/i.test(rawLower)
+    ) {
+      return {
+        success: true,
+        answer: `Local business owners, healthcare practitioners, and professional service providers can submit their listing to the **DCVC LGBTQ+ Affirming Business Directory** online at [Submit a Business](/directory/submit).\n\n` +
+          `**How to Submit & Get Verified:**\n` +
+          `1. **Complete the Online Form:** Provide your business name, category, Ventura County street address, phone number, website, and a welcoming description at [Directory Submission](/directory/submit).\n` +
+          `2. **Sign the Affirming Pledge:** Confirm your commitment to providing a safe, affirming, and non-discriminatory environment for LGBTQ+ community members, clients, and staff.\n` +
+          `3. **Staff Verification:** Our team reviews every submission (typically within 3–5 business days). Once verified, your listing goes live in the public directory with official DCVC Verified status and special edge lighting!\n\n` +
+          `👉 Start your submission: [Directory Submission Form](/directory/submit).`,
+        citations: [
+          { title: "Directory Submission Form", url: "/directory/submit" },
+          { title: "Affirming Directory", url: "/directory" }
+        ],
+        mode: "client-unlimited"
+      };
+    }
+
+    // 2. Community Resource Submission
+    if (
+      (/\b(submit|add|suggest|recommend)\b/i.test(rawLower) && /\b(resource|helpline|lifeline|organization|service|hotline)\b/i.test(rawLower)) ||
+      /\bresource submission\b/i.test(rawLower) ||
+      /\bhow (do|can) i submit a resource\b/i.test(rawLower)
+    ) {
+      return {
+        success: true,
+        answer: `You can suggest a community resource, healthcare lifeline, or local advocacy organization to be included in our countywide directory at [Submit a Resource](/resources/submit).\n\n` +
+          `**Submission Guidelines:**\n` +
+          `• Resources must directly serve Ventura County residents or provide certified 24/7 crisis support.\n` +
+          `• Every entry is vetted by DCVC care navigators to ensure accurate contact information and affirming service standards.\n\n` +
+          `👉 Submit details online: [Resource Submission Form](/resources/submit).`,
+        citations: [
+          { title: "Submit a Resource", url: "/resources/submit" },
+          { title: "Community Resources", url: "/resources" }
+        ],
+        mode: "client-unlimited"
+      };
+    }
+
+    // 3. Training & Workshop Booking
+    if (
+      (/\b(book|request|schedule|inquire|proposal|pricing|quote)\b/i.test(rawLower) && /\b(training|workshop|pride training|cultural competency|workplace training)\b/i.test(rawLower)) ||
+      /\btraining booking\b/i.test(rawLower) ||
+      /\bhow (do|can) i book training\b/i.test(rawLower)
+    ) {
+      return {
+        success: true,
+        answer: `Diversity Collective offers customized **P.R.I.D.E. Workplace Cultural Humility & Inclusion Workshops** for businesses, schools, healthcare clinics, and civic agencies across Ventura County.\n\n` +
+          `**How to Request Training:**\n` +
+          `• **Flexible Delivery:** Available on-site at your facility, virtually via Zoom, or at our Community Resource Center.\n` +
+          `• **Customized Proposal:** Workshop pricing is tailored via formal proposal based on group size, duration, and nonprofit versus corporate tier (sliding scale available for grassroots nonprofits).\n\n` +
+          `👉 Submit a workshop inquiry: [Book Training Workshop](/training/booking).`,
+        citations: [
+          { title: "Training Booking Form", url: "/training/booking" },
+          { title: "P.R.I.D.E. Training Overview", url: "/training" }
+        ],
+        mode: "client-unlimited"
+      };
+    }
+
+    // 4. Health / STI / HIV Appointments
+    if (
+      (/\b(book|schedule|make|set up)\b/i.test(rawLower) && /\b(appointment|visit|intake|screening)\b/i.test(rawLower)) ||
+      /\b(how (do|can) i get tested|schedule testing|book testing|make appointment)\b/i.test(rawLower)
+    ) {
+      return {
+        success: true,
+        answer: `You can book a free, confidential health appointment or wellness intake online at [Book an Appointment](/appointments).\n\n` +
+          `**Available Services:**\n` +
+          `• **Diversity SHINES Rapid HIV & STI Testing:** 15–20 minute confidential rapid screenings. Walk-ins welcomed 1st Monday of every month (3:00–7:00 PM PT), or reserve an appointment online.\n` +
+          `• **Mental Health & Care Intake:** Confidential referrals to affirming, licensed therapists in Ventura County.\n` +
+          `• **Free Safer Sex Supplies:** Drop in Mon–Fri 1:00–5:00 PM at 2471 Portola Road, Suite 100, Ventura for barrier supplies and Narcan kits.\n\n` +
+          `👉 Schedule your visit: [Appointment Booking](/appointments).`,
+        citations: [
+          { title: "Schedule Appointment", url: "/appointments" },
+          { title: "Diversity SHINES Clinic", url: "/programs/diversity-shines" }
+        ],
+        mode: "client-unlimited"
+      };
+    }
+
+    // 5. Volunteer Application
+    if (
+      /\b(how (do|can) i volunteer|how to volunteer|sign up to volunteer|volunteer application|apply to volunteer|get involved)\b/i.test(rawLower)
+    ) {
+      return {
+        success: true,
+        answer: `We are always looking for passionate community members to get involved! You can apply online at [Volunteer With DCVC](/volunteer).\n\n` +
+          `**Key Volunteer Roles:**\n` +
+          `• **Resource Center Greeter:** Front desk welcome, lending library checkouts, and mutual aid pantry support (Mon–Fri 1–5 PM).\n` +
+          `• **Ventura County Pride Festival Crew:** Event setup, stage management, festival safety, and info booths.\n` +
+          `• **Health Outreach:** Community distribution of testing information and safer sex kits.\n` +
+          `• **Youth Mentorship:** Supporting Rainbow Umbrella circles (ages 21+ with mandatory Live Scan background checks required for youth safety).\n\n` +
+          `👉 Submit an application: [Volunteer Application Form](/volunteer).`,
+        citations: [
+          { title: "Volunteer Application", url: "/volunteer" },
+          { title: "Community Center", url: "/programs/community-resource-center" }
+        ],
+        mode: "client-unlimited"
+      };
+    }
+
+    // 6. Donations
+    if (
+      /\b(how (do|can) i donate|how to donate|where to donate|make a donation|give money|financial support|tax-deductible|tax deductible)\b/i.test(rawLower)
+    ) {
+      return {
+        success: true,
+        answer: `You can make a secure, tax-deductible donation online at [Donate to DCVC](/donate).\n\n` +
+          `**Why Give Through DCVC:**\n` +
+          `• **100% Impact:** We use Zeffy, a 100% zero-fee nonprofit platform, so 100% of your dollars support community programs.\n` +
+          `• **Instant Appreciation Card:** Every gift automatically generates an animated digital keepsake card recognizing your donor tier!\n` +
+          `• **501(c)(3) Tax Deductible:** DCVC is a registered 501(c)(3) public charity (EIN: 46-5312131).\n\n` +
+          `👉 Make your gift: [Donate to DCVC](/donate).`,
+        citations: [
+          { title: "Donate to DCVC", url: "/donate" },
+          { title: "About DCVC", url: "/about" }
+        ],
+        mode: "client-unlimited"
+      };
+    }
+
     // 5. Specific Entity Resolution (High Precision matching for specific programs, groups, people, businesses)
     const entityMatch = this.resolveEntity(effectiveQuery);
     if (entityMatch) {
@@ -1065,9 +1217,9 @@ export class LunaLearningEngine {
 
     // 7. Dynamic Live Search Fallback using smartSiteSearch
     const siteSearch = searchSiteWithSuggestions(effectiveQuery, { limit: 5 });
-    if (siteSearch.results && siteSearch.results.length > 0 && siteSearch.results[0].score >= 26) {
+    if (siteSearch.results && siteSearch.results.length > 0 && siteSearch.results[0].score >= 18) {
       const top = siteSearch.results[0];
-      const secondary = siteSearch.results.slice(1, 3).filter((r) => r.score >= 28);
+      const secondary = siteSearch.results.slice(1, 3).filter((r) => r.score >= 18);
       const typoNote = siteSearch.correctedQuery ? `*(Showing live site results for "${siteSearch.correctedQuery}")*\n\n` : '';
       const bullets = secondary.map((item) => `• **[${item.title}](${item.url})**${item.subtitle ? ` — ${item.subtitle}` : ''}`);
 
@@ -1407,6 +1559,23 @@ export class LunaLearningEngine {
       q.includes("coffee") || q.includes("affirming business") ||
       (q.includes("affirming") && (q.includes("find") || q.includes("recommend") || q.includes("where") || q.includes("near")))
     ) {
+      if (q.includes("submit") || q.includes("add") || q.includes("list") || q.includes("register") || q.includes("apply") || q.includes("how do i") || q.includes("join")) {
+        return {
+          success: true,
+          answer: `Local business owners, healthcare practitioners, and professional service providers can submit their listing to the **DCVC LGBTQ+ Affirming Business Directory** online at [Submit a Business](/directory/submit).\n\n` +
+            `**How to Submit & Get Verified:**\n` +
+            `1. **Complete the Online Form:** Provide your business name, category, Ventura County street address, phone number, website, and a welcoming description at [Directory Submission](/directory/submit).\n` +
+            `2. **Sign the Affirming Pledge:** Confirm your commitment to providing a safe, affirming, and non-discriminatory environment for LGBTQ+ community members, clients, and staff.\n` +
+            `3. **Staff Verification:** Our team reviews every submission (typically within 3–5 business days). Once verified, your listing goes live in the public directory with official DCVC Verified status and special edge lighting!\n\n` +
+            `👉 Start your submission: [Directory Submission Form](/directory/submit).`,
+          citations: [
+            { title: "Directory Submission Form", url: "/directory/submit" },
+            { title: "Affirming Directory", url: "/directory" }
+          ],
+          mode: "client-unlimited"
+        };
+      }
+
       const businesses = this.knowledge.businesses || [];
       // Search businesses matching specific terms
       let matches = businesses.filter((b) => {
