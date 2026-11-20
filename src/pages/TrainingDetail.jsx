@@ -11,9 +11,13 @@ import {
   Building,
   Calendar,
   Sparkles,
-  ShieldCheck
+  ShieldCheck,
+  Award,
+  Package,
+  Store
 } from 'lucide-react';
 import { useLiveOrgInfo, useLiveTrainings } from '../hooks/useCmsLive';
+import DcvcApprovedBadge from '../components/DcvcApprovedBadge';
 import { usePageMeta } from '../utils/seo';
 
 export default function TrainingDetail() {
@@ -71,6 +75,48 @@ export default function TrainingDetail() {
             <p className="text-base sm:text-lg text-slate-600 leading-relaxed font-medium">
               {course.summary}
             </p>
+
+            {/* DCVC Approved Accreditation Callout Banner if applicable */}
+            {course.isBusinessAccreditation && (
+              <div className="p-6 rounded-3xl bg-gradient-to-r from-purple-900 via-[#5A1E65] to-indigo-950 text-white shadow-xl space-y-4 border border-purple-400/40">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-300 bg-amber-400/20 px-2.5 py-0.5 rounded-full border border-amber-400/30 inline-block">
+                      OFFICIAL ACCREDITATION PATHWAY
+                    </span>
+                    <h3 className="font-display text-xl sm:text-2xl font-black text-white">
+                      Earn the DCVC Approved Storefront Seal
+                    </h3>
+                  </div>
+                  <div className="p-2.5 rounded-2xl bg-white/10 backdrop-blur-md shrink-0">
+                    <DcvcApprovedBadge />
+                  </div>
+                </div>
+
+                <p className="text-xs sm:text-sm text-purple-200 leading-relaxed font-medium">
+                  Completing this training workshop qualifies your organization to receive the official heavy-duty physical storefront window decal cling, framed certificate, and verified 3D holographic badge with rainbow edge lighting in the Ventura County Business Directory.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-white/15 text-xs text-purple-200">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Storefront static-cling window decal</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Directory Platinum listing with Hype meter</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>California SB 396 compliance verification</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Frontline staff pronoun pins kit</span>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Target Audience */}
             <div className="p-5 rounded-2xl bg-purple-50/70 border border-purple-200 flex items-start gap-3 text-xs sm:text-sm">
@@ -170,6 +216,68 @@ export default function TrainingDetail() {
             </div>
           </div>
 
+        </div>
+      </section>
+
+      {/* Related Modules & Tracks */}
+      <section className="container-clean pt-16 space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <span className="text-xs font-black uppercase tracking-wider text-[#5A1E65]">
+              EXPLORE MORE CURRICULUM
+            </span>
+            <h3 className="font-display text-2xl font-black text-slate-950">
+              Related Workshops & Certification Tracks
+            </h3>
+          </div>
+          <Link
+            to="/training"
+            className="text-xs font-bold text-purple-700 hover:text-purple-900 inline-flex items-center gap-1"
+          >
+            <span>All Workshops</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {trainingCourses
+            .filter((c) => c.slug !== course.slug)
+            .slice(0, 3)
+            .map((rel) => (
+              <div
+                key={rel.slug}
+                className="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between gap-4"
+              >
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-[10px] font-black uppercase text-slate-500">
+                    <span className="text-[#5A1E65]">{rel.badge}</span>
+                    <span>{rel.duration}</span>
+                  </div>
+                  <h4 className="font-display font-black text-base text-slate-950 line-clamp-2">
+                    {rel.title}
+                  </h4>
+                  <p className="text-xs text-slate-600 line-clamp-2 font-medium">
+                    {rel.summary}
+                  </p>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                  <Link
+                    to={`/training/${rel.slug}`}
+                    className="text-xs font-bold text-purple-700 hover:text-purple-900 inline-flex items-center gap-1"
+                  >
+                    <span>View Syllabus</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </Link>
+                  <Link
+                    to={`/training/${rel.slug}/book`}
+                    className="btn-secondary py-1 px-3 text-[11px] font-bold"
+                  >
+                    Book
+                  </Link>
+                </div>
+              </div>
+            ))}
         </div>
       </section>
 

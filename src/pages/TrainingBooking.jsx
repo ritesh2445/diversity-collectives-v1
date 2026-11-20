@@ -9,12 +9,17 @@ import {
   Building, 
   Users, 
   Clock, 
-  ShieldCheck 
+  ShieldCheck,
+  Store,
+  Award,
+  Sparkles,
+  MapPin
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useLiveTrainings } from '../hooks/useCmsLive';
 import { submitTrainingBooking } from '../services/api';
 import TurnstileWidget from '../components/TurnstileWidget';
+import DcvcApprovedBadge from '../components/DcvcApprovedBadge';
 import { usePageMeta } from '../utils/seo';
 
 export default function TrainingBooking() {
@@ -36,6 +41,10 @@ export default function TrainingBooking() {
     email: '',
     phone: '',
     courseSlug: selectedCourse ? selectedCourse.slug : (trainingCourses[0]?.slug || ''),
+    isSeekingDcvcApprovedStatus: selectedCourse?.isBusinessAccreditation || false,
+    storefrontAddress: '',
+    storefrontCity: 'Ventura',
+    businessCategory: 'Retail & Dining',
     estimatedAttendees: '25-50',
     preferredFormat: 'In-Person at Our Facility',
     requestedDate: '',
@@ -200,6 +209,72 @@ export default function TrainingBooking() {
                     className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none"
                   />
                 </div>
+              </div>
+
+              {/* DCVC Approved Business Accreditation Enrollment Option */}
+              <div className="p-6 rounded-2xl bg-gradient-to-r from-purple-50 via-white to-emerald-50/50 border-2 border-purple-200/90 space-y-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <input
+                      id="businessAccreditationToggle"
+                      type="checkbox"
+                      checked={formData.isSeekingDcvcApprovedStatus}
+                      onChange={(e) => setFormData({ ...formData, isSeekingDcvcApprovedStatus: e.target.checked })}
+                      className="mt-1 h-5 w-5 rounded border-purple-300 text-[#5A1E65] focus:ring-[#5A1E65] cursor-pointer"
+                    />
+                    <div>
+                      <label htmlFor="businessAccreditationToggle" className="font-display font-black text-sm text-slate-950 cursor-pointer block">
+                        Enroll Our Business in the DCVC Approved Partner Pathway ⭐
+                      </label>
+                      <p className="text-xs text-slate-600 font-medium mt-0.5">
+                        Check this box if your goal is to earn the official storefront window cling, framed certificate, and 3D verified badge in the Ventura County Business Directory.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="hidden sm:block shrink-0">
+                    <DcvcApprovedBadge />
+                  </div>
+                </div>
+
+                {formData.isSeekingDcvcApprovedStatus && (
+                  <div className="pt-4 border-t border-purple-100 grid grid-cols-1 sm:grid-cols-3 gap-4 animate-fadeIn">
+                    <div className="sm:col-span-2 space-y-1">
+                      <label htmlFor="storefrontAddress" className="text-[11px] font-black uppercase tracking-wider text-slate-700 block">
+                        Storefront / Office Street Address (For Decal Delivery)
+                      </label>
+                      <input
+                        id="storefrontAddress"
+                        type="text"
+                        value={formData.storefrontAddress}
+                        onChange={(e) => setFormData({ ...formData, storefrontAddress: e.target.value })}
+                        placeholder="e.g. 555 E Main St"
+                        className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:border-[#5A1E65] outline-none"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label htmlFor="storefrontCity" className="text-[11px] font-black uppercase tracking-wider text-slate-700 block">
+                        Ventura County City
+                      </label>
+                      <select
+                        id="storefrontCity"
+                        value={formData.storefrontCity}
+                        onChange={(e) => setFormData({ ...formData, storefrontCity: e.target.value })}
+                        className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:border-[#5A1E65] outline-none bg-white font-medium"
+                      >
+                        <option value="Ventura">Ventura</option>
+                        <option value="Oxnard">Oxnard</option>
+                        <option value="Camarillo">Camarillo</option>
+                        <option value="Simi Valley">Simi Valley</option>
+                        <option value="Thousand Oaks">Thousand Oaks</option>
+                        <option value="Ojai">Ojai</option>
+                        <option value="Moorpark">Moorpark</option>
+                        <option value="Port Hueneme">Port Hueneme</option>
+                        <option value="Santa Paula">Santa Paula</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Module and Logistics */}

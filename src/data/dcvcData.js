@@ -818,9 +818,39 @@ export const staffMembers = [
 
 export const trainingCourses = [
   {
+    slug: "dcvc-affirming-business",
+    title: "DCVC Affirming Business Accreditation: From Training to Storefront Verification",
+    badge: "Official Accreditation Pathway",
+    sector: "business",
+    isBusinessAccreditation: true,
+    isFlagship: true,
+    format: "In-Person (On-Site at Your Business) or Interactive Virtual",
+    duration: "2.5 Hours",
+    targetAudience: "Storefront Retail, Cafes, Restaurants, Hospitality, Service Providers & Local Commerce",
+    summary: "The official prerequisite accreditation program for local businesses seeking DCVC Approved Partner status. Prepares frontline and management teams with actionable welcoming practices, California SB 396 non-discrimination standards, all-gender restroom dignity, and conflict de-escalation protocols.",
+    learningObjectives: [
+      "Frontline Welcoming & Affirming Customer Care: Greet patrons respectfully, navigate pronouns naturally, and eliminate assumptions in hospitality and retail.",
+      "All-Gender Restroom Dignity & CA Signage: Implement California Health and Safety Code standards for inclusive single-occupancy facilities and safety.",
+      "De-Escalation & Safe Space Enforcement: Confidently address discriminatory behavior or customer conflicts while protecting vulnerable patrons.",
+      "California Workplace Protections & SB 396: Align internal hiring, employee handbooks, and team culture with state non-discrimination mandates.",
+      "Storefront Onboarding & DCVC Verification: Complete the site checklist to unlock your physical window cling, 3D directory badge, and community hype eligibility."
+    ],
+    materials: [
+      "Official Heavy-Duty Vinyl Storefront Window Cling ('Proudly DCVC Approved Space')",
+      "Framed Official Certificate of Affirmation signed by DCVC Executive Leadership",
+      "Frontline Staff Pronoun Pin Pack & Countertop Affirming Customer Etiquette Card",
+      "Digital Verified Badge Suite (High-res SVG, PNG) for websites, Yelp, and Google Business Profile",
+      "Ventura County Business Directory Platinum Listing with Rainbow Glow & Hype Meter"
+    ],
+    feeStructure: "Sliding scale for local small businesses; grants available for non-profits and community co-ops.",
+    contactEmail: "business@diversitycollective.org"
+  },
+  {
     slug: "pride-cultural-competency",
     title: "P.R.I.D.E. Cultural Competency Workshop",
     badge: "Foundational Certification",
+    sector: "foundational",
+    isBusinessAccreditation: true,
     format: "In-Person or Interactive Virtual",
     duration: "Tailored Session",
     targetAudience: "Educators, Healthcare Teams, Corporate Staff & Youth Advocates",
@@ -842,9 +872,61 @@ export const trainingCourses = [
     contactEmail: "info@diversitycollective.org"
   },
   {
+    slug: "workplace-dei-sb396",
+    title: "Corporate Inclusion & California SB 396 Workplace Compliance",
+    badge: "Corporate & HR Compliance",
+    sector: "corporate",
+    isBusinessAccreditation: true,
+    format: "Executive Workshop (On-Site or Virtual)",
+    duration: "2 Hours",
+    targetAudience: "HR Directors, People Operations, Executives & Corporate Teams",
+    summary: "Exceed California SB 396 mandatory harassment prevention requirements with a human-centered, data-backed approach to transgender workplace rights, ERG development, and inclusive benefits.",
+    learningObjectives: [
+      "Meet and exceed California SB 396 training mandates on gender identity and harassment prevention.",
+      "Audit internal HR policies, health insurance coverage, and parental leave for queer and trans equity.",
+      "Establish and empower thriving Employee Resource Groups (ERGs) and executive ally sponsorship.",
+      "Build psychological safety to attract and retain premier diverse talent across Ventura County."
+    ],
+    materials: [
+      "California SB 396 HR Compliance Audit Guide",
+      "Corporate LGBTQ+ Benefits & Inclusive Policy Checklist",
+      "Employee Resource Group (ERG) Starter Kit",
+      "Executive Briefing Slides & Compliance Certificate"
+    ],
+    feeStructure: "Corporate sliding scale based on company headcount.",
+    contactEmail: "corporate@diversitycollective.org"
+  },
+  {
+    slug: "salons-wellness-affirming",
+    title: "Affirming Spaces for Salons, Fitness & Wellness",
+    badge: "Wellness & Personal Care",
+    sector: "wellness",
+    isBusinessAccreditation: true,
+    format: "Interactive Studio Workshop",
+    duration: "2 Hours",
+    targetAudience: "Barbers, Stylists, Estheticians, Gym Owners, Yoga Instructors & Bodyworkers",
+    summary: "Empowering high-touch personal care and fitness providers to build deeply welcoming, gender-affirming, and body-positive client experiences in Ventura County.",
+    learningObjectives: [
+      "Gender-neutral service menus and consultation workflows that eliminate awkward misgendering.",
+      "Trauma-informed body language, consent protocols, and affirming touch practices.",
+      "Inclusive locker room, changing area, and restroom policies that protect trans and non-binary clients.",
+      "Navigating hair, beauty, and wellness needs for transitioning and gender-expansive clients."
+    ],
+    materials: [
+      "Salon & Fitness Affirming Space Toolkit",
+      "Gender-Neutral Service Menu Transition Guide",
+      "Client Intake & Consultation Affirming Cards",
+      "DCVC Affirming Salon & Wellness Window Decal"
+    ],
+    feeStructure: "Subsidized for independent Ventura County stylists and fitness studios.",
+    contactEmail: "business@diversitycollective.org"
+  },
+  {
     slug: "healthcare-affirming-care",
     title: "Status-Neutral Healthcare & Clinical Affirmation",
     badge: "Clinical & Healthcare",
+    sector: "healthcare",
+    isBusinessAccreditation: false,
     format: "Interactive Workshop (On-Site or Virtual)",
     duration: "2.5 Hours",
     targetAudience: "Nurses, Medical Assistants, Intake Staff & Mental Health Clinicians",
@@ -867,6 +949,8 @@ export const trainingCourses = [
     slug: "youth-affirming-spaces",
     title: "Creating Safe & Affirming Spaces for LGBTQ+ Youth",
     badge: "Schools & Youth Groups",
+    sector: "youth",
+    isBusinessAccreditation: false,
     format: "Interactive Seminar",
     duration: "3 Hours",
     targetAudience: "K-12 Teachers, School Counselors, Coaches & Youth Mentors",
