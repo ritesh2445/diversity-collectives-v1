@@ -475,7 +475,7 @@ export default function CmsStudio() {
         category: 'board',
         email: 'info@diversitycollective.org',
         bio: '',
-        photo: '/images/volunteers.jpg'
+        photo: ''
       });
     } else if (type === 'gallery') {
       setFormData({
@@ -601,7 +601,7 @@ export default function CmsStudio() {
         ...item,
         originalId: item.id,
         title: item.title || item.role || '',
-        photo: item.photo || item.image || '/images/volunteers.jpg'
+        photo: item.photo || item.image || ''
       });
     } else if (type === 'training') {
       setFormData({
@@ -2748,8 +2748,8 @@ export default function CmsStudio() {
 
                   <MultiImagePicker
                     images={formData.images || (formData.heroImage ? [formData.heroImage] : [])}
-                    primaryImage={formData.heroImage}
-                    onChange={(newImages) => setFormData({ ...formData, images: newImages, heroImage: newImages[0] || formData.heroImage })}
+                    primaryImage={formData.heroImage || ''}
+                    onChange={(newImages) => setFormData({ ...formData, images: newImages, heroImage: newImages[0] || '' })}
                     onPrimaryChange={(url) => setFormData({ ...formData, heroImage: url })}
                     label="Program Pictures & Slideshow"
                     helpText="Upload or choose multiple photos for this program. They will automatically slide on website cards and detail pages."
@@ -3037,8 +3037,8 @@ export default function CmsStudio() {
 
                   <MultiImagePicker
                     images={formData.images || (formData.image ? [formData.image] : [])}
-                    primaryImage={formData.image || '/images/community-gathering.jpg'}
-                    onChange={(newImages) => setFormData({ ...formData, images: newImages, image: newImages[0] || formData.image })}
+                    primaryImage={formData.image || ''}
+                    onChange={(newImages) => setFormData({ ...formData, images: newImages, image: newImages[0] || '' })}
                     onPrimaryChange={(url) => setFormData({ ...formData, image: url })}
                     label="Event Photos & Rotating Flyers"
                     helpText="Upload or choose multiple flyers or event photos. They will automatically slide on event cards and calendar views."
@@ -3124,8 +3124,8 @@ export default function CmsStudio() {
 
                   <MultiImagePicker
                     images={formData.images || (formData.image ? [formData.image] : [])}
-                    primaryImage={formData.image || '/images/community-gathering.jpg'}
-                    onChange={(newImages) => setFormData({ ...formData, images: newImages, image: newImages[0] || formData.image })}
+                    primaryImage={formData.image || ''}
+                    onChange={(newImages) => setFormData({ ...formData, images: newImages, image: newImages[0] || '' })}
                     onPrimaryChange={(url) => setFormData({ ...formData, image: url })}
                     label="Article Feature & Gallery Photos"
                     helpText="Upload or choose multiple article photos. They will automatically slide on article cards."
@@ -3325,7 +3325,7 @@ export default function CmsStudio() {
                   </div>
 
                   <ImagePicker
-                    value={formData.photo || '/images/volunteers.jpg'}
+                    value={formData.photo || ''}
                     onChange={(url) => setFormData({ ...formData, photo: url })}
                     label="Staff / Board Member Portrait"
                     aspectRatio="aspect-[4/3]"
@@ -3383,8 +3383,8 @@ export default function CmsStudio() {
 
                   <MultiImagePicker
                     images={formData.images || (formData.image ? [formData.image] : [])}
-                    primaryImage={formData.image || '/images/community-gathering.jpg'}
-                    onChange={(newImages) => setFormData({ ...formData, images: newImages, image: newImages[0] || formData.image })}
+                    primaryImage={formData.image || ''}
+                    onChange={(newImages) => setFormData({ ...formData, images: newImages, image: newImages[0] || '' })}
                     onPrimaryChange={(url) => setFormData({ ...formData, image: url })}
                     label="3D Carousel Spotlight Pictures"
                     helpText="Upload or choose multiple images for this spotlight. They will automatically slide on cards."
@@ -3470,7 +3470,7 @@ export default function CmsStudio() {
                   </div>
 
                   <ImagePicker
-                    value={formData.image || '/images/community-gathering.jpg'}
+                    value={formData.image || ''}
                     onChange={(url) => setFormData({ ...formData, image: url })}
                     label="Featured Milestone Picture"
                     aspectRatio="aspect-[16/9]"
@@ -3805,7 +3805,7 @@ export default function CmsStudio() {
                   </div>
 
                   <ImagePicker
-                    value={formData.coverImage || '/images/community-gathering.jpg'}
+                    value={formData.coverImage || ''}
                     onChange={(url) => setFormData({ ...formData, coverImage: url })}
                     label="Episode Cover Image"
                   />

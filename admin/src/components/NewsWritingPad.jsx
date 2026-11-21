@@ -723,7 +723,7 @@ export default function NewsWritingPad({
 
             {/* Visual Image Picker Integration */}
             <ImagePicker
-              value={imageUrl || '/images/community-gathering.jpg'}
+              value={imageUrl || ''}
               onChange={(url) => setImageUrl(url)}
               label="Select from DCVC Photo Library or Upload"
               aspectRatio="aspect-[16/9]"

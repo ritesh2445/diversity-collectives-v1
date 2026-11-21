@@ -281,6 +281,18 @@ export default function ImagePicker({
           </button>
         )}
 
+        {value && (
+          <button
+            type="button"
+            onClick={() => onChange('')}
+            className="px-3 py-1.5 rounded-xl border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold cursor-pointer flex items-center gap-1.5 transition-colors shadow-2xs"
+            title="Remove Photo"
+          >
+            <X className="w-3.5 h-3.5 text-rose-600" />
+            <span>Remove</span>
+          </button>
+        )}
+
         {optimizeStatus && (
           <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 animate-fade-in">
             {optimizeStatus}
