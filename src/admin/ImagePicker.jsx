@@ -59,8 +59,7 @@ export default function ImagePicker({
     try {
       setIsOptimizing(true);
       setOptimizeStatus('Optimizing & uploading original image...');
-      const optimized = await optimizeImageFile(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.88 });
-      const result = await uploadAndStoreImage(optimized.file || file);
+      const result = await uploadAndStoreImage(file);
       onChange(result.url);
       setOptimizeStatus('✓ Uploaded full original image (no crop)');
       setTimeout(() => setOptimizeStatus(''), 4000);
@@ -87,14 +86,14 @@ export default function ImagePicker({
       setIsOptimizing(true);
       setOptimizeStatus('Optimizing & storing cropped image...');
 
-      const result = await uploadAndStoreImage(croppedFile);
+      const result = await uploadAndStoreImage(croppedFile || previewUrl);
       onChange(result.url);
 
       const kbSaved = ((result.sizeBytes || 0) / 1024).toFixed(0);
       setOptimizeStatus(`✓ Image saved (${kbSaved} KB)`);
       setTimeout(() => setOptimizeStatus(''), 4000);
     } catch (err) {
-      alert('Failed to process cropped image: ' + err.message);
+      console.warn('[ImagePicker] Cropper upload notice:', err);
       if (previewUrl) onChange(previewUrl);
       setOptimizeStatus('');
     } finally {

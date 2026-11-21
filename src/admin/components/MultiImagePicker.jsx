@@ -55,6 +55,7 @@ export default function MultiImagePicker({
   const [isUploading, setIsUploading] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
   const [showLivePreview, setShowLivePreview] = useState(false);
+  const [uploadMode, setUploadMode] = useState('crop'); // 'crop' | 'direct'
   const fileInputRef = useRef(null);
 
   const updateImages = (newList) => {
@@ -94,6 +95,12 @@ export default function MultiImagePicker({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (uploadMode === 'direct') {
+      handleDirectUploadFile(file);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = () => {
       setCropperSource(reader.result);
@@ -104,14 +111,12 @@ export default function MultiImagePicker({
   };
 
   // Direct upload without crop
-  const handleDirectUploadFile = async (e) => {
-    const file = e.target.files?.[0];
+  const handleDirectUploadFile = async (file) => {
     if (!file) return;
     try {
       setIsUploading(true);
       setStatusMsg('Optimizing & uploading photo...');
-      const optimized = await optimizeImageFile(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.88 });
-      const result = await uploadAndStoreImage(optimized.file || file);
+      const result = await uploadAndStoreImage(file);
       const updated = [...normalizedImages, result.url];
       updateImages(updated);
       setStatusMsg('✓ Photo uploaded and added to slideshow');
@@ -125,19 +130,22 @@ export default function MultiImagePicker({
   };
 
   // Cropper apply
-  const handleCropperApply = async (croppedFile) => {
+  const handleCropperApply = async (croppedFile, previewUrl) => {
     setShowCropper(false);
     setCropperSource(null);
     try {
       setIsUploading(true);
       setStatusMsg('Saving cropped photo...');
-      const result = await uploadAndStoreImage(croppedFile);
+      const result = await uploadAndStoreImage(croppedFile || previewUrl);
       const updated = [...normalizedImages, result.url];
       updateImages(updated);
       setStatusMsg('✓ Cropped photo added to slideshow');
       setTimeout(() => setStatusMsg(''), 4000);
     } catch (err) {
-      alert('Failed to save cropped image: ' + err.message);
+      console.warn('[MultiImagePicker] Save notice:', err);
+      if (previewUrl) {
+        updateImages([...normalizedImages, previewUrl]);
+      }
     } finally {
       setIsUploading(false);
     }
@@ -327,21 +335,37 @@ export default function MultiImagePicker({
             onChange={handleFileChange}
             className="hidden"
           />
-          <div className="flex items-center gap-1">
+          <div className="flex flex-wrap items-center justify-center gap-1">
             <button
               type="button"
               disabled={isUploading}
-              onClick={() => fileInputRef.current?.click()}
-              className="px-2.5 py-1.5 rounded-lg bg-[#5A1E65] text-white hover:bg-purple-900 text-xs font-bold flex items-center gap-1 shadow-2xs cursor-pointer"
+              onClick={() => {
+                setUploadMode('crop');
+                fileInputRef.current?.click();
+              }}
+              className="px-2 py-1 rounded-lg bg-[#5A1E65] text-white hover:bg-purple-900 text-[11px] font-bold flex items-center gap-1 shadow-2xs cursor-pointer"
               title="Upload from computer and crop"
             >
               <Upload className="w-3 h-3" />
-              <span>Upload</span>
+              <span>Crop</span>
+            </button>
+            <button
+              type="button"
+              disabled={isUploading}
+              onClick={() => {
+                setUploadMode('direct');
+                fileInputRef.current?.click();
+              }}
+              className="px-2 py-1 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 text-[11px] font-bold flex items-center gap-1 shadow-2xs cursor-pointer"
+              title="Upload original image directly without crop"
+            >
+              <Sparkles className="w-3 h-3" />
+              <span>Direct</span>
             </button>
             <button
               type="button"
               onClick={() => setShowLibrary(true)}
-              className="px-2 py-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold flex items-center gap-1 shadow-2xs cursor-pointer"
+              className="px-2 py-1 rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-[11px] font-bold flex items-center gap-1 shadow-2xs cursor-pointer"
               title="Pick from DCVC Center Library"
             >
               <FolderOpen className="w-3 h-3 text-purple-700" />

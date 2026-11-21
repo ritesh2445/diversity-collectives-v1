@@ -23,6 +23,22 @@ const ASPECT_PRESETS = [
   { id: 'contain', label: 'Fit Whole (Padded)', description: 'Center whole graphic on a clean tinted background' }
 ];
 
+function dataUrlToBlob(dataUrl) {
+  try {
+    const parts = dataUrl.split(',');
+    const mime = parts[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+    const binStr = atob(parts[1]);
+    const len = binStr.length;
+    const u8arr = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      u8arr[i] = binStr.charCodeAt(i);
+    }
+    return new Blob([u8arr], { type: mime });
+  } catch {
+    return null;
+  }
+}
+
 export default function ImageCropperModal({ 
   imageSrc, 
   initialAspect = 'original',
@@ -49,13 +65,21 @@ export default function ImageCropperModal({
   useEffect(() => {
     if (!imageSrc) return;
     const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.src = imageSrc;
+    if (typeof imageSrc === 'string' && (imageSrc.startsWith('http://') || imageSrc.startsWith('https://')) && typeof window !== 'undefined' && !imageSrc.startsWith(window.location.origin)) {
+      img.crossOrigin = 'anonymous';
+    }
     img.onload = () => {
       const w = img.naturalWidth || 800;
       const h = img.naturalHeight || 600;
       setImageMeta({ width: w, height: h, naturalRatio: w / h });
     };
+    img.onerror = () => {
+      if (img.crossOrigin) {
+        img.crossOrigin = null;
+        img.src = imageSrc;
+      }
+    };
+    img.src = imageSrc;
   }, [imageSrc]);
 
   // Set initial crop based on preset
@@ -237,12 +261,23 @@ export default function ImageCropperModal({
 
     try {
       const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.src = imageSrc;
+      if (typeof imageSrc === 'string' && (imageSrc.startsWith('http://') || imageSrc.startsWith('https://')) && typeof window !== 'undefined' && !imageSrc.startsWith(window.location.origin)) {
+        img.crossOrigin = 'anonymous';
+      }
 
       await new Promise((resolve, reject) => {
         img.onload = resolve;
-        img.onerror = reject;
+        img.onerror = () => {
+          if (img.crossOrigin) {
+            img.crossOrigin = null;
+            img.onload = resolve;
+            img.onerror = () => reject(new Error('Failed to load image for cropping.'));
+            img.src = imageSrc;
+          } else {
+            reject(new Error('Failed to load image for cropping.'));
+          }
+        };
+        img.src = imageSrc;
       });
 
       const natW = img.naturalWidth || 800;
@@ -332,20 +367,35 @@ export default function ImageCropperModal({
         ctx.restore();
       }
 
-      // Convert canvas to File & Object URL
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          alert('Failed to generate image from canvas.');
-          setIsProcessing(false);
-          return;
+      // Convert canvas to File & Object URL with resilient fallback
+      const finalizeOutput = (blob) => {
+        let finalBlob = blob;
+        let dataUrlFallback = '';
+        if (!finalBlob) {
+          try {
+            dataUrlFallback = canvas.toDataURL('image/jpeg', 0.88);
+            finalBlob = dataUrlToBlob(dataUrlFallback);
+          } catch (e) {
+            console.warn('[ImageCropper] Canvas export fallback:', e);
+          }
         }
 
-        const croppedFile = new File([blob], `image-${Date.now()}.jpg`, { type: 'image/jpeg' });
-        const localPreviewUrl = URL.createObjectURL(blob);
+        const croppedFile = finalBlob 
+          ? new File([finalBlob], `image-${Date.now()}.jpg`, { type: 'image/jpeg' })
+          : null;
+        const localPreviewUrl = finalBlob ? URL.createObjectURL(finalBlob) : (dataUrlFallback || imageSrc);
 
-        onApply(croppedFile, localPreviewUrl);
+        onApply(croppedFile || dataUrlFallback || imageSrc, localPreviewUrl);
         setIsProcessing(false);
-      }, 'image/jpeg', 0.92);
+      };
+
+      try {
+        canvas.toBlob((blob) => {
+          finalizeOutput(blob);
+        }, 'image/jpeg', 0.88);
+      } catch {
+        finalizeOutput(null);
+      }
 
     } catch (err) {
       alert('Error processing image crop: ' + err.message);

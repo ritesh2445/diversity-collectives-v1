@@ -62,17 +62,108 @@ export function saveGitHubStorageConfig(config) {
 
 /**
  * Client-Side Image Optimizer
- * Resizes large high-res camera photos down to max dimensions (default 1600px),
- * converts to WebP/JPEG, and compresses to quality ~0.85.
- * Prevents multi-MB raw uploads from slowing down the site.
+ * Resizes large high-res camera photos down to optimized web dimensions (default 1280px),
+ * converts to WebP/JPEG, and compresses to quality ~0.82.
+ * Prevents multi-MB raw uploads from slowing down the site or exceeding browser storage.
  */
 export async function optimizeImageFile(file, options = {}) {
-  const maxWidth = options.maxWidth || 1600;
-  const maxHeight = options.maxHeight || 1600;
-  const quality = options.quality || 0.85;
+  const maxWidth = options.maxWidth || 1280;
+  const maxHeight = options.maxHeight || 960;
+  const quality = options.quality || 0.82;
+
+  // 1. Direct pass-through if string URL that isn't a base64 data URL
+  if (typeof file === 'string') {
+    if (file.startsWith('/images/') || file.startsWith('http://') || file.startsWith('https://')) {
+      return {
+        url: file,
+        dataUrl: file,
+        filename: file.split('/').pop() || 'image.jpg',
+        width: 800,
+        height: 600,
+        mimeType: 'image/jpeg',
+        sizeBytes: 0,
+        originalSizeBytes: 0
+      };
+    }
+  }
+
+  // Handle object wrappers { file } or { blob } or { dataUrl }
+  const actualFile = (file && typeof file === 'object' && !file.type && !file.size && (file.file || file.blob))
+    ? (file.file || file.blob)
+    : file;
 
   return new Promise((resolve, reject) => {
-    if (!file.type.startsWith('image/')) {
+    // If it's already a base64 data URL string
+    if (typeof actualFile === 'string' && actualFile.startsWith('data:image/')) {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+        if (width > maxWidth || height > maxHeight) {
+          if (width / height > maxWidth / maxHeight) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          } else {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, width, height);
+
+        let mimeType = 'image/webp';
+        let dataUrl = canvas.toDataURL(mimeType, quality);
+        if (!dataUrl.startsWith('data:image/webp')) {
+          mimeType = 'image/jpeg';
+          dataUrl = canvas.toDataURL(mimeType, quality);
+        }
+
+        const filename = `photo-${Date.now().toString(36)}.${mimeType === 'image/webp' ? 'webp' : 'jpg'}`;
+        canvas.toBlob((blob) => {
+          const finalFile = blob ? new File([blob], filename, { type: mimeType }) : null;
+          resolve({
+            dataUrl,
+            blob,
+            file: finalFile,
+            filename,
+            width,
+            height,
+            mimeType,
+            sizeBytes: blob?.size || dataUrl.length,
+            originalSizeBytes: actualFile.length
+          });
+        }, mimeType, quality);
+      };
+      img.onerror = () => {
+        // Fallback: return as-is
+        resolve({
+          dataUrl: actualFile,
+          blob: null,
+          file: null,
+          filename: `photo-${Date.now().toString(36)}.jpg`,
+          width: 800,
+          height: 600,
+          mimeType: 'image/jpeg',
+          sizeBytes: actualFile.length,
+          originalSizeBytes: actualFile.length
+        });
+      };
+      img.src = actualFile;
+      return;
+    }
+
+    if (!actualFile) {
+      return reject(new Error('No image file provided for upload.'));
+    }
+
+    // Check if it's a valid Blob / File
+    const isBlob = actualFile instanceof Blob || (typeof actualFile === 'object' && actualFile.slice);
+    if (!isBlob && (!actualFile.type || !actualFile.type.startsWith('image/'))) {
       return reject(new Error('Selected file is not an image.'));
     }
 
@@ -113,31 +204,41 @@ export async function optimizeImageFile(file, options = {}) {
           dataUrl = canvas.toDataURL(mimeType, quality);
         }
 
-        canvas.toBlob((blob) => {
-          const cleanName = (file.name || 'photo')
-            .replace(/\.[^/.]+$/, '')
-            .toLowerCase()
-            .replace(/[^a-z0-9_-]/g, '-')
-            .slice(0, 40);
+        const cleanName = (actualFile.name || 'photo')
+          .replace(/\.[^/.]+$/, '')
+          .toLowerCase()
+          .replace(/[^a-z0-9_-]/g, '-')
+          .slice(0, 40);
 
-          const ext = mimeType === 'image/webp' ? 'webp' : 'jpg';
-          const filename = `${cleanName}-${Date.now().toString(36)}.${ext}`;
+        const ext = mimeType === 'image/webp' ? 'webp' : 'jpg';
+        const filename = `${cleanName}-${Date.now().toString(36)}.${ext}`;
 
+        const finalize = (blob) => {
+          const finalFile = blob ? new File([blob], filename, { type: mimeType }) : null;
           resolve({
             dataUrl,
             blob,
+            file: finalFile,
             filename,
             width,
             height,
             mimeType,
-            sizeBytes: blob?.size || 0,
-            originalSizeBytes: file.size
+            sizeBytes: blob?.size || dataUrl.length,
+            originalSizeBytes: actualFile.size || dataUrl.length
           });
-        }, mimeType, quality);
+        };
+
+        try {
+          canvas.toBlob((blob) => {
+            finalize(blob);
+          }, mimeType, quality);
+        } catch {
+          finalize(null);
+        }
       };
       img.src = e.target.result;
     };
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(actualFile);
   });
 }
 

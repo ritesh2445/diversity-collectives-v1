@@ -221,14 +221,22 @@ export function applySiteStatePayload(state, { broadcast = false } = {}) {
       mergedCms.events = normalizeCmsEventList(mergedCms.events);
     }
     if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(STORAGE_KEYS.CMS_DATA, JSON.stringify(mergedCms));
+      try {
+        localStorage.setItem(STORAGE_KEYS.CMS_DATA, JSON.stringify(mergedCms));
+      } catch (err) {
+        console.warn('[LiveSync] LocalStorage write error (CMS_DATA quota):', err);
+      }
     }
     notifyWindowEvent(SYNC_EVENTS.CMS_CHANGED, mergedCms);
   }
 
   if (state.siteStatus && typeof state.siteStatus === 'object') {
     if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(STORAGE_KEYS.SITE_STATUS, JSON.stringify(state.siteStatus));
+      try {
+        localStorage.setItem(STORAGE_KEYS.SITE_STATUS, JSON.stringify(state.siteStatus));
+      } catch (err) {
+        console.warn('[LiveSync] LocalStorage write error (SITE_STATUS quota):', err);
+      }
     }
     notifyWindowEvent(SYNC_EVENTS.SITE_STATUS_CHANGED, state.siteStatus);
   }
@@ -240,7 +248,11 @@ export function applySiteStatePayload(state, { broadcast = false } = {}) {
         const merged = { ...existing, ...state.siteFeatures };
         localStorage.setItem(STORAGE_KEYS.FEATURES, JSON.stringify(merged));
       } catch {
-        localStorage.setItem(STORAGE_KEYS.FEATURES, JSON.stringify(state.siteFeatures));
+        try {
+          localStorage.setItem(STORAGE_KEYS.FEATURES, JSON.stringify(state.siteFeatures));
+        } catch (err) {
+          console.warn('[LiveSync] LocalStorage write error (FEATURES quota):', err);
+        }
       }
     }
     notifyWindowEvent(SYNC_EVENTS.FEATURES_CHANGED, state.siteFeatures);
