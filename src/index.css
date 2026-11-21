@@ -861,6 +861,28 @@ a[class~="from-purple-900"] {
   color: #FFFFFF !important;
 }
 
+/* Ensure headings inside dark purple and gradient containers are crisp 100% white */
+[class*="from-[#5A1E65]"] h1,
+[class*="from-[#5A1E65]"] h2,
+[class*="from-[#5A1E65]"] h3,
+[class*="from-[#5A1E65]"] h4,
+[class*="from-[#5A1E65]"] h5,
+[class*="from-[#5A1E65]"] h6,
+[class*="bg-gradient-to-r"][class*="purple"] h1,
+[class*="bg-gradient-to-r"][class*="purple"] h2,
+[class*="bg-gradient-to-r"][class*="purple"] h3,
+[class*="bg-gradient-to-r"][class*="purple"] h4,
+[class*="bg-gradient-to-r"][class*="purple"] h5,
+[class*="bg-gradient-to-r"][class*="purple"] h6,
+.bg-gradient-to-r.text-white h1,
+.bg-gradient-to-r.text-white h2,
+.bg-gradient-to-r.text-white h3,
+.bg-gradient-to-r.text-white h4,
+.bg-gradient-to-r.text-white h5,
+.bg-gradient-to-r.text-white h6 {
+  color: #FFFFFF !important;
+}
+
 button[class~="bg-[#5A1E65]"] span,
 a[class~="bg-[#5A1E65]"] span,
 button[class~="bg-[#5A1E65]"] strong,

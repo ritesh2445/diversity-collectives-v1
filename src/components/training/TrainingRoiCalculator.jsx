@@ -47,7 +47,7 @@ const SECTORS = [
   }
 ];
 
-export default function TrainingRoiCalculator() {
+export default function TrainingRoiCalculator({ content }) {
   const [teamSize, setTeamSize] = useState('small');
   const [sector, setSector] = useState('retail');
 
@@ -100,13 +100,13 @@ export default function TrainingRoiCalculator() {
       <div className="space-y-2 border-b border-slate-100 pb-6">
         <span className="glass-pill text-xs font-black uppercase tracking-wider text-[#5A1E65] bg-purple-50 border-purple-200">
           <Calculator className="w-3.5 h-3.5" />
-          INTERACTIVE IMPACT & ROI CALCULATOR
+          {content?.calculatorEyebrow || 'INTERACTIVE IMPACT & ROI CALCULATOR'}
         </span>
         <h3 className="font-display text-2xl sm:text-4xl font-black text-slate-950 tracking-tight">
-          Estimate Your Business Impact & Training Track
+          {content?.calculatorTitle || 'Estimate Your Business Impact & Training Track'}
         </h3>
         <p className="text-xs sm:text-sm text-slate-600 font-medium max-w-2xl">
-          Discover the measurable community reach, compliance safeguards, and customer loyalty your business unlocks through DCVC accreditation.
+          {content?.calculatorSubtitle || 'Discover the measurable community reach, compliance safeguards, and customer loyalty your business unlocks through DCVC accreditation.'}
         </p>
       </div>
 

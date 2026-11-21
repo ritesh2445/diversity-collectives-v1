@@ -57,21 +57,27 @@ const STEPS = [
   }
 ];
 
-export default function AccreditationPathwayRoadmap() {
+export default function AccreditationPathwayRoadmap({ content }) {
   return (
     <div className="w-full space-y-10">
       <div className="text-center max-w-3xl mx-auto space-y-3">
         <span className="glass-pill text-xs font-black uppercase tracking-wider text-[#5A1E65] bg-purple-50 border-purple-200">
-          OFFICIAL ACCREDITATION ROADMAP
+          {content?.roadmapEyebrow || 'OFFICIAL ACCREDITATION ROADMAP'}
         </span>
         <h2 className="font-display text-3xl sm:text-5xl font-black text-slate-950 tracking-tight">
-          How Your Business Becomes <br />
-          <span className="bg-gradient-to-r from-[#5A1E65] via-purple-700 to-emerald-600 bg-clip-text text-transparent">
-            DCVC Approved & Certified
-          </span>
+          {content?.roadmapTitle ? (
+            <span>{content.roadmapTitle}</span>
+          ) : (
+            <>
+              How Your Business Becomes <br />
+              <span className="bg-gradient-to-r from-[#5A1E65] via-purple-700 to-emerald-600 bg-clip-text text-transparent">
+                DCVC Approved & Certified
+              </span>
+            </>
+          )}
         </h2>
         <p className="text-sm sm:text-base text-slate-600 font-medium">
-          A seamless 4-step journey from staff education to trusted community storefront status across Ventura County.
+          {content?.roadmapSubtitle || 'A seamless 4-step journey from staff education to trusted community storefront status across Ventura County.'}
         </p>
       </div>
 
@@ -135,7 +141,7 @@ export default function AccreditationPathwayRoadmap() {
       </div>
 
       {/* Pathway Callout Banner */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-[#5A1E65] via-purple-900 to-indigo-950 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-[#5A1E65] via-purple-900 to-indigo-950 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 border border-purple-400/30">
         <div className="space-y-2 text-center md:text-left">
           <div className="flex items-center justify-center md:justify-start gap-2">
             <Sparkles className="w-4 h-4 text-amber-400" />
@@ -143,20 +149,20 @@ export default function AccreditationPathwayRoadmap() {
               FAST-TRACK ONBOARDING
             </span>
           </div>
-          <h4 className="font-display text-2xl font-black tracking-tight">
-            Ready to train your team and earn the DCVC Approved seal?
+          <h4 className="font-display text-2xl font-black tracking-tight text-white !text-white">
+            {content?.roadmapBannerHeading || 'Ready to train your team and earn the DCVC Approved seal?'}
           </h4>
           <p className="text-xs sm:text-sm text-purple-200 max-w-xl font-medium">
-            Join over 40+ accredited Ventura County cafes, health clinics, salons, and offices that pride themselves on authentic inclusivity.
+            {content?.roadmapBannerText || 'Join over 40+ accredited Ventura County cafes, health clinics, salons, and offices that pride themselves on authentic inclusivity.'}
           </p>
         </div>
 
         <Link
           to="/training/dcvc-affirming-business/book"
-          className="btn-primary py-3 px-7 text-xs font-bold whitespace-nowrap bg-amber-400 text-slate-950 hover:bg-amber-300 shadow-lg border-none"
+          className="py-3 px-7 text-xs font-black tracking-wide rounded-full text-white !text-white bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 hover:from-purple-600 hover:to-indigo-600 border border-purple-300/40 shadow-xl hover:shadow-2xl transition-all inline-flex items-center gap-2 whitespace-nowrap cursor-pointer hover:scale-102 shrink-0"
         >
-          <span>Schedule Storefront Training</span>
-          <ArrowRight className="w-4 h-4" />
+          <span className="text-white !text-white font-black">{content?.roadmapBannerButtonText || 'Schedule Storefront Training'}</span>
+          <ArrowRight className="w-4 h-4 text-white !text-white" />
         </Link>
       </div>
     </div>

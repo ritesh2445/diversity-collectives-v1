@@ -71,7 +71,7 @@ const QUESTIONS = [
   }
 ];
 
-export default function AffirmingReadinessQuiz() {
+export default function AffirmingReadinessQuiz({ content }) {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState({});
   const [isCompleted, setIsCompleted] = useState(false);
@@ -154,13 +154,13 @@ export default function AffirmingReadinessQuiz() {
           <div>
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider text-[#5A1E65] bg-purple-50 border border-purple-200">
               <Sparkles className="w-3 h-3 text-[#5A1E65]" />
-              60-SECOND SELF-AUDIT
+              {content?.quizEyebrow || '60-SECOND SELF-AUDIT'}
             </span>
             <h3 className="font-display text-2xl sm:text-3xl font-black text-slate-950 mt-1">
-              Is Your Business Ready for DCVC Approved Status?
+              {content?.quizTitle || 'Is Your Business Ready for DCVC Approved Status?'}
             </h3>
             <p className="text-xs sm:text-sm text-slate-600 mt-1">
-              Answer 5 quick questions to gauge your storefront readiness and discover your custom training track.
+              {content?.quizSubtitle || 'Answer 5 quick questions to gauge your storefront readiness and discover your custom training track.'}
             </p>
           </div>
 

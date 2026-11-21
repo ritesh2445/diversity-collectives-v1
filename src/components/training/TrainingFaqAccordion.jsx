@@ -28,8 +28,14 @@ const FAQS = [
   }
 ];
 
-export default function TrainingFaqAccordion() {
+export default function TrainingFaqAccordion({ content, faqs }) {
   const [openIdx, setOpenIdx] = useState(0);
+
+  const activeFaqs = (Array.isArray(faqs) && faqs.length > 0)
+    ? faqs
+    : (Array.isArray(content?.faqs) && content.faqs.length > 0)
+      ? content.faqs
+      : FAQS;
 
   const toggleIdx = (idx) => {
     setOpenIdx(prev => (prev === idx ? -1 : idx));
@@ -39,18 +45,18 @@ export default function TrainingFaqAccordion() {
     <div className="w-full max-w-4xl mx-auto space-y-6">
       <div className="text-center space-y-2 mb-6">
         <span className="glass-pill text-xs font-black uppercase tracking-wider text-[#5A1E65] bg-purple-50 border-purple-200">
-          COMMON QUESTIONS
+          {content?.faqEyebrow || 'COMMON QUESTIONS'}
         </span>
         <h3 className="font-display text-2xl sm:text-4xl font-black text-slate-950">
-          Frequently Asked Questions
+          {content?.faqTitle || 'Frequently Asked Questions'}
         </h3>
         <p className="text-xs sm:text-sm text-slate-600 font-medium">
-          Everything you need to know about certifying your business and booking a DCVC workshop.
+          {content?.faqSubtitle || 'Everything you need to know about certifying your business and booking a DCVC workshop.'}
         </p>
       </div>
 
       <div className="space-y-3">
-        {FAQS.map((faq, idx) => {
+        {activeFaqs.map((faq, idx) => {
           const isOpen = openIdx === idx;
           return (
             <div

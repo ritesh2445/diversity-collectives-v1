@@ -82,7 +82,7 @@ const KIT_ITEMS = [
   }
 ];
 
-export default function ApprovedWelcomeKitShowcase() {
+export default function ApprovedWelcomeKitShowcase({ content }) {
   const [activeTab, setActiveTab] = useState(KIT_ITEMS[0].id);
   const activeItem = KIT_ITEMS.find(item => item.id === activeTab) || KIT_ITEMS[0];
 
@@ -98,16 +98,22 @@ export default function ApprovedWelcomeKitShowcase() {
           <div className="space-y-3 max-w-2xl">
             <span className="glass-pill text-xs font-black uppercase tracking-wider text-amber-300 bg-amber-400/10 border-amber-400/30">
               <Package className="w-3.5 h-3.5" />
-              TANGIBLE VALUE FOR YOUR STOREFRONT
+              {content?.welcomeKitEyebrow || 'TANGIBLE VALUE FOR YOUR STOREFRONT'}
             </span>
-            <h3 className="font-display text-3xl sm:text-5xl font-black tracking-tight text-white">
-              What's Inside the <br />
-              <span className="bg-gradient-to-r from-amber-300 via-purple-300 to-emerald-300 bg-clip-text text-transparent">
-                DCVC Approved Welcome Kit?
-              </span>
+            <h3 className="font-display text-3xl sm:text-5xl font-black tracking-tight text-white !text-white">
+              {content?.welcomeKitTitle ? (
+                <span>{content.welcomeKitTitle}</span>
+              ) : (
+                <>
+                  What's Inside the <br />
+                  <span className="bg-gradient-to-r from-amber-300 via-purple-300 to-emerald-300 bg-clip-text text-transparent">
+                    DCVC Approved Welcome Kit?
+                  </span>
+                </>
+              )}
             </h3>
             <p className="text-xs sm:text-sm text-slate-300 font-medium leading-relaxed">
-              Upon graduating from the accreditation workshop, every certified business receives our comprehensive physical and digital welcoming package shipped directly to their storefront.
+              {content?.welcomeKitSubtitle || 'Upon graduating from the accreditation workshop, every certified business receives our comprehensive physical and digital welcoming package shipped directly to their storefront.'}
             </p>
           </div>
 
@@ -227,10 +233,10 @@ export default function ApprovedWelcomeKitShowcase() {
 
           <Link
             to="/training/dcvc-affirming-business/book"
-            className="btn-primary py-2.5 px-6 text-xs font-bold bg-amber-400 text-slate-950 hover:bg-amber-300 whitespace-nowrap shadow-md"
+            className="py-3 px-7 text-xs font-black tracking-wide rounded-full text-white !text-white bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 hover:from-purple-600 hover:to-indigo-600 border border-purple-300/40 shadow-lg hover:shadow-xl transition-all inline-flex items-center gap-2 whitespace-nowrap cursor-pointer hover:scale-102 shrink-0"
           >
-            <span>Get Your Storefront Kit</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            <span className="text-white !text-white font-black">{content?.welcomeKitButtonText || 'Get Your Storefront Kit'}</span>
+            <ArrowRight className="w-3.5 h-3.5 text-white !text-white" />
           </Link>
         </div>
       </div>

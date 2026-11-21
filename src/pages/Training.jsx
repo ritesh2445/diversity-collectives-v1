@@ -52,6 +52,7 @@ export default function Training() {
   });
 
   const [courses, setCourses] = useState(() => cmsStore.getTrainings?.() || trainingCourses);
+  const [trainingContent, setTrainingContent] = useState(() => cmsStore.getTrainingPageContent?.() || {});
   const [activeSector, setActiveSector] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCourseForModal, setSelectedCourseForModal] = useState(null);
@@ -60,6 +61,8 @@ export default function Training() {
     return cmsStore.subscribe(() => {
       const next = cmsStore.getTrainings?.();
       if (Array.isArray(next) && next.length > 0) setCourses(next);
+      const nextContent = cmsStore.getTrainingPageContent?.();
+      if (nextContent && typeof nextContent === 'object') setTrainingContent(nextContent);
     });
   }, []);
 
@@ -117,7 +120,7 @@ export default function Training() {
           <div className="lg:col-span-7 space-y-6">
             <div className="flex flex-wrap items-center gap-2">
               <span className="glass-pill text-xs font-bold text-[#5A1E65] bg-purple-50 border-purple-200/90 shadow-xs">
-                P.R.I.D.E. EDUCATION & ACCREDITATION
+                {trainingContent.heroEyebrow || 'P.R.I.D.E. EDUCATION & ACCREDITATION'}
               </span>
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black text-emerald-800 bg-emerald-50 border border-emerald-200">
                 <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
@@ -126,14 +129,20 @@ export default function Training() {
             </div>
 
             <h1 className="font-display text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-slate-950 leading-[1.04]">
-              Transforming Spaces. <br />
-              <span className="bg-gradient-to-r from-[#5A1E65] via-purple-700 to-emerald-600 bg-clip-text text-transparent">
-                Accrediting Businesses.
-              </span>
+              {trainingContent.heroTitle ? (
+                <span>{trainingContent.heroTitle}</span>
+              ) : (
+                <>
+                  Transforming Spaces. <br />
+                  <span className="bg-gradient-to-r from-[#5A1E65] via-purple-700 to-emerald-600 bg-clip-text text-transparent">
+                    Accrediting Businesses.
+                  </span>
+                </>
+              )}
             </h1>
 
             <p className="font-serif italic text-lg sm:text-2xl text-slate-700 leading-relaxed max-w-2xl">
-              Parents & Professionals' Responsibility for Inclusion, Diversity, and Equity. We train local businesses and organizations beforehand to build genuinely welcoming spaces and earn official DCVC Approved Partner status.
+              {trainingContent.heroSubtitle || "Parents & Professionals' Responsibility for Inclusion, Diversity, and Equity. We train local businesses and organizations beforehand to build genuinely welcoming spaces and earn official DCVC Approved Partner status."}
             </p>
 
             {/* CTAs */}
@@ -159,16 +168,16 @@ export default function Training() {
             {/* Quick Metrics */}
             <div className="grid grid-cols-3 gap-3 pt-4 border-t border-slate-200/80 max-w-xl">
               <div className="space-y-0.5">
-                <span className="font-display text-2xl font-black text-[#5A1E65]">40+</span>
-                <span className="text-[11px] text-slate-500 font-medium block">Accredited Local Businesses</span>
+                <span className="font-display text-2xl font-black text-[#5A1E65]">{trainingContent.stat1Number || '40+'}</span>
+                <span className="text-[11px] text-slate-500 font-medium block">{trainingContent.stat1Label || 'Accredited Local Businesses'}</span>
               </div>
               <div className="space-y-0.5">
-                <span className="font-display text-2xl font-black text-emerald-600">100%</span>
-                <span className="text-[11px] text-slate-500 font-medium block">CA SB 396 Compliant</span>
+                <span className="font-display text-2xl font-black text-emerald-600">{trainingContent.stat2Number || '98%'}</span>
+                <span className="text-[11px] text-slate-500 font-medium block">{trainingContent.stat2Label || 'Trainee Satisfaction & Confidence'}</span>
               </div>
               <div className="space-y-0.5">
-                <span className="font-display text-2xl font-black text-amber-600">40%+</span>
-                <span className="text-[11px] text-slate-500 font-medium block">Youth Suicide Risk Reduction</span>
+                <span className="font-display text-2xl font-black text-amber-600">{trainingContent.stat3Number || '100%'}</span>
+                <span className="text-[11px] text-slate-500 font-medium block">{trainingContent.stat3Label || 'Customized for Local Realities'}</span>
               </div>
             </div>
           </div>
@@ -284,22 +293,22 @@ export default function Training() {
 
       {/* SECTION 1: THE ACCREDITATION PATHWAY ROADMAP */}
       <section id="pathway-roadmap" className="container-clean scroll-mt-24">
-        <AccreditationPathwayRoadmap />
+        <AccreditationPathwayRoadmap content={trainingContent} />
       </section>
 
       {/* SECTION 2: 60-SECOND READINESS SELF-AUDIT QUIZ */}
       <section id="readiness-audit" className="container-clean scroll-mt-24">
-        <AffirmingReadinessQuiz />
+        <AffirmingReadinessQuiz content={trainingContent} />
       </section>
 
       {/* SECTION 3: WHAT'S INSIDE THE WELCOME KIT SHOWCASE */}
       <section id="welcome-kit" className="container-clean scroll-mt-24">
-        <ApprovedWelcomeKitShowcase />
+        <ApprovedWelcomeKitShowcase content={trainingContent} />
       </section>
 
       {/* SECTION 4: ROI & IMPACT CALCULATOR */}
       <section id="roi-calculator" className="container-clean scroll-mt-24">
-        <TrainingRoiCalculator />
+        <TrainingRoiCalculator content={trainingContent} />
       </section>
 
       {/* SECTION 5: FILTERABLE & SEARCHABLE COURSE CATALOG */}
@@ -469,12 +478,12 @@ export default function Training() {
 
       {/* SECTION 6: BUSINESS TESTIMONIALS */}
       <section className="container-clean">
-        <BusinessTestimonials />
+        <BusinessTestimonials content={trainingContent} />
       </section>
 
       {/* SECTION 7: TRAINING FAQS */}
       <section id="training-faqs" className="container-clean scroll-mt-24">
-        <TrainingFaqAccordion />
+        <TrainingFaqAccordion content={trainingContent} faqs={trainingContent.faqs} />
       </section>
 
       {/* SECTION 8: BOTTOM CONSULTATION & BOOKING BANNER */}
@@ -485,41 +494,41 @@ export default function Training() {
           <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-8">
             <div className="space-y-4 max-w-2xl text-center lg:text-left">
               <span className="glass-pill text-xs font-bold text-amber-300 bg-amber-400/10 border-amber-400/30">
-                VENTURA COUNTY COMMERCE & EQUITY
+                {trainingContent.bottomBannerTag || 'VENTURA COUNTY COMMERCE & EQUITY'}
               </span>
-              <h2 className="font-display text-3xl sm:text-5xl font-black tracking-tight">
-                Bring DCVC Accreditation to Your Team
+              <h2 className="font-display text-3xl sm:text-5xl font-black tracking-tight text-white !text-white">
+                {trainingContent.bottomBannerHeading || 'Bring DCVC Accreditation to Your Team'}
               </h2>
               <p className="text-xs sm:text-sm text-purple-200 font-medium leading-relaxed">
-                Whether you run an independent coffee shop on Main Street or a healthcare clinic in Oxnard, our certified educators are ready to tailor an engaging workshop for your team.
+                {trainingContent.bottomBannerText || 'Whether you run an independent coffee shop on Main Street or a healthcare clinic in Oxnard, our certified educators are ready to tailor an engaging workshop for your team.'}
               </p>
               <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 text-xs text-purple-200 pt-1">
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                  Sliding scale for local small businesses
+                  {trainingContent.bottomBannerBullet1 || 'Sliding scale for local small businesses'}
                 </span>
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                  On-site or interactive virtual
+                  {trainingContent.bottomBannerBullet2 || 'On-site or interactive virtual'}
                 </span>
               </div>
             </div>
 
             <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0 w-full sm:w-auto">
               <a
-                href="tel:8056445428"
+                href={trainingContent.bottomBannerPhoneRaw || 'tel:8056445428'}
                 className="btn-secondary py-3.5 px-6 text-xs font-bold bg-white/10 text-white border-white/20 hover:bg-white/20 w-full sm:w-auto text-center inline-flex items-center justify-center gap-2"
               >
                 <PhoneCall className="w-4 h-4 text-amber-300" />
-                <span>Call (805) 644-5428</span>
+                <span>{trainingContent.bottomBannerPhone || 'Call (805) 644-5428'}</span>
               </a>
 
               <Link
                 to="/training/book"
-                className="btn-primary py-3.5 px-7 text-xs font-bold bg-amber-400 text-slate-950 hover:bg-amber-300 w-full sm:w-auto text-center inline-flex items-center justify-center gap-2 shadow-lg border-none"
+                className="py-3.5 px-8 text-xs font-black tracking-wide rounded-full text-white !text-white bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 hover:from-purple-600 hover:to-indigo-600 border border-purple-300/40 shadow-xl hover:shadow-2xl transition-all inline-flex items-center justify-center gap-2 w-full sm:w-auto text-center whitespace-nowrap cursor-pointer hover:scale-102 shrink-0"
               >
-                <span>Request Workshop Proposal</span>
-                <ArrowRight className="w-4 h-4" />
+                <span className="text-white !text-white font-black">{trainingContent.bottomBannerButtonText || 'Request Workshop Proposal'}</span>
+                <ArrowRight className="w-4 h-4 text-white !text-white" />
               </Link>
             </div>
           </div>

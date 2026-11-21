@@ -48,4 +48,30 @@ describe('DCVC P.R.I.D.E. Training & Business Accreditation Features', () => {
       assert.ok(Array.isArray(course.materials) && course.materials.length >= 3);
     }
   });
+
+  it('exposes DEFAULT_TRAINING_PAGE_CONTENT with all sections completely customizable', async () => {
+    const { cmsStore, DEFAULT_TRAINING_PAGE_CONTENT } = await import('../src/services/cmsStore.js');
+    assert.ok(DEFAULT_TRAINING_PAGE_CONTENT, 'DEFAULT_TRAINING_PAGE_CONTENT must exist');
+    assert.ok(DEFAULT_TRAINING_PAGE_CONTENT.heroTitle);
+    assert.ok(DEFAULT_TRAINING_PAGE_CONTENT.roadmapBannerHeading);
+    assert.ok(DEFAULT_TRAINING_PAGE_CONTENT.welcomeKitButtonText);
+    assert.ok(DEFAULT_TRAINING_PAGE_CONTENT.bottomBannerHeading);
+    assert.ok(Array.isArray(DEFAULT_TRAINING_PAGE_CONTENT.faqs) && DEFAULT_TRAINING_PAGE_CONTENT.faqs.length >= 5);
+
+    const initial = cmsStore.getTrainingPageContent();
+    assert.strictEqual(typeof initial, 'object');
+    assert.ok(initial.heroTitle);
+
+    // Test saving an update
+    const updated = cmsStore.saveTrainingPageContent({
+      heroTitle: 'Ventura County Affirming Business Education'
+    });
+    assert.strictEqual(updated.heroTitle, 'Ventura County Affirming Business Education');
+    assert.strictEqual(cmsStore.getTrainingPageContent().heroTitle, 'Ventura County Affirming Business Education');
+
+    // Restore original
+    cmsStore.saveTrainingPageContent({
+      heroTitle: DEFAULT_TRAINING_PAGE_CONTENT.heroTitle
+    });
+  });
 });

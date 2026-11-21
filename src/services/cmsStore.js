@@ -243,6 +243,89 @@ function groupSanityResources(resources = []) {
   return Array.from(groups.entries()).map(([category, items]) => ({ category, items }));
 }
 
+export const DEFAULT_TRAINING_PAGE_CONTENT = {
+  // Hero section
+  heroEyebrow: "P.R.I.D.E. EDUCATION & ACCREDITATION",
+  heroTitle: "Empower Your Team with LGBTQ+ Competency & Earn the DCVC Approved Seal",
+  heroSubtitle: "Ventura County's accredited workshops transforming workplaces, clinics, educators, and local storefronts into authentically affirming spaces.",
+  stat1Number: "40+",
+  stat1Label: "Accredited Ventura County Businesses",
+  stat2Number: "98%",
+  stat2Label: "Trainee Satisfaction & Confidence",
+  stat3Number: "100%",
+  stat3Label: "Customized for Local Realities",
+
+  // Quiz section
+  quizEyebrow: "60-SECOND SELF-AUDIT",
+  quizTitle: "Is Your Business Ready for DCVC Approved Status?",
+  quizSubtitle: "Answer 5 quick questions to gauge your storefront readiness and discover your custom training track.",
+
+  // Pathway roadmap section
+  roadmapEyebrow: "OFFICIAL ACCREDITATION ROADMAP",
+  roadmapTitle: "How Your Business Becomes DCVC Approved & Certified",
+  roadmapSubtitle: "A seamless 4-step journey from staff education to trusted community storefront status across Ventura County.",
+  roadmapBannerHeading: "Ready to train your team and earn the DCVC Approved seal?",
+  roadmapBannerText: "Join over 40+ accredited Ventura County cafes, health clinics, salons, and offices that pride themselves on authentic inclusivity.",
+  roadmapBannerButtonText: "Schedule Storefront Training",
+
+  // Welcome kit section
+  welcomeKitEyebrow: "TANGIBLE VALUE FOR YOUR STOREFRONT",
+  welcomeKitTitle: "What's Inside the DCVC Approved Welcome Kit?",
+  welcomeKitSubtitle: "Upon graduating from the accreditation workshop, every certified business receives our comprehensive physical and digital welcoming package shipped directly to their storefront.",
+  welcomeKitButtonText: "Get Your Storefront Kit",
+
+  // ROI / Impact calculator section
+  calculatorEyebrow: "INTERACTIVE IMPACT & ROI CALCULATOR",
+  calculatorTitle: "Estimate Your Business Impact & Training Track",
+  calculatorSubtitle: "Discover the measurable community reach, compliance safeguards, and customer loyalty your business unlocks through DCVC accreditation.",
+
+  // Testimonials section
+  testimonialsEyebrow: "PROVEN COMMUNITY TRUST",
+  testimonialsTitle: "Trusted by Ventura County Commerce",
+  testimonialsSubtitle: "See how local cafes, clinics, salons, and offices have elevated their patron experience with DCVC Affirming Business Accreditation.",
+
+  // FAQ section
+  faqEyebrow: "COMMON QUESTIONS",
+  faqTitle: "Frequently Asked Questions",
+  faqSubtitle: "Everything you need to know about certifying your business and booking a DCVC workshop.",
+  faqs: [
+    {
+      q: "How does training help our business become a 'DCVC Approved' partner?",
+      a: "Diversity Collective requires businesses to complete an affirming cultural competency workshop before earning the official DCVC Approved badge. This ensures that the rainbow glow and 3D verified badge in our Business Directory represent authentic, trained welcoming standards — not just self-declarations. Upon completing the workshop and affirming our space charter, you unlock storefront window clings, framed certificates, and directory verification."
+    },
+    {
+      q: "Can the training be hosted on-site at our storefront or is it virtual?",
+      a: "We offer both! DCVC educators routinely travel on-site to local cafes, restaurants, health clinics, and corporate offices across Ventura, Oxnard, Camarillo, Simi Valley, Thousand Oaks, and Ojai. We also host engaging, interactive virtual workshops via Zoom for remote or hybrid teams."
+    },
+    {
+      q: "Do all staff members need to attend, or can managers train-the-trainer?",
+      a: "For small businesses (under 15 staff), we strongly recommend having all frontline and management staff attend together for maximum team cohesion. For mid-size and enterprise organizations (50+ staff), we provide a certified 'Train-the-Trainer' and shift-lead curriculum so your supervisors can onboard new hires consistently."
+    },
+    {
+      q: "What are the fees for local small businesses versus corporate teams?",
+      a: "DCVC is a local 501(c)(3) nonprofit dedicated to community wellbeing. We offer generous sliding-scale pricing for independent Ventura County small businesses, co-ops, and grassroots nonprofits. For mid-size and enterprise corporate teams, training fees support DCVC's free youth circles and HIV/STI community wellness clinics."
+    },
+    {
+      q: "What California legal mandates do your workshops cover?",
+      a: "Our corporate and business tracks cover California SB 396 (transgender, gender identity, and gender expression rights in employment), the California Fair Employment and Housing Act (FEHA), and California Health and Safety Code § 118600 (all-gender single-user restroom signage)."
+    },
+    {
+      q: "How long does our DCVC Approved status stay active?",
+      a: "Accreditation is valid for 1 full calendar year. Each year, certified partners receive a free 45-minute annual refresher and an updated annual window cling to keep their storefront and directory status active."
+    }
+  ],
+
+  // Bottom consultation banner (Section 8)
+  bottomBannerTag: "VENTURA COUNTY COMMERCE & EQUITY",
+  bottomBannerHeading: "Bring DCVC Accreditation to Your Team",
+  bottomBannerText: "Whether you run an independent coffee shop on Main Street or a healthcare clinic in Oxnard, our certified educators are ready to tailor an engaging workshop for your team.",
+  bottomBannerPhone: "Call (805) 644-5428",
+  bottomBannerPhoneRaw: "tel:8056445428",
+  bottomBannerBullet1: "Sliding scale for local small businesses",
+  bottomBannerBullet2: "On-site or interactive virtual",
+  bottomBannerButtonText: "Request Workshop Proposal"
+};
+
 export const INITIAL_CMS_DATA = {
   version: '3.1',
   lastUpdated: new Date().toISOString(),
@@ -306,6 +389,7 @@ export const INITIAL_CMS_DATA = {
   gallery: galleryPhotos || [],
   memoryLane: memoryLaneMilestones || [],
   podcasts: podcastsSeed || [],
+  trainingPageContent: DEFAULT_TRAINING_PAGE_CONTENT,
   mediaSuggestions: []
 };
 
@@ -800,6 +884,10 @@ class CmsStoreEngine {
         gallery: parsed.gallery || INITIAL_CMS_DATA.gallery,
         memoryLane: parsed.memoryLane || INITIAL_CMS_DATA.memoryLane,
         podcasts: parsed.podcasts || INITIAL_CMS_DATA.podcasts,
+        trainingPageContent: {
+          ...DEFAULT_TRAINING_PAGE_CONTENT,
+          ...(parsed.trainingPageContent || {})
+        },
         mediaSuggestions: parsed.mediaSuggestions || []
       };
     } catch {
@@ -1405,6 +1493,23 @@ class CmsStoreEngine {
     );
     this.saveData({ ...this.data, trainings: existing });
     return existing;
+  }
+
+  getTrainingPageContent() {
+    return {
+      ...DEFAULT_TRAINING_PAGE_CONTENT,
+      ...(this.data?.trainingPageContent || {})
+    };
+  }
+
+  saveTrainingPageContent(updates) {
+    const current = this.getTrainingPageContent();
+    const updated = {
+      ...current,
+      ...updates
+    };
+    this.saveData({ ...this.data, trainingPageContent: updated });
+    return updated;
   }
 
   // --------------------------------------------------------------------------

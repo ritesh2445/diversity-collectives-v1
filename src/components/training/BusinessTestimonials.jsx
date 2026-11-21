@@ -35,18 +35,18 @@ const TESTIMONIALS = [
   }
 ];
 
-export default function BusinessTestimonials() {
+export default function BusinessTestimonials({ content }) {
   return (
     <div className="w-full space-y-8">
       <div className="text-center max-w-2xl mx-auto space-y-2">
         <span className="glass-pill text-xs font-black uppercase tracking-wider text-[#5A1E65] bg-purple-50 border-purple-200">
-          PROVEN COMMUNITY TRUST
+          {content?.testimonialsEyebrow || 'PROVEN COMMUNITY TRUST'}
         </span>
         <h3 className="font-display text-2xl sm:text-4xl font-black text-slate-950">
-          Trusted by Ventura County Commerce
+          {content?.testimonialsTitle || 'Trusted by Ventura County Commerce'}
         </h3>
         <p className="text-xs sm:text-sm text-slate-600 font-medium">
-          See how local cafes, clinics, salons, and offices have elevated their patron experience with DCVC Affirming Business Accreditation.
+          {content?.testimonialsSubtitle || 'See how local cafes, clinics, salons, and offices have elevated their patron experience with DCVC Affirming Business Accreditation.'}
         </p>
       </div>
 

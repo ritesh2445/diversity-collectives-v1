@@ -159,6 +159,16 @@ export function deleteCmsTraining(slugOrId) {
   return list;
 }
 
+export function getCmsTrainingPageContent() {
+  return cmsStore.getTrainingPageContent();
+}
+
+export function saveCmsTrainingPageContent(updates) {
+  const updated = cmsStore.saveTrainingPageContent(updates);
+  publishAdminSitePatch({ cmsData: cmsStore.getData() }).catch(() => {});
+  return updated;
+}
+
 export function saveCmsCommunityGroup(group) {
   const list = cmsStore.saveCommunityGroup(group);
   publishAdminSitePatch({ cmsData: cmsStore.getData() }).catch(() => {});
