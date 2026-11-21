@@ -149,7 +149,10 @@ export default function AccreditationPathwayRoadmap({ content }) {
               FAST-TRACK ONBOARDING
             </span>
           </div>
-          <h4 className="font-display text-2xl font-black tracking-tight text-white !text-white">
+          <h4
+            className="font-display text-2xl font-black tracking-tight text-white !text-white"
+            style={{ color: '#FFFFFF' }}
+          >
             {content?.roadmapBannerHeading || 'Ready to train your team and earn the DCVC Approved seal?'}
           </h4>
           <p className="text-xs sm:text-sm text-purple-200 max-w-xl font-medium">
@@ -160,9 +163,12 @@ export default function AccreditationPathwayRoadmap({ content }) {
         <Link
           to="/training/dcvc-affirming-business/book"
           className="py-3 px-7 text-xs font-black tracking-wide rounded-full text-white !text-white bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 hover:from-purple-600 hover:to-indigo-600 border border-purple-300/40 shadow-xl hover:shadow-2xl transition-all inline-flex items-center gap-2 whitespace-nowrap cursor-pointer hover:scale-102 shrink-0"
+          style={{ color: '#FFFFFF' }}
         >
-          <span className="text-white !text-white font-black">{content?.roadmapBannerButtonText || 'Schedule Storefront Training'}</span>
-          <ArrowRight className="w-4 h-4 text-white !text-white" />
+          <span className="text-white !text-white font-black" style={{ color: '#FFFFFF' }}>
+            {content?.roadmapBannerButtonText || 'Schedule Storefront Training'}
+          </span>
+          <ArrowRight className="w-4 h-4 text-white !text-white" style={{ color: '#FFFFFF' }} />
         </Link>
       </div>
     </div>

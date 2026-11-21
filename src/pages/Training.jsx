@@ -496,7 +496,10 @@ export default function Training() {
               <span className="glass-pill text-xs font-bold text-amber-300 bg-amber-400/10 border-amber-400/30">
                 {trainingContent.bottomBannerTag || 'VENTURA COUNTY COMMERCE & EQUITY'}
               </span>
-              <h2 className="font-display text-3xl sm:text-5xl font-black tracking-tight text-white !text-white">
+              <h2
+                className="font-display text-3xl sm:text-5xl font-black tracking-tight text-white !text-white"
+                style={{ color: '#FFFFFF' }}
+              >
                 {trainingContent.bottomBannerHeading || 'Bring DCVC Accreditation to Your Team'}
               </h2>
               <p className="text-xs sm:text-sm text-purple-200 font-medium leading-relaxed">
@@ -517,18 +520,19 @@ export default function Training() {
             <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0 w-full sm:w-auto">
               <a
                 href={trainingContent.bottomBannerPhoneRaw || 'tel:8056445428'}
-                className="btn-secondary py-3.5 px-6 text-xs font-bold bg-white/10 text-white border-white/20 hover:bg-white/20 w-full sm:w-auto text-center inline-flex items-center justify-center gap-2"
+                className="py-3.5 px-6 text-xs font-bold bg-white text-slate-900 border border-white hover:bg-slate-100 rounded-full w-full sm:w-auto text-center inline-flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer hover:scale-102"
               >
-                <PhoneCall className="w-4 h-4 text-amber-300" />
-                <span>{trainingContent.bottomBannerPhone || 'Call (805) 644-5428'}</span>
+                <PhoneCall className="w-4 h-4 text-[#5A1E65]" />
+                <span className="text-slate-900 font-bold">{trainingContent.bottomBannerPhone || 'Call (805) 644-5428'}</span>
               </a>
 
               <Link
                 to="/training/book"
                 className="py-3.5 px-8 text-xs font-black tracking-wide rounded-full text-white !text-white bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 hover:from-purple-600 hover:to-indigo-600 border border-purple-300/40 shadow-xl hover:shadow-2xl transition-all inline-flex items-center justify-center gap-2 w-full sm:w-auto text-center whitespace-nowrap cursor-pointer hover:scale-102 shrink-0"
+                style={{ color: '#FFFFFF' }}
               >
-                <span className="text-white !text-white font-black">{trainingContent.bottomBannerButtonText || 'Request Workshop Proposal'}</span>
-                <ArrowRight className="w-4 h-4 text-white !text-white" />
+                <span className="text-white !text-white font-black" style={{ color: '#FFFFFF' }}>{trainingContent.bottomBannerButtonText || 'Request Workshop Proposal'}</span>
+                <ArrowRight className="w-4 h-4 text-white !text-white" style={{ color: '#FFFFFF' }} />
               </Link>
             </div>
           </div>

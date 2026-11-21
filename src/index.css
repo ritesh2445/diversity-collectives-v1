@@ -857,7 +857,15 @@ a[class~="bg-purple-950"],
 button[class~="from-rose-600"],
 a[class~="from-rose-600"],
 button[class~="from-purple-900"],
-a[class~="from-purple-900"] {
+a[class~="from-purple-900"],
+button[class*="from-purple-"],
+a[class*="from-purple-"],
+button[class*="to-purple-"],
+a[class*="to-purple-"],
+button[class*="via-indigo-"],
+a[class*="via-indigo-"],
+button[class*="from-indigo-"],
+a[class*="from-indigo-"] {
   color: #FFFFFF !important;
 }
 
@@ -898,7 +906,15 @@ a[class~="bg-purple-950"] span,
 button[class~="from-rose-600"] span,
 a[class~="from-rose-600"] span,
 button[class~="from-purple-900"] span,
-a[class~="from-purple-900"] span {
+a[class~="from-purple-900"] span,
+button[class*="from-purple-"] span,
+a[class*="from-purple-"] span,
+button[class*="from-purple-"] strong,
+a[class*="from-purple-"] strong,
+button[class*="to-purple-"] span,
+a[class*="to-purple-"] span,
+button[class*="via-indigo-"] span,
+a[class*="via-indigo-"] span {
   color: #FFFFFF !important;
 }
 
@@ -907,7 +923,11 @@ a[class~="bg-[#5A1E65]"] svg:not([class*="text-amber-"]):not([class*="text-rose-
 button[class~="bg-purple-900"] svg:not([class*="text-amber-"]):not([class*="text-rose-"]):not([class*="text-emerald-"]),
 a[class~="bg-purple-900"] svg:not([class*="text-amber-"]):not([class*="text-rose-"]):not([class*="text-emerald-"]),
 button[class~="from-rose-600"] svg:not([class*="text-amber-"]):not([class*="text-rose-"]):not([class*="text-emerald-"]),
-a[class~="from-rose-600"] svg:not([class*="text-amber-"]):not([class*="text-rose-"]):not([class*="text-emerald-"]) {
+a[class~="from-rose-600"] svg:not([class*="text-amber-"]):not([class*="text-rose-"]):not([class*="text-emerald-"]),
+button[class*="from-purple-"] svg:not([class*="text-amber-"]):not([class*="text-rose-"]):not([class*="text-emerald-"]),
+a[class*="from-purple-"] svg:not([class*="text-amber-"]):not([class*="text-rose-"]):not([class*="text-emerald-"]),
+button[class*="to-purple-"] svg:not([class*="text-amber-"]):not([class*="text-rose-"]):not([class*="text-emerald-"]),
+a[class*="to-purple-"] svg:not([class*="text-amber-"]):not([class*="text-rose-"]):not([class*="text-emerald-"]) {
   stroke: #FFFFFF !important;
   color: #FFFFFF !important;
 }
