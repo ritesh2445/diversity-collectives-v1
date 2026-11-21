@@ -858,14 +858,14 @@ button[class~="from-rose-600"],
 a[class~="from-rose-600"],
 button[class~="from-purple-900"],
 a[class~="from-purple-900"],
-button[class*="from-purple-"],
-a[class*="from-purple-"],
-button[class*="to-purple-"],
-a[class*="to-purple-"],
-button[class*="via-indigo-"],
-a[class*="via-indigo-"],
-button[class*="from-indigo-"],
-a[class*="from-indigo-"] {
+button[class*="from-purple-"]:not([class*="from-purple-50"]):not([class*="from-purple-100"]):not([class*="from-purple-200"]):not([class*="from-purple-300"]):not([class*="from-purple-400"]):not(.mobile-ask-luna-btn):not(#mobile-ask-luna-nav-button),
+a[class*="from-purple-"]:not([class*="from-purple-50"]):not([class*="from-purple-100"]):not([class*="from-purple-200"]):not([class*="from-purple-300"]):not([class*="from-purple-400"]),
+button[class*="to-purple-"]:not([class*="to-purple-50"]):not([class*="to-purple-100"]):not([class*="to-purple-200"]):not([class*="to-purple-300"]):not([class*="to-purple-400"]):not(.mobile-ask-luna-btn):not(#mobile-ask-luna-nav-button),
+a[class*="to-purple-"]:not([class*="to-purple-50"]):not([class*="to-purple-100"]):not([class*="to-purple-200"]):not([class*="to-purple-300"]):not([class*="to-purple-400"]),
+button[class*="via-indigo-"]:not([class*="via-indigo-50"]):not([class*="via-indigo-100"]):not([class*="via-indigo-200"]):not([class*="via-indigo-300"]):not([class*="via-indigo-400"]):not(.mobile-ask-luna-btn):not(#mobile-ask-luna-nav-button),
+a[class*="via-indigo-"]:not([class*="via-indigo-50"]):not([class*="via-indigo-100"]):not([class*="via-indigo-200"]):not([class*="via-indigo-300"]):not([class*="via-indigo-400"]),
+button[class*="from-indigo-"]:not([class*="from-indigo-50"]):not([class*="from-indigo-100"]):not([class*="from-indigo-200"]):not([class*="from-indigo-300"]):not([class*="from-indigo-400"]):not(.mobile-ask-luna-btn):not(#mobile-ask-luna-nav-button),
+a[class*="from-indigo-"]:not([class*="from-indigo-50"]):not([class*="from-indigo-100"]):not([class*="from-indigo-200"]):not([class*="from-indigo-300"]):not([class*="from-indigo-400"]) {
   color: #FFFFFF !important;
 }
 
@@ -907,14 +907,14 @@ button[class~="from-rose-600"] span,
 a[class~="from-rose-600"] span,
 button[class~="from-purple-900"] span,
 a[class~="from-purple-900"] span,
-button[class*="from-purple-"] span,
-a[class*="from-purple-"] span,
-button[class*="from-purple-"] strong,
-a[class*="from-purple-"] strong,
-button[class*="to-purple-"] span,
-a[class*="to-purple-"] span,
-button[class*="via-indigo-"] span,
-a[class*="via-indigo-"] span {
+button[class*="from-purple-"]:not([class*="from-purple-50"]):not([class*="from-purple-100"]):not([class*="from-purple-200"]):not([class*="from-purple-300"]):not([class*="from-purple-400"]):not(.mobile-ask-luna-btn):not(#mobile-ask-luna-nav-button) span,
+a[class*="from-purple-"]:not([class*="from-purple-50"]):not([class*="from-purple-100"]):not([class*="from-purple-200"]):not([class*="from-purple-300"]):not([class*="from-purple-400"]) span,
+button[class*="from-purple-"]:not([class*="from-purple-50"]):not([class*="from-purple-100"]):not([class*="from-purple-200"]):not([class*="from-purple-300"]):not([class*="from-purple-400"]):not(.mobile-ask-luna-btn):not(#mobile-ask-luna-nav-button) strong,
+a[class*="from-purple-"]:not([class*="from-purple-50"]):not([class*="from-purple-100"]):not([class*="from-purple-200"]):not([class*="from-purple-300"]):not([class*="from-purple-400"]) strong,
+button[class*="to-purple-"]:not([class*="to-purple-50"]):not([class*="to-purple-100"]):not([class*="to-purple-200"]):not([class*="to-purple-300"]):not([class*="to-purple-400"]):not(.mobile-ask-luna-btn):not(#mobile-ask-luna-nav-button) span,
+a[class*="to-purple-"]:not([class*="to-purple-50"]):not([class*="to-purple-100"]):not([class*="to-purple-200"]):not([class*="to-purple-300"]):not([class*="to-purple-400"]) span,
+button[class*="via-indigo-"]:not([class*="via-indigo-50"]):not([class*="via-indigo-100"]):not([class*="via-indigo-200"]):not([class*="via-indigo-300"]):not([class*="via-indigo-400"]):not(.mobile-ask-luna-btn):not(#mobile-ask-luna-nav-button) span,
+a[class*="via-indigo-"]:not([class*="via-indigo-50"]):not([class*="via-indigo-100"]):not([class*="via-indigo-200"]):not([class*="via-indigo-300"]):not([class*="via-indigo-400"]) span {
   color: #FFFFFF !important;
 }
 
@@ -924,12 +924,68 @@ button[class~="bg-purple-900"] svg:not([class*="text-amber-"]):not([class*="text
 a[class~="bg-purple-900"] svg:not([class*="text-amber-"]):not([class*="text-rose-"]):not([class*="text-emerald-"]),
 button[class~="from-rose-600"] svg:not([class*="text-amber-"]):not([class*="text-rose-"]):not([class*="text-emerald-"]),
 a[class~="from-rose-600"] svg:not([class*="text-amber-"]):not([class*="text-rose-"]):not([class*="text-emerald-"]),
-button[class*="from-purple-"] svg:not([class*="text-amber-"]):not([class*="text-rose-"]):not([class*="text-emerald-"]),
-a[class*="from-purple-"] svg:not([class*="text-amber-"]):not([class*="text-rose-"]):not([class*="text-emerald-"]),
-button[class*="to-purple-"] svg:not([class*="text-amber-"]):not([class*="text-rose-"]):not([class*="text-emerald-"]),
-a[class*="to-purple-"] svg:not([class*="text-amber-"]):not([class*="text-rose-"]):not([class*="text-emerald-"]) {
+button[class*="from-purple-"]:not([class*="from-purple-50"]):not([class*="from-purple-100"]):not([class*="from-purple-200"]):not([class*="from-purple-300"]):not([class*="from-purple-400"]):not(.mobile-ask-luna-btn):not(#mobile-ask-luna-nav-button) svg:not([class*="text-amber-"]):not([class*="text-rose-"]):not([class*="text-emerald-"]),
+a[class*="from-purple-"]:not([class*="from-purple-50"]):not([class*="from-purple-100"]):not([class*="from-purple-200"]):not([class*="from-purple-300"]):not([class*="from-purple-400"]) svg:not([class*="text-amber-"]):not([class*="text-rose-"]):not([class*="text-emerald-"]),
+button[class*="to-purple-"]:not([class*="to-purple-50"]):not([class*="to-purple-100"]):not([class*="to-purple-200"]):not([class*="to-purple-300"]):not([class*="to-purple-400"]):not(.mobile-ask-luna-btn):not(#mobile-ask-luna-nav-button) svg:not([class*="text-amber-"]):not([class*="text-rose-"]):not([class*="text-emerald-"]),
+a[class*="to-purple-"]:not([class*="to-purple-50"]):not([class*="to-purple-100"]):not([class*="to-purple-200"]):not([class*="to-purple-300"]):not([class*="to-purple-400"]) svg:not([class*="text-amber-"]):not([class*="text-rose-"]):not([class*="text-emerald-"]) {
   stroke: #FFFFFF !important;
   color: #FFFFFF !important;
+}
+
+/* Mobile Hamburger Navigation - Ask Luna Trigger */
+#mobile-ask-luna-nav-button,
+.mobile-ask-luna-btn {
+  color: #0F172A !important;
+}
+
+#mobile-ask-luna-nav-button .mobile-luna-title,
+.mobile-ask-luna-btn .mobile-luna-title {
+  color: #0F172A !important;
+}
+
+#mobile-ask-luna-nav-button:hover .mobile-luna-title,
+.mobile-ask-luna-btn:hover .mobile-luna-title,
+#mobile-ask-luna-nav-button:focus .mobile-luna-title,
+.mobile-ask-luna-btn:focus .mobile-luna-title {
+  color: #5A1E65 !important;
+}
+
+#mobile-ask-luna-nav-button .mobile-luna-badge,
+.mobile-ask-luna-btn .mobile-luna-badge {
+  color: #065F46 !important;
+  background-color: #D1FAE5 !important;
+  border-color: #A7F3D0 !important;
+}
+
+#mobile-ask-luna-nav-button .mobile-luna-desc,
+.mobile-ask-luna-btn .mobile-luna-desc {
+  color: #64748B !important;
+}
+
+#mobile-ask-luna-nav-button svg.mobile-luna-chevron,
+.mobile-ask-luna-btn svg.mobile-luna-chevron {
+  stroke: #5A1E65 !important;
+  color: #5A1E65 !important;
+}
+
+/* Mobile Navigation Drawer - Strict Horizontal Bleed & Overscroll Lock */
+#mobile-nav-drawer {
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
+  overscroll-behavior: contain !important;
+  touch-action: pan-y !important;
+}
+
+#mobile-nav-drawer > div {
+  max-width: 100vw !important;
+  overflow-x: hidden !important;
+}
+
+#mobile-nav-drawer [class*="overflow-y-auto"] {
+  overflow-x: hidden !important;
+  overscroll-behavior-y: contain !important;
+  touch-action: pan-y !important;
+  -webkit-overflow-scrolling: touch !important;
 }
 
 /* Ensure text elements inside dark containers inherit light text color instead of default --text-body */

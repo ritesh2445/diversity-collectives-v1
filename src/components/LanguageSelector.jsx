@@ -99,7 +99,7 @@ export default function LanguageSelector({ variant = 'header', className = '' })
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-1.5 max-h-52 overflow-y-auto pr-1 no-scrollbar">
+        <div className="grid grid-cols-2 gap-1.5 max-h-52 overflow-y-auto overflow-x-hidden pr-1 no-scrollbar min-w-0 max-w-full">
           {filteredLanguages.map((lang) => {
             const isSelected = lang.code === currentLang;
             return (
@@ -107,17 +107,17 @@ export default function LanguageSelector({ variant = 'header', className = '' })
                 key={lang.code}
                 type="button"
                 onClick={() => handleSelectLanguage(lang.code)}
-                className={`flex items-center justify-between p-2 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                className={`flex items-center justify-between p-2 rounded-xl text-xs font-bold transition-all border cursor-pointer min-w-0 max-w-full overflow-hidden ${
                   isSelected
                     ? 'bg-[#5A1E65] text-white border-[#5A1E65] shadow-xs'
                     : 'bg-white hover:bg-purple-50 text-slate-700 border-slate-200 hover:border-purple-300'
                 }`}
               >
-                <div className="flex items-center gap-1.5 truncate">
-                  <span className="text-base leading-none">{lang.flag}</span>
-                  <span className="truncate text-[11px]">{lang.nativeName}</span>
+                <div className="flex items-center gap-1.5 min-w-0 flex-1 truncate">
+                  <span className="text-base leading-none shrink-0">{lang.flag}</span>
+                  <span className="truncate text-[11px] min-w-0">{lang.nativeName}</span>
                 </div>
-                {isSelected && <Check className="w-3.5 h-3.5 flex-shrink-0 text-amber-300" />}
+                {isSelected && <Check className="w-3.5 h-3.5 flex-shrink-0 text-amber-300 ml-1 shrink-0" />}
               </button>
             );
           })}

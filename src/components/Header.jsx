@@ -359,13 +359,13 @@ export default function Header() {
 
       {/* Full-Screen Mobile Navigation Drawer (Layered at z-[100]) */}
       {mobileMenuOpen && (
-        <div id="mobile-nav-drawer" role="dialog" aria-modal="true" aria-label="Mobile Navigation" className="fixed inset-0 z-[100] bg-slate-950/60 backdrop-blur-sm xl:hidden flex flex-col justify-end animate-fadeIn">
+        <div id="mobile-nav-drawer" role="dialog" aria-modal="true" aria-label="Mobile Navigation" className="fixed inset-0 z-[100] bg-slate-950/60 backdrop-blur-sm xl:hidden flex flex-col justify-end animate-fadeIn overflow-hidden max-w-[100vw]" style={{ overscrollBehavior: 'contain', touchAction: 'pan-y' }}>
 
-          <div className="bg-white w-full h-[95vh] rounded-t-3xl shadow-2xl flex flex-col overflow-hidden animate-slideUp">
+          <div className="bg-white w-full max-w-full h-[95vh] rounded-t-3xl shadow-2xl flex flex-col overflow-hidden animate-slideUp">
 
             {/* Drawer Header Bar */}
-            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
-              <div className="flex items-center gap-2.5">
+            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70 shrink-0 min-w-0">
+              <div className="flex items-center gap-2.5 min-w-0">
                 <div className="w-9 h-9 rounded-xl overflow-hidden border border-purple-200 bg-white p-0.5 shadow-2xs flex-shrink-0">
                   <img
                     src="/images/logo-square.png"
@@ -373,17 +373,17 @@ export default function Header() {
                     className="w-full h-full object-contain"
                   />
                 </div>
-                <div>
-                  <span className="font-display font-extrabold text-sm text-slate-950 block leading-tight">
+                <div className="min-w-0">
+                  <span className="font-display font-extrabold text-sm text-slate-950 block leading-tight truncate">
                     Diversity Collective
                   </span>
-                  <span className="text-[10px] font-bold text-[#5A1E65] uppercase tracking-wider block">
+                  <span className="text-[10px] font-bold text-[#5A1E65] uppercase tracking-wider block truncate">
                     Ventura County Sanctuary
                   </span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 <button
                   onClick={handleQuickExit}
                   className="px-2.5 py-1 text-[11px] font-bold text-slate-600 hover:text-slate-950 rounded-full border border-slate-200 bg-white inline-flex items-center gap-1"
@@ -402,7 +402,10 @@ export default function Header() {
             </div>
 
             {/* Scrollable Navigation List */}
-            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 divide-y divide-slate-100">
+            <div
+              className="flex-1 overflow-y-auto overflow-x-hidden px-5 py-4 space-y-3 divide-y divide-slate-100 overscroll-contain"
+              style={{ touchAction: 'pan-y' }}
+            >
 
               {/* Mobile Language Selector Chips */}
               <LanguageSelector variant="mobile" className="pb-3" />
@@ -414,10 +417,10 @@ export default function Header() {
                   setMobileMenuOpen(false);
                   setSearchOpen(true);
                 }}
-                className="flex items-center gap-2.5 w-full py-2.5 px-3.5 rounded-xl bg-white border border-purple-200 hover:border-[#5A1E65] text-slate-600 text-xs font-semibold shadow-2xs cursor-pointer text-left"
+                className="flex items-center gap-2.5 w-full py-2.5 px-3.5 rounded-xl bg-white border border-purple-200 hover:border-[#5A1E65] text-slate-600 text-xs font-semibold shadow-2xs cursor-pointer text-left min-w-0"
               >
                 <Search className="w-4 h-4 text-[#5A1E65] flex-shrink-0" />
-                <span>Search programs, events, board, resources...</span>
+                <span className="truncate min-w-0">Search programs, events, board, resources...</span>
               </button>
 
               {/* Mobile Quick Calendar Trigger */}
@@ -427,53 +430,54 @@ export default function Header() {
                   setMobileMenuOpen(false);
                   setCalendarOpen(true);
                 }}
-                className="flex items-center gap-2.5 w-full py-2.5 px-3.5 rounded-xl bg-white border border-purple-200 hover:border-[#5A1E65] text-slate-700 text-xs font-semibold shadow-2xs cursor-pointer text-left"
+                className="flex items-center gap-2.5 w-full py-2.5 px-3.5 rounded-xl bg-white border border-purple-200 hover:border-[#5A1E65] text-slate-700 text-xs font-semibold shadow-2xs cursor-pointer text-left min-w-0"
               >
                 <Calendar className="w-4 h-4 text-[#5A1E65] flex-shrink-0" />
-                <span>Events Calendar Quick View & Dates...</span>
+                <span className="truncate min-w-0">Events Calendar Quick View & Dates...</span>
               </button>
 
               {/* Chat with Luna (AI Community Guide) Quick Action */}
               <button
                 type="button"
+                id="mobile-ask-luna-nav-button"
                 onClick={() => {
                   setMobileMenuOpen(false);
                   window.dispatchEvent(new CustomEvent('openAskDcvc'));
                 }}
-                className="flex items-center justify-between py-2.5 px-3 rounded-xl bg-gradient-to-r from-purple-50 via-fuchsia-50/40 to-amber-50/50 border border-purple-200/90 hover:border-purple-400 transition-all group w-full text-left cursor-pointer shadow-2xs pt-3"
+                className="mobile-ask-luna-btn flex items-center justify-between py-2.5 px-3 rounded-xl bg-gradient-to-r from-purple-50 via-fuchsia-50/40 to-amber-50/50 border border-purple-200/90 hover:border-purple-400 transition-all group w-full text-left cursor-pointer shadow-2xs pt-3 min-w-0"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
                   <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#5A1E65] to-purple-800 text-amber-300 flex items-center justify-center flex-shrink-0 shadow-xs">
                     <Sparkles className="w-4 h-4 fill-current" />
                   </div>
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-bold text-slate-900 group-hover:text-[#5A1E65] text-sm block">Ask Luna</span>
-                      <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="mobile-luna-title font-bold text-slate-900 group-hover:text-[#5A1E65] text-sm block">Ask Luna</span>
+                      <span className="mobile-luna-badge text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 shrink-0">
                         Free AI Guide
                       </span>
                     </div>
-                    <span className="text-[11px] text-slate-500">Ask about testing, hours, youth circles & resources</span>
+                    <span className="mobile-luna-desc text-[11px] text-slate-500 block truncate">Ask about testing, hours, youth circles & resources</span>
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-[#5A1E65] group-hover:translate-x-0.5 transition-transform" />
+                <ChevronRight className="mobile-luna-chevron w-4 h-4 text-[#5A1E65] group-hover:translate-x-0.5 transition-transform flex-shrink-0" />
               </button>
 
               <Link
                 to="/"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-purple-50/60 transition-colors group pt-3"
+                className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-purple-50/60 transition-colors group pt-3 min-w-0"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
                   <div className="w-9 h-9 rounded-lg bg-purple-100/80 text-[#5A1E65] flex items-center justify-center flex-shrink-0">
                     <Home className="w-4 h-4" />
                   </div>
-                  <div>
-                    <span className="font-bold text-slate-900 group-hover:text-[#5A1E65] text-sm block">Home</span>
-                    <span className="text-[11px] text-slate-500">Sanctuary homepage & announcements</span>
+                  <div className="min-w-0 flex-1">
+                    <span className="font-bold text-slate-900 group-hover:text-[#5A1E65] text-sm block truncate">Home</span>
+                    <span className="text-[11px] text-slate-500 block truncate">Sanctuary homepage & announcements</span>
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform flex-shrink-0" />
               </Link>
 
               {allNavItems.map((item) => {
@@ -485,27 +489,27 @@ export default function Header() {
                     key={item.to}
                     to={item.to}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`nav-bar-btn flex items-center justify-between py-2.5 px-3 rounded-xl transition-all group ${isActive
+                    className={`nav-bar-btn flex items-center justify-between py-2.5 px-3 rounded-xl transition-all group min-w-0 ${isActive
                         ? 'nav-bar-btn-active font-bold shadow-md'
                         : 'font-bold'
                       }`}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
                       <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${isActive ? 'bg-white/20' : 'bg-slate-100 text-slate-800 group-hover:bg-white/20'
                         }`}>
                         <ItemIcon className="w-4 h-4" />
                       </div>
-                      <div>
-                        <span className={`nav-title font-bold text-sm block ${isActive ? '!text-white text-white' : 'text-slate-900 group-hover:text-white'}`}>
+                      <div className="min-w-0 flex-1">
+                        <span className={`nav-title font-bold text-sm block truncate ${isActive ? '!text-white text-white' : 'text-slate-900 group-hover:text-white'}`}>
                           {item.label}
                         </span>
-                        <span className={`nav-desc text-[11px] block mt-0.5 ${isActive ? '!text-white/90 text-white/90 font-medium' : 'text-slate-500 group-hover:text-white/90'
+                        <span className={`nav-desc text-[11px] block mt-0.5 truncate ${isActive ? '!text-white/90 text-white/90 font-medium' : 'text-slate-500 group-hover:text-white/90'
                           }`}>
                           {item.desc}
                         </span>
                       </div>
                     </div>
-                    <ChevronRight className={`w-4 h-4 transition-transform group-hover:translate-x-0.5 ${isActive ? '!text-white text-white' : 'text-slate-400 group-hover:text-white'
+                    <ChevronRight className={`w-4 h-4 transition-transform group-hover:translate-x-0.5 flex-shrink-0 ${isActive ? '!text-white text-white' : 'text-slate-400 group-hover:text-white'
                       }`} />
                   </Link>
                 );
@@ -514,18 +518,18 @@ export default function Header() {
               <Link
                 to="/contact"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-purple-50/60 transition-colors group"
+                className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-purple-50/60 transition-colors group min-w-0"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
                   <div className="w-9 h-9 rounded-lg bg-teal-100 text-teal-800 flex items-center justify-center flex-shrink-0">
                     <MapPin className="w-4 h-4" />
                   </div>
-                  <div>
-                    <span className="font-bold text-slate-900 group-hover:text-teal-800 text-sm block">Contact & Directions</span>
-                    <span className="text-[11px] text-slate-500">2471 Portola Road, Suite 100, Ventura</span>
+                  <div className="min-w-0 flex-1">
+                    <span className="font-bold text-slate-900 group-hover:text-teal-800 text-sm block truncate">Contact & Directions</span>
+                    <span className="text-[11px] text-slate-500 block truncate">2471 Portola Road, Suite 100, Ventura</span>
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform flex-shrink-0" />
               </Link>
 
               {/* Mobile Accessibility Companion Toggle */}
@@ -535,24 +539,24 @@ export default function Header() {
                   setMobileMenuOpen(false);
                   a11yStore.toggleToolbar();
                 }}
-                className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-amber-50/70 transition-colors group w-full text-left cursor-pointer"
+                className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-amber-50/70 transition-colors group w-full text-left cursor-pointer min-w-0"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
                   <div className="w-9 h-9 rounded-lg bg-amber-100 text-[#5A1E65] flex items-center justify-center flex-shrink-0">
                     <TraditionalAccessibilityIcon className="w-4 h-4 text-[#5A1E65]" />
                   </div>
-                  <div>
-                    <span className="font-bold text-slate-900 group-hover:text-[#5A1E65] text-sm block">Accessibility Companion</span>
-                    <span className="text-[11px] text-slate-500">Speech reader, focus audio, dyslexia fonts & contrast</span>
+                  <div className="min-w-0 flex-1">
+                    <span className="font-bold text-slate-900 group-hover:text-[#5A1E65] text-sm block truncate">Accessibility Companion</span>
+                    <span className="text-[11px] text-slate-500 block truncate">Speech reader, focus audio, dyslexia fonts & contrast</span>
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform flex-shrink-0" />
               </button>
 
             </div>
 
             {/* Bottom Mobile Action Drawer Footer */}
-            <div className="p-5 border-t border-slate-200 bg-slate-50/90 flex flex-col gap-2.5">
+            <div className="p-5 border-t border-slate-200 bg-slate-50/90 flex flex-col gap-2.5 shrink-0 overflow-hidden max-w-full">
               <Link
                 to="/donate"
                 onClick={() => setMobileMenuOpen(false)}
