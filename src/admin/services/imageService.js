@@ -93,8 +93,8 @@ export async function optimizeImageFile(file, options = {}) {
     : file;
 
   return new Promise((resolve, reject) => {
-    // If it's already a base64 data URL string
-    if (typeof actualFile === 'string' && actualFile.startsWith('data:image/')) {
+    // If it's already a base64 data URL string or blob URL string
+    if (typeof actualFile === 'string' && (actualFile.startsWith('data:image/') || actualFile.startsWith('blob:'))) {
       const img = new Image();
       img.onload = () => {
         let width = img.width;

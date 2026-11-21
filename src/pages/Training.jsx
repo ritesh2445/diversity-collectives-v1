@@ -488,7 +488,7 @@ export default function Training() {
 
       {/* SECTION 8: BOTTOM CONSULTATION & BOOKING BANNER */}
       <section className="container-clean">
-        <div className="rounded-3xl bg-gradient-to-r from-[#5A1E65] via-purple-900 to-indigo-950 text-white p-8 sm:p-12 shadow-2xl relative overflow-hidden border border-purple-400/30">
+        <div className="training-purple-banner rounded-3xl bg-gradient-to-r from-[#5A1E65] via-purple-900 to-indigo-950 text-white p-8 sm:p-12 shadow-2xl relative overflow-hidden border border-purple-400/30">
           <div className="absolute top-0 right-0 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl pointer-events-none" />
 
           <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-8">
@@ -528,7 +528,7 @@ export default function Training() {
 
               <Link
                 to="/training/book"
-                className="py-3.5 px-8 text-xs font-black tracking-wide rounded-full text-white !text-white bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 hover:from-purple-600 hover:to-indigo-600 border border-purple-300/40 shadow-xl hover:shadow-2xl transition-all inline-flex items-center justify-center gap-2 w-full sm:w-auto text-center whitespace-nowrap cursor-pointer hover:scale-102 shrink-0"
+                className="training-cta-btn py-3.5 px-8 text-xs font-black tracking-wide rounded-full text-white !text-white bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 hover:from-purple-600 hover:to-indigo-600 border border-purple-300/40 shadow-xl hover:shadow-2xl transition-all inline-flex items-center justify-center gap-2 w-full sm:w-auto text-center whitespace-nowrap cursor-pointer hover:scale-102 shrink-0"
                 style={{ color: '#FFFFFF' }}
               >
                 <span className="text-white !text-white font-black" style={{ color: '#FFFFFF' }}>{trainingContent.bottomBannerButtonText || 'Request Workshop Proposal'}</span>

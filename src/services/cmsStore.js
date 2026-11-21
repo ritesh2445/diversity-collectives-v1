@@ -390,7 +390,44 @@ export const INITIAL_CMS_DATA = {
   memoryLane: memoryLaneMilestones || [],
   podcasts: podcastsSeed || [],
   trainingPageContent: DEFAULT_TRAINING_PAGE_CONTENT,
-  mediaSuggestions: []
+  mediaSuggestions: [
+    {
+      id: 'sug-seed-1',
+      topic: 'Amplifying Queer Small Businesses in Ventura County',
+      category: 'Community Stories',
+      name: 'Elena Torres',
+      email: 'elena@venturabakery.com',
+      guestRecommendation: 'Marco & Sofia (Main St. Collective)',
+      linkUrl: 'https://diversitycollectivevc.org/directory',
+      description: 'A conversation about navigating storefront challenges, local customer allyship, and how the DCVC directory boosted community foot traffic.',
+      status: 'new',
+      createdAt: '2026-11-18T14:30:00.000Z'
+    },
+    {
+      id: 'sug-seed-2',
+      topic: 'Youth Mental Health & Affirming Spaces in High Schools',
+      category: 'Youth Voices',
+      name: 'Jordan Hayes',
+      email: 'jordan.h@vcu.edu',
+      guestRecommendation: 'Rainbow Umbrella Youth Peer Leads',
+      linkUrl: 'https://diversitycollectivevc.org/programs/rainbow-umbrella',
+      description: 'Discussing our latest youth center peer group findings, safe space stickers, and school counselor collaborations across Oxnard and Simi Valley.',
+      status: 'reviewed',
+      createdAt: '2026-11-15T10:15:00.000Z'
+    },
+    {
+      id: 'sug-seed-3',
+      topic: 'Frontline Healthcare Equity & LGBTQ+ Patient Dignity',
+      category: 'Health & Wellness',
+      name: 'Dr. Alicia Vance',
+      email: 'avance@coastalclinic.org',
+      guestRecommendation: 'Diversity SHINES Clinical Outreach Nurses',
+      linkUrl: 'https://diversitycollectivevc.org/programs/diversity-shines',
+      description: 'Practical strategies for clinics and care centers to implement gender-affirming intake workflows and non-stigmatizing medical consultations.',
+      status: 'in_production',
+      createdAt: '2026-11-10T09:00:00.000Z'
+    }
+  ]
 };
 
 class CmsStoreEngine {

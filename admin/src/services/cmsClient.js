@@ -839,6 +839,11 @@ export function deleteCmsPodcast(id) {
   return list;
 }
 
+export function getMediaSuggestions() {
+  const data = getLiveCmsData();
+  return data.mediaSuggestions || [];
+}
+
 export function saveMediaSuggestion(suggestion) {
   const data = getLiveCmsData();
   const list = [...(data.mediaSuggestions || [])];

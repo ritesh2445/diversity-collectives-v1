@@ -30,12 +30,17 @@ import {
   Layers,
   ArrowRight,
   FolderOpen,
-  Palette
+  Palette,
+  Mic,
+  Radio
 } from 'lucide-react';
 import ImagePicker from './ImagePicker.jsx';
+import MultiImagePicker from './MultiImagePicker.jsx';
+import AutoSlideImage from '../../components/AutoSlideImage.jsx';
 import PictureFolderManager from './PictureFolderManager.jsx';
 import StyleCustomizer from './StyleCustomizer.jsx';
 import NewsWritingPad from './NewsWritingPad.jsx';
+import CardGradientStudio from './CardGradientStudio.jsx';
 import {
   getLiveCmsData,
   saveLiveCmsData,
@@ -55,9 +60,19 @@ import {
   deleteCmsGalleryPhoto,
   saveCmsMilestone,
   deleteCmsMilestone,
+  saveCmsSponsor,
+  deleteCmsSponsor,
+  saveCmsTraining,
+  deleteCmsTraining,
+  getCmsTrainingPageContent,
+  saveCmsTrainingPageContent,
+  saveCmsPodcast,
+  deleteCmsPodcast,
   saveCmsSettings,
   DEFAULT_CMS_SEED
 } from '../services/cmsClient.js';
+import { parseEventDate, normalizeCmsEvent } from '../../utils/eventDates.js';
+import { SYNC_EVENTS } from '../../services/liveSync.js';
 
 export default function CmsStudio() {
   const [cmsData, setCmsData] = useState(getLiveCmsData());
@@ -72,11 +87,53 @@ export default function CmsStudio() {
   const [showResetModal, setShowResetModal] = useState(false);
   const [cancelModalEvent, setCancelModalEvent] = useState(null);
   const [cancelNoticeText, setCancelNoticeText] = useState('');
+  const [showImportEventsModal, setShowImportEventsModal] = useState(false);
+  const [importEventsRawText, setImportEventsRawText] = useState('');
+  const [importEventsMode, setImportEventsMode] = useState('file'); // 'file' | 'paste'
+  const [importEventsMergeMode, setImportEventsMergeMode] = useState('append'); // 'append' | 'replace'
+  const [importEventsParsed, setImportEventsParsed] = useState([]);
+  const [importEventsError, setImportEventsError] = useState('');
+  const [trainingViewMode, setTrainingViewMode] = useState('courses'); // 'courses' | 'pageContent'
+  const [trainingPageData, setTrainingPageData] = useState(() => getCmsTrainingPageContent());
 
   // Reload data
   const refreshData = () => {
     setCmsData(getLiveCmsData());
+    setTrainingPageData(getCmsTrainingPageContent());
   };
+
+  useEffect(() => {
+    const onCmsUpdate = () => {
+      setCmsData(getLiveCmsData());
+      setTrainingPageData(getCmsTrainingPageContent());
+    };
+    const onSubTabNav = (e) => {
+      if (e?.detail?.subTab) setActiveSubTab(e.detail.subTab);
+    };
+    const onCreatePodcast = (e) => {
+      setActiveSubTab('podcasts');
+      openCreateModal('podcast');
+      if (e?.detail) {
+        setFormData(prev => ({
+          ...prev,
+          title: e.detail.title || prev.title,
+          category: e.detail.category || prev.category,
+          guests: e.detail.guests || prev.guests,
+          link: e.detail.link || prev.link,
+          summary: e.detail.description || prev.summary,
+          description: e.detail.description || prev.description
+        }));
+      }
+    };
+    window.addEventListener(SYNC_EVENTS.CMS_CHANGED, onCmsUpdate);
+    window.addEventListener('dcvc-admin-cms-subtab', onSubTabNav);
+    window.addEventListener('dcvc-admin-create-podcast', onCreatePodcast);
+    return () => {
+      window.removeEventListener(SYNC_EVENTS.CMS_CHANGED, onCmsUpdate);
+      window.removeEventListener('dcvc-admin-cms-subtab', onSubTabNav);
+      window.removeEventListener('dcvc-admin-create-podcast', onCreatePodcast);
+    };
+  }, []);
 
   const showToast = (msg) => {
     setFeedbackMsg(msg);
@@ -86,6 +143,213 @@ export default function CmsStudio() {
   // --------------------------------------------------------------------------
   // Reset, Export & Import
   // --------------------------------------------------------------------------
+  const downloadSampleEventsCsv = () => {
+    const csvSample = `title,date,time,location,address,category,description,rsvpUrl,contactEmail,featured
+"Oceanside Pride Sunset Gala","August 15, 2026","5:00 PM – 9:00 PM","Ventura Promenade","Ventura Beach Boardwalk, Ventura, CA","Community Celebration","Annual sunset gala celebrating community resilience and LGBTQ+ pride.","https://diversitycollectivevc.org/events","events@diversitycollective.org",true
+"Youth Creative Arts & Open Mic","September 12, 2026","4:00 PM – 6:30 PM","Community Resource Center","2471 Portola Road, Suite 100, Ventura, CA","Youth","An affirming creative space for LGBTQ+ youth and allies to share poetry, art, and music.","/events","youth@diversitycollective.org",false
+"Trans & Nonbinary Wellness Circle","October 10, 2026","6:00 PM – 7:30 PM","Community Resource Center","2471 Portola Road, Suite 100, Ventura, CA","Health & Wellness","Monthly peer support, wellbeing resources, and guided discussion for trans and nonbinary community members.","/events","info@diversitycollective.org",false`;
+
+    const blob = new Blob([csvSample], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'dcvc_events_import_template.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const parseImportedEventsText = (rawText) => {
+    if (!rawText || !rawText.trim()) return [];
+    const trimmed = rawText.trim();
+
+    // JSON format
+    if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        const list = Array.isArray(parsed) ? parsed : (parsed.events || [parsed]);
+        return list.map(evt => formatImportedEvent(evt)).filter(Boolean);
+      } catch (err) {
+        throw new Error('Invalid JSON format: ' + err.message);
+      }
+    }
+
+    // CSV format parsing with quotes and multiline support
+    const lines = [];
+    let curLine = [];
+    let curVal = '';
+    let insideQuote = false;
+
+    for (let i = 0; i < trimmed.length; i++) {
+      const char = trimmed[i];
+      const next = trimmed[i + 1];
+
+      if (char === '"') {
+        if (insideQuote && next === '"') {
+          curVal += '"';
+          i++;
+        } else {
+          insideQuote = !insideQuote;
+        }
+      } else if (char === ',' && !insideQuote) {
+        curLine.push(curVal.trim());
+        curVal = '';
+      } else if ((char === '\r' || char === '\n') && !insideQuote) {
+        if (char === '\r' && next === '\n') i++;
+        curLine.push(curVal.trim());
+        if (curLine.some(c => c.length > 0)) lines.push(curLine);
+        curLine = [];
+        curVal = '';
+      } else {
+        curVal += char;
+      }
+    }
+    if (curVal.length > 0 || curLine.length > 0) {
+      curLine.push(curVal.trim());
+      if (curLine.some(c => c.length > 0)) lines.push(curLine);
+    }
+
+    if (lines.length < 2) {
+      throw new Error('CSV must contain a header row and at least one event row.');
+    }
+
+    const rawHeaders = lines[0].map(h => h.toLowerCase().replace(/[^a-z0-9]/g, ''));
+    const headerMap = {};
+    rawHeaders.forEach((h, idx) => {
+      if (h.includes('title') || h.includes('name') || h.includes('event')) headerMap.title = idx;
+      else if (h.includes('date') || h.includes('day')) headerMap.date = idx;
+      else if (h.includes('time') || h.includes('hour')) headerMap.time = idx;
+      else if (h.includes('address')) headerMap.address = idx;
+      else if (h.includes('loc') || h.includes('venue')) headerMap.location = idx;
+      else if (h.includes('cat') || h.includes('type')) headerMap.category = idx;
+      else if (h.includes('desc') || h.includes('detail') || h.includes('about')) headerMap.description = idx;
+      else if (h.includes('rsvp') || h.includes('link') || h.includes('reg') || h.includes('url')) headerMap.rsvpUrl = idx;
+      else if (h.includes('email') || h.includes('contact')) headerMap.contactEmail = idx;
+      else if (h.includes('feat') || h.includes('highlight')) headerMap.featured = idx;
+    });
+
+    const events = [];
+    for (let i = 1; i < lines.length; i++) {
+      const row = lines[i];
+      const getCol = (key) => headerMap[key] !== undefined ? row[headerMap[key]] : '';
+      
+      const title = getCol('title') || row[0];
+      if (!title) continue;
+
+      const date = getCol('date') || 'August 15, 2026';
+      const time = getCol('time') || '11:00 AM – 7:00 PM';
+      const location = getCol('location') || 'Community Resource Center';
+      const address = getCol('address') || (location.includes('Portola') ? location : '2471 Portola Road, Suite 100, Ventura, CA');
+      const category = getCol('category') || 'Community Celebration';
+      const description = getCol('description') || 'Join us for this community gathering.';
+      const rsvpUrl = getCol('rsvpUrl') || '/events';
+      const contactEmail = getCol('contactEmail') || 'info@diversitycollective.org';
+      const featuredRaw = String(getCol('featured')).toLowerCase();
+      const featured = featuredRaw === 'true' || featuredRaw === '1' || featuredRaw === 'yes';
+
+      events.push(formatImportedEvent({
+        title,
+        date,
+        time,
+        location,
+        address,
+        category,
+        description,
+        rsvpUrl,
+        contactEmail,
+        featured
+      }));
+    }
+
+    return events;
+  };
+
+  const formatImportedEvent = (raw) => {
+    const slug = (raw.title || 'event')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+    const id = raw.id || `evt-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    
+    return {
+      id,
+      slug,
+      title: raw.title || 'Community Event',
+      date: raw.date || raw.displayDate || 'August 15, 2026',
+      isoDate: raw.isoDate || (raw.date && /^\d{4}-\d{2}-\d{2}$/.test(raw.date) ? raw.date : '2026-08-15'),
+      time: raw.time || '11:00 AM – 7:00 PM',
+      location: raw.location || 'Community Resource Center',
+      address: raw.address || '2471 Portola Road, Suite 100, Ventura, CA',
+      category: raw.category || 'Community Celebration',
+      description: raw.description || '',
+      image: '/images/community-gathering.jpg', // Images can be added by editing event
+      rsvpUrl: raw.rsvpUrl || raw.registrationUrl || '/events',
+      contactEmail: raw.contactEmail || 'info@diversitycollective.org',
+      featured: Boolean(raw.featured),
+      isCancelled: false,
+      cancellationNotice: ''
+    };
+  };
+
+  const handleEventsFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportEventsError('');
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = event.target.result;
+        setImportEventsRawText(text);
+        const parsed = parseImportedEventsText(text);
+        setImportEventsParsed(parsed);
+      } catch (err) {
+        setImportEventsError(err.message);
+        setImportEventsParsed([]);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  const handleEventsRawTextChange = (text) => {
+    setImportEventsRawText(text);
+    setImportEventsError('');
+    if (!text.trim()) {
+      setImportEventsParsed([]);
+      return;
+    }
+    try {
+      const parsed = parseImportedEventsText(text);
+      setImportEventsParsed(parsed);
+    } catch (err) {
+      setImportEventsError(err.message);
+      setImportEventsParsed([]);
+    }
+  };
+
+  const handleExecuteEventsImport = () => {
+    if (!importEventsParsed.length) return;
+
+    const existing = cmsData.events || [];
+    let merged;
+    if (importEventsMergeMode === 'replace') {
+      merged = importEventsParsed;
+    } else {
+      const existingSlugs = new Set(existing.map(e => e.slug || e.id));
+      const newOnly = importEventsParsed.filter(e => !existingSlugs.has(e.slug));
+      merged = [...existing, ...newOnly];
+    }
+
+    saveLiveCmsData({ events: merged });
+    refreshData();
+    setShowImportEventsModal(false);
+    showToast(`Successfully imported ${importEventsParsed.length} event(s) into calendar.`);
+    setImportEventsParsed([]);
+    setImportEventsRawText('');
+    setImportEventsError('');
+  };
+
   const handleResetDefaults = () => {
     resetCmsToDefault();
     refreshData();
@@ -133,12 +397,17 @@ export default function CmsStudio() {
     setModalType(type);
     setEditingItem(null);
     if (type === 'program') {
+      const progCount = (cmsData.programs?.length || 0) + 1;
+      const chapterStr = progCount < 10 ? `0${progCount}` : `${progCount}`;
       setFormData({
+        id: `prog-${Date.now()}`,
         title: '',
         tagline: '',
         slug: '',
-        chapter: `0${(cmsData.programs?.length || 0) + 1}`,
+        chapter: chapterStr,
         heroImage: '/images/crc-building.jpg',
+        images: ['/images/crc-building.jpg'],
+        imageFit: 'contain',
         accent: '#5A1E65',
         fontSize: 'base',
         fontColor: '#5A1E65',
@@ -147,6 +416,8 @@ export default function CmsStudio() {
         schedule: 'Monday – Friday, 1:00 PM – 5:00 PM',
         location: '2471 Portola Road, Suite 100, Ventura, CA 93003',
         summary: '',
+        description: '',
+        amenities: [],
         contactEmail: 'info@diversitycollective.org',
         contactPhone: '(805) 644-5428',
         active: true
@@ -155,12 +426,14 @@ export default function CmsStudio() {
       setFormData({
         title: '',
         slug: '',
+        isoDate: '2026-08-15',
         date: 'August 15, 2026',
         time: '11:00 AM – 7:00 PM',
         location: 'Ventura County, CA',
         category: 'Community Celebration',
         description: '',
         image: '/images/community-gathering.jpg',
+        images: ['/images/community-gathering.jpg'],
         fontSize: 'base',
         fontColor: '#0F172A',
         rsvpUrl: '/events',
@@ -177,6 +450,7 @@ export default function CmsStudio() {
         author: 'Diversity Collective Team',
         readTime: '3 min read',
         image: '/images/community-gathering.jpg',
+        images: ['/images/community-gathering.jpg'],
         fontSize: 'base',
         fontColor: '#0F172A',
         excerpt: '',
@@ -195,9 +469,10 @@ export default function CmsStudio() {
       });
     } else if (type === 'staff') {
       setFormData({
+        id: `stf-${Date.now()}`,
         name: '',
         title: '',
-        category: 'staff',
+        category: 'board',
         email: 'info@diversitycollective.org',
         bio: '',
         photo: '/images/volunteers.jpg'
@@ -226,15 +501,67 @@ export default function CmsStudio() {
         quote: '',
         details: ''
       });
+    } else if (type === 'sponsor') {
+      setFormData({
+        name: '',
+        shortName: '',
+        role: 'Community Health & Center Partner',
+        url: 'https://diversitycollectivevc.org',
+        logo: '/images/vcph-logo.png'
+      });
+    } else if (type === 'training') {
+      setFormData({
+        title: '',
+        slug: '',
+        badge: 'Cultural Competency Workshop',
+        sector: 'business',
+        isBusinessAccreditation: false,
+        isFlagship: false,
+        duration: '2.5 Hours',
+        format: 'In-Person or Interactive Virtual',
+        targetAudience: 'Storefront Retail, Hospitality & Service Providers',
+        summary: '',
+        feeStructure: 'Sliding scale for local small businesses; custom quote for corporate teams',
+        contactEmail: 'training@diversitycollective.org',
+        learningObjectives: ['Understand LGBTQ+ affirming practices, frontline customer dignity, and California SB 396 non-discrimination.'],
+        materials: ['Official Storefront Vinyl Window Cling', 'Framed Certificate of Excellence', 'Frontline Ally & Pronoun Pins']
+      });
+    } else if (type === 'podcast') {
+      setFormData({
+        title: '',
+        slug: '',
+        episodeNumber: (cmsData.podcasts?.length || 0) + 1,
+        season: 1,
+        category: 'Community Stories',
+        host: 'DCVC Team',
+        guests: '',
+        duration: '30 min',
+        date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+        link: '',
+        audioUrl: '',
+        coverImage: '/images/community-gathering.jpg',
+        summary: '',
+        description: '',
+        featured: false
+      });
     }
   };
 
   const openEditModal = (type, item) => {
     setModalType(type);
     setEditingItem(item);
-    if (type === 'news') {
+    if (type === 'podcast') {
+      setFormData({
+        ...item
+      });
+    } else if (type === 'news') {
+      const newsImages = Array.isArray(item.images) && item.images.length > 0
+        ? item.images
+        : (item.image ? [item.image] : ['/images/community-gathering.jpg']);
       setFormData({
         ...item,
+        images: newsImages,
+        image: item.image || newsImages[0],
         originalId: item.id || item.slug,
         originalSlug: item.slug,
         body: item.body || item.content || '',
@@ -246,6 +573,42 @@ export default function CmsStudio() {
         ...item,
         pictureFolder: item.pictureFolder || []
       });
+    } else if (type === 'event') {
+      const parsed = parseEventDate(item);
+      const eventImages = Array.isArray(item.images) && item.images.length > 0
+        ? item.images
+        : (item.image ? [item.image] : ['/images/community-gathering.jpg']);
+      setFormData({
+        ...item,
+        images: eventImages,
+        image: item.image || eventImages[0],
+        isoDate: parsed?.isoDate || item.isoDate || '',
+        date: item.date || parsed?.displayDate || ''
+      });
+    } else if (type === 'program') {
+      const progImages = Array.isArray(item.images) && item.images.length > 0
+        ? item.images
+        : (item.heroImage ? [item.heroImage] : ['/images/crc-building.jpg']);
+      setFormData({
+        ...item,
+        images: progImages,
+        heroImage: item.heroImage || progImages[0],
+        originalId: item.id || item.slug,
+        originalSlug: item.slug
+      });
+    } else if (type === 'staff') {
+      setFormData({
+        ...item,
+        originalId: item.id,
+        title: item.title || item.role || '',
+        photo: item.photo || item.image || '/images/volunteers.jpg'
+      });
+    } else if (type === 'training') {
+      setFormData({
+        ...item,
+        materials: Array.isArray(item.materials) ? item.materials : [],
+        learningObjectives: Array.isArray(item.learningObjectives) ? item.learningObjectives : []
+      });
     } else {
       setFormData({ ...item });
     }
@@ -254,17 +617,39 @@ export default function CmsStudio() {
   const handleSaveModal = (e) => {
     e.preventDefault();
     if (modalType === 'program') {
-      saveCmsProgram(formData);
-      showToast(`Program "${formData.title}" saved.`);
+      const cleanTitle = (formData.title || '').trim();
+      const fallbackSlug = cleanTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      const progSlug = (formData.slug || '').trim() || fallbackSlug || `program-${Date.now()}`;
+      const heroImg = formData.images?.[0] || formData.heroImage || '/images/crc-building.jpg';
+      const payload = {
+        ...formData,
+        heroImage: heroImg,
+        images: Array.isArray(formData.images) && formData.images.length > 0 ? formData.images : [heroImg],
+        slug: progSlug,
+        originalId: editingItem?.id || editingItem?.slug,
+        originalSlug: editingItem?.slug
+      };
+      saveCmsProgram(payload);
+      showToast(`Program "${formData.title}" published live.`);
     } else if (modalType === 'event') {
-      saveCmsEvent(formData);
-      showToast(`Event "${formData.title}" saved.`);
+      const eventImg = formData.images?.[0] || formData.image || '/images/community-gathering.jpg';
+      const eventPayload = {
+        ...formData,
+        image: eventImg,
+        images: Array.isArray(formData.images) && formData.images.length > 0 ? formData.images : [eventImg]
+      };
+      const normalizedEvent = normalizeCmsEvent(eventPayload);
+      saveCmsEvent(normalizedEvent);
+      showToast(`Event "${normalizedEvent.title}" saved & synced to website Calendar.`);
     } else if (modalType === 'news') {
       const formattedTags = typeof formData.tags === 'string'
         ? formData.tags.split(',').map(t => t.trim()).filter(Boolean)
         : formData.tags;
+      const articleImg = formData.images?.[0] || formData.image || '/images/community-gathering.jpg';
       saveCmsArticle({
         ...formData,
+        image: articleImg,
+        images: Array.isArray(formData.images) && formData.images.length > 0 ? formData.images : [articleImg],
         originalId: editingItem?.id || editingItem?.slug,
         originalSlug: editingItem?.slug,
         tags: formattedTags
@@ -274,14 +659,37 @@ export default function CmsStudio() {
       saveCmsResource(formData);
       showToast(`Resource "${formData.name}" saved.`);
     } else if (modalType === 'staff') {
-      saveCmsStaff(formData);
-      showToast(`Team member "${formData.name}" saved.`);
+      saveCmsStaff({
+        ...formData,
+        originalId: editingItem?.id,
+        title: formData.title || formData.role || 'Team Member'
+      });
+      showToast(`${formData.category === 'board' ? 'Board Member' : 'Staff Member'} "${formData.name}" saved.`);
     } else if (modalType === 'gallery') {
       saveCmsGalleryPhoto(formData);
       showToast(`Gallery photo "${formData.title}" saved.`);
     } else if (modalType === 'milestone') {
       saveCmsMilestone(formData);
       showToast(`Milestone "${formData.year}" saved.`);
+    } else if (modalType === 'sponsor') {
+      saveCmsSponsor(formData);
+      showToast(`Sponsor "${formData.name}" published live.`);
+    } else if (modalType === 'training') {
+      const normalizedObjectives = Array.isArray(formData.learningObjectives)
+        ? formData.learningObjectives
+        : String(formData.learningObjectives || '').split('\n').map((s) => s.trim()).filter(Boolean);
+      const normalizedMaterials = Array.isArray(formData.materials)
+        ? formData.materials
+        : String(formData.materials || '').split('\n').map((s) => s.trim()).filter(Boolean);
+      saveCmsTraining({
+        ...formData,
+        learningObjectives: normalizedObjectives,
+        materials: normalizedMaterials
+      });
+      showToast(`Training "${formData.title}" published live.`);
+    } else if (modalType === 'podcast') {
+      saveCmsPodcast(formData);
+      showToast(`Podcast episode "${formData.title}" saved.`);
     }
     refreshData();
     setModalType(null);
@@ -297,8 +705,11 @@ export default function CmsStudio() {
     else if (type === 'staff') deleteCmsStaff(idOrYear);
     else if (type === 'gallery') deleteCmsGalleryPhoto(idOrYear);
     else if (type === 'milestone') deleteCmsMilestone(idOrYear);
+    else if (type === 'sponsor') deleteCmsSponsor(idOrYear);
+    else if (type === 'training') deleteCmsTraining(idOrYear);
+    else if (type === 'podcast') deleteCmsPodcast(idOrYear);
     refreshData();
-    showToast('Content item deleted.');
+    showToast('Content item deleted & synced live.');
   };
 
   const handleSaveSettingsForm = (e) => {
@@ -326,8 +737,12 @@ export default function CmsStudio() {
   const subTabs = [
     { id: 'programs', label: 'Programs & Clinical Care', count: cmsData.programs?.length || 0, icon: Sparkles },
     { id: 'events', label: 'Events & Calendar', count: cmsData.events?.length || 0, icon: Calendar },
+    { id: 'trainings', label: 'P.R.I.D.E. Trainings', count: cmsData.trainings?.length || 0, icon: Award },
+    { id: 'sponsors', label: 'Sponsors & Partners', count: cmsData.sponsors?.length || 0, icon: Heart },
+    { id: 'podcasts', label: 'Podcasts & Media', count: cmsData.podcasts?.length || 0, icon: Mic },
     { id: 'news', label: 'News & Articles', count: cmsData.news?.length || 0, icon: FileText },
     { id: 'resources', label: 'Community Resources', count: cmsData.resources?.length || 0, icon: BookOpen },
+    { id: 'cardThemes', label: 'Card Gradients & Themes', count: null, icon: Palette },
     { id: 'staff', label: 'Board & Staff', count: cmsData.staff?.length || 0, icon: Users },
     { id: 'gallery', label: 'Gallery & Memory Lane', count: (cmsData.gallery?.length || 0) + (cmsData.memoryLane?.length || 0), icon: Camera },
     { id: 'settings', label: 'Global Site Settings', count: null, icon: Settings }
@@ -484,35 +899,28 @@ export default function CmsStudio() {
                     </span>
                   </div>
 
-                  {(() => {
-                    const isContain = prog.imageFit === 'contain' || 
-                      prog.heroImage?.includes('crc-building') || 
-                      prog.heroImage?.includes('unicorns') || 
-                      prog.heroImage?.includes('logo');
-                    return (
-                      <div className="aspect-[16/9] rounded-2xl overflow-hidden bg-slate-900 relative flex items-center justify-center p-3">
-                        {isContain && (
-                          <img
-                            src={prog.heroImage}
-                            alt=""
-                            aria-hidden="true"
-                            className="absolute inset-0 w-full h-full object-cover blur-xl opacity-30 scale-125 pointer-events-none"
-                          />
-                        )}
-                        <img
-                          src={prog.heroImage}
-                          alt={prog.title}
-                          className={`w-full h-full ${isContain ? 'object-contain relative z-10' : 'object-cover'}`}
-                          onError={(e) => {
-                            e.currentTarget.onerror = null;
-                            e.currentTarget.src = '/images/crc-building.jpg';
-                          }}
-                        />
-                      </div>
-                    );
-                  })()}
+                  <AutoSlideImage
+                    images={Array.isArray(prog.images) && prog.images.length > 0 ? prog.images : [prog.heroImage || '/images/crc-building.jpg']}
+                    alt={prog.title}
+                    aspectRatio="aspect-[16/9]"
+                    className="rounded-2xl shadow-xs"
+                    imageFit={prog.imageFit || 'cover'}
+                    fallbackSrc="/images/crc-building.jpg"
+                  />
 
                   <div>
+                    {prog.audience && (
+                      <span
+                        className="inline-block text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border mb-1.5 shadow-2xs truncate max-w-full"
+                        style={{
+                          color: prog.audienceColor || prog.accent || '#7E22CE',
+                          backgroundColor: `${prog.audienceColor || prog.accent || '#7E22CE'}15`,
+                          borderColor: `${prog.audienceColor || prog.accent || '#7E22CE'}35`
+                        }}
+                      >
+                        {prog.audience}
+                      </span>
+                    )}
                     <h4 className="font-display text-lg font-black text-slate-950 leading-tight">
                       {prog.title}
                     </h4>
@@ -587,14 +995,30 @@ export default function CmsStudio() {
                 Schedule signature galas, oceanside Pride festivals, or post live cancellation/reschedule alerts.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => openCreateModal('event')}
-              className="px-4 py-2.5 rounded-xl bg-[#5A1E65] hover:bg-[#43144A] text-white font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Create New Event</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowImportEventsModal(true);
+                  setImportEventsParsed([]);
+                  setImportEventsRawText('');
+                  setImportEventsError('');
+                }}
+                className="px-4 py-2.5 rounded-xl bg-purple-100 hover:bg-purple-200 text-[#5A1E65] font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
+                title="Import events from CSV or JSON"
+              >
+                <Upload className="w-4 h-4" />
+                <span>Import Events</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => openCreateModal('event')}
+                className="px-4 py-2.5 rounded-xl bg-[#5A1E65] hover:bg-[#43144A] text-white font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Create New Event</span>
+              </button>
+            </div>
           </div>
 
           <div className="space-y-4">
@@ -684,6 +1108,122 @@ export default function CmsStudio() {
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================================
+          SUB-TAB: PODCASTS & MEDIA
+          ====================================================================== */}
+      {activeSubTab === 'podcasts' && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h3 className="font-display text-xl font-bold text-slate-950">
+                Podcasts & Community Media ({cmsData.podcasts?.length || 0})
+              </h3>
+              <p className="text-xs text-slate-600 mt-0.5">
+                Create podcast episodes and paste streaming links (YouTube, Spotify, Apple Podcasts, audio URLs).
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => openCreateModal('podcast')}
+              className="px-4 py-2.5 rounded-xl bg-[#5A1E65] hover:bg-[#43144A] text-white text-xs font-extrabold flex items-center gap-1.5 shadow-sm cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Podcast Episode</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {(cmsData.podcasts || []).map((pod) => (
+              <div
+                key={pod.id || pod.slug}
+                className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between gap-3"
+              >
+                <div>
+                  <div className="relative h-36 rounded-xl overflow-hidden mb-3 bg-slate-900">
+                    <img
+                      src={pod.coverImage || '/images/community-gathering.jpg'}
+                      alt={pod.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-sm text-[10px] font-bold text-amber-300">
+                      Ep {pod.episodeNumber || 1}
+                    </div>
+                    {pod.category && (
+                      <div className="absolute top-2 right-2 px-2 py-0.5 rounded-md bg-purple-900/80 backdrop-blur-sm text-[10px] font-bold text-purple-200">
+                        {pod.category}
+                      </div>
+                    )}
+                    {pod.duration && (
+                      <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-sm text-[10px] font-medium text-white flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-amber-300" />
+                        <span>{pod.duration}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <h4 className="font-display text-sm font-extrabold text-slate-950 line-clamp-2">
+                    {pod.title}
+                  </h4>
+                  {pod.guests && (
+                    <p className="text-[11px] text-slate-500 font-medium mt-1 truncate">
+                      Guests: {pod.guests}
+                    </p>
+                  )}
+                  <p className="text-xs text-slate-600 mt-2 line-clamp-2">
+                    {pod.summary || pod.description}
+                  </p>
+
+                  {pod.link && (
+                    <div className="mt-3">
+                      <a
+                        href={pod.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-[11px] font-bold text-[#5A1E65] hover:underline truncate max-w-full"
+                      >
+                        <ExternalLink className="w-3 h-3 shrink-0" />
+                        <span className="truncate">{pod.link}</span>
+                      </a>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                  <a
+                    href={`/media#${pod.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] font-bold text-slate-500 hover:text-[#5A1E65] flex items-center gap-1"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>Preview</span>
+                  </a>
+
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => openEditModal('podcast', pod)}
+                      className="p-1.5 text-purple-800 hover:bg-purple-50 rounded-lg cursor-pointer"
+                      title="Edit episode"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteItem('podcast', pod.slug || pod.id)}
+                      className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg cursor-pointer"
+                      title="Delete episode"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -1158,6 +1698,738 @@ export default function CmsStudio() {
       )}
 
       {/* ======================================================================
+          SUB-TAB: P.R.I.D.E. TRAININGS & WORKSHOPS
+          ====================================================================== */}
+      {activeSubTab === 'trainings' && (
+        <div className="space-y-6">
+          {/* Sub-navigation View Switcher: Courses vs Page Content & Sections */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setTrainingViewMode('courses')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                  trainingViewMode === 'courses'
+                    ? 'bg-[#5A1E65] text-white shadow-sm'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                <Award className="w-4 h-4" />
+                <span>Course Catalog ({cmsData.trainings?.length || 0})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTrainingViewMode('pageContent')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                  trainingViewMode === 'pageContent'
+                    ? 'bg-[#5A1E65] text-white shadow-sm'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                <Layers className="w-4 h-4" />
+                <span>Page Content, Banners & FAQs</span>
+              </button>
+            </div>
+
+            {trainingViewMode === 'courses' ? (
+              <button
+                type="button"
+                onClick={() => openCreateModal('training')}
+                className="px-4 py-2.5 rounded-xl bg-[#5A1E65] hover:bg-[#43144A] text-white text-xs font-extrabold flex items-center gap-1.5 shadow-sm cursor-pointer self-start sm:self-auto"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add Training Workshop</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  saveCmsTrainingPageContent(trainingPageData);
+                  showToast('Training page sections saved & published live!');
+                  refreshData();
+                }}
+                className="px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-sm cursor-pointer self-start sm:self-auto"
+              >
+                <Check className="w-4 h-4" />
+                <span>Save Page Content Live</span>
+              </button>
+            )}
+          </div>
+
+          {/* VIEW 1: COURSES CATALOG */}
+          {trainingViewMode === 'courses' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-display text-lg font-bold text-slate-950">
+                    Workshop & Certification Modules ({cmsData.trainings?.length || 0})
+                  </h3>
+                  <p className="text-xs text-slate-600 mt-0.5">
+                    Manage accreditation workshops, corporate tracks, and healthcare competencies displayed on /training.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {(cmsData.trainings || []).map((course) => (
+                  <div
+                    key={course.slug || course.id || course.title}
+                    className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between gap-4 relative group"
+                  >
+                    <div className="space-y-2.5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-purple-100 text-[#5A1E65]">
+                          {course.badge || 'P.R.I.D.E. Workshop'}
+                        </span>
+                        {course.isBusinessAccreditation && (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800">
+                            DCVC Approved Seal
+                          </span>
+                        )}
+                        {course.isFlagship && (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-amber-100 text-amber-900">
+                            Flagship
+                          </span>
+                        )}
+                        <span className="text-[11px] font-bold text-slate-500 ml-auto">
+                          {course.duration || '2.5 Hours'}
+                        </span>
+                      </div>
+
+                      <h4 className="font-display text-base font-extrabold text-slate-950 leading-snug">
+                        {course.title}
+                      </h4>
+
+                      <p className="text-xs text-slate-700 leading-relaxed line-clamp-3">
+                        {course.summary}
+                      </p>
+
+                      <div className="pt-1 text-[11px] text-slate-600 space-y-1">
+                        <div><strong className="text-slate-900">Audience:</strong> {course.targetAudience || 'All Organizations'}</div>
+                        {course.format && <div><strong className="text-slate-900">Format:</strong> {course.format}</div>}
+                        {course.sector && <div><strong className="text-slate-900">Sector:</strong> <span className="capitalize">{course.sector}</span></div>}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2 pt-3 border-t border-slate-200">
+                      <span className="text-[10px] text-slate-500 font-mono">
+                        slug: /{course.slug}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => openEditModal('training', course)}
+                          className="px-3 py-1.5 rounded-xl text-purple-800 hover:bg-purple-50 border border-purple-200 text-xs font-bold inline-flex items-center gap-1 cursor-pointer"
+                        >
+                          <Edit className="w-3.5 h-3.5" />
+                          <span>Edit</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteItem('training', course.slug || course.id)}
+                          className="px-3 py-1.5 rounded-xl text-rose-700 hover:bg-rose-50 border border-rose-200 text-xs font-bold inline-flex items-center gap-1 cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Delete</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* VIEW 2: FULL PAGE CONTENT & SECTIONS EDITOR */}
+          {trainingViewMode === 'pageContent' && (
+            <div className="space-y-8">
+              {/* Card 1: Hero & Impact Metrics */}
+              <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-4">
+                <div className="border-b border-slate-100 pb-3">
+                  <h4 className="font-display text-base font-extrabold text-slate-950">
+                    1. Hero Section & Impact Statistics
+                  </h4>
+                  <p className="text-xs text-slate-600 mt-0.5">
+                    Customize the top hero banner and the 3 key metric highlights displayed above the fold.
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Hero Eyebrow Badge</label>
+                    <input
+                      type="text"
+                      value={trainingPageData.heroEyebrow || ''}
+                      onChange={(e) => setTrainingPageData({ ...trainingPageData, heroEyebrow: e.target.value })}
+                      placeholder="P.R.I.D.E. EDUCATION & ACCREDITATION"
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Hero Main Headline</label>
+                    <input
+                      type="text"
+                      value={trainingPageData.heroTitle || ''}
+                      onChange={(e) => setTrainingPageData({ ...trainingPageData, heroTitle: e.target.value })}
+                      placeholder="Empower Your Team with LGBTQ+ Competency & Earn the DCVC Approved Seal"
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Hero Subheadline / Mission Narrative</label>
+                    <textarea
+                      rows={3}
+                      value={trainingPageData.heroSubtitle || ''}
+                      onChange={(e) => setTrainingPageData({ ...trainingPageData, heroSubtitle: e.target.value })}
+                      placeholder="Ventura County's accredited workshops transforming workplaces, clinics, educators, and local storefronts..."
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                      <span className="text-[11px] font-bold text-slate-600 block">Metric 1</span>
+                      <input
+                        type="text"
+                        value={trainingPageData.stat1Number || ''}
+                        onChange={(e) => setTrainingPageData({ ...trainingPageData, stat1Number: e.target.value })}
+                        placeholder="40+"
+                        className="w-full px-2.5 py-1.5 border rounded-lg text-xs font-black text-[#5A1E65]"
+                      />
+                      <input
+                        type="text"
+                        value={trainingPageData.stat1Label || ''}
+                        onChange={(e) => setTrainingPageData({ ...trainingPageData, stat1Label: e.target.value })}
+                        placeholder="Accredited Local Businesses"
+                        className="w-full px-2.5 py-1.5 border rounded-lg text-xs"
+                      />
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                      <span className="text-[11px] font-bold text-slate-600 block">Metric 2</span>
+                      <input
+                        type="text"
+                        value={trainingPageData.stat2Number || ''}
+                        onChange={(e) => setTrainingPageData({ ...trainingPageData, stat2Number: e.target.value })}
+                        placeholder="98%"
+                        className="w-full px-2.5 py-1.5 border rounded-lg text-xs font-black text-emerald-600"
+                      />
+                      <input
+                        type="text"
+                        value={trainingPageData.stat2Label || ''}
+                        onChange={(e) => setTrainingPageData({ ...trainingPageData, stat2Label: e.target.value })}
+                        placeholder="Trainee Satisfaction & Confidence"
+                        className="w-full px-2.5 py-1.5 border rounded-lg text-xs"
+                      />
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                      <span className="text-[11px] font-bold text-slate-600 block">Metric 3</span>
+                      <input
+                        type="text"
+                        value={trainingPageData.stat3Number || ''}
+                        onChange={(e) => setTrainingPageData({ ...trainingPageData, stat3Number: e.target.value })}
+                        placeholder="100%"
+                        className="w-full px-2.5 py-1.5 border rounded-lg text-xs font-black text-amber-600"
+                      />
+                      <input
+                        type="text"
+                        value={trainingPageData.stat3Label || ''}
+                        onChange={(e) => setTrainingPageData({ ...trainingPageData, stat3Label: e.target.value })}
+                        placeholder="Customized for Local Realities"
+                        className="w-full px-2.5 py-1.5 border rounded-lg text-xs"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 2: 60-Second Readiness Self-Audit Quiz */}
+              <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-4">
+                <div className="border-b border-slate-100 pb-3">
+                  <h4 className="font-display text-base font-extrabold text-slate-950">
+                    2. 60-Second Readiness Self-Audit Quiz
+                  </h4>
+                  <p className="text-xs text-slate-600 mt-0.5">
+                    Headings and guidance for the interactive 5-question audit quiz.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Quiz Eyebrow</label>
+                    <input
+                      type="text"
+                      value={trainingPageData.quizEyebrow || ''}
+                      onChange={(e) => setTrainingPageData({ ...trainingPageData, quizEyebrow: e.target.value })}
+                      placeholder="60-SECOND SELF-AUDIT"
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Quiz Title</label>
+                    <input
+                      type="text"
+                      value={trainingPageData.quizTitle || ''}
+                      onChange={(e) => setTrainingPageData({ ...trainingPageData, quizTitle: e.target.value })}
+                      placeholder="Is Your Business Ready for DCVC Approved Status?"
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Quiz Subtitle</label>
+                  <input
+                    type="text"
+                    value={trainingPageData.quizSubtitle || ''}
+                    onChange={(e) => setTrainingPageData({ ...trainingPageData, quizSubtitle: e.target.value })}
+                    placeholder="Answer 5 quick questions to gauge your storefront readiness and discover your custom training track."
+                    className="w-full px-3 py-2 border rounded-xl text-xs"
+                  />
+                </div>
+              </div>
+
+              {/* Card 3: Accreditation Pathway Roadmap & Fast-Track Callout Banner */}
+              <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-4">
+                <div className="border-b border-slate-100 pb-3">
+                  <h4 className="font-display text-base font-extrabold text-slate-950">
+                    3. Accreditation Pathway Roadmap & Callout Banner
+                  </h4>
+                  <p className="text-xs text-slate-600 mt-0.5">
+                    Headings, descriptions, and the purple Fast-Track callout banner at the bottom of the 4-step pathway.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Roadmap Eyebrow</label>
+                    <input
+                      type="text"
+                      value={trainingPageData.roadmapEyebrow || ''}
+                      onChange={(e) => setTrainingPageData({ ...trainingPageData, roadmapEyebrow: e.target.value })}
+                      placeholder="OFFICIAL ACCREDITATION ROADMAP"
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Roadmap Title</label>
+                    <input
+                      type="text"
+                      value={trainingPageData.roadmapTitle || ''}
+                      onChange={(e) => setTrainingPageData({ ...trainingPageData, roadmapTitle: e.target.value })}
+                      placeholder="How Your Business Becomes DCVC Approved & Certified"
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Roadmap Subtitle</label>
+                  <input
+                    type="text"
+                    value={trainingPageData.roadmapSubtitle || ''}
+                    onChange={(e) => setTrainingPageData({ ...trainingPageData, roadmapSubtitle: e.target.value })}
+                    placeholder="A seamless 4-step journey from staff education to trusted community storefront status..."
+                    className="w-full px-3 py-2 border rounded-xl text-xs"
+                  />
+                </div>
+
+                <div className="p-4 rounded-xl bg-purple-50/70 border border-purple-200 space-y-3">
+                  <span className="text-xs font-black text-[#5A1E65] block uppercase tracking-wider">
+                    Purple Fast-Track Callout Banner
+                  </span>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Banner Heading</label>
+                    <input
+                      type="text"
+                      value={trainingPageData.roadmapBannerHeading || ''}
+                      onChange={(e) => setTrainingPageData({ ...trainingPageData, roadmapBannerHeading: e.target.value })}
+                      placeholder="Ready to train your team and earn the DCVC Approved seal?"
+                      className="w-full px-3 py-2 border rounded-xl text-xs bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Banner Subtext</label>
+                    <input
+                      type="text"
+                      value={trainingPageData.roadmapBannerText || ''}
+                      onChange={(e) => setTrainingPageData({ ...trainingPageData, roadmapBannerText: e.target.value })}
+                      placeholder="Join over 40+ accredited Ventura County cafes, health clinics, salons, and offices..."
+                      className="w-full px-3 py-2 border rounded-xl text-xs bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Callout Button Text</label>
+                    <input
+                      type="text"
+                      value={trainingPageData.roadmapBannerButtonText || ''}
+                      onChange={(e) => setTrainingPageData({ ...trainingPageData, roadmapBannerButtonText: e.target.value })}
+                      placeholder="Schedule Storefront Training"
+                      className="w-full px-3 py-2 border rounded-xl text-xs bg-white"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 4: Storefront Welcome Kit Showcase */}
+              <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-4">
+                <div className="border-b border-slate-100 pb-3">
+                  <h4 className="font-display text-base font-extrabold text-slate-950">
+                    4. Storefront Welcome Kit Showcase
+                  </h4>
+                  <p className="text-xs text-slate-600 mt-0.5">
+                    Deliverables showcase highlighting the physical window decal, framed certificate, pins, and directory spotlight.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Welcome Kit Eyebrow</label>
+                    <input
+                      type="text"
+                      value={trainingPageData.welcomeKitEyebrow || ''}
+                      onChange={(e) => setTrainingPageData({ ...trainingPageData, welcomeKitEyebrow: e.target.value })}
+                      placeholder="TANGIBLE VALUE FOR YOUR STOREFRONT"
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Welcome Kit Title</label>
+                    <input
+                      type="text"
+                      value={trainingPageData.welcomeKitTitle || ''}
+                      onChange={(e) => setTrainingPageData({ ...trainingPageData, welcomeKitTitle: e.target.value })}
+                      placeholder="What's Inside the DCVC Approved Welcome Kit?"
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Welcome Kit Subtitle</label>
+                  <textarea
+                    rows={2}
+                    value={trainingPageData.welcomeKitSubtitle || ''}
+                    onChange={(e) => setTrainingPageData({ ...trainingPageData, welcomeKitSubtitle: e.target.value })}
+                    placeholder="Upon graduating from the accreditation workshop, every certified business receives our comprehensive physical and digital welcoming package..."
+                    className="w-full px-3 py-2 border rounded-xl text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">CTA Button Text</label>
+                  <input
+                    type="text"
+                    value={trainingPageData.welcomeKitButtonText || ''}
+                    onChange={(e) => setTrainingPageData({ ...trainingPageData, welcomeKitButtonText: e.target.value })}
+                    placeholder="Get Your Storefront Kit"
+                    className="w-full px-3 py-2 border rounded-xl text-xs"
+                  />
+                </div>
+              </div>
+
+              {/* Card 5: ROI Calculator, Testimonials & FAQs */}
+              <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-4">
+                <div className="border-b border-slate-100 pb-3">
+                  <h4 className="font-display text-base font-extrabold text-slate-950">
+                    5. ROI Calculator & Testimonials Copy
+                  </h4>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Calculator Title</label>
+                    <input
+                      type="text"
+                      value={trainingPageData.calculatorTitle || ''}
+                      onChange={(e) => setTrainingPageData({ ...trainingPageData, calculatorTitle: e.target.value })}
+                      placeholder="Estimate Your Business Impact & Training Track"
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Testimonials Title</label>
+                    <input
+                      type="text"
+                      value={trainingPageData.testimonialsTitle || ''}
+                      onChange={(e) => setTrainingPageData({ ...trainingPageData, testimonialsTitle: e.target.value })}
+                      placeholder="Trusted by Ventura County Commerce"
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 6: Interactive FAQs Editor */}
+              <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                  <div>
+                    <h4 className="font-display text-base font-extrabold text-slate-950">
+                      6. Frequently Asked Questions ({(trainingPageData.faqs || []).length})
+                    </h4>
+                    <p className="text-xs text-slate-600 mt-0.5">
+                      Edit existing questions or add new accreditation FAQ items.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const updated = Array.isArray(trainingPageData.faqs) ? [...trainingPageData.faqs] : [];
+                      updated.push({ q: 'New Question?', a: 'Answer details here.' });
+                      setTrainingPageData({ ...trainingPageData, faqs: updated });
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-purple-100 text-[#5A1E65] hover:bg-purple-200 text-xs font-bold inline-flex items-center gap-1 cursor-pointer self-start sm:self-auto"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Question</span>
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {(trainingPageData.faqs || []).map((faq, idx) => (
+                    <div key={idx} className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2 relative group">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[11px] font-black uppercase text-purple-900">
+                          Question #{idx + 1}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = [...(trainingPageData.faqs || [])];
+                            updated.splice(idx, 1);
+                            setTrainingPageData({ ...trainingPageData, faqs: updated });
+                          }}
+                          className="text-rose-600 hover:text-rose-800 text-xs font-bold cursor-pointer p-1"
+                          title="Delete this question"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <input
+                        type="text"
+                        value={faq.q || ''}
+                        onChange={(e) => {
+                          const updated = [...(trainingPageData.faqs || [])];
+                          updated[idx] = { ...updated[idx], q: e.target.value };
+                          setTrainingPageData({ ...trainingPageData, faqs: updated });
+                        }}
+                        placeholder="e.g. What does it take to become a DCVC Approved Business?"
+                        className="w-full px-3 py-2 border rounded-xl text-xs bg-white font-bold"
+                      />
+                      <textarea
+                        rows={3}
+                        value={faq.a || ''}
+                        onChange={(e) => {
+                          const updated = [...(trainingPageData.faqs || [])];
+                          updated[idx] = { ...updated[idx], a: e.target.value };
+                          setTrainingPageData({ ...trainingPageData, faqs: updated });
+                        }}
+                        placeholder="Comprehensive answer..."
+                        className="w-full px-3 py-2 border rounded-xl text-xs bg-white"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Card 7: Section 8 Bottom Consultation & Booking Proposal Banner */}
+              <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-4">
+                <div className="border-b border-slate-100 pb-3">
+                  <h4 className="font-display text-base font-extrabold text-slate-950">
+                    7. Section 8 Bottom Consultation & Proposal Banner
+                  </h4>
+                  <p className="text-xs text-slate-600 mt-0.5">
+                    Configure the large purple bottom callout banner with proposal request button and phone details.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Tag / Pill Label</label>
+                    <input
+                      type="text"
+                      value={trainingPageData.bottomBannerTag || ''}
+                      onChange={(e) => setTrainingPageData({ ...trainingPageData, bottomBannerTag: e.target.value })}
+                      placeholder="VENTURA COUNTY COMMERCE & EQUITY"
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Banner Heading</label>
+                    <input
+                      type="text"
+                      value={trainingPageData.bottomBannerHeading || ''}
+                      onChange={(e) => setTrainingPageData({ ...trainingPageData, bottomBannerHeading: e.target.value })}
+                      placeholder="Bring DCVC Accreditation to Your Team"
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Banner Description Text</label>
+                  <textarea
+                    rows={2}
+                    value={trainingPageData.bottomBannerText || ''}
+                    onChange={(e) => setTrainingPageData({ ...trainingPageData, bottomBannerText: e.target.value })}
+                    placeholder="Whether you run an independent coffee shop on Main Street or a healthcare clinic in Oxnard..."
+                    className="w-full px-3 py-2 border rounded-xl text-xs"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Phone Button Text</label>
+                    <input
+                      type="text"
+                      value={trainingPageData.bottomBannerPhone || ''}
+                      onChange={(e) => setTrainingPageData({ ...trainingPageData, bottomBannerPhone: e.target.value })}
+                      placeholder="Call (805) 644-5428"
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Proposal Button Text</label>
+                    <input
+                      type="text"
+                      value={trainingPageData.bottomBannerButtonText || ''}
+                      onChange={(e) => setTrainingPageData({ ...trainingPageData, bottomBannerButtonText: e.target.value })}
+                      placeholder="Request Workshop Proposal"
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Bullet Point 1</label>
+                    <input
+                      type="text"
+                      value={trainingPageData.bottomBannerBullet1 || ''}
+                      onChange={(e) => setTrainingPageData({ ...trainingPageData, bottomBannerBullet1: e.target.value })}
+                      placeholder="Sliding scale for local small businesses"
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Bullet Point 2</label>
+                    <input
+                      type="text"
+                      value={trainingPageData.bottomBannerBullet2 || ''}
+                      onChange={(e) => setTrainingPageData({ ...trainingPageData, bottomBannerBullet2: e.target.value })}
+                      placeholder="On-site or interactive virtual"
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom Sticky Action Bar */}
+              <div className="p-4 rounded-2xl bg-white border-2 border-emerald-300 shadow-md flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="text-xs text-slate-600">
+                  <strong className="text-slate-900 block font-bold">Ready to apply changes?</strong>
+                  Saving updates all headlines, stats, banners, and FAQs instantly on the live website.
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    saveCmsTrainingPageContent(trainingPageData);
+                    showToast('Training page sections saved & published live!');
+                    refreshData();
+                  }}
+                  className="px-6 py-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-black flex items-center gap-2 shadow-lg transition-all hover:scale-102 cursor-pointer w-full sm:w-auto justify-center"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>Save All Training Page Content</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ======================================================================
+          SUB-TAB: SPONSORS & COMMUNITY PARTNERSHIPS
+          ====================================================================== */}
+      {activeSubTab === 'sponsors' && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h3 className="font-display text-xl font-bold text-slate-950">
+                Partnerships & Official Sponsors ({cmsData.sponsors?.length || 0})
+              </h3>
+              <p className="text-xs text-slate-600 mt-0.5">
+                Changes sync live to the Homepage Partnership Strip, Footer, and Sponsors Directory.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => openCreateModal('sponsor')}
+              className="px-4 py-2.5 rounded-xl bg-[#5A1E65] hover:bg-[#43144A] text-white text-xs font-extrabold flex items-center gap-1.5 shadow-sm cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Partner / Sponsor</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {(cmsData.sponsors || []).map((sp) => (
+              <div
+                key={sp.id || sp.name}
+                className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between gap-3"
+              >
+                <div className="flex items-start gap-3">
+                  {sp.logo ? (
+                    <img
+                      src={sp.logo}
+                      alt={sp.name}
+                      className="w-12 h-12 rounded-xl object-contain bg-slate-100 border border-slate-200 shrink-0 p-1"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-xl bg-purple-100 text-[#5A1E65] flex items-center justify-center font-black text-xs shrink-0">
+                      {sp.shortName || sp.name?.slice(0, 3) || 'PRT'}
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <h4 className="font-display text-sm font-extrabold text-slate-950 truncate">
+                      {sp.name}
+                    </h4>
+                    <p className="text-[11px] font-bold text-[#5A1E65] truncate">
+                      {sp.role || 'Community Partner'}
+                    </p>
+                    {sp.url && (
+                      <p className="text-[11px] text-slate-600 truncate">{sp.url}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200">
+                  <button
+                    type="button"
+                    onClick={() => openEditModal('sponsor', sp)}
+                    className="p-2 text-purple-800 hover:bg-purple-50 rounded-xl cursor-pointer"
+                    aria-label={`Edit ${sp.name}`}
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteItem('sponsor', sp.id || sp.name)}
+                    className="p-2 text-rose-700 hover:bg-rose-50 rounded-xl cursor-pointer"
+                    aria-label={`Delete ${sp.name}`}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================================
           SUB-TAB 7: SITE-WIDE SETTINGS & CRISIS ALERT BAR
           ====================================================================== */}
       {activeSubTab === 'settings' && (
@@ -1219,6 +2491,18 @@ export default function CmsStudio() {
                   })}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#5A1E65] outline-none"
                 />
+                <label className="flex items-center gap-2 mt-2 cursor-pointer text-xs font-semibold text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(cmsData.settings?.voicemailOnly)}
+                    onChange={(e) => setCmsData({
+                      ...cmsData,
+                      settings: { ...cmsData.settings, voicemailOnly: e.target.checked }
+                    })}
+                    className="rounded text-[#5A1E65] focus:ring-purple-400"
+                  />
+                  <span>Toggle voicemails only (hide phone number across site and display "Send Voicemail" button)</span>
+                </label>
               </div>
 
               <div>
@@ -1360,6 +2644,13 @@ export default function CmsStudio() {
       )}
 
       {/* ======================================================================
+          SUB-TAB: CARD GRADIENTS & CATEGORY THEMES STUDIO
+          ====================================================================== */}
+      {activeSubTab === 'cardThemes' && (
+        <CardGradientStudio />
+      )}
+
+      {/* ======================================================================
           CREATE / EDIT CONTENT MODAL
           ====================================================================== */}
       {modalType && (
@@ -1388,14 +2679,22 @@ export default function CmsStudio() {
               {/* Program Form Fields */}
               {modalType === 'program' && (
                 <>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1">Title</label>
                       <input
                         type="text"
                         required
                         value={formData.title || ''}
-                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                        onChange={(e) => {
+                          const title = e.target.value;
+                          const autoSlug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+                          setFormData({
+                            ...formData,
+                            title,
+                            slug: (!editingItem || !formData.slug) ? autoSlug : formData.slug
+                          });
+                        }}
                         className="w-full px-3 py-2 border rounded-xl text-xs"
                       />
                     </div>
@@ -1411,7 +2710,22 @@ export default function CmsStudio() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="sm:col-span-1">
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        URL Slug <span className="font-normal text-slate-400">(/programs/...)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.slug || ''}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, '')
+                        })}
+                        placeholder="e.g. youth-art-circle"
+                        className="w-full px-3 py-2 border rounded-xl text-xs font-mono"
+                      />
+                    </div>
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1">Chapter</label>
                       <input
@@ -1432,10 +2746,13 @@ export default function CmsStudio() {
                     </div>
                   </div>
 
-                  <ImagePicker
-                    value={formData.heroImage}
-                    onChange={(url) => setFormData({ ...formData, heroImage: url })}
-                    label="Program Header / Center Picture"
+                  <MultiImagePicker
+                    images={formData.images || (formData.heroImage ? [formData.heroImage] : [])}
+                    primaryImage={formData.heroImage}
+                    onChange={(newImages) => setFormData({ ...formData, images: newImages, heroImage: newImages[0] || formData.heroImage })}
+                    onPrimaryChange={(url) => setFormData({ ...formData, heroImage: url })}
+                    label="Program Pictures & Slideshow"
+                    helpText="Upload or choose multiple photos for this program. They will automatically slide on website cards and detail pages."
                     aspectRatio="aspect-[16/9]"
                   />
 
@@ -1611,17 +2928,69 @@ export default function CmsStudio() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">Date</label>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Calendar Date Picker (Auto-Syncs Website Calendar)
+                      </label>
+                      <input
+                        type="date"
+                        value={formData.isoDate || parseEventDate(formData)?.isoDate || ''}
+                        onChange={(e) => {
+                          const iso = e.target.value;
+                          const parsed = parseEventDate(iso);
+                          setFormData({
+                            ...formData,
+                            isoDate: iso,
+                            date: parsed ? parsed.displayDate : formData.date,
+                            month: parsed?.monthAbbr,
+                            day: parsed?.dayStr,
+                            year: parsed?.yearStr
+                          });
+                        }}
+                        className="w-full px-3 py-2 border border-purple-200 bg-purple-50/30 rounded-xl text-xs font-bold text-slate-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Display Date Text</label>
                       <input
                         type="text"
                         required
                         value={formData.date || ''}
-                        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const parsed = parseEventDate(val);
+                          setFormData({
+                            ...formData,
+                            date: val,
+                            ...(parsed ? { isoDate: parsed.isoDate, month: parsed.monthAbbr, day: parsed.dayStr, year: parsed.yearStr } : {})
+                          });
+                        }}
+                        placeholder="e.g., August 15, 2026"
                         className="w-full px-3 py-2 border rounded-xl text-xs"
                       />
                     </div>
+                  </div>
+
+                  {(() => {
+                    const previewDate = parseEventDate(formData);
+                    return (
+                      <div className={`px-3 py-2 rounded-xl border text-[11px] font-bold flex items-center gap-2 ${
+                        previewDate
+                          ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                          : 'bg-amber-50 border-amber-200 text-amber-800'
+                      }`}>
+                        <Calendar className="w-3.5 h-3.5 shrink-0" />
+                        <span>
+                          {previewDate
+                            ? `Calendar Auto-Slot: ${previewDate.monthAbbr} ${previewDate.dayStr}, ${previewDate.yearStr} (${previewDate.isoDate})`
+                            : 'Use Calendar Date Picker or enter e.g. "October 18, 2026" to auto-place on /events calendar.'}
+                        </span>
+                      </div>
+                    );
+                  })()}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1">Time</label>
                       <input
@@ -1666,10 +3035,13 @@ export default function CmsStudio() {
                     />
                   </div>
 
-                  <ImagePicker
-                    value={formData.image || '/images/community-gathering.jpg'}
-                    onChange={(url) => setFormData({ ...formData, image: url })}
-                    label="Event Cover Picture"
+                  <MultiImagePicker
+                    images={formData.images || (formData.image ? [formData.image] : [])}
+                    primaryImage={formData.image || '/images/community-gathering.jpg'}
+                    onChange={(newImages) => setFormData({ ...formData, images: newImages, image: newImages[0] || formData.image })}
+                    onPrimaryChange={(url) => setFormData({ ...formData, image: url })}
+                    label="Event Photos & Rotating Flyers"
+                    helpText="Upload or choose multiple flyers or event photos. They will automatically slide on event cards and calendar views."
                     aspectRatio="aspect-[16/9]"
                   />
 
@@ -1750,10 +3122,13 @@ export default function CmsStudio() {
                     </div>
                   </div>
 
-                  <ImagePicker
-                    value={formData.image || '/images/community-gathering.jpg'}
-                    onChange={(url) => setFormData({ ...formData, image: url })}
-                    label="Article Feature Picture"
+                  <MultiImagePicker
+                    images={formData.images || (formData.image ? [formData.image] : [])}
+                    primaryImage={formData.image || '/images/community-gathering.jpg'}
+                    onChange={(newImages) => setFormData({ ...formData, images: newImages, image: newImages[0] || formData.image })}
+                    onPrimaryChange={(url) => setFormData({ ...formData, image: url })}
+                    label="Article Feature & Gallery Photos"
+                    helpText="Upload or choose multiple article photos. They will automatically slide on article cards."
                     aspectRatio="aspect-[16/9]"
                   />
 
@@ -1834,6 +3209,15 @@ export default function CmsStudio() {
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                         className="w-full px-3 py-2 border rounded-xl text-xs"
                       />
+                      <label className="flex items-center gap-1.5 mt-1.5 cursor-pointer text-[11px] font-semibold text-slate-600">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(formData.voicemailOnly)}
+                          onChange={(e) => setFormData({ ...formData, voicemailOnly: e.target.checked })}
+                          className="rounded text-[#5A1E65] focus:ring-purple-400"
+                        />
+                        <span>Toggle voicemails only (show Send Voicemail button)</span>
+                      </label>
                     </div>
                   </div>
 
@@ -1997,10 +3381,13 @@ export default function CmsStudio() {
                     </div>
                   </div>
 
-                  <ImagePicker
-                    value={formData.image || '/images/community-gathering.jpg'}
-                    onChange={(url) => setFormData({ ...formData, image: url })}
-                    label="3D Carousel Spotlight Picture"
+                  <MultiImagePicker
+                    images={formData.images || (formData.image ? [formData.image] : [])}
+                    primaryImage={formData.image || '/images/community-gathering.jpg'}
+                    onChange={(newImages) => setFormData({ ...formData, images: newImages, image: newImages[0] || formData.image })}
+                    onPrimaryChange={(url) => setFormData({ ...formData, image: url })}
+                    label="3D Carousel Spotlight Pictures"
+                    helpText="Upload or choose multiple images for this spotlight. They will automatically slide on cards."
                     aspectRatio="aspect-[16/9]"
                   />
 
@@ -2109,6 +3496,327 @@ export default function CmsStudio() {
                       required
                       value={formData.description || ''}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Sponsor Form Fields */}
+              {modalType === 'sponsor' && (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Organization / Partner Name</label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.name || ''}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        className="w-full px-3 py-2 border rounded-xl text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Short Acronym (e.g. VCBH)</label>
+                      <input
+                        type="text"
+                        value={formData.shortName || ''}
+                        onChange={(e) => setFormData({ ...formData, shortName: e.target.value })}
+                        className="w-full px-3 py-2 border rounded-xl text-xs"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Partnership Role / Tier</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.role || ''}
+                      onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Partner Website URL</label>
+                    <input
+                      type="url"
+                      value={formData.url || ''}
+                      onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                  </div>
+                  <ImagePicker
+                    value={formData.logo}
+                    onChange={(url) => setFormData({ ...formData, logo: url })}
+                    label="Partner Logo Image"
+                  />
+                </>
+              )}
+
+              {/* Training Workshop Form Fields */}
+              {modalType === 'training' && (
+                <>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Workshop Title <span className="text-rose-500">*</span></label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.title || ''}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      placeholder="e.g. DCVC Affirming Business Accreditation"
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Badge Label</label>
+                      <input
+                        type="text"
+                        value={formData.badge || ''}
+                        onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
+                        placeholder="e.g. Official Accreditation"
+                        className="w-full px-3 py-2 border rounded-xl text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Duration</label>
+                      <input
+                        type="text"
+                        value={formData.duration || ''}
+                        onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                        placeholder="e.g. 2.5 Hours"
+                        className="w-full px-3 py-2 border rounded-xl text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Sector Track</label>
+                      <select
+                        value={formData.sector || 'business'}
+                        onChange={(e) => setFormData({ ...formData, sector: e.target.value })}
+                        className="w-full px-3 py-2 border rounded-xl text-xs bg-white"
+                      >
+                        <option value="business">Storefront & Small Business</option>
+                        <option value="healthcare">Healthcare & Clinical Care</option>
+                        <option value="education">Education & Youth</option>
+                        <option value="corporate">Corporate, HR & Tech</option>
+                        <option value="wellness">Wellness & Salons</option>
+                        <option value="general">General Community</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Session Delivery Format</label>
+                      <input
+                        type="text"
+                        value={formData.format || ''}
+                        onChange={(e) => setFormData({ ...formData, format: e.target.value })}
+                        placeholder="In-Person (On-Site) or Interactive Virtual"
+                        className="w-full px-3 py-2 border rounded-xl text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Target Audience</label>
+                      <input
+                        type="text"
+                        value={formData.targetAudience || ''}
+                        onChange={(e) => setFormData({ ...formData, targetAudience: e.target.value })}
+                        placeholder="Storefront Retail, Cafes, Hospitality & Offices"
+                        className="w-full px-3 py-2 border rounded-xl text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-purple-50/70 rounded-xl border border-purple-200">
+                    <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-purple-950">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(formData.isBusinessAccreditation)}
+                        onChange={(e) => setFormData({ ...formData, isBusinessAccreditation: e.target.checked })}
+                        className="w-4 h-4 rounded text-purple-600"
+                      />
+                      <span>DCVC Approved Storefront Accreditation</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-purple-950">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(formData.isFlagship)}
+                        onChange={(e) => setFormData({ ...formData, isFlagship: e.target.checked })}
+                        className="w-4 h-4 rounded text-purple-600"
+                      />
+                      <span>Feature as Flagship Course</span>
+                    </label>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Fee Structure</label>
+                      <input
+                        type="text"
+                        value={formData.feeStructure || ''}
+                        onChange={(e) => setFormData({ ...formData, feeStructure: e.target.value })}
+                        placeholder="e.g. Sliding scale for local small businesses"
+                        className="w-full px-3 py-2 border rounded-xl text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Contact Email</label>
+                      <input
+                        type="email"
+                        value={formData.contactEmail || ''}
+                        onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
+                        placeholder="training@diversitycollective.org"
+                        className="w-full px-3 py-2 border rounded-xl text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Workshop Summary <span className="text-rose-500">*</span></label>
+                    <textarea
+                      rows={3}
+                      required
+                      value={formData.summary || ''}
+                      onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
+                      placeholder="Comprehensive overview of training topics and outcomes..."
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Learning Objectives (One per line)</label>
+                    <textarea
+                      rows={3}
+                      placeholder="Frontline Welcoming & Affirming Customer Care&#10;California SB 396 Compliance & Protections&#10;All-Gender Restroom Dignity"
+                      value={Array.isArray(formData.learningObjectives) ? formData.learningObjectives.join('\n') : (formData.learningObjectives || '')}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        learningObjectives: e.target.value.split('\n')
+                      })}
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Deliverables & Materials Included (One per line)</label>
+                    <textarea
+                      rows={3}
+                      placeholder="Official Storefront Vinyl Window Cling&#10;Framed Certificate of Excellence&#10;10 Frontline Ally & Pronoun Pins"
+                      value={Array.isArray(formData.materials) ? formData.materials.join('\n') : (formData.materials || '')}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        materials: e.target.value.split('\n')
+                      })}
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Podcast & Media Episode Form Fields */}
+              {modalType === 'podcast' && (
+                <>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Episode Title <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.title || ''}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      placeholder="e.g. A Decade of Resilience"
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Episode #</label>
+                      <input
+                        type="number"
+                        value={formData.episodeNumber || 1}
+                        onChange={(e) => setFormData({ ...formData, episodeNumber: parseInt(e.target.value, 10) || 1 })}
+                        className="w-full px-3 py-2 border rounded-xl text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Duration</label>
+                      <input
+                        type="text"
+                        value={formData.duration || ''}
+                        onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                        placeholder="e.g. 35 min"
+                        className="w-full px-3 py-2 border rounded-xl text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Category / Topic</label>
+                      <input
+                        type="text"
+                        value={formData.category || ''}
+                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                        placeholder="e.g. Youth Voices"
+                        className="w-full px-3 py-2 border rounded-xl text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Host / Speaker</label>
+                      <input
+                        type="text"
+                        value={formData.host || ''}
+                        onChange={(e) => setFormData({ ...formData, host: e.target.value })}
+                        placeholder="e.g. DCVC Communications Team"
+                        className="w-full px-3 py-2 border rounded-xl text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Guest(s)</label>
+                      <input
+                        type="text"
+                        value={formData.guests || ''}
+                        onChange={(e) => setFormData({ ...formData, guests: e.target.value })}
+                        placeholder="e.g. Founding Members & Community Elders"
+                        className="w-full px-3 py-2 border rounded-xl text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  {/* PASTE LINK INPUT */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Podcast / Video Link (YouTube, Spotify, Apple Podcasts, Soundcloud, audio URL) <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="url"
+                      required
+                      value={formData.link || ''}
+                      onChange={(e) => setFormData({ ...formData, link: e.target.value })}
+                      placeholder="https://www.youtube.com/watch?v=... or https://open.spotify.com/..."
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      Paste the URL where visitors can listen or watch this episode.
+                    </p>
+                  </div>
+
+                  <ImagePicker
+                    value={formData.coverImage || '/images/community-gathering.jpg'}
+                    onChange={(url) => setFormData({ ...formData, coverImage: url })}
+                    label="Episode Cover Image"
+                  />
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Summary / Description</label>
+                    <textarea
+                      rows={3}
+                      value={formData.summary || formData.description || ''}
+                      onChange={(e) => setFormData({ ...formData, summary: e.target.value, description: e.target.value })}
+                      placeholder="Brief overview of the conversation and show notes..."
                       className="w-full px-3 py-2 border rounded-xl text-xs"
                     />
                   </div>

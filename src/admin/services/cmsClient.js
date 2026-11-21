@@ -193,6 +193,10 @@ export function deleteCmsPodcast(slugOrId) {
   return list;
 }
 
+export function getMediaSuggestions() {
+  return cmsStore.getMediaSuggestions();
+}
+
 export function saveMediaSuggestion(suggestion) {
   return cmsStore.saveMediaSuggestion(suggestion);
 }

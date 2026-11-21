@@ -141,7 +141,7 @@ export default function AccreditationPathwayRoadmap({ content }) {
       </div>
 
       {/* Pathway Callout Banner */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-[#5A1E65] via-purple-900 to-indigo-950 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 border border-purple-400/30">
+      <div className="training-purple-banner p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-[#5A1E65] via-purple-900 to-indigo-950 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 border border-purple-400/30">
         <div className="space-y-2 text-center md:text-left">
           <div className="flex items-center justify-center md:justify-start gap-2">
             <Sparkles className="w-4 h-4 text-amber-400" />
@@ -162,7 +162,7 @@ export default function AccreditationPathwayRoadmap({ content }) {
 
         <Link
           to="/training/dcvc-affirming-business/book"
-          className="py-3 px-7 text-xs font-black tracking-wide rounded-full text-white !text-white bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 hover:from-purple-600 hover:to-indigo-600 border border-purple-300/40 shadow-xl hover:shadow-2xl transition-all inline-flex items-center gap-2 whitespace-nowrap cursor-pointer hover:scale-102 shrink-0"
+          className="training-cta-btn py-3 px-7 text-xs font-black tracking-wide rounded-full text-white !text-white bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 hover:from-purple-600 hover:to-indigo-600 border border-purple-300/40 shadow-xl hover:shadow-2xl transition-all inline-flex items-center gap-2 whitespace-nowrap cursor-pointer hover:scale-102 shrink-0"
           style={{ color: '#FFFFFF' }}
         >
           <span className="text-white !text-white font-black" style={{ color: '#FFFFFF' }}>

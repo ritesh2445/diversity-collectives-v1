@@ -233,7 +233,7 @@ export default function ApprovedWelcomeKitShowcase({ content }) {
 
           <Link
             to="/training/dcvc-affirming-business/book"
-            className="py-3 px-7 text-xs font-black tracking-wide rounded-full text-white !text-white bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 hover:from-purple-600 hover:to-indigo-600 border border-purple-300/40 shadow-lg hover:shadow-xl transition-all inline-flex items-center gap-2 whitespace-nowrap cursor-pointer hover:scale-102 shrink-0"
+            className="training-cta-btn py-3 px-7 text-xs font-black tracking-wide rounded-full text-white !text-white bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 hover:from-purple-600 hover:to-indigo-600 border border-purple-300/40 shadow-lg hover:shadow-xl transition-all inline-flex items-center gap-2 whitespace-nowrap cursor-pointer hover:scale-102 shrink-0"
             style={{ color: '#FFFFFF' }}
           >
             <span className="text-white !text-white font-black" style={{ color: '#FFFFFF' }}>{content?.welcomeKitButtonText || 'Get Your Storefront Kit'}</span>

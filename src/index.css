@@ -891,6 +891,26 @@ a[class*="from-indigo-"]:not([class*="from-indigo-50"]):not([class*="from-indigo
   color: #FFFFFF !important;
 }
 
+/* Training Page explicit purple banners, headings, text, and buttons */
+.training-purple-banner,
+.training-purple-banner h1,
+.training-purple-banner h2,
+.training-purple-banner h3,
+.training-purple-banner h4,
+.training-purple-banner h5,
+.training-purple-banner h6,
+.training-purple-banner .font-display,
+.training-cta-btn,
+.training-cta-btn span,
+.training-cta-btn strong {
+  color: #FFFFFF !important;
+}
+
+.training-cta-btn svg {
+  color: #FFFFFF !important;
+  stroke: #FFFFFF !important;
+}
+
 button[class~="bg-[#5A1E65]"] span,
 a[class~="bg-[#5A1E65]"] span,
 button[class~="bg-[#5A1E65]"] strong,

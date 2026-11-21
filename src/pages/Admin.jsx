@@ -68,6 +68,8 @@ import SiteStatusManager from '../admin/components/SiteStatusManager.jsx';
 import DonationSettingsStudio from '../admin/components/DonationSettingsStudio.jsx';
 import VoicemailItemRow from '../components/VoicemailItemRow.jsx';
 import { getSiteStateMeta, SYNC_EVENTS } from '../services/liveSync.js';
+import { cmsStore } from '../services/cmsStore.js';
+import { getMediaSuggestions, updateMediaSuggestion, deleteMediaSuggestion } from '../admin/services/cmsClient.js';
 
 const API_BASE_URL = typeof window !== 'undefined' && window.location.origin
   ? (import.meta.env?.VITE_API_URL || import.meta.env?.VITE_API_BASE_URL || '/api')
@@ -888,13 +890,19 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
       const res = await fetch(`${API_BASE_URL}/gallery`);
       if (res.ok) {
         const data = await res.json();
-        setGalleryPhotos(data.photos || []);
+        if (Array.isArray(data.photos) && data.photos.length > 0) {
+          setGalleryPhotos(data.photos);
+          setGalleryLoading(false);
+          return;
+        }
       }
     } catch (err) {
-      console.warn('Failed to load gallery photos:', err);
-    } finally {
-      setGalleryLoading(false);
+      console.warn('Failed to load gallery photos from API:', err);
     }
+    // Fallback to cmsStore gallery
+    const fallbackPhotos = cmsStore.data.gallery || [];
+    setGalleryPhotos(fallbackPhotos);
+    setGalleryLoading(false);
   };
 
   const handleImageSelect = (e) => {
@@ -965,10 +973,38 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
         });
       }
     } catch {
-      setGalleryActionStatus({
-        success: false,
-        message: 'Network communication failure uploading photo.'
-      });
+      // Local fallback for offline / serverless deployment
+      try {
+        const localPhoto = {
+          id: `photo-${Date.now()}`,
+          title: uploadTitle.trim(),
+          category: uploadCategory,
+          year: uploadYear,
+          description: uploadDescription.trim(),
+          quote: uploadQuote.trim(),
+          featured: uploadFeatured,
+          image_url: uploadFileData,
+          cdn_url: uploadFileData
+        };
+        cmsStore.saveGalleryPhoto(localPhoto);
+        setGalleryPhotos(prev => [localPhoto, ...prev]);
+        setGalleryActionStatus({
+          success: true,
+          message: `Photo "${uploadTitle}" saved and published to gallery!`
+        });
+        setShowUploadModal(false);
+        setUploadTitle('');
+        setUploadDescription('');
+        setUploadQuote('');
+        setUploadFileData(null);
+        setUploadFileName('');
+        setUploadPreviewUrl('');
+      } catch (saveErr) {
+        setGalleryActionStatus({
+          success: false,
+          message: 'Unable to save photo: ' + saveErr.message
+        });
+      }
     } finally {
       setIsUploadingToGit(false);
     }
@@ -985,16 +1021,24 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
         credentials: 'include',
         headers: buildAuthHeaders()
       });
-      const data = await res.json();
-      if (data.success) {
-        setGalleryPhotos(prev => prev.filter(p => p.id !== id));
-        setGalleryActionStatus({ success: true, message: `Photo removed from gallery.` });
-      } else {
-        alert(data.error || 'Failed to delete photo.');
+      if (res.ok) {
+        setGalleryActionStatus({
+          success: true,
+          message: `Photo "${title}" removed from repository.`
+        });
+        fetchAdminGallery();
+        return;
       }
-    } catch {
-      alert('Network error deleting photo.');
+    } catch (err) {
+      console.warn('API delete gallery photo fallback:', err);
     }
+    // Local fallback
+    cmsStore.deleteGalleryPhoto(id);
+    setGalleryPhotos(prev => prev.filter(p => p.id !== id));
+    setGalleryActionStatus({
+      success: true,
+      message: `Photo "${title}" deleted from gallery.`
+    });
   };
 
   const buildAuthHeaders = (extra = {}) => ({
@@ -2041,6 +2085,127 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  const fetchMediaSuggestions = async () => {
+    try {
+      const local = getMediaSuggestions() || [];
+      try {
+        const res = await fetch(`${API_BASE_URL}/admin/media-suggestions`, {
+          credentials: 'include',
+          headers: buildAuthHeaders()
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.suggestions) && data.suggestions.length > 0) {
+            setMediaSuggestions(data.suggestions);
+            return;
+          }
+        }
+      } catch (err) {
+        // Fallback to local CMS store
+      }
+      setMediaSuggestions(local);
+    } catch {
+      setMediaSuggestions(cmsStore.getMediaSuggestions() || []);
+    }
+  };
+
+  const handleMediaSuggestionStatusChange = async (id, newStatus) => {
+    try {
+      await fetch(`${API_BASE_URL}/admin/media-suggestions/${id}`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ status: newStatus })
+      });
+    } catch {}
+    const updated = updateMediaSuggestion(id, { status: newStatus });
+    setMediaSuggestions(updated);
+  };
+
+  const handleDeleteMediaSuggestion = async (id, topic) => {
+    if (!window.confirm(`Are you sure you want to delete the idea "${topic || 'this suggestion'}"?`)) return;
+    try {
+      await fetch(`${API_BASE_URL}/admin/media-suggestions/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: buildAuthHeaders()
+      });
+    } catch {}
+    const updated = deleteMediaSuggestion(id);
+    setMediaSuggestions(updated);
+  };
+
+  const exportMediaSuggestionsToCsv = () => {
+    if (!mediaSuggestions || mediaSuggestions.length === 0) {
+      alert('No media or podcast suggestions available to export.');
+      return;
+    }
+
+    const headers = [
+      'ID',
+      'Topic / Title',
+      'Category',
+      'Submitter Name',
+      'Submitter Email',
+      'Guest Recommendation',
+      'Reference URL',
+      'Description / Pitch',
+      'Status',
+      'Submitted Date'
+    ];
+
+    const escapeCell = (val) => {
+      if (val === null || val === undefined) return '""';
+      const str = String(val).replace(/"/g, '""');
+      return `"${str}"`;
+    };
+
+    const rows = mediaSuggestions.map((s) => [
+      s.id || '',
+      s.topic || '',
+      s.category || '',
+      s.name || '',
+      s.email || '',
+      s.guestRecommendation || '',
+      s.linkUrl || '',
+      s.description || '',
+      s.status || 'new',
+      s.createdAt || ''
+    ]);
+
+    const csvContent = [
+      headers.map(escapeCell).join(','),
+      ...rows.map(row => row.map(escapeCell).join(','))
+    ].join('\r\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `dcvc_podcast_ideas_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleConvertSuggestionToPodcast = (suggestion) => {
+    handleMediaSuggestionStatusChange(suggestion.id, 'in_production');
+    setActiveTab('cms');
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('dcvc-admin-cms-subtab', { detail: { subTab: 'podcasts' } }));
+      window.dispatchEvent(new CustomEvent('dcvc-admin-create-podcast', {
+        detail: {
+          title: suggestion.topic || '',
+          category: suggestion.category || 'Community Stories',
+          guests: suggestion.guestRecommendation || '',
+          link: suggestion.linkUrl || '',
+          description: suggestion.description || ''
+        }
+      }));
+    }, 100);
   };
 
   const applyPreset = (preset) => {
@@ -4935,6 +5100,253 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                       onDelete={handleDeleteVoicemail}
                     />
                   ))}
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
+        {/* PODCAST & CONTENT IDEAS INBOX */}
+        {inboxSubTab === 'suggestions' && (
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-xs p-6 sm:p-8 space-y-6">
+            <div className="border-b border-slate-100 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="font-display text-xl font-black text-slate-950">
+                    Podcast & Content Ideas
+                  </h2>
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-purple-100 text-[#5A1E65]">
+                    {mediaSuggestions.length} Total
+                  </span>
+                  {mediaSuggestions.filter(s => s.status === 'new').length > 0 && (
+                    <span className="px-2 py-0.5 rounded-full text-xs font-black bg-amber-400 text-slate-950 animate-pulse">
+                      {mediaSuggestions.filter(s => s.status === 'new').length} New
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  Review listener topic proposals, community speaker recommendations, and episode pitches submitted via the Podcasts & Media hub.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={exportMediaSuggestionsToCsv}
+                  className="px-3.5 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer"
+                  title="Export all podcast ideas to CSV"
+                >
+                  <Download className="w-3.5 h-3.5 text-purple-700" />
+                  <span>Export CSV</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={fetchMediaSuggestions}
+                  className="p-2 rounded-xl text-slate-500 hover:text-purple-700 hover:bg-purple-50 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all border border-slate-200"
+                  title="Refresh suggestions from server"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Refresh</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Filter and Search Bar */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-2xl flex-wrap">
+                {[
+                  { id: 'all', label: 'All Ideas', count: mediaSuggestions.length },
+                  { id: 'new', label: 'New', count: mediaSuggestions.filter(s => s.status === 'new').length, badge: mediaSuggestions.filter(s => s.status === 'new').length > 0 },
+                  { id: 'reviewed', label: 'Reviewed', count: mediaSuggestions.filter(s => s.status === 'reviewed').length },
+                  { id: 'in_production', label: 'In Production', count: mediaSuggestions.filter(s => s.status === 'in_production').length },
+                  { id: 'archived', label: 'Archived', count: mediaSuggestions.filter(s => s.status === 'archived').length }
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setMediaSuggestionStatusFilter(tab.id)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                      mediaSuggestionStatusFilter === tab.id
+                        ? 'bg-white text-slate-900 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+                    }`}
+                  >
+                    <span>{tab.label}</span>
+                    <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold ${
+                      tab.badge
+                        ? 'bg-amber-400 text-slate-950'
+                        : mediaSuggestionStatusFilter === tab.id
+                          ? 'bg-purple-100 text-[#5A1E65]'
+                          : 'bg-slate-200 text-slate-700'
+                    }`}>
+                      {tab.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="relative w-full sm:w-72">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={mediaSuggestionSearch}
+                  onChange={(e) => setMediaSuggestionSearch(e.target.value)}
+                  placeholder="Search topic, speaker, email..."
+                  className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-slate-200 text-xs bg-slate-50 focus:bg-white focus:outline-hidden focus:border-purple-400 transition-colors"
+                />
+              </div>
+            </div>
+
+            {/* Suggestions List */}
+            {(() => {
+              const filtered = mediaSuggestions.filter(s => {
+                const matchesStatus = mediaSuggestionStatusFilter === 'all' || (s.status || 'new') === mediaSuggestionStatusFilter;
+                const query = mediaSuggestionSearch.toLowerCase().trim();
+                const matchesSearch = !query ||
+                  (s.topic && s.topic.toLowerCase().includes(query)) ||
+                  (s.name && s.name.toLowerCase().includes(query)) ||
+                  (s.email && s.email.toLowerCase().includes(query)) ||
+                  (s.guestRecommendation && s.guestRecommendation.toLowerCase().includes(query)) ||
+                  (s.description && s.description.toLowerCase().includes(query));
+                return matchesStatus && matchesSearch;
+              });
+
+              if (filtered.length === 0) {
+                return (
+                  <div className="p-12 text-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 space-y-2">
+                    <Lightbulb className="w-8 h-8 text-slate-400 mx-auto" />
+                    <p className="text-sm font-bold text-slate-700">No Content Ideas Found</p>
+                    <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                      {mediaSuggestionSearch
+                        ? `No ideas match the search "${mediaSuggestionSearch}". Try another keyword or clear the search.`
+                        : `No ideas currently marked as ${mediaSuggestionStatusFilter}.`}
+                    </p>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="space-y-4">
+                  {filtered.map(s => {
+                    const statusColor = {
+                      new: 'bg-amber-100 text-amber-900 border-amber-300',
+                      reviewed: 'bg-blue-100 text-blue-900 border-blue-300',
+                      in_production: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+                      archived: 'bg-slate-100 text-slate-700 border-slate-300'
+                    }[s.status || 'new'] || 'bg-slate-100 text-slate-700 border-slate-300';
+
+                    return (
+                      <div
+                        key={s.id}
+                        className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs hover:shadow-md transition-shadow space-y-4"
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-slate-100 pb-3">
+                          <div className="space-y-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-purple-100 text-[#5A1E65]">
+                                {s.category || 'Content Idea'}
+                              </span>
+                              <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-extrabold border ${statusColor}`}>
+                                {(s.status || 'new').replace('_', ' ').toUpperCase()}
+                              </span>
+                              <span className="text-[11px] text-slate-400 font-medium flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                {s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recently'}
+                              </span>
+                            </div>
+                            <h3 className="font-display text-base font-black text-slate-950 pt-1">
+                              {s.topic}
+                            </h3>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => handleConvertSuggestionToPodcast(s)}
+                              className="px-3.5 py-1.5 rounded-xl bg-[#5A1E65] hover:bg-purple-900 text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+                              title="Prefill a new Podcast Episode with this pitch"
+                            >
+                              <Plus className="w-3.5 h-3.5 text-amber-300" />
+                              <span>Create Episode</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteMediaSuggestion(s.id, s.topic)}
+                              className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                              title="Delete idea"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Description */}
+                        {s.description && (
+                          <p className="text-xs text-slate-700 leading-relaxed bg-slate-50/70 p-3.5 rounded-xl border border-slate-100">
+                            {s.description}
+                          </p>
+                        )}
+
+                        {/* Guest / Link Info */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                          {s.guestRecommendation && (
+                            <div className="flex items-center gap-2 text-slate-700">
+                              <Users className="w-3.5 h-3.5 text-purple-700 shrink-0" />
+                              <span><strong className="text-slate-900">Recommended Guest:</strong> {s.guestRecommendation}</span>
+                            </div>
+                          )}
+                          {s.linkUrl && (
+                            <div className="flex items-center gap-2 text-slate-700 truncate">
+                              <ExternalLink className="w-3.5 h-3.5 text-purple-700 shrink-0" />
+                              <a
+                                href={s.linkUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-purple-700 hover:underline truncate font-semibold"
+                              >
+                                {s.linkUrl}
+                              </a>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Submitter & Status Triage Toolbar */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 text-xs text-slate-500">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-bold text-slate-700">Submitted by:</span>
+                            <span className="text-slate-900 font-semibold">{s.name || 'Anonymous Community Member'}</span>
+                            {s.email && (
+                              <a
+                                href={`mailto:${s.email}?subject=Regarding DCVC Podcast Pitch: ${encodeURIComponent(s.topic || '')}`}
+                                className="text-purple-700 hover:underline flex items-center gap-1 font-medium"
+                              >
+                                <Mail className="w-3 h-3" />
+                                {s.email}
+                              </a>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[11px] font-bold text-slate-400 mr-1">Triage:</span>
+                            {['new', 'reviewed', 'in_production', 'archived'].map(st => (
+                              <button
+                                key={st}
+                                type="button"
+                                onClick={() => handleMediaSuggestionStatusChange(s.id, st)}
+                                className={`px-2 py-0.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                                  (s.status || 'new') === st
+                                    ? 'bg-slate-900 text-white'
+                                    : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                                }`}
+                              >
+                                {st === 'in_production' ? 'In Prod' : st.charAt(0).toUpperCase() + st.slice(1)}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               );
             })()}

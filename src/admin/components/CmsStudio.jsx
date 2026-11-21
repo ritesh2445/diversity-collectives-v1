@@ -110,11 +110,28 @@ export default function CmsStudio() {
     const onSubTabNav = (e) => {
       if (e?.detail?.subTab) setActiveSubTab(e.detail.subTab);
     };
+    const onCreatePodcast = (e) => {
+      setActiveSubTab('podcasts');
+      openCreateModal('podcast');
+      if (e?.detail) {
+        setFormData(prev => ({
+          ...prev,
+          title: e.detail.title || prev.title,
+          category: e.detail.category || prev.category,
+          guests: e.detail.guests || prev.guests,
+          link: e.detail.link || prev.link,
+          summary: e.detail.description || prev.summary,
+          description: e.detail.description || prev.description
+        }));
+      }
+    };
     window.addEventListener(SYNC_EVENTS.CMS_CHANGED, onCmsUpdate);
     window.addEventListener('dcvc-admin-cms-subtab', onSubTabNav);
+    window.addEventListener('dcvc-admin-create-podcast', onCreatePodcast);
     return () => {
       window.removeEventListener(SYNC_EVENTS.CMS_CHANGED, onCmsUpdate);
       window.removeEventListener('dcvc-admin-cms-subtab', onSubTabNav);
+      window.removeEventListener('dcvc-admin-create-podcast', onCreatePodcast);
     };
   }, []);
 
