@@ -73,4 +73,17 @@ describe('Real Zoomable Directory Map & Geolocation Engine', () => {
     const coordsNull = getBusinessCoordinates(nullBiz);
     assert.deepStrictEqual(coordsNull, VENTURA_COUNTY_CENTER);
   });
+
+  it('strictly uses 100% free map tile services that do NOT require any API key or subscription', async () => {
+    const fs = await import('node:fs');
+    const mapSource = fs.readFileSync('src/components/DirectoryMapView.jsx', 'utf8');
+
+    // Must NOT use cartocdn (which displays "API key is required" watermark)
+    assert.doesNotMatch(mapSource, /basemaps\.cartocdn\.com/i, 'Must not use cartocdn watermarked endpoints');
+    assert.doesNotMatch(mapSource, /api[_-]?key/i, 'Must not require any API keys in map providers');
+
+    // Must include free OpenStreetMap and ArcGIS services
+    assert.match(mapSource, /arcgisonline\.com/i, 'Should include free Esri ArcGIS World Street map');
+    assert.match(mapSource, /tile\.openstreetmap\.org/i, 'Should include free OpenStreetMap standard tile server');
+  });
 });

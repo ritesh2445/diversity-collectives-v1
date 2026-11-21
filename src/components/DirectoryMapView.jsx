@@ -29,33 +29,40 @@ import DcvcApprovedBadge from './DcvcApprovedBadge';
 import AirDropPulseWaves from './AirDropPulseWaves';
 
 const TILE_PROVIDERS = {
-  voyager: {
-    name: 'Vibrant Voyager',
-    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    subdomains: 'abcd',
+  esriStreet: {
+    name: 'Street Navigation (Free ArcGIS)',
+    icon: '🗺️',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
     maxZoom: 19,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+    attribution: '&copy; <a href="https://www.esri.com" target="_blank" rel="noopener noreferrer">Esri</a> &mdash; DeLorme, NAVTEQ, USGS'
   },
-  positron: {
-    name: 'Editorial Clean',
-    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-    subdomains: 'abcd',
+  osm: {
+    name: 'OpenStreetMap (Free Community)',
+    icon: '🌐',
+    url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
     maxZoom: 19,
-    attribution: '&copy; OpenStreetMap &copy; CARTO'
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors'
   },
-  dark: {
-    name: 'Night Mode',
-    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-    subdomains: 'abcd',
+  esriSatellite: {
+    name: 'Satellite Aerial (Free ArcGIS)',
+    icon: '🛰️',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     maxZoom: 19,
-    attribution: '&copy; OpenStreetMap &copy; CARTO'
+    attribution: '&copy; <a href="https://www.esri.com" target="_blank" rel="noopener noreferrer">Esri</a> &mdash; Maxar, Earthstar Geographics'
+  },
+  esriTopo: {
+    name: 'Topographic Relief (Free ArcGIS)',
+    icon: '🏔️',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.esri.com" target="_blank" rel="noopener noreferrer">Esri</a> &mdash; USGS, NASA'
   }
 };
 
 export default function DirectoryMapView({ businesses = [], onHype, activeHypeId }) {
   const [selectedCity, setSelectedCity] = useState('All');
   const [selectedBiz, setSelectedBiz] = useState(() => businesses[0] || null);
-  const [activeTileStyle, setActiveTileStyle] = useState('voyager');
+  const [activeTileStyle, setActiveTileStyle] = useState('esriStreet');
   const [isLocating, setIsLocating] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -106,13 +113,15 @@ export default function DirectoryMapView({ businesses = [], onHype, activeHypeId
         // Add sleek zoom control in top-right
         L.control.zoom({ position: 'topright' }).addTo(map);
 
-        // Add base tile layer
-        const provider = TILE_PROVIDERS[activeTileStyle] || TILE_PROVIDERS.voyager;
-        const tileLayer = L.tileLayer(provider.url, {
+        // Add base tile layer (100% Free, No API Key Required)
+        const provider = TILE_PROVIDERS[activeTileStyle] || TILE_PROVIDERS.esriStreet || TILE_PROVIDERS.osm;
+        const tileOptions = {
           attribution: provider.attribution,
-          subdomains: provider.subdomains,
-          maxZoom: provider.maxZoom
-        }).addTo(map);
+          maxZoom: provider.maxZoom || 19
+        };
+        if (provider.subdomains) tileOptions.subdomains = provider.subdomains;
+
+        const tileLayer = L.tileLayer(provider.url, tileOptions).addTo(map);
 
         map.tileLayerInstance = tileLayer;
 
@@ -136,20 +145,22 @@ export default function DirectoryMapView({ businesses = [], onHype, activeHypeId
     };
   }, []);
 
-  // 2. Handle Tile Layer Switch
+  // 2. Handle Tile Layer Switch (100% Free, No API Key Required)
   useEffect(() => {
     const map = mapRef.current;
     const L = leafletRef.current;
     if (!map || !L || !map.tileLayerInstance) return;
 
-    const provider = TILE_PROVIDERS[activeTileStyle] || TILE_PROVIDERS.voyager;
+    const provider = TILE_PROVIDERS[activeTileStyle] || TILE_PROVIDERS.esriStreet || TILE_PROVIDERS.osm;
     map.removeLayer(map.tileLayerInstance);
 
-    const nextTileLayer = L.tileLayer(provider.url, {
+    const tileOptions = {
       attribution: provider.attribution,
-      subdomains: provider.subdomains,
-      maxZoom: provider.maxZoom
-    }).addTo(map);
+      maxZoom: provider.maxZoom || 19
+    };
+    if (provider.subdomains) tileOptions.subdomains = provider.subdomains;
+
+    const nextTileLayer = L.tileLayer(provider.url, tileOptions).addTo(map);
 
     map.tileLayerInstance = nextTileLayer;
   }, [activeTileStyle]);
@@ -412,16 +423,18 @@ export default function DirectoryMapView({ businesses = [], onHype, activeHypeId
             <span className="hidden md:inline">{isLocating ? 'Locating...' : 'Near Me'}</span>
           </button>
 
-          {/* Map Layer Style Switcher */}
+          {/* Map Layer Style Switcher (100% Free Providers, Zero API Key) */}
           <select
             value={activeTileStyle}
             onChange={(e) => setActiveTileStyle(e.target.value)}
             className="py-1.5 px-2.5 rounded-xl bg-slate-100 text-xs font-bold text-slate-700 border border-slate-200 outline-none cursor-pointer hover:bg-slate-200"
-            title="Switch Map Visual Style"
+            title="Switch Map Visual Style (100% Free Services)"
           >
-            <option value="voyager">🗺️ Voyager</option>
-            <option value="positron">📄 Positron</option>
-            <option value="dark">🌙 Dark Mode</option>
+            {Object.entries(TILE_PROVIDERS).map(([key, provider]) => (
+              <option key={key} value={key}>
+                {provider.icon} {provider.name}
+              </option>
+            ))}
           </select>
 
           {/* Fullscreen Toggle */}
