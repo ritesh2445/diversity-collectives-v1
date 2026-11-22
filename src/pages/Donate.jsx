@@ -37,8 +37,8 @@ const DESIGNATION_OPTIONS = [
 export default function Donate() {
   const orgInfo = useLiveOrgInfo();
   usePageMeta({
-    title: 'Donate & Sustainer Giving | Diversity Collective Ventura County',
-    description: 'Support Diversity Collective Ventura County. Tax-deductible contributions fund free HIV/STI screenings, youth peer sanctuaries, and LGBTQ+ community mutual aid. Every gift unlocks a personalized Appreciation Card.',
+    title: 'Donate & GEM Membership | Diversity Collective Ventura County',
+    description: 'Support Diversity Collective Ventura County. Tax-deductible contributions and recurring GEM Memberships fund free HIV/STI screenings, youth peer sanctuaries, and LGBTQ+ community mutual aid. Every gift unlocks a personalized Appreciation Card.',
     canonicalPath: '/donate'
   });
 
@@ -267,7 +267,7 @@ export default function Donate() {
                 Thank You, {donationResult.donorDisplayName}! 💜
               </h2>
               <p className="text-sm sm:text-base text-slate-600 max-w-xl mx-auto leading-relaxed">
-                Your gift of <strong>${Number(donationResult.amount).toFixed(2)}</strong> ({donationResult.frequency === 'monthly' ? 'Monthly Sustainer' : 'One-Time'}) designated to <em>{donationResult.designation}</em> directly empowers LGBTQ+ health, youth sanctuary, and community safety.
+                Your gift of <strong>${Number(donationResult.amount).toFixed(2)}</strong> ({donationResult.frequency === 'monthly' ? 'GEM Membership (Monthly)' : 'One-Time'}) designated to <em>{donationResult.designation}</em> directly empowers LGBTQ+ health, youth sanctuary, and community safety.
               </p>
             </div>
 
@@ -361,7 +361,7 @@ export default function Donate() {
               {/* Frequency Selector */}
               <div className="space-y-3">
                 <span className="text-xs font-black uppercase tracking-wider text-slate-500 block">
-                  01. CHOOSE FREQUENCY
+                  01. CHOOSE FREQUENCY (ONE-TIME OR GEM MEMBERSHIP)
                 </span>
                 <div className="grid grid-cols-2 gap-3 p-1.5 bg-slate-100 rounded-2xl">
                   <button
@@ -373,7 +373,7 @@ export default function Donate() {
                         : 'text-slate-700 hover:text-slate-950'
                     }`}
                   >
-                    Monthly Sustainer (Most Impact)
+                    GEM Membership (Give Every Month)
                   </button>
                   <button
                     type="button"

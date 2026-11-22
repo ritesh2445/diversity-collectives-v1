@@ -265,7 +265,7 @@ export default function Footer() {
                 <li><Link to="/gallery" className="text-white/90 hover:text-amber-300 transition-colors">Community Gallery</Link></li>
                 <li><Link to="/media" className="text-white/90 hover:text-amber-300 transition-colors">Podcasts & Media</Link></li>
                 <li><Link to="/volunteer" className="text-white/90 hover:text-amber-300 transition-colors">Volunteer Pathways</Link></li>
-                <li><Link to="/donate" className="text-white/90 hover:text-amber-300 transition-colors">Donate & Sustainer Giving</Link></li>
+                <li><Link to="/donate" className="text-white/90 hover:text-amber-300 transition-colors">Donate & GEM Membership</Link></li>
                 <li><Link to="/contact" className="text-white/90 hover:text-amber-300 transition-colors">Contact & Center</Link></li>
               </ul>
             </div>

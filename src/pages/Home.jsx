@@ -996,11 +996,11 @@ export default function Home() {
                     : 'text-slate-600 hover:text-[#5A1E65]'
                 }`}
               >
-                <span>Monthly Sustainer</span>
+                <span>GEM Membership</span>
                 <span className={`text-[9px] uppercase font-bold px-1.5 py-0.2 rounded-full ${
                   donationFreq === 'monthly' ? 'bg-amber-400 text-slate-950' : 'bg-purple-100 text-[#5A1E65]'
                 }`}>
-                  ★ Most Needed
+                  ★ Give Every Month
                 </span>
               </button>
             </div>
@@ -1017,7 +1017,7 @@ export default function Home() {
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-black text-slate-950 uppercase tracking-wider flex items-center gap-1.5">
                       <Gift className="w-4 h-4 text-[#5A1E65]" />
-                      <span>Select Gift Tier {donationFreq === 'monthly' ? '(Monthly Sustainer)' : ''}</span>
+                      <span>Select Gift Tier {donationFreq === 'monthly' ? '(GEM Membership)' : ''}</span>
                     </span>
                     <span className="text-xs text-emerald-700 font-bold bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200/60">
                       100% Tax-Deductible
@@ -1123,7 +1123,7 @@ export default function Home() {
                       LIVE IMPACT PREVIEW
                     </span>
                     <span className="text-xs font-semibold text-purple-200">
-                      {donationFreq === 'monthly' ? 'Recurring Monthly' : 'One-Time Direct'}
+                      {donationFreq === 'monthly' ? 'Recurring Monthly (GEM Membership)' : 'One-Time Direct'}
                     </span>
                   </div>
 
@@ -1280,7 +1280,7 @@ export default function Home() {
                 <div className="min-w-0">
                   <span className="text-xs font-black text-slate-900 block leading-tight">
                     {customDonation ? `Custom Gift of $${customDonation}` : activeTierObj.title}
-                    {donationFreq === 'monthly' ? ' (Monthly Sustainer)' : ''}
+                    {donationFreq === 'monthly' ? ' (GEM Membership)' : ''}
                   </span>
                   <p className="text-[11px] sm:text-xs text-slate-600 leading-snug mt-0.5">
                     {customDonation

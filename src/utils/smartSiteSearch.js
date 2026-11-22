@@ -236,10 +236,10 @@ export function buildLiveSiteIndex(customSnapshot = null) {
       id: 'page-donate',
       type: 'Giving',
       title: 'Donate & Support (100% Zero-Fee via Zeffy)',
-      subtitle: 'One-Time & Recurring Monthly Sustainers',
-      snippet: 'Give via Zeffy with zero platform fees. Every confirmed donation earns an official personalized DCVC Appreciation Card, and recurring sustainers automatically receive heartfelt email keepsakes.',
+      subtitle: 'One-Time Gifts & Recurring GEM Membership',
+      snippet: 'Give via Zeffy with zero platform fees. Every confirmed donation earns an official personalized DCVC Appreciation Card, and recurring GEM members automatically receive heartfelt email keepsakes.',
       url: '/donate',
-      keywords: ['donate', 'donation', 'give', 'zeffy', 'monthly', 'recurring', 'sustainer', 'appreciation card', 'tax deductible']
+      keywords: ['donate', 'donation', 'give', 'zeffy', 'monthly', 'recurring', 'sustainer', 'gem', 'gem membership', 'give every month', 'appreciation card', 'tax deductible']
     },
     {
       id: 'page-appreciation',

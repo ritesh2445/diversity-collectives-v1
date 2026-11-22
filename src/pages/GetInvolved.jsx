@@ -114,7 +114,7 @@ export default function GetInvolved() {
                 Donate to Diversity Collective
               </h2>
               <p className="text-base text-slate-600 leading-relaxed font-medium">
-                Donations keep Diversity Collective Ventura County growing and thriving. It is our mission to make our Community Resource Center self-sustaining through individual donations, monthly sustainer pledges, and community fundraisers. We do not rely solely on government subsidies.
+                Donations keep Diversity Collective Ventura County growing and thriving. It is our mission to make our Community Resource Center self-sustaining through individual donations, GEM Membership (Give Every Month) recurring pledges, and community fundraisers. We do not rely solely on government subsidies.
               </p>
               
               <div className="p-6 bg-white rounded-2xl border-2 border-purple-100 shadow-sm space-y-2 text-xs">
