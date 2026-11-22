@@ -870,25 +870,33 @@ a[class*="from-indigo-"]:not([class*="from-indigo-50"]):not([class*="from-indigo
 }
 
 /* Ensure headings inside dark purple and gradient containers are crisp 100% white, while preserving dark text on pastel/light backgrounds */
-[class*="from-[#5A1E65]"] h1:not([class*="text-slate-"]):not([class*="text-gray-"]):not([class*="text-zinc-"]):not([class*="text-neutral-"]):not([class*="text-black"]),
-[class*="from-[#5A1E65]"] h2:not([class*="text-slate-"]):not([class*="text-gray-"]):not([class*="text-zinc-"]):not([class*="text-neutral-"]):not([class*="text-black"]),
-[class*="from-[#5A1E65]"] h3:not([class*="text-slate-"]):not([class*="text-gray-"]):not([class*="text-zinc-"]):not([class*="text-neutral-"]):not([class*="text-black"]),
-[class*="from-[#5A1E65]"] h4:not([class*="text-slate-"]):not([class*="text-gray-"]):not([class*="text-zinc-"]):not([class*="text-neutral-"]):not([class*="text-black"]),
-[class*="from-[#5A1E65]"] h5:not([class*="text-slate-"]):not([class*="text-gray-"]):not([class*="text-zinc-"]):not([class*="text-neutral-"]):not([class*="text-black"]),
-[class*="from-[#5A1E65]"] h6:not([class*="text-slate-"]):not([class*="text-gray-"]):not([class*="text-zinc-"]):not([class*="text-neutral-"]):not([class*="text-black"]),
-[class*="bg-gradient-to-r"][class*="purple"]:not([class*="from-purple-50"]):not([class*="from-purple-100"]):not([class*="from-purple-200"]):not([class*="from-purple-300"]):not([class*="from-purple-400"]):not([class*="to-purple-50"]):not([class*="to-purple-100"]):not([class*="to-purple-200"]) h1:not([class*="text-slate-"]):not([class*="text-gray-"]):not([class*="text-zinc-"]):not([class*="text-neutral-"]):not([class*="text-black"]),
-[class*="bg-gradient-to-r"][class*="purple"]:not([class*="from-purple-50"]):not([class*="from-purple-100"]):not([class*="from-purple-200"]):not([class*="from-purple-300"]):not([class*="from-purple-400"]):not([class*="to-purple-50"]):not([class*="to-purple-100"]):not([class*="to-purple-200"]) h2:not([class*="text-slate-"]):not([class*="text-gray-"]):not([class*="text-zinc-"]):not([class*="text-neutral-"]):not([class*="text-black"]),
-[class*="bg-gradient-to-r"][class*="purple"]:not([class*="from-purple-50"]):not([class*="from-purple-100"]):not([class*="from-purple-200"]):not([class*="from-purple-300"]):not([class*="from-purple-400"]):not([class*="to-purple-50"]):not([class*="to-purple-100"]):not([class*="to-purple-200"]) h3:not([class*="text-slate-"]):not([class*="text-gray-"]):not([class*="text-zinc-"]):not([class*="text-neutral-"]):not([class*="text-black"]),
-[class*="bg-gradient-to-r"][class*="purple"]:not([class*="from-purple-50"]):not([class*="from-purple-100"]):not([class*="from-purple-200"]):not([class*="from-purple-300"]):not([class*="from-purple-400"]):not([class*="to-purple-50"]):not([class*="to-purple-100"]):not([class*="to-purple-200"]) h4:not([class*="text-slate-"]):not([class*="text-gray-"]):not([class*="text-zinc-"]):not([class*="text-neutral-"]):not([class*="text-black"]),
-[class*="bg-gradient-to-r"][class*="purple"]:not([class*="from-purple-50"]):not([class*="from-purple-100"]):not([class*="from-purple-200"]):not([class*="from-purple-300"]):not([class*="from-purple-400"]):not([class*="to-purple-50"]):not([class*="to-purple-100"]):not([class*="to-purple-200"]) h5:not([class*="text-slate-"]):not([class*="text-gray-"]):not([class*="text-zinc-"]):not([class*="text-neutral-"]):not([class*="text-black"]),
-[class*="bg-gradient-to-r"][class*="purple"]:not([class*="from-purple-50"]):not([class*="from-purple-100"]):not([class*="from-purple-200"]):not([class*="from-purple-300"]):not([class*="from-purple-400"]):not([class*="to-purple-50"]):not([class*="to-purple-100"]):not([class*="to-purple-200"]) h6:not([class*="text-slate-"]):not([class*="text-gray-"]):not([class*="text-zinc-"]):not([class*="text-neutral-"]):not([class*="text-black"]),
-.bg-gradient-to-r.text-white h1,
-.bg-gradient-to-r.text-white h2,
-.bg-gradient-to-r.text-white h3,
-.bg-gradient-to-r.text-white h4,
-.bg-gradient-to-r.text-white h5,
-.bg-gradient-to-r.text-white h6 {
+[class*="from-[#5A1E65]"] h1:not([class*="text-slate-"]):not([class*="text-gray-"]):not([class*="text-zinc-"]):not([class*="text-neutral-"]):not([class*="text-black"]):not(#podcast-suggestion-headline):not(.podcast-suggestion-headline),
+[class*="from-[#5A1E65]"] h2:not([class*="text-slate-"]):not([class*="text-gray-"]):not([class*="text-zinc-"]):not([class*="text-neutral-"]):not([class*="text-black"]):not(#podcast-suggestion-headline):not(.podcast-suggestion-headline),
+[class*="from-[#5A1E65]"] h3:not([class*="text-slate-"]):not([class*="text-gray-"]):not([class*="text-zinc-"]):not([class*="text-neutral-"]):not([class*="text-black"]):not(#podcast-suggestion-headline):not(.podcast-suggestion-headline),
+[class*="from-[#5A1E65]"] h4:not([class*="text-slate-"]):not([class*="text-gray-"]):not([class*="text-zinc-"]):not([class*="text-neutral-"]):not([class*="text-black"]):not(#podcast-suggestion-headline):not(.podcast-suggestion-headline),
+[class*="from-[#5A1E65]"] h5:not([class*="text-slate-"]):not([class*="text-gray-"]):not([class*="text-zinc-"]):not([class*="text-neutral-"]):not([class*="text-black"]):not(#podcast-suggestion-headline):not(.podcast-suggestion-headline),
+[class*="from-[#5A1E65]"] h6:not([class*="text-slate-"]):not([class*="text-gray-"]):not([class*="text-zinc-"]):not([class*="text-neutral-"]):not([class*="text-black"]):not(#podcast-suggestion-headline):not(.podcast-suggestion-headline),
+[class*="bg-gradient-to-r"][class*="purple"]:not([class*="from-purple-50"]):not([class*="from-purple-100"]):not([class*="from-purple-200"]):not([class*="from-purple-300"]):not([class*="from-purple-400"]):not([class*="to-purple-50"]):not([class*="to-purple-100"]):not([class*="to-purple-200"]) h1:not([class*="text-slate-"]):not([class*="text-gray-"]):not([class*="text-zinc-"]):not([class*="text-neutral-"]):not([class*="text-black"]):not(#podcast-suggestion-headline):not(.podcast-suggestion-headline),
+[class*="bg-gradient-to-r"][class*="purple"]:not([class*="from-purple-50"]):not([class*="from-purple-100"]):not([class*="from-purple-200"]):not([class*="from-purple-300"]):not([class*="from-purple-400"]):not([class*="to-purple-50"]):not([class*="to-purple-100"]):not([class*="to-purple-200"]) h2:not([class*="text-slate-"]):not([class*="text-gray-"]):not([class*="text-zinc-"]):not([class*="text-neutral-"]):not([class*="text-black"]):not(#podcast-suggestion-headline):not(.podcast-suggestion-headline),
+[class*="bg-gradient-to-r"][class*="purple"]:not([class*="from-purple-50"]):not([class*="from-purple-100"]):not([class*="from-purple-200"]):not([class*="from-purple-300"]):not([class*="from-purple-400"]):not([class*="to-purple-50"]):not([class*="to-purple-100"]):not([class*="to-purple-200"]) h3:not([class*="text-slate-"]):not([class*="text-gray-"]):not([class*="text-zinc-"]):not([class*="text-neutral-"]):not([class*="text-black"]):not(#podcast-suggestion-headline):not(.podcast-suggestion-headline),
+[class*="bg-gradient-to-r"][class*="purple"]:not([class*="from-purple-50"]):not([class*="from-purple-100"]):not([class*="from-purple-200"]):not([class*="from-purple-300"]):not([class*="from-purple-400"]):not([class*="to-purple-50"]):not([class*="to-purple-100"]):not([class*="to-purple-200"]) h4:not([class*="text-slate-"]):not([class*="text-gray-"]):not([class*="text-zinc-"]):not([class*="text-neutral-"]):not([class*="text-black"]):not(#podcast-suggestion-headline):not(.podcast-suggestion-headline),
+[class*="bg-gradient-to-r"][class*="purple"]:not([class*="from-purple-50"]):not([class*="from-purple-100"]):not([class*="from-purple-200"]):not([class*="from-purple-300"]):not([class*="from-purple-400"]):not([class*="to-purple-50"]):not([class*="to-purple-100"]):not([class*="to-purple-200"]) h5:not([class*="text-slate-"]):not([class*="text-gray-"]):not([class*="text-zinc-"]):not([class*="text-neutral-"]):not([class*="text-black"]):not(#podcast-suggestion-headline):not(.podcast-suggestion-headline),
+[class*="bg-gradient-to-r"][class*="purple"]:not([class*="from-purple-50"]):not([class*="from-purple-100"]):not([class*="from-purple-200"]):not([class*="from-purple-300"]):not([class*="from-purple-400"]):not([class*="to-purple-50"]):not([class*="to-purple-100"]):not([class*="to-purple-200"]) h6:not([class*="text-slate-"]):not([class*="text-gray-"]):not([class*="text-zinc-"]):not([class*="text-neutral-"]):not([class*="text-black"]):not(#podcast-suggestion-headline):not(.podcast-suggestion-headline),
+.bg-gradient-to-r.text-white h1:not(#podcast-suggestion-headline):not(.podcast-suggestion-headline),
+.bg-gradient-to-r.text-white h2:not(#podcast-suggestion-headline):not(.podcast-suggestion-headline),
+.bg-gradient-to-r.text-white h3:not(#podcast-suggestion-headline):not(.podcast-suggestion-headline),
+.bg-gradient-to-r.text-white h4:not(#podcast-suggestion-headline):not(.podcast-suggestion-headline),
+.bg-gradient-to-r.text-white h5:not(#podcast-suggestion-headline):not(.podcast-suggestion-headline),
+.bg-gradient-to-r.text-white h6:not(#podcast-suggestion-headline):not(.podcast-suggestion-headline) {
   color: #FFFFFF !important;
+}
+
+/* Explicit high-contrast override for podcast/media suggestion callout heading */
+#podcast-suggestion-banner h2,
+#podcast-suggestion-headline,
+.podcast-suggestion-headline {
+  color: #020617 !important;
+  -webkit-text-fill-color: #020617 !important;
 }
 
 /* Training Page explicit purple banners, headings, text, and buttons */

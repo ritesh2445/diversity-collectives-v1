@@ -62,6 +62,7 @@ const EXPECTED_V3_ORDER = [
   'impact_popups',
   'hero_banner',
   'impact_stats',
+  'upcoming_week',
   'programs_section',
   'signature_events',
   'events_section',

@@ -252,6 +252,7 @@ export default function Home() {
 
   const impactPopupsProps = getBlockProps('impact_popups');
   const statsProps = getBlockProps('impact_stats');
+  const upcomingWeekProps = getBlockProps('upcoming_week');
   const directoryProps = getBlockProps('directory_cta');
   const programsProps = getBlockProps('programs_section');
   const signatureEventsProps = getBlockProps('signature_events');
@@ -587,6 +588,16 @@ export default function Home() {
       </section>
 
       {/* ====================================================================
+          UPCOMING PROGRAMS & EVENTS THIS WEEK
+          Positioned directly after "Trusted community" Impact Section
+          ==================================================================== */}
+      <UpcomingWeekSection
+        props={upcomingWeekProps}
+        style={getSectionStyle('upcoming_week', 2.5)}
+        events={cmsEvents}
+      />
+
+      {/* ====================================================================
           LGBTQ+ AFFIRMING BUSINESS DIRECTORY SPOTLIGHT
           ==================================================================== */}
       <section data-block-id="block-directory" style={getSectionStyle('directory_cta', 6)} className="py-14 md:py-20 bg-white border-b border-slate-100 scroll-reveal">
@@ -642,12 +653,6 @@ export default function Home() {
           </MobileCarousel>
         </div>
       </section>
-
-      {/* ====================================================================
-          UPCOMING PROGRAMS & EVENTS THIS WEEK
-          Positioned between Community Impact & Programs Built for Every Age & Stage
-          ==================================================================== */}
-      <UpcomingWeekSection events={cmsEvents} />
 
       {/* ====================================================================
           PROGRAMS DIRECTORY: COLLISION-PROOF EXPANDABLE CARDS

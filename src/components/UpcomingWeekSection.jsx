@@ -16,6 +16,7 @@ import {
 import { cmsStore } from '../services/cmsStore';
 
 export default function UpcomingWeekSection({ 
+  props = {},
   schedule = null, 
   events = null,
   style = {} 
@@ -56,15 +57,15 @@ export default function UpcomingWeekSection({
           <div className="flex flex-col gap-3 max-w-2xl">
             <span className="glass-pill text-xs font-bold text-[#5A1E65] bg-purple-50 border-purple-200 shadow-xs flex items-center gap-1.5">
               <CalendarIcon className="w-3.5 h-3.5 text-[#5A1E65]" />
-              THIS WEEK ACROSS VENTURA COUNTY
+              {props?.eyebrow || 'THIS WEEK ACROSS VENTURA COUNTY'}
             </span>
 
             <h2 className="font-display text-2xl sm:text-4xl md:text-5xl font-extrabold text-slate-950 tracking-tight leading-tight">
-              Upcoming Programs & Events This Week
+              {props?.headline || 'Upcoming Programs & Events This Week'}
             </h2>
 
             <p className="text-sm sm:text-base text-slate-700 leading-relaxed font-medium">
-              Join affirming peer groups, youth circles, and wellness gatherings happening this week at our Community Resource Center. All programs are free and welcoming.
+              {props?.description || 'Join affirming peer groups, youth circles, and wellness gatherings happening this week at our Community Resource Center. All programs are free and welcoming.'}
             </p>
           </div>
 
@@ -73,7 +74,7 @@ export default function UpcomingWeekSection({
               to="/events"
               className="btn-primary py-2.5 px-5 text-xs font-bold inline-flex items-center justify-center gap-2 shadow-md"
             >
-              <span>View Full Calendar</span>
+              <span>{props?.ctaText || 'View Weekly Schedule'}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>

@@ -112,6 +112,18 @@ export const DEFAULT_PAGE_BLOCKS = [
     }
   },
   {
+    id: 'block-upcoming-week',
+    type: 'upcoming_week',
+    title: 'Upcoming Programs & Events This Week',
+    enabled: true,
+    props: {
+      eyebrow: 'THIS WEEK ACROSS VENTURA COUNTY',
+      headline: 'Upcoming Programs & Events This Week',
+      description: 'Explore verified weekly peer circles, youth spaces, recovery meetings, and special gatherings scheduled across Ventura County.',
+      ctaText: 'View All Gatherings'
+    }
+  },
+  {
     id: 'block-programs',
     type: 'programs_section',
     title: 'Programs (9 Featured Initiatives)',
@@ -344,6 +356,7 @@ export function upgradeOrNormalizePageLayout(rawBlocks) {
     normalized.some((b) => b?.type === 'programs_section') &&
     normalized.some((b) => b?.type === 'directory_cta');
   const missingV3Sections =
+    !normalized.some((b) => b?.type === 'upcoming_week') ||
     !normalized.some((b) => b?.type === 'impact_popups') ||
     !normalized.some((b) => b?.type === 'signature_events') ||
     !normalized.some((b) => b?.type === 'calendar_section') ||

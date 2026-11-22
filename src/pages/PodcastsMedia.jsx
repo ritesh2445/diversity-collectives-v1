@@ -493,15 +493,16 @@ export default function PodcastsMedia() {
       )}
 
       {/* Suggest Ideas Callout Banner */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16">
-        <div className="rounded-3xl bg-gradient-to-r from-purple-100 via-pink-50 to-amber-50 p-8 sm:p-12 border border-purple-200/80 shadow-md flex flex-col md:flex-row items-center justify-between gap-6">
+      <section id="podcast-suggestion-banner" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16">
+        <div className="rounded-3xl bg-gradient-to-br from-purple-100 via-pink-50 to-amber-50 p-8 sm:p-12 border border-purple-200/80 shadow-md flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="max-w-xl">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-200/60 text-[#5A1E65] text-xs font-black uppercase tracking-wider mb-2">
               <Lightbulb className="w-3.5 h-3.5" />
               <span>Community Powered</span>
             </div>
             <h2 
-              className="font-display text-2xl sm:text-3xl font-extrabold !text-slate-950"
+              id="podcast-suggestion-headline"
+              className="podcast-suggestion-headline font-display text-2xl sm:text-3xl font-extrabold !text-slate-950 text-slate-950"
               style={{ color: '#020617' }}
             >
               Have a Story or Topic We Should Feature?
