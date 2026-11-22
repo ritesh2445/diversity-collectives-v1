@@ -41,9 +41,7 @@ export default function CardOrderManager() {
     } else if (col === 'resources') {
       setItems(cmsStore.getResources() || []);
     } else if (col === 'board') {
-      const allStaff = cmsStore.getStaff() || [];
-      const boardOnly = allStaff.filter(s => s.category === 'board');
-      setItems(boardOnly);
+      setItems(cmsStore.getBoardMembers() || []);
     } else if (col === 'sponsors') {
       setItems(cmsStore.getSponsors() || []);
     } else if (col === 'trainings') {

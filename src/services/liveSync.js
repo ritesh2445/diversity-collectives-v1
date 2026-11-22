@@ -162,7 +162,28 @@ function mergeLiveSyncStaff(incoming = [], existing = [], deleted = []) {
   const seenKeys = new Set();
   const seenNames = new Set();
 
-  const processList = (list) => {
+  let overrides = {};
+  try {
+    if (typeof localStorage !== 'undefined') {
+      overrides = JSON.parse(localStorage.getItem('dcvc_staff_image_overrides') || '{}') || {};
+    }
+  } catch {}
+
+  const findExistingMatch = (s) => {
+    if (!s) return null;
+    const name = String(s.name || '').trim().toLowerCase();
+    const id = s.id ? String(s.id).trim().toLowerCase() : '';
+    const slug = s.slug ? String(s.slug).trim().toLowerCase() : '';
+    return existing.find((e) => {
+      if (!e) return false;
+      const eName = String(e.name || '').trim().toLowerCase();
+      const eId = e.id ? String(e.id).trim().toLowerCase() : '';
+      const eSlug = e.slug ? String(e.slug).trim().toLowerCase() : '';
+      return (name && eName === name) || (id && eId === id) || (slug && eSlug === slug);
+    });
+  };
+
+  const processList = (list, isIncoming = false) => {
     for (const s of list) {
       if (!s || typeof s !== 'object') continue;
       const name = String(s.name || '').trim().toLowerCase();
@@ -188,9 +209,20 @@ function mergeLiveSyncStaff(incoming = [], existing = [], deleted = []) {
       if (s.id) seenKeys.add(String(s.id).trim().toLowerCase());
       if (nameSlug) seenKeys.add(nameSlug);
 
-      const effectivePhoto = s.photo || s.image || '/images/volunteers.jpg';
+      // Check for user-uploaded custom photo override
+      const overridePhoto = overrides[name] || overrides[nameSlug] || (s.id && overrides[String(s.id).toLowerCase()]);
+
+      // If incoming from server, check if local existing record had an edited photo or bio
+      const existingMatch = isIncoming ? findExistingMatch(s) : null;
+      const localPhoto = existingMatch ? (existingMatch.photo || existingMatch.image) : null;
+
+      const effectivePhoto = overridePhoto || localPhoto || s.photo || s.image || '/images/volunteers.jpg';
+      const effectiveBio = (existingMatch && existingMatch.bio && existingMatch.bio !== s.bio) ? existingMatch.bio : s.bio;
+
       result.push({
+        ...(existingMatch || {}),
         ...s,
+        bio: effectiveBio || s.bio || '',
         id: s.id || key,
         photo: effectivePhoto,
         image: effectivePhoto
@@ -198,8 +230,8 @@ function mergeLiveSyncStaff(incoming = [], existing = [], deleted = []) {
     }
   };
 
-  processList(incoming);
-  processList(existing);
+  processList(incoming, true);
+  processList(existing, false);
   return result;
 }
 

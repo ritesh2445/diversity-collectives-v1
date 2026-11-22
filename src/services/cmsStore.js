@@ -54,6 +54,62 @@ const APPROVED_BOARD_ORDER = [
 ];
 const APPROVED_BOARD_SET = new Set(APPROVED_BOARD_ORDER);
 
+export const KNOWN_OPERATIONAL_STAFF = new Set([
+  'tess allen',
+  'genevieve flores-haro',
+  'crc program coordinator',
+  'youth programs facilitator',
+  'health navigation specialist'
+]);
+
+export const STAFF_IMAGE_OVERRIDES_KEY = 'dcvc_staff_image_overrides';
+let memoryImageOverrides = {};
+
+export function getStaffImageOverrides() {
+  if (typeof localStorage === 'undefined') return memoryImageOverrides;
+  try {
+    const parsed = JSON.parse(localStorage.getItem(STAFF_IMAGE_OVERRIDES_KEY) || '{}');
+    return { ...memoryImageOverrides, ...(parsed || {}) };
+  } catch {
+    return memoryImageOverrides;
+  }
+}
+
+export function setStaffImageOverride(nameOrSlugOrId, photoUrl) {
+  if (!nameOrSlugOrId || !photoUrl) return;
+  const cleanKey = String(nameOrSlugOrId).trim().toLowerCase();
+  const slugKey = cleanKey.replace(/[^a-z0-9]+/g, '-');
+  memoryImageOverrides[cleanKey] = photoUrl;
+  memoryImageOverrides[slugKey] = photoUrl;
+  if (typeof localStorage !== 'undefined') {
+    try {
+      const overrides = getStaffImageOverrides();
+      overrides[cleanKey] = photoUrl;
+      overrides[slugKey] = photoUrl;
+      localStorage.setItem(STAFF_IMAGE_OVERRIDES_KEY, JSON.stringify(overrides));
+    } catch (err) {
+      console.warn('[cmsStore] Could not persist staff image override:', err);
+    }
+  }
+}
+
+export function lookupStaffImageOverride(name, slug, id) {
+  const overrides = getStaffImageOverrides();
+  const keys = [
+    name ? String(name).trim().toLowerCase() : null,
+    name ? String(name).trim().toLowerCase().replace(/[^a-z0-9]+/g, '-') : null,
+    slug ? String(slug).trim().toLowerCase() : null,
+    id ? String(id).trim().toLowerCase() : null
+  ].filter(Boolean);
+
+  for (const k of keys) {
+    if (overrides[k] && typeof overrides[k] === 'string' && overrides[k].trim()) {
+      return overrides[k].trim();
+    }
+  }
+  return null;
+}
+
 export function mergeStaffWithDefaults(savedStaff = [], defaultStaff = null, deletedIds = []) {
   const seed = Array.isArray(defaultStaff) && defaultStaff.length > 0 ? defaultStaff : [
     ...(staffMembers || []).map((s, idx) => ({
@@ -140,7 +196,8 @@ export function mergeStaffWithDefaults(savedStaff = [], defaultStaff = null, del
         return (id && sKeys.id === id) || (slug && sKeys.slug === slug) || (name && sKeys.name === name);
       });
 
-      const effectivePhoto = member.photo || member.image || (seedMatch && (seedMatch.photo || seedMatch.image)) || '/images/volunteers.jpg';
+      const override = lookupStaffImageOverride(member.name || (seedMatch && seedMatch.name), slug, id);
+      const effectivePhoto = override || member.photo || member.image || (seedMatch && (seedMatch.photo || seedMatch.image)) || '/images/volunteers.jpg';
 
       result.push({
         ...(seedMatch || {}),
@@ -159,7 +216,7 @@ export function mergeStaffWithDefaults(savedStaff = [], defaultStaff = null, del
   // 2. Append any missing seed members not explicitly deleted or already seen
   for (const member of seed) {
     if (!member || typeof member !== 'object') continue;
-    const { name } = getKeys(member);
+    const { name, slug, id } = getKeys(member);
 
     // Keep only the 6 approved board members in seed
     if (member.category === 'board' && !APPROVED_BOARD_SET.has(name)) {
@@ -170,7 +227,8 @@ export function mergeStaffWithDefaults(savedStaff = [], defaultStaff = null, del
     if (isSeen(member)) continue;
 
     markSeen(member);
-    const effectivePhoto = member.photo || member.image || '/images/volunteers.jpg';
+    const override = lookupStaffImageOverride(member.name, slug, id);
+    const effectivePhoto = override || member.photo || member.image || '/images/volunteers.jpg';
     result.push({
       ...member,
       photo: effectivePhoto,
@@ -1071,12 +1129,14 @@ class CmsStoreEngine {
     const orderedApproved = APPROVED_BOARD_ORDER.map((name) => {
       const match = baseList.find(m => m.name && m.name.trim().toLowerCase() === name);
       if (match) {
-        const photo = match.photo || match.image || '/images/volunteers.jpg';
+        const override = lookupStaffImageOverride(match.name, match.slug, match.id);
+        const photo = override || match.photo || match.image || '/images/volunteers.jpg';
         return { ...match, photo, image: photo };
       }
       const seedMatch = (boardMembers || []).find(m => m.name && m.name.trim().toLowerCase() === name);
       if (seedMatch) {
-        const photo = seedMatch.photo || seedMatch.image || '/images/volunteers.jpg';
+        const override = lookupStaffImageOverride(seedMatch.name, seedMatch.slug, seedMatch.id);
+        const photo = override || seedMatch.photo || seedMatch.image || '/images/volunteers.jpg';
         return { ...seedMatch, category: 'board', photo, image: photo };
       }
       return null;
@@ -1084,14 +1144,16 @@ class CmsStoreEngine {
 
     const seen = new Set(orderedApproved.map(m => m.name.trim().toLowerCase()));
 
-    // 2. Append newly added custom board members from admin CMS (excluding unapproved/legacy or duplicates)
+    // 2. Append newly added custom board members from admin CMS (excluding unapproved/legacy, operational staff, or duplicates)
     const customBoard = [];
     for (const b of baseList) {
       if (!b || !b.name) continue;
       const norm = b.name.trim().toLowerCase();
-      if (norm === 'tess allen' || seen.has(norm)) continue;
+      if (norm === 'tess allen' || KNOWN_OPERATIONAL_STAFF.has(norm) || seen.has(norm)) continue;
+      if (b.category !== 'board') continue;
       seen.add(norm);
-      const photo = b.photo || b.image || '/images/volunteers.jpg';
+      const override = lookupStaffImageOverride(b.name, b.slug, b.id);
+      const photo = override || b.photo || b.image || '/images/volunteers.jpg';
       customBoard.push({ ...b, photo, image: photo });
     }
 
@@ -1111,7 +1173,8 @@ class CmsStoreEngine {
       seen.add(norm);
       return true;
     }).map(s => {
-      const photo = s.photo || s.image || '/images/volunteers.jpg';
+      const override = lookupStaffImageOverride(s.name, s.slug, s.id);
+      const photo = override || s.photo || s.image || '/images/volunteers.jpg';
       return { ...s, photo, image: photo };
     });
   }
@@ -1656,6 +1719,12 @@ class CmsStoreEngine {
         if (key && !seen.has(key)) {
           seen.add(key);
           if (norm) seen.add(norm);
+          const p = m.photo || m.image;
+          if (p && m.name) {
+            setStaffImageOverride(m.name, p);
+            if (m.slug) setStaffImageOverride(m.slug, p);
+            if (m.id) setStaffImageOverride(m.id, p);
+          }
           deduped.push(m);
         }
       }
@@ -1671,6 +1740,13 @@ class CmsStoreEngine {
     const memberSlug = (memberOrList.slug || cleanName.toLowerCase().replace(/[^a-z0-9]+/g, '-')).replace(/(^-|-$)/g, '');
     const memberId = targetId || `${targetCategory}-${memberSlug || Date.now()}`;
     const effectivePhoto = memberOrList.photo || memberOrList.image || '/images/volunteers.jpg';
+
+    if (cleanName && effectivePhoto) {
+      setStaffImageOverride(cleanName, effectivePhoto);
+      if (memberSlug) setStaffImageOverride(memberSlug, effectivePhoto);
+      if (memberId) setStaffImageOverride(memberId, effectivePhoto);
+      if (targetId) setStaffImageOverride(targetId, effectivePhoto);
+    }
 
     const normalizedMember = {
       ...memberOrList,
