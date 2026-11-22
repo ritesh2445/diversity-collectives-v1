@@ -104,12 +104,24 @@ function mergeLiveSyncPrograms(incoming = [], existing = [], deleted = []) {
   const deletedSet = new Set(deleted || []);
   const result = [];
   const seenKeys = new Set();
-  for (const p of incoming) {
-    if (!p || typeof p !== 'object') continue;
+  const isDeleted = (p) => {
+    if (!p || typeof p !== 'object') return true;
     const titleSlug = p.title ? String(p.title).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : '';
     const rawKey = p.slug || p.id || titleSlug;
     const key = rawKey ? String(rawKey).trim() : '';
-    if (key && !deletedSet.has(key) && !deletedSet.has(p.slug) && !deletedSet.has(p.id) && !seenKeys.has(key)) {
+    return deletedSet.has(key) || 
+      (p.slug && deletedSet.has(String(p.slug).trim())) || 
+      (p.id && deletedSet.has(String(p.id).trim())) || 
+      (titleSlug && deletedSet.has(titleSlug)) ||
+      (p.title && deletedSet.has(String(p.title).trim().toLowerCase()));
+  };
+
+  for (const p of incoming) {
+    if (!p || typeof p !== 'object' || isDeleted(p)) continue;
+    const titleSlug = p.title ? String(p.title).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : '';
+    const rawKey = p.slug || p.id || titleSlug;
+    const key = rawKey ? String(rawKey).trim() : '';
+    if (key && !seenKeys.has(key)) {
       seenKeys.add(key);
       result.push({
         ...p,
@@ -119,11 +131,11 @@ function mergeLiveSyncPrograms(incoming = [], existing = [], deleted = []) {
     }
   }
   for (const p of existing) {
-    if (!p || typeof p !== 'object') continue;
+    if (!p || typeof p !== 'object' || isDeleted(p)) continue;
     const titleSlug = p.title ? String(p.title).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : '';
     const rawKey = p.slug || p.id || titleSlug;
     const key = rawKey ? String(rawKey).trim() : '';
-    if (key && !deletedSet.has(key) && !deletedSet.has(p.slug) && !deletedSet.has(p.id) && !seenKeys.has(key)) {
+    if (key && !seenKeys.has(key)) {
       seenKeys.add(key);
       result.push({
         ...p,
@@ -198,8 +210,9 @@ export function applySiteStatePayload(state, { broadcast = false } = {}) {
         existing = {};
       }
     }
-    const incomingPrograms = Array.isArray(state.cmsData.programs) ? state.cmsData.programs : (existing.programs || []);
-    const existingPrograms = Array.isArray(existing.programs) ? existing.programs : [];
+    const hasIncomingPrograms = Array.isArray(state.cmsData.programs);
+    const incomingPrograms = hasIncomingPrograms ? state.cmsData.programs : (existing.programs || []);
+    const existingPrograms = hasIncomingPrograms ? [] : (Array.isArray(existing.programs) ? existing.programs : []);
     const deletedSlugs = Array.from(new Set([...(state.cmsData.deletedPrograms || []), ...(existing.deletedPrograms || [])]));
     const mergedPrograms = mergeLiveSyncPrograms(incomingPrograms, existingPrograms, deletedSlugs);
 

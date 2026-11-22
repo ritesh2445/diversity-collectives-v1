@@ -637,8 +637,29 @@ export function saveCmsProgram(program) {
 
 export function deleteCmsProgram(id) {
   const data = getLiveCmsData();
-  const list = data.programs.filter(p => p.id !== id && p.slug !== id);
-  saveLiveCmsData({ ...data, programs: list });
+  const cleanKey = String(id).trim();
+  const target = (data.programs || []).find(p => 
+    (p.slug && p.slug === cleanKey) || 
+    (p.id && String(p.id) === cleanKey) || 
+    (p.title && p.title.toLowerCase().trim() === cleanKey.toLowerCase())
+  );
+  const targetSlug = target?.slug || cleanKey;
+  const targetId = target?.id ? String(target.id) : cleanKey;
+  const targetTitleSlug = target?.title ? target.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : null;
+
+  const list = (data.programs || []).filter(p => 
+    p.slug !== cleanKey && 
+    String(p.id) !== cleanKey && 
+    (!target || (p.slug !== target.slug && String(p.id) !== String(target.id)))
+  );
+  const deleted = Array.from(new Set([
+    ...(data.deletedPrograms || []), 
+    cleanKey, 
+    ...(targetSlug ? [targetSlug] : []), 
+    ...(targetId ? [targetId] : []),
+    ...(targetTitleSlug ? [targetTitleSlug] : [])
+  ]));
+  saveLiveCmsData({ ...data, programs: list, deletedPrograms: deleted });
   return list;
 }
 
@@ -657,8 +678,27 @@ export function saveCmsEvent(event) {
 
 export function deleteCmsEvent(id) {
   const data = getLiveCmsData();
-  const list = data.events.filter(e => e.id !== id && e.slug !== id);
-  saveLiveCmsData({ ...data, events: list });
+  const cleanKey = String(id).trim();
+  const target = (data.events || []).find(e => 
+    (e.slug && e.slug === cleanKey) || 
+    (e.id && String(e.id) === cleanKey) || 
+    (e.title && e.title.toLowerCase().trim() === cleanKey.toLowerCase())
+  );
+  const targetSlug = target?.slug || cleanKey;
+  const targetId = target?.id ? String(target.id) : cleanKey;
+
+  const list = (data.events || []).filter(e => 
+    e.slug !== cleanKey && 
+    String(e.id) !== cleanKey && 
+    (!target || (e.slug !== target.slug && String(e.id) !== String(target.id)))
+  );
+  const deleted = Array.from(new Set([
+    ...(data.deletedEvents || []), 
+    cleanKey, 
+    ...(targetSlug ? [targetSlug] : []), 
+    ...(targetId ? [targetId] : [])
+  ]));
+  saveLiveCmsData({ ...data, events: list, deletedEvents: deleted });
   return list;
 }
 

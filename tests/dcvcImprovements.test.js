@@ -106,4 +106,32 @@ describe('DCVC Approved Improvements: GEM Membership, Sponsorship, In-Kind, CRC 
       });
     });
   });
+
+  describe('3. Program Deletion Persistence & Tombstone Integrity', () => {
+    it('permanently deletes newly added programs and records tombstones without resurrecting', () => {
+      const initialCount = cmsStore.getPrograms().length;
+      const testProgram = {
+        id: 'prog-temp-delete-test',
+        slug: 'temp-delete-test-slug',
+        title: 'Temporary Deletion Test Program',
+        schedule: 'Fridays 4 PM',
+        location: 'Ventura Community Center'
+      };
+
+      cmsStore.saveProgram(testProgram);
+      assert.equal(cmsStore.getPrograms().length, initialCount + 1);
+      assert.ok(cmsStore.getPrograms().some(p => p.slug === 'temp-delete-test-slug'));
+
+      // Delete by slug
+      cmsStore.deleteProgram('temp-delete-test-slug');
+      const afterDelete = cmsStore.getPrograms();
+      assert.equal(afterDelete.length, initialCount);
+      assert.ok(!afterDelete.some(p => p.slug === 'temp-delete-test-slug' || p.id === 'prog-temp-delete-test'));
+
+      // Check tombstones
+      const deletedList = cmsStore.getAllData().deletedPrograms || [];
+      assert.ok(deletedList.includes('temp-delete-test-slug'));
+      assert.ok(deletedList.includes('prog-temp-delete-test'));
+    });
+  });
 });

@@ -133,7 +133,10 @@ const CMS_ALLOWED_KEYS = new Set([
   'settings',
   'trainings',
   'testimonials',
-  'lastUpdated'
+  'lastUpdated',
+  'deletedPrograms',
+  'deletedEvents',
+  'deletedStaff'
 ]);
 
 const SAFE_STATUS_TYPE_RE = /^(live|launch_timer|maintenance|custom)$/i;

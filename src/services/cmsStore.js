@@ -1088,8 +1088,29 @@ class CmsStoreEngine {
 
   deleteProgram(slugOrId) {
     if (!slugOrId) return this.getPrograms();
-    const existing = this.getPrograms().filter(p => p.slug !== slugOrId && p.id !== slugOrId);
-    const deleted = Array.from(new Set([...(this.data.deletedPrograms || []), slugOrId]));
+    const cleanKey = String(slugOrId).trim();
+    const currentList = this.getPrograms();
+    const target = currentList.find(p => 
+      (p.slug && p.slug === cleanKey) || 
+      (p.id && String(p.id) === cleanKey) || 
+      (p.title && p.title.toLowerCase().trim() === cleanKey.toLowerCase())
+    );
+    const targetSlug = target?.slug || cleanKey;
+    const targetId = target?.id ? String(target.id) : cleanKey;
+    const targetTitleSlug = target?.title ? target.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : null;
+
+    const existing = currentList.filter(p => 
+      p.slug !== cleanKey && 
+      String(p.id) !== cleanKey && 
+      (!target || (p.slug !== target.slug && String(p.id) !== String(target.id)))
+    );
+    const deleted = Array.from(new Set([
+      ...(this.data.deletedPrograms || []), 
+      cleanKey, 
+      ...(targetSlug ? [targetSlug] : []), 
+      ...(targetId ? [targetId] : []),
+      ...(targetTitleSlug ? [targetTitleSlug] : [])
+    ]));
     this.saveData({ ...this.data, programs: existing, deletedPrograms: deleted });
     return existing;
   }
