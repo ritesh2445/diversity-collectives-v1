@@ -56,6 +56,7 @@ const About = lazyWithRetry(() => import('./pages/About'));
 const BoardAndStaff = lazyWithRetry(() => import('./pages/BoardAndStaff'));
 const BoardMemberProfile = lazyWithRetry(() => import('./pages/BoardMemberProfile'));
 const Sponsors = lazyWithRetry(() => import('./pages/Sponsors'));
+const Sponsorships = lazyWithRetry(() => import('./pages/Sponsorships'));
 const Programs = lazyWithRetry(() => import('./pages/Programs'));
 const ProgramDetail = lazyWithRetry(() => import('./pages/ProgramDetail'));
 const Community = lazyWithRetry(() => import('./pages/Community'));
@@ -251,6 +252,7 @@ function AppLayout() {
               <Route path="/board-and-staff/:slug" element={<BoardMemberProfile />} />
               <Route path="/board/:slug" element={<BoardMemberProfile />} />
               <Route path="/sponsors" element={<Sponsors />} />
+              <Route path="/sponsorships" element={<Sponsorships />} />
 
               {/* Programs & Community */}
               <Route path="/programs" element={<Programs />} />

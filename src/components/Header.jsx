@@ -129,6 +129,7 @@ export default function Header() {
   const secondaryNavItems = [
     { label: translationService.t('nav_directory', 'Directory'), to: "/directory", icon: Compass, desc: translationService.t('nav_desc_directory', "LGBTQ+ affirming business network") },
     { label: translationService.t('nav_training', 'Training'), to: "/training", icon: Sparkles, desc: translationService.t('nav_desc_training', "P.R.I.D.E. cultural competency") },
+    { label: translationService.t('nav_sponsorships', 'Sponsorships'), to: "/sponsorships", icon: HeartHandshake, desc: translationService.t('nav_desc_sponsorships', "Corporate partnerships & packets") },
     { label: translationService.t('nav_news', 'News'), to: "/news", icon: Info, desc: translationService.t('nav_desc_news', "Stories, updates & advocacy") },
     { label: translationService.t('nav_gallery', 'Gallery'), to: "/gallery", icon: Sparkles, desc: translationService.t('nav_desc_gallery', "Celebration & memories") },
     { label: translationService.t('nav_podcasts', 'Podcasts & Media'), to: "/media", icon: Mic, desc: translationService.t('nav_desc_podcasts', "Conversations, stories & community media") },

@@ -394,6 +394,106 @@ export const DEFAULT_TRAINING_PAGE_CONTENT = {
   bottomBannerButtonText: "Request Workshop Proposal"
 };
 
+export const DEFAULT_SPONSORSHIP_PAGE_CONTENT = {
+  heroEyebrow: "PARTNER WITH DIVERSITY COLLECTIVE",
+  headline: "Corporate Partnerships & Sponsorship Opportunities",
+  subtitle: "Investing in LGBTQ+ Advocacy, Community Health, and Youth Sanctuaries Across Ventura County",
+  introduction: "Diversity Collective Ventura County welcomes corporate sponsors, civic foundations, regional employers, and community partners committed to making a lasting impact. Your partnership directly champions our four foundational pillars: Community Advocacy, Cultural Visibility, Safe Peer Sanctuaries, and Equitable Public Health Access across all ten cities of Ventura County.",
+  sectionTitle: "Official Sponsorship Documents & Packets",
+  sectionSubtitle: "Explore our official 2027 corporate partnership opportunities, investment tier breakdowns, and strategic community impact blueprints. View online or download official PDFs.",
+  contactHeading: "Ready to Discuss a Corporate Partnership?",
+  contactSubtitle: "Our leadership and community development team works directly with corporate sponsors to create tailored engagement packages, employee volunteer days, and premier brand recognition.",
+  contactCtaText: "Contact Partnership Team",
+  contactEmail: "info@diversitycollective.org",
+  contactPhone: "(805) 644-LGBT (5428)",
+  contactAddress: "2471 Portola Road, Suite 100, Ventura, CA 93003"
+};
+
+export const DEFAULT_SPONSORSHIP_DOCUMENTS = [
+  {
+    id: "doc-2027-cover-letter",
+    title: "DCVC 2027 Sponsorship Cover Letter",
+    description: "Official introductory correspondence from DCVC leadership presenting our 2027 community partnership alignments, mission milestones, and the executive invitation to sponsor regional LGBTQ+ programs.",
+    category: "Cover Letter",
+    year: "2027",
+    fileUrl: "/documents/sponsorships/dcvc-2027-sponsorship-cover-letter.pdf",
+    fileName: "dcvc-2027-sponsorship-cover-letter.pdf",
+    fileSize: "7.1 KB",
+    status: "published",
+    displayOrder: 1,
+    createdAt: "2026-11-20T10:00:00.000Z",
+    updatedAt: "2026-11-20T10:00:00.000Z"
+  },
+  {
+    id: "doc-2027-opportunities-packet",
+    title: "DCVC 2027 Sponsorship Opportunities Packet",
+    description: "Detailed 2027 investment tier guide (Premier, Major, Specialty, Community, and In-Kind), partner branding activations, employee engagement benefits, and partnership commitment form.",
+    category: "Sponsorship Package",
+    year: "2027",
+    fileUrl: "/documents/sponsorships/dcvc-2027-sponsorship-opportunities-packet.pdf",
+    fileName: "dcvc-2027-sponsorship-opportunities-packet.pdf",
+    fileSize: "8.1 KB",
+    status: "published",
+    displayOrder: 2,
+    createdAt: "2026-11-20T10:00:00.000Z",
+    updatedAt: "2026-11-20T10:00:00.000Z"
+  },
+  {
+    id: "doc-2027-strategic-proposal",
+    title: "DCVC 2027 Strategic Partnership Proposal",
+    description: "Strategic impact blueprint communicating DCVC's four core impact pillars (Advocacy, Visibility, Safety, Wellness), regional promotional reach across 10 Ventura County cities, and community value.",
+    category: "Strategic Proposal",
+    year: "2027",
+    fileUrl: "/documents/sponsorships/dcvc-2027-strategic-partnership-proposal.pdf",
+    fileName: "dcvc-2027-strategic-partnership-proposal.pdf",
+    fileSize: "6.9 KB",
+    status: "published",
+    displayOrder: 3,
+    createdAt: "2026-11-20T10:00:00.000Z",
+    updatedAt: "2026-11-20T10:00:00.000Z"
+  }
+];
+
+export function mergeSponsorshipDocumentsWithDefaults(savedDocs = [], defaultDocs = DEFAULT_SPONSORSHIP_DOCUMENTS, deletedIds = []) {
+  const seed = Array.isArray(defaultDocs) && defaultDocs.length > 0 ? defaultDocs : DEFAULT_SPONSORSHIP_DOCUMENTS;
+  const deletedSet = new Set(Array.isArray(deletedIds) ? deletedIds.map(d => String(d).trim().toLowerCase()) : []);
+
+  if (!Array.isArray(savedDocs) || savedDocs.length === 0) {
+    return seed.filter(d => !deletedSet.has(String(d.id || '').toLowerCase()));
+  }
+
+  const result = [];
+  const seenIds = new Set();
+
+  for (const doc of savedDocs) {
+    if (!doc || typeof doc !== 'object') continue;
+    const id = String(doc.id || '').trim();
+    if (id && !deletedSet.has(id.toLowerCase()) && !seenIds.has(id.toLowerCase())) {
+      seenIds.add(id.toLowerCase());
+      const seedMatch = seed.find(s => String(s.id).toLowerCase() === id.toLowerCase());
+      result.push({
+        ...(seedMatch || {}),
+        ...doc,
+        id,
+        displayOrder: typeof doc.displayOrder === 'number' ? doc.displayOrder : (result.length + 1)
+      });
+    }
+  }
+
+  for (const doc of seed) {
+    const id = String(doc.id || '').trim();
+    if (id && !deletedSet.has(id.toLowerCase()) && !seenIds.has(id.toLowerCase())) {
+      seenIds.add(id.toLowerCase());
+      result.push({
+        ...doc,
+        displayOrder: typeof doc.displayOrder === 'number' ? doc.displayOrder : (result.length + 1)
+      });
+    }
+  }
+
+  return result.sort((a, b) => (Number(a.displayOrder) || 0) - (Number(b.displayOrder) || 0));
+}
+
 export const INITIAL_CMS_DATA = {
   version: '3.1',
   lastUpdated: new Date().toISOString(),
@@ -458,6 +558,9 @@ export const INITIAL_CMS_DATA = {
   memoryLane: memoryLaneMilestones || [],
   podcasts: podcastsSeed || [],
   trainingPageContent: DEFAULT_TRAINING_PAGE_CONTENT,
+  sponsorshipDocuments: DEFAULT_SPONSORSHIP_DOCUMENTS,
+  sponsorshipPageContent: DEFAULT_SPONSORSHIP_PAGE_CONTENT,
+  deletedSponsorshipDocuments: [],
   mediaSuggestions: [
     {
       id: 'sug-seed-1',
@@ -1023,6 +1126,12 @@ class CmsStoreEngine {
           ...DEFAULT_TRAINING_PAGE_CONTENT,
           ...(parsed.trainingPageContent || {})
         },
+        sponsorshipDocuments: mergeSponsorshipDocumentsWithDefaults(parsed.sponsorshipDocuments, INITIAL_CMS_DATA.sponsorshipDocuments, parsed.deletedSponsorshipDocuments || []),
+        sponsorshipPageContent: {
+          ...DEFAULT_SPONSORSHIP_PAGE_CONTENT,
+          ...(parsed.sponsorshipPageContent || {})
+        },
+        deletedSponsorshipDocuments: parsed.deletedSponsorshipDocuments || [],
         mediaSuggestions: parsed.mediaSuggestions || []
       };
     } catch {
@@ -1033,9 +1142,14 @@ class CmsStoreEngine {
   saveData(data, { broadcast = true } = {}) {
     const cleanData = {
       ...data,
-      programs: mergeProgramsWithDefaults(data.programs || this.data.programs, INITIAL_CMS_DATA.programs, data.deletedPrograms || this.data.deletedPrograms || []),
-      events: mergeEventsWithDefaults(data.events || this.data.events, INITIAL_CMS_DATA.events, data.deletedEvents || this.data.deletedEvents || []),
-      staff: mergeStaffWithDefaults(data.staff || this.data.staff, INITIAL_CMS_DATA.staff, data.deletedStaff || this.data.deletedStaff || []),
+      programs: mergeProgramsWithDefaults(data.programs || this.data?.programs, INITIAL_CMS_DATA.programs, data.deletedPrograms || this.data?.deletedPrograms || []),
+      events: mergeEventsWithDefaults(data.events || this.data?.events, INITIAL_CMS_DATA.events, data.deletedEvents || this.data?.deletedEvents || []),
+      staff: mergeStaffWithDefaults(data.staff || this.data?.staff, INITIAL_CMS_DATA.staff, data.deletedStaff || this.data?.deletedStaff || []),
+      sponsorshipDocuments: mergeSponsorshipDocumentsWithDefaults(data.sponsorshipDocuments || this.data?.sponsorshipDocuments, INITIAL_CMS_DATA.sponsorshipDocuments, data.deletedSponsorshipDocuments || this.data?.deletedSponsorshipDocuments || []),
+      sponsorshipPageContent: {
+        ...DEFAULT_SPONSORSHIP_PAGE_CONTENT,
+        ...(data.sponsorshipPageContent || this.data?.sponsorshipPageContent || {})
+      },
       lastUpdated: new Date().toISOString()
     };
     this.data = cleanData;
@@ -1788,6 +1902,114 @@ class CmsStoreEngine {
     const existing = this.getMediaSuggestions().filter(s => s.id !== id);
     this.saveData({ ...this.data, mediaSuggestions: existing });
     return existing;
+  }
+
+  // --------------------------------------------------------------------------
+  // Sponsorship Document Library & Page Content CRUD
+  // --------------------------------------------------------------------------
+  getSponsorshipDocuments(includeDrafts = true) {
+    const docs = mergeSponsorshipDocumentsWithDefaults(
+      this.data?.sponsorshipDocuments,
+      INITIAL_CMS_DATA.sponsorshipDocuments,
+      this.data?.deletedSponsorshipDocuments || []
+    );
+    if (!includeDrafts) {
+      return docs.filter(d => d.status === 'published');
+    }
+    return docs;
+  }
+
+  getPublishedSponsorshipDocuments() {
+    return this.getSponsorshipDocuments(false);
+  }
+
+  saveSponsorshipDocument(doc) {
+    if (!doc || typeof doc !== 'object') return this.getSponsorshipDocuments(true);
+    const existing = [...this.getSponsorshipDocuments(true)];
+    const id = doc.id || `doc-${Date.now()}`;
+    const cleanDoc = {
+      ...doc,
+      id,
+      title: doc.title?.trim() || 'Untitled Sponsorship Document',
+      description: doc.description?.trim() || '',
+      category: doc.category || 'Other',
+      year: doc.year ? String(doc.year).trim() : '2027',
+      fileUrl: doc.fileUrl || '',
+      fileName: doc.fileName || 'document.pdf',
+      fileSize: doc.fileSize || 'PDF',
+      status: doc.status === 'draft' ? 'draft' : 'published',
+      displayOrder: typeof doc.displayOrder === 'number' ? doc.displayOrder : (existing.length + 1),
+      updatedAt: new Date().toISOString()
+    };
+    if (!cleanDoc.createdAt) {
+      cleanDoc.createdAt = new Date().toISOString();
+    }
+
+    const idx = existing.findIndex(d => String(d.id).toLowerCase() === String(id).toLowerCase());
+    if (idx >= 0) {
+      existing[idx] = cleanDoc;
+    } else {
+      existing.push(cleanDoc);
+    }
+
+    // Sort by displayOrder
+    existing.sort((a, b) => (Number(a.displayOrder) || 0) - (Number(b.displayOrder) || 0));
+
+    // Remove from deleted list if it was previously marked deleted
+    const deletedList = (this.data?.deletedSponsorshipDocuments || []).filter(
+      d => String(d).toLowerCase() !== String(id).toLowerCase()
+    );
+
+    this.saveData({
+      ...this.data,
+      sponsorshipDocuments: existing,
+      deletedSponsorshipDocuments: deletedList
+    });
+    return existing;
+  }
+
+  deleteSponsorshipDocument(id) {
+    const deletedId = String(id).trim();
+    const deletedList = Array.from(new Set([...(this.data?.deletedSponsorshipDocuments || []), deletedId]));
+    const existing = this.getSponsorshipDocuments(true).filter(d => String(d.id).toLowerCase() !== deletedId.toLowerCase());
+    this.saveData({
+      ...this.data,
+      sponsorshipDocuments: existing,
+      deletedSponsorshipDocuments: deletedList
+    });
+    return existing;
+  }
+
+  reorderSponsorshipDocuments(orderedIds) {
+    if (!Array.isArray(orderedIds)) return this.getSponsorshipDocuments(true);
+    const idOrderMap = new Map(orderedIds.map((id, index) => [String(id).toLowerCase(), index + 1]));
+    const existing = this.getSponsorshipDocuments(true).map(doc => {
+      const newOrder = idOrderMap.get(String(doc.id).toLowerCase());
+      return {
+        ...doc,
+        displayOrder: newOrder !== undefined ? newOrder : doc.displayOrder
+      };
+    });
+    existing.sort((a, b) => (Number(a.displayOrder) || 0) - (Number(b.displayOrder) || 0));
+    this.saveData({ ...this.data, sponsorshipDocuments: existing });
+    return existing;
+  }
+
+  getSponsorshipPageContent() {
+    return {
+      ...DEFAULT_SPONSORSHIP_PAGE_CONTENT,
+      ...(this.data?.sponsorshipPageContent || {})
+    };
+  }
+
+  saveSponsorshipPageContent(updates) {
+    const current = this.getSponsorshipPageContent();
+    const updated = {
+      ...current,
+      ...updates
+    };
+    this.saveData({ ...this.data, sponsorshipPageContent: updated });
+    return updated;
   }
 }
 

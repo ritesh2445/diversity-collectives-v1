@@ -217,3 +217,42 @@ export function deleteMediaSuggestion(id) {
   publishAdminSitePatch({ cmsData: cmsStore.getData() }).catch(() => {});
   return list;
 }
+
+// ----------------------------------------------------------------------------
+// Sponsorship Document Library & Page Content
+// ----------------------------------------------------------------------------
+export function getSponsorshipDocuments(includeDrafts = true) {
+  return cmsStore.getSponsorshipDocuments(includeDrafts);
+}
+
+export function getPublishedSponsorshipDocuments() {
+  return cmsStore.getPublishedSponsorshipDocuments();
+}
+
+export function saveCmsSponsorshipDocument(doc) {
+  const list = cmsStore.saveSponsorshipDocument(doc);
+  publishAdminSitePatch({ cmsData: cmsStore.getData() }).catch(() => {});
+  return list;
+}
+
+export function deleteCmsSponsorshipDocument(id) {
+  const list = cmsStore.deleteSponsorshipDocument(id);
+  publishAdminSitePatch({ cmsData: cmsStore.getData() }).catch(() => {});
+  return list;
+}
+
+export function reorderCmsSponsorshipDocuments(orderedIds) {
+  const list = cmsStore.reorderSponsorshipDocuments(orderedIds);
+  publishAdminSitePatch({ cmsData: cmsStore.getData() }).catch(() => {});
+  return list;
+}
+
+export function getSponsorshipPageContent() {
+  return cmsStore.getSponsorshipPageContent();
+}
+
+export function saveCmsSponsorshipPageContent(content) {
+  const updated = cmsStore.saveSponsorshipPageContent(content);
+  publishAdminSitePatch({ cmsData: cmsStore.getData() }).catch(() => {});
+  return updated;
+}

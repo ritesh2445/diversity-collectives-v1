@@ -66,6 +66,7 @@ import CardOrderManager from '../admin/components/CardOrderManager.jsx';
 import AdminQuickSearch from '../admin/components/AdminQuickSearch.jsx';
 import SiteStatusManager from '../admin/components/SiteStatusManager.jsx';
 import DonationSettingsStudio from '../admin/components/DonationSettingsStudio.jsx';
+import SponsorshipManager from '../admin/components/SponsorshipManager.jsx';
 import VoicemailItemRow from '../components/VoicemailItemRow.jsx';
 import { getSiteStateMeta, SYNC_EVENTS } from '../services/liveSync.js';
 import { cmsStore } from '../services/cmsStore.js';
@@ -3091,6 +3092,19 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
 
           <button
             type="button"
+            onClick={() => setActiveTab('sponsorships')}
+            className={`py-3 px-4 text-xs font-extrabold border-b-2 flex items-center gap-2 whitespace-nowrap cursor-pointer transition-all ${
+              activeTab === 'sponsorships'
+                ? 'border-[#5A1E65] text-[#5A1E65] bg-purple-50/50'
+                : 'border-transparent text-slate-600 hover:text-slate-950'
+            }`}
+          >
+            <FileText className="w-4 h-4" />
+            <span>Sponsorships & Documents</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setActiveTab('features')}
             className={`py-3 px-4 text-xs font-extrabold border-b-2 flex items-center gap-2 whitespace-nowrap cursor-pointer transition-all ${
               activeTab === 'features'
@@ -3231,6 +3245,15 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
         {activeTab === 'cms' && (
           <div className="space-y-6 animate-fadeIn">
             <CmsStudio />
+          </div>
+        )}
+
+        {/* ================================================================= */}
+        {/* TAB: SPONSORSHIPS & CORPORATE PARTNERSHIP DOCUMENTS                */}
+        {/* ================================================================= */}
+        {activeTab === 'sponsorships' && (
+          <div className="space-y-6 animate-fadeIn">
+            <SponsorshipManager />
           </div>
         )}
 

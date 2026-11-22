@@ -41,6 +41,7 @@ import PictureFolderManager from './PictureFolderManager.jsx';
 import StyleCustomizer from './StyleCustomizer.jsx';
 import NewsWritingPad from './NewsWritingPad.jsx';
 import CardGradientStudio from './CardGradientStudio.jsx';
+import SponsorshipManager from './SponsorshipManager.jsx';
 import {
   getLiveCmsData,
   saveLiveCmsData,
@@ -758,6 +759,7 @@ export default function CmsStudio() {
     { id: 'events', label: 'Events & Calendar', count: cmsData.events?.length || 0, icon: Calendar },
     { id: 'trainings', label: 'P.R.I.D.E. Trainings', count: cmsData.trainings?.length || 0, icon: Award },
     { id: 'sponsors', label: 'Sponsors & Partners', count: cmsData.sponsors?.length || 0, icon: Heart },
+    { id: 'sponsorshipDocs', label: 'Sponsorship Documents', count: cmsData.sponsorshipDocuments?.length || 0, icon: FileText },
     { id: 'podcasts', label: 'Podcasts & Media', count: cmsData.podcasts?.length || 0, icon: Mic },
     { id: 'news', label: 'News & Articles', count: cmsData.news?.length || 0, icon: FileText },
     { id: 'resources', label: 'Community Resources', count: cmsData.resources?.length || 0, icon: BookOpen },
@@ -2446,6 +2448,13 @@ export default function CmsStudio() {
             ))}
           </div>
         </div>
+      )}
+
+      {/* ======================================================================
+          SUB-TAB: SPONSORSHIP DOCUMENTS & PARTNERSHIP PACKETS
+          ====================================================================== */}
+      {activeSubTab === 'sponsorshipDocs' && (
+        <SponsorshipManager />
       )}
 
       {/* ======================================================================

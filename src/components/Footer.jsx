@@ -258,6 +258,7 @@ export default function Footer() {
                 <li><Link to="/about" className="text-white/90 hover:text-amber-300 transition-colors">About Diversity Collective</Link></li>
                 <li><Link to="/board-and-staff" className="text-white/90 hover:text-amber-300 transition-colors">Board & Staff</Link></li>
                 <li><Link to="/sponsors" className="text-white/90 hover:text-amber-300 transition-colors">Sponsors & Partners</Link></li>
+                <li><Link to="/sponsorships" className="text-white/90 hover:text-amber-300 transition-colors">Sponsorship Opportunities</Link></li>
                 <li><Link to="/programs" className="text-white/90 hover:text-amber-300 transition-colors">Programs & Health Care</Link></li>
                 <li><Link to="/directory" className="text-white/90 hover:text-amber-300 transition-colors">LGBTQ+ Business Directory</Link></li>
                 <li><Link to="/training" className="text-white/90 hover:text-amber-300 transition-colors">P.R.I.D.E. Training</Link></li>
