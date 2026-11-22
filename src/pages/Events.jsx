@@ -27,7 +27,10 @@ import {
   findBestCalendarMonth,
   getLocalizedMonthName,
   getLocalizedMonthAbbr,
-  getLocalizedWeekdays
+  getLocalizedWeekdays,
+  isUpcomingEvent,
+  isPastEvent,
+  getPacificEventEndTimestamp
 } from '../utils/eventDates';
 import { translationService } from '../services/translationService';
 
@@ -49,12 +52,16 @@ export default function Events() {
   const [searchInput, setSearchInput] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [viewMode, setViewMode] = useState('list'); // 'list' | 'calendar'
+  const [activeTab, setActiveTab] = useState('upcoming'); // 'upcoming' | 'past'
 
   // Traditional Monthly Calendar State — smartly focuses on active scheduled events
   const [currentCalendarDate, setCurrentCalendarDate] = useState(() =>
     findBestCalendarMonth(cmsStore.getEvents())
   );
   const [selectedDateFilter, setSelectedDateFilter] = useState(null);
+
+  const upcomingCount = useMemo(() => (events || []).filter(isUpcomingEvent).length, [events]);
+  const pastCount = useMemo(() => (events || []).filter(isPastEvent).length, [events]);
 
   useEffect(() => {
     const unsubscribe = cmsStore.subscribe((data) => {
@@ -109,22 +116,36 @@ export default function Events() {
   }, [events]);
 
   const filteredEvents = useMemo(() => {
-    return (events || []).filter((evt) => {
-      const q = searchQuery.toLowerCase();
-      const matchesSearch = !q ||
-        (evt.title || '').toLowerCase().includes(q) ||
-        (evt.description || '').toLowerCase().includes(q) ||
-        (evt.location || '').toLowerCase().includes(q) ||
-        (evt.category || '').toLowerCase().includes(q);
+    return (events || [])
+      .filter((evt) => {
+        // If user explicitly clicked a day in calendar view or date pill, show that date
+        if (selectedDateFilter) {
+          const dateKey = getEventDateKey(evt);
+          if (dateKey !== selectedDateFilter) return false;
+        } else if (viewMode === 'list') {
+          // In list view: strictly enforce Upcoming vs Past based on current date & Pacific timezone
+          if (activeTab === 'upcoming' && !isUpcomingEvent(evt)) return false;
+          if (activeTab === 'past' && !isPastEvent(evt)) return false;
+        }
 
-      const matchesCat = selectedCategory === 'All' || evt.category === selectedCategory;
+        const q = searchQuery.toLowerCase();
+        const matchesSearch = !q ||
+          (evt.title || '').toLowerCase().includes(q) ||
+          (evt.description || '').toLowerCase().includes(q) ||
+          (evt.location || '').toLowerCase().includes(q) ||
+          (evt.category || '').toLowerCase().includes(q);
 
-      const dateKey = getEventDateKey(evt);
-      const matchesDate = !selectedDateFilter || dateKey === selectedDateFilter;
+        const matchesCat = selectedCategory === 'All' || evt.category === selectedCategory;
 
-      return matchesSearch && matchesCat && matchesDate;
-    });
-  }, [events, searchQuery, selectedCategory, selectedDateFilter]);
+        return matchesSearch && matchesCat;
+      })
+      .sort((a, b) => {
+        const tsA = getPacificEventEndTimestamp(a);
+        const tsB = getPacificEventEndTimestamp(b);
+        // Past events sort descending (most recent first), upcoming sort ascending (soonest first)
+        return activeTab === 'past' && !selectedDateFilter ? tsB - tsA : tsA - tsB;
+      });
+  }, [events, searchQuery, selectedCategory, selectedDateFilter, viewMode, activeTab]);
 
   // Calendar calculations for selected month
   const calendarYear = currentCalendarDate.getFullYear();
@@ -462,17 +483,52 @@ export default function Events() {
       {/* Event Cards Section */}
       <section className="container-clean py-8">
         
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
             <h2 className="font-display text-2xl sm:text-3xl font-black text-slate-950">
-              {viewMode === 'calendar' ? 'Events for Selected Timeframe' : 'Upcoming Gatherings'}
+              {selectedDateFilter
+                ? 'Gatherings on Selected Date'
+                : viewMode === 'calendar'
+                ? 'Events for Selected Timeframe'
+                : activeTab === 'upcoming'
+                ? 'Upcoming Gatherings'
+                : 'Past Gatherings Archive'}
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 font-medium">
               Showing {filteredEvents.length} event{filteredEvents.length === 1 ? '' : 's'}
               {selectedCategory !== 'All' ? ` in ${selectedCategory}` : ''}
               {searchQuery ? ` matching "${searchQuery}"` : ''}
+              {activeTab === 'upcoming' && !selectedDateFilter ? ' · Live time-evaluated' : ''}
             </p>
           </div>
+
+          {/* Toggle between Upcoming Gatherings and Past Archive in Cards View */}
+          {viewMode === 'list' && !selectedDateFilter && (
+            <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-2xl border border-slate-200 self-start sm:self-auto">
+              <button
+                type="button"
+                onClick={() => setActiveTab('upcoming')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === 'upcoming'
+                    ? 'bg-[#5A1E65] text-white shadow-xs font-extrabold'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Upcoming ({upcomingCount})
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('past')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === 'past'
+                    ? 'bg-[#5A1E65] text-white shadow-xs font-extrabold'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Past Archive ({pastCount})
+              </button>
+            </div>
+          )}
         </div>
 
         {filteredEvents.length === 0 ? (

@@ -198,8 +198,9 @@ export function findBestCalendarMonth(events, referenceDate = new Date()) {
   const ref = referenceDate instanceof Date && !Number.isNaN(referenceDate.getTime())
     ? referenceDate
     : new Date();
-  const refYear = ref.getFullYear();
-  const refMonth = ref.getMonth();
+  const pacificToday = getCurrentPacificDate(ref);
+  const refYear = pacificToday.year;
+  const refMonth = pacificToday.monthIndex;
 
   const parsedEvents = (Array.isArray(events) ? events : [])
     .map(parseEventDate)
@@ -225,5 +226,156 @@ export function findBestCalendarMonth(events, referenceDate = new Date()) {
 
   const latest = parsedEvents[parsedEvents.length - 1];
   return new Date(latest.year, latest.monthIndex, 1);
+}
+
+/**
+ * Resolves current calendar date in Ventura County, California (America/Los_Angeles).
+ * Handles global viewers in different timezones so dates are not misclassified.
+ */
+export function getCurrentPacificDate(referenceDate = new Date()) {
+  const ref = referenceDate instanceof Date && !Number.isNaN(referenceDate.getTime())
+    ? referenceDate
+    : new Date();
+  try {
+    const dtf = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Los_Angeles',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+    const parts = dtf.formatToParts(ref);
+    const pMap = {};
+    for (const p of parts) pMap[p.type] = p.value;
+    const year = parseInt(pMap.year, 10);
+    const month = parseInt(pMap.month, 10);
+    const day = parseInt(pMap.day, 10);
+    const isoDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    return { year, monthIndex: month - 1, day, isoDate };
+  } catch {
+    const y = ref.getFullYear();
+    const m = ref.getMonth();
+    const d = ref.getDate();
+    return {
+      year: y,
+      monthIndex: m,
+      day: d,
+      isoDate: `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+    };
+  }
+}
+
+/**
+ * Returns UTC epoch timestamp (in ms) when an event concludes in Pacific Time.
+ * If the event has an end time (e.g. 7:00 PM), it concludes at that specific time.
+ * If all-day or unspecified time, it concludes at 23:59:59 Pacific Time of that date.
+ */
+export function getPacificEventEndTimestamp(event) {
+  if (!event) return 0;
+  const parsed = parseEventDate(event);
+  if (!parsed || !parsed.isoDate) return 0;
+
+  const [yearStr, monthStr, dayStr] = parsed.isoDate.split('-');
+  const year = parseInt(yearStr, 10);
+  const month = parseInt(monthStr, 10);
+  const day = parseInt(dayStr, 10);
+
+  let hours = 23, minutes = 59, seconds = 59;
+  const timeStr = event.time || event.schedule || '';
+  if (timeStr && timeStr.toLowerCase() !== 'all day') {
+    const allTimes = [...timeStr.matchAll(/(\d{1,2}):(\d{2})\s*([ap]m)?/gi)];
+    if (allTimes.length > 0) {
+      const targetTime = allTimes[allTimes.length - 1];
+      hours = parseInt(targetTime[1], 10);
+      minutes = parseInt(targetTime[2], 10);
+      const ampm = targetTime[3] ? targetTime[3].toLowerCase() : null;
+      if (!ampm && allTimes.length > 1 && allTimes[0][3]) {
+        const globalAmpm = (allTimes[allTimes.length - 1][3] || allTimes[0][3]).toLowerCase();
+        if (globalAmpm === 'pm' && hours < 12) hours += 12;
+      } else if (ampm === 'pm' && hours < 12) {
+        hours += 12;
+      } else if (ampm === 'am' && hours === 12) {
+        hours = 0;
+      } else if (!ampm && hours >= 1 && hours <= 7) {
+        hours += 12;
+      }
+      seconds = 0;
+    }
+  }
+
+  // Find UTC timestamp matching this America/Los_Angeles wall time
+  try {
+    const guessUtc = Date.UTC(year, month - 1, day, hours, minutes, seconds);
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Los_Angeles',
+      year: 'numeric', month: 'numeric', day: 'numeric',
+      hour: 'numeric', minute: 'numeric', second: 'numeric',
+      hour12: false
+    });
+    const parts = formatter.formatToParts(new Date(guessUtc));
+    const pMap = {};
+    for (const p of parts) pMap[p.type] = p.value;
+    const pYear = parseInt(pMap.year, 10);
+    const pMonth = parseInt(pMap.month, 10);
+    const pDay = parseInt(pMap.day, 10);
+    let pHour = parseInt(pMap.hour, 10);
+    if (pHour === 24) pHour = 0;
+    const pMin = parseInt(pMap.minute, 10);
+    const pSec = parseInt(pMap.second, 10);
+
+    const pUtc = Date.UTC(pYear, pMonth - 1, pDay, pHour, pMin, pSec);
+    const offset = guessUtc - pUtc;
+
+    return guessUtc + offset;
+  } catch {
+    return new Date(year, month - 1, day, hours, minutes, seconds).getTime();
+  }
+}
+
+/**
+ * Returns true if an event is upcoming or currently active relative to referenceDate.
+ * Timezone-aware: evaluates against the event's Pacific Time finish.
+ */
+export function isUpcomingEvent(event, referenceDate = new Date()) {
+  const refMs = referenceDate instanceof Date && !Number.isNaN(referenceDate.getTime())
+    ? referenceDate.getTime()
+    : Date.now();
+  const endTs = getPacificEventEndTimestamp(event);
+  if (!endTs) return false;
+  return endTs >= refMs;
+}
+
+/**
+ * Returns true if an event is in the past relative to referenceDate.
+ */
+export function isPastEvent(event, referenceDate = new Date()) {
+  return !isUpcomingEvent(event, referenceDate);
+}
+
+/**
+ * Filters an event list to strictly upcoming events, sorted chronologically (earliest first).
+ */
+export function filterUpcomingEvents(events, referenceDate = new Date()) {
+  if (!Array.isArray(events)) return [];
+  return events
+    .filter((e) => isUpcomingEvent(e, referenceDate))
+    .sort((a, b) => {
+      const tsA = getPacificEventEndTimestamp(a);
+      const tsB = getPacificEventEndTimestamp(b);
+      return tsA - tsB;
+    });
+}
+
+/**
+ * Filters an event list to strictly past events, sorted reverse-chronologically (most recent first).
+ */
+export function filterPastEvents(events, referenceDate = new Date()) {
+  if (!Array.isArray(events)) return [];
+  return events
+    .filter((e) => isPastEvent(e, referenceDate))
+    .sort((a, b) => {
+      const tsA = getPacificEventEndTimestamp(a);
+      const tsB = getPacificEventEndTimestamp(b);
+      return tsB - tsA;
+    });
 }
 

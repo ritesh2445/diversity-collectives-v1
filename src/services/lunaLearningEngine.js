@@ -497,6 +497,13 @@ export class LunaLearningEngine {
         if (!n) continue;
         const norm = normalizeText(n);
         if (norm) {
+          // Standing programs and community circles take precedence over individual event calendar dates
+          if (type === 'Event' && this.entityIndex.has(norm)) {
+            const existing = this.entityIndex.get(norm);
+            if (existing && (existing.type === 'Program' || existing.type === 'CommunityGroup')) {
+              continue;
+            }
+          }
           this.entityIndex.set(norm, entry);
         }
       }
@@ -1196,6 +1203,19 @@ export class LunaLearningEngine {
           { title: "Donate to DCVC", url: "/donate" },
           { title: "About DCVC", url: "/about" }
         ],
+        mode: "client-unlimited"
+      };
+    }
+
+    // 4d. Historical Concluded Events Guard (Prevents past historical events from being resolved as active events)
+    if (
+      (rawLower.includes("2023") || rawLower.includes("2024") || rawLower.includes("past event") || rawLower.includes("concluded")) &&
+      (rawLower.includes("pride") || rawLower.includes("event") || rawLower.includes("festival") || rawLower.includes("gala") || rawLower.includes("prom"))
+    ) {
+      return {
+        success: true,
+        answer: `Past events (such as 2023 or 2024 Pride celebrations) have concluded and are not active. Our upcoming community celebrations include **Ventura County Pride** in August, the annual **Diversity Gala**, and the youth **Pride Prom**. View our live calendar at [Community Events](/events).`,
+        citations: [{ title: "Community Events", url: "/events" }],
         mode: "client-unlimited"
       };
     }

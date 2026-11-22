@@ -48,7 +48,7 @@ import {
 import HeroShowcase from '../components/HeroShowcase';
 import MobileCarousel from '../components/MobileCarousel.jsx';
 import { DEFAULT_PAGE_BLOCKS, upgradeOrNormalizePageLayout } from '../data/siteDefaults';
-import { parseEventDate, getLocalizedMonthAbbr } from '../utils/eventDates';
+import { parseEventDate, getLocalizedMonthAbbr, isUpcomingEvent } from '../utils/eventDates';
 import { translationService } from '../services/translationService';
 
 export default function Home() {
@@ -464,8 +464,10 @@ export default function Home() {
 
   const filteredEvents = useMemo(() => {
     const list = cmsEvents || liveEvents || [];
-    if (selectedEventCategory === 'all') return list;
-    return list.filter(evt => {
+    // Strictly filter out past events so that no past events appear in upcoming gatherings
+    const upcomingList = list.filter((evt) => isUpcomingEvent(evt));
+    if (selectedEventCategory === 'all') return upcomingList;
+    return upcomingList.filter(evt => {
       const cat = (evt.category || '').toLowerCase();
       const target = selectedEventCategory.toLowerCase();
       return cat === target || cat.includes(target) || target.includes(cat);
