@@ -149,7 +149,7 @@ export default function LunaLearningStudio() {
               <span>Autonomous Continuous Learning Engine</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-black font-display tracking-tight text-white">
-              Luna AI Knowledge & Learning Center
+              Luna Knowledge & Learning Center
             </h2>
             <p className="text-purple-200/90 text-sm mt-2 max-w-2xl leading-relaxed">
               Luna dynamically ingests, updates, and grounds herself in 100% of the information available on Diversity Collective Ventura County. Every time an event, program, business, news post, or setting is edited in CMS, Luna learns it in real-time.
@@ -217,7 +217,7 @@ export default function LunaLearningStudio() {
             <div>
               <h3 className="text-lg font-black text-slate-950 font-display flex items-center gap-2">
                 <Brain className="w-5 h-5 text-[#5A1E65]" />
-                <span>Luna AI Verification Sandbox</span>
+                <span>Luna Verification Sandbox</span>
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
                 Test any question live to verify that Luna answers with 100% accurate, up-to-date site information.

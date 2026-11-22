@@ -436,7 +436,7 @@ export default function Header() {
                 <span className="truncate min-w-0">Events Calendar Quick View & Dates...</span>
               </button>
 
-              {/* Chat with Luna (AI Community Guide) Quick Action */}
+              {/* Chat with Luna (Virtual Friend & Community Guide) Quick Action */}
               <button
                 type="button"
                 id="mobile-ask-luna-nav-button"

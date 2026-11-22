@@ -42,7 +42,7 @@ export default function AskDcvcChatbot() {
     {
       id: 'welcome',
       role: 'assistant',
-      text: translationService.t('chatbot_welcome', "Hello! I'm Luna, your free community guide. Ask me about our free health testing, youth groups, center hours, events, or volunteer opportunities."),
+      text: translationService.t('chatbot_welcome', "Hello! I'm Luna, your virtual friend here at Diversity Collective. I'm so glad you're here! 💜 Ask me about our free health testing, youth groups, center hours, events, or volunteer opportunities — I'm here for you!"),
       citations: [
         { title: "Programs", url: "/programs" },
         { title: "Contact Us", url: "/contact" }
@@ -434,7 +434,7 @@ export default function AskDcvcChatbot() {
               aria-label="Hide button prompt"
             >
               <div className="flex items-center justify-between pb-1.5 border-b border-white/10 mb-2">
-                <span className="font-bold text-amber-300">Luna AI Assistant</span>
+                <span className="font-bold text-amber-300">Luna · Virtual Friend</span>
                 <button
                   onClick={() => setShowHidePrompt(false)}
                   className="text-slate-400 hover:text-white"
@@ -484,7 +484,7 @@ export default function AskDcvcChatbot() {
             }}
             aria-expanded={false}
             aria-haspopup="dialog"
-            aria-label="Open Luna Free AI Community Assistant (Alt + C). Long press to hide."
+            aria-label="Open Luna, Your Virtual Friend & Community Guide (Alt + C). Long press to hide."
             title="Ask Luna (Alt + C) • Long-press to hide"
             id="ask-luna-launcher-button"
             className={`${
@@ -503,7 +503,7 @@ export default function AskDcvcChatbot() {
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 </span>
                 <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider leading-none whitespace-nowrap">
-                  Free AI Guide
+                  Virtual Friend
                 </span>
               </div>
             )}
@@ -525,7 +525,7 @@ export default function AskDcvcChatbot() {
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Luna • DCVC Community Guide"
+          aria-label="Luna • Your Virtual Friend & DCVC Guide"
           onWheel={(e) => e.stopPropagation()}
           onTouchMove={(e) => e.stopPropagation()}
           style={mobileViewportStyle}
@@ -535,7 +535,7 @@ export default function AskDcvcChatbot() {
           <div className="p-4 bg-gradient-to-r from-[#5A1E65] via-purple-900 to-[#3b0764] text-white flex items-center justify-between shadow-md">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center font-bold shadow-xs flex-shrink-0">
-                <Bot className="w-5 h-5" />
+                <Sparkles className="w-5 h-5 fill-current" />
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
@@ -544,11 +544,11 @@ export default function AskDcvcChatbot() {
                   </h3>
                   <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                    100% Free • Unlimited
+                    Virtual Friend • 100% Free
                   </span>
                 </div>
                 <p className="text-[11px] text-purple-200">
-                  {translationService.t('chatbot_subtitle', 'DCVC Community Guide • Ventura County')}
+                  {translationService.t('chatbot_subtitle', 'Your Virtual Friend & DCVC Guide')}
                 </p>
               </div>
             </div>
@@ -643,7 +643,7 @@ export default function AskDcvcChatbot() {
             {isLoading && (
               <div className="flex gap-2.5 items-center text-slate-500">
                 <div className="w-7 h-7 rounded-xl bg-purple-100 text-[#5A1E65] flex items-center justify-center flex-shrink-0 border border-purple-200">
-                  <Bot className="w-4 h-4" />
+                  <Sparkles className="w-4 h-4 fill-current text-purple-600" />
                 </div>
                 <div className="bg-white border border-slate-200 rounded-2xl px-3.5 py-2 flex items-center gap-1.5">
                   <div className="w-1.5 h-1.5 rounded-full bg-purple-600 animate-bounce" />
@@ -713,7 +713,7 @@ export default function AskDcvcChatbot() {
 
           {/* Bottom Micro Footnote */}
           <div className="px-3 py-1 bg-slate-50 border-t border-slate-100 text-[9px] text-slate-400 text-center">
-            Powered by Cloudflare Workers AI • Free tier • No personal health data stored
+            Your caring virtual friend • 100% private &amp; confidential • No personal health data stored
           </div>
         </div>
       )}

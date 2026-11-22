@@ -185,7 +185,7 @@ export default function SiteFeaturesStudio({ initialSubTab = 'forms' }) {
             { id: 'flex', label: 'Flex Space & Timings', icon: CalendarClock },
             { id: 'hiv', label: 'HIV Screening Slots', icon: ShieldCheck },
             { id: 'broadcast', label: 'Auto Broadcast Popups', icon: Megaphone },
-            { id: 'luna', label: 'Luna AI Learning Center', icon: Brain }
+            { id: 'luna', label: 'Luna Learning Center', icon: Brain }
           ].map((item) => {
             const Icon = item.icon;
             return (

@@ -717,7 +717,7 @@ export async function getFeatureFlags() {
     },
     {
       key: 'ai_chatbot_active',
-      name: 'Luna AI Knowledge Assistant',
+      name: 'Luna Virtual Friend & Guide',
       description: 'Surface the interactive AI chat widget on the public website.',
       enabled: true,
       category: 'AI & Chat',

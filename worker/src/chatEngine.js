@@ -328,7 +328,7 @@ function handleCasualWorkerGreeting(cleanMessage) {
   const collapsed = norm.replace(/([a-z])\1{2,}/g, '$1');
   if (/^(hi|hii|hey|hello|helo|hola|namaste|yo|sup|good morning|morning|good afternoon|good evening|gm|howdy|luna|hey luna|hi luna|hello luna)(\s+(there|luna|everyone|friend))?$/.test(collapsed)) {
     return {
-      answer: `Hey there! 💜 I'm **Luna**, your Diversity Collective Ventura County guide. How can I help you today? Ask me about free HIV/STI testing, upcoming events, youth & trans circles, board leadership, training, or support resources!`,
+      answer: `Hey there, friend! 💜 I'm **Luna**, your virtual friend here at Diversity Collective Ventura County! 🌈 How are you doing today? Ask me about free HIV/STI testing, upcoming community events, youth & trans circles, board leadership, volunteer opportunities, or anything on your mind — I'm right here with you!`,
       citations: [
         { title: 'Programs', url: '/programs' },
         { title: 'Events Calendar', url: '/events' }
@@ -340,10 +340,10 @@ function handleCasualWorkerGreeting(cleanMessage) {
     const isBye = /bye/.test(collapsed);
     return {
       answer: isBye
-        ? `Take care! 🌈 Visit our Resource Center at 2471 Portola Rd, Suite 100, Ventura Mon–Fri 1–5 PM anytime.`
+        ? `Take care, friend! 🌈 Remember you are always loved and welcome at our Resource Center at 2471 Portola Rd, Suite 100, Ventura Mon–Fri 1–5 PM.`
         : isThanks
-          ? `You're so welcome! 💜 Let me know anytime you want to look something up on Diversity Collective.`
-          : `Doing great, thank you for asking! ✨ What can I help you explore across Diversity Collective today?`,
+          ? `You're so welcome, friend! 💜 I'm always here whenever you need anything across Diversity Collective.`
+          : `Doing wonderfully, thank you so much for asking! ✨ How are you doing today, friend? What can I help you explore across Diversity Collective?`,
       citations: [{ title: 'Community Resource Center', url: '/programs/community-resource-center' }]
     };
   }
@@ -436,7 +436,7 @@ export async function processChatRequest(userMessage, env = {}, clientIp = '', o
         ? `CURRENT LIVE WEBSITE & CMS RECORDS (HIGHEST PRIORITY):\n${validSiteContext.map((c, idx) => `${idx + 1}. [${c.type || 'Page'}] ${c.title} (${c.url})${c.subtitle ? ` — ${c.subtitle}` : ''}: ${c.snippet || ''}`).join('\n')}`
         : '';
       const combinedContext = [liveContextText, kbContext ? `STATIC BASELINE CONTEXT:\n${kbContext}` : ''].filter(Boolean).join('\n\n').trim();
-      const systemPrompt = `${buildChatbotSystemPrompt(combinedContext)}\nRespond warmly as Luna, DCVC's helpful community guide. Always prioritize CURRENT LIVE WEBSITE & CMS RECORDS as the latest ground truth over static baseline data. If casual or misspelled, be understanding and answer clearly from the context above using markdown links [Title](/route).`;
+      const systemPrompt = `${buildChatbotSystemPrompt(combinedContext)}\nRespond with genuine warmth, empathy, and care as Luna, a loving virtual friend and community companion at DCVC. Always sound supportive, kind, and welcoming like a close friend. Never refer to yourself as an AI or a bot. Always prioritize CURRENT LIVE WEBSITE & CMS RECORDS as the latest ground truth over static baseline data. If casual or misspelled, be understanding and answer clearly from the context above using markdown links [Title](/route).`;
       const model = env.AI_MODEL || '@cf/meta/llama-3.1-8b-instruct-fp8';
 
       const sanitizedHistory = Array.isArray(history)

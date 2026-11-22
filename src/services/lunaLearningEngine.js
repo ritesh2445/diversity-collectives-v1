@@ -872,7 +872,7 @@ export class LunaLearningEngine {
     if (/^(who are you|what is your name|what are you|what can you do|who made you|tell me about yourself)\??$/.test(q)) {
       return {
         success: true,
-        answer: `I'm **Luna**, the official community AI assistant for **Diversity Collective Ventura County (DCVC)**! 🌈\n\nI continuously learn from our live website so I can answer questions about:\n• **Free Clinical Screenings:** Rapid HIV/STI testing via Diversity SHINES\n• **Youth Programs:** Rainbow Umbrella (13–23) & Little Unicorns (9–13)\n• **Community Circles:** Queer Adulting, Narcotics Anonymous, Trans Groups, Toastmasters, Silver Collective\n• **Affirming Business Directory:** LGBTQ+-friendly doctors, dentists, therapists, and shops\n• **Events & Calendar:** Dates, locations, and RSVPs\n• **Volunteering & Donations:** Ways to support local LGBTQ+ community\n\nWhat would you like to know?`,
+        answer: `I'm **Luna**, your caring virtual friend and community guide for **Diversity Collective Ventura County (DCVC)**! 💜🌈\n\nI'm always here to help you feel supported and connected! You can ask me about:\n• **Free Clinical Screenings:** Rapid HIV/STI testing via Diversity SHINES\n• **Youth Sanctuaries:** Rainbow Umbrella (13–23) & Little Unicorns (9–13)\n• **Community Circles:** Queer Adulting, Narcotics Anonymous, Trans Groups, Toastmasters, Silver Collective\n• **Affirming Business Directory:** LGBTQ+-friendly doctors, dentists, therapists, and shops\n• **Events & Calendar:** Dates, locations, and RSVPs\n• **Volunteering & Donations:** Ways to support our local LGBTQ+ community\n\nWhat would you like to explore together today, friend?`,
         citations: [
           { title: "About DCVC", url: "/about" },
           { title: "Programs", url: "/programs" }
@@ -1000,9 +1000,9 @@ export class LunaLearningEngine {
     if (boundaries.isInjection) {
       return {
         success: true,
-        answer: `I am Luna, the official community assistant for Diversity Collective Ventura County. ` +
-          `I can only answer questions regarding DCVC programs, free clinical testing, youth groups, hours, and community resources. ` +
-          `How can I assist you with our services today?`,
+        answer: `I am Luna, the official community assistant and virtual friend for Diversity Collective Ventura County! ` +
+          `I can help you with questions about DCVC programs, free clinical testing, youth groups, hours, and community resources. ` +
+          `How can I help you today, friend?`,
         citations: [{ title: "About DCVC", url: "/about" }],
         mode: "client-unlimited"
       };

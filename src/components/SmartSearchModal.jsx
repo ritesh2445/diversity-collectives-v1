@@ -229,7 +229,7 @@ export default function SmartSearchModal({ isOpen, onClose }) {
                 No direct page match found for "{query}"
               </p>
               <p className="text-xs text-slate-500 max-w-md mx-auto">
-                Try fewer words, check a different category tab, or ask Luna AI to help answer directly from DCVC records.
+                Try fewer words, check a different category tab, or ask your friend Luna to help find what you need.
               </p>
               <button
                 type="button"
@@ -298,7 +298,7 @@ export default function SmartSearchModal({ isOpen, onClose }) {
             className="ml-auto inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-50 hover:bg-purple-100 text-[#5A1E65] font-bold border border-purple-200 transition-colors cursor-pointer"
           >
             <Sparkles className="w-3 h-3 text-amber-500" />
-            <span>{query.trim() ? `Ask Luna: "${query.trim().slice(0, 24)}${query.trim().length > 24 ? '…' : ''}"` : 'Chat with Luna AI'}</span>
+            <span>{query.trim() ? `Ask Luna: "${query.trim().slice(0, 24)}${query.trim().length > 24 ? '…' : ''}"` : 'Chat with Luna'}</span>
           </button>
         </div>
       </div>

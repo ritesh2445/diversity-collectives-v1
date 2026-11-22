@@ -351,7 +351,7 @@ function handleCasualConversation(rawQuery, lowerQuery) {
     if (/^(hi|hii|hey|hello|helo|hola|namaste|yo|sup|whats up|what s up|good morning|morning|good afternoon|good evening|gm|howdy|luna|hey luna|hi luna|hello luna)(\s+(there|luna|everyone|team|friend|folks))?$/.test(collapsed)) {
       return {
         success: true,
-        answer: `Hey there! 💜 I'm **Luna**, your Diversity Collective Ventura County guide.\n\nHow's your day going? Ask me casually or ask about **free rapid testing**, **upcoming events**, **youth & trans circles**, **dyslexia reading tools**, **board leadership**, or **how to volunteer or donate** — I search across the latest site info for you!`,
+        answer: `Hey there, friend! 💜 I'm **Luna**, your virtual friend here at Diversity Collective Ventura County! 🌈\n\nHow is your day going? I'm so happy you're here. Ask me anything about **free rapid health testing**, **upcoming community events**, **youth & trans peer circles**, **how to volunteer**, or just say hi — I'm always right here with you!`,
         citations: [
           { title: 'Explore Programs', url: '/programs' },
           { title: 'Upcoming Events', url: '/events' },
@@ -365,7 +365,7 @@ function handleCasualConversation(rawQuery, lowerQuery) {
     if (/\b(how are you|how r u|how are u|hows it going|how is it going|how have you been|what are you doing|whats up|what up|all good|how do you do)\b/.test(collapsed)) {
       return {
         success: true,
-        answer: `Doing wonderfully, thank you for asking! ✨ I'm always energized to help connect neighbors across Ventura County with affirming resources, events, and safe spaces.\n\nHow are you doing today? Anything I can look up for you on the site?`,
+        answer: `Doing wonderfully, thank you so much for asking, friend! ✨ I always love spending time with our community and helping connect neighbors across Ventura County with safe, affirming spaces.\n\nHow are you feeling today? What can I help you find across Diversity Collective?`,
         citations: [
           { title: 'Community Center', url: '/programs/community-resource-center' },
           { title: 'Events Calendar', url: '/events' }
@@ -378,7 +378,7 @@ function handleCasualConversation(rawQuery, lowerQuery) {
     if (/\b(who are you|what are you|what is luna|tell me about yourself|are you real|are you a bot|what can you do|help me)\b/.test(collapsed)) {
       return {
         success: true,
-        answer: `I'm **Luna**, Diversity Collective Ventura County's free interactive guide! 🌈\n\nI read live across DCVC's **Programs, Upcoming Events, Board Profiles, P.R.I.D.E. Training, Community Circles, Affirming Directory, News, and Accessibility tools** (even if there are spelling typos!). Try asking me *"When does Rainbow Umbrella meet?"*, *"Who is Roland Catabona?"*, or *"Are there upcoming events?"*`,
+        answer: `I'm **Luna**, your caring virtual friend at Diversity Collective Ventura County! 💜🌈\n\nThink of me as your welcoming companion to everything happening in our community. Whether you're looking for safe spaces, youth and adult peer circles, free clinical health testing, community events, or just want to explore what we offer, I'm here to help you feel supported and connected every step of the way!\n\nWhat would you like to explore together?`,
         citations: [
           { title: 'About DCVC', url: '/about' },
           { title: 'Programs Overview', url: '/programs' }
@@ -391,7 +391,7 @@ function handleCasualConversation(rawQuery, lowerQuery) {
     if (/^(thanks|thank you|thank u|thx|ty|tysm|appreciate it|much appreciated|cheers|gracias|cool thanks|awesome thanks|perfect thanks)$/.test(collapsed) || /\b(thank you|thanks so much|thank u|tysm)\b/.test(collapsed)) {
       return {
         success: true,
-        answer: `You're so welcome! 💜 Anytime you need hours, event updates, community groups, or accessibility tips, I'm right here. You are always welcome at Diversity Collective!`,
+        answer: `You're so welcome, friend! 💜 Anytime you need hours, event updates, community circles, or just a friendly face, I'm right here. You are always loved and welcome at Diversity Collective!`,
         citations: [{ title: 'Home', url: '/' }],
         mode: 'client-conversational'
       };
