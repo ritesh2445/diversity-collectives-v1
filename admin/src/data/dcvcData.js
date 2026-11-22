@@ -1192,23 +1192,23 @@ export const boardMembers = [
     image: "/images/board/aj-holmes.jpg"
   },
   {
-    slug: "tess-allen",
-    name: "Tess Allen",
-    pronouns: "she/her",
-    role: "Executive Director & Board Leadership",
-    email: "tess.allen@diversitycollective.org",
-    tenure: "Executive Leadership & Board Governance",
-    city: "Ventura, CA",
-    committee: "Executive Governance & Regional Partnerships",
-    quote: "Guiding Diversity Collective means ensuring our doors remain wide open, welcoming, and unconditionally safe for every member of our LGBTQ+ community.",
-    bio: "DCVC's first Executive Director, previously serving as Board President and Director. With an extensive background in the nonprofit sector and conservatory training in dance and music, Tess plays a foundational role in guiding DCVC's local advocacy, community programs, and Diversity SHINES wellness initiatives across Ventura County.",
+    slug: "roland-catabona",
+    name: "Roland Catabona",
+    pronouns: "he/him/his",
+    role: "President, Board of Directors",
+    email: "roland@diversitycollective.org",
+    tenure: "Board President · Fiduciary & Community Banking",
+    city: "Oxnard, CA",
+    committee: "Board Governance, Major Events & Financial Stewardship",
+    quote: "Building sustainable community support means ensuring every LGBTQ+ neighbor across Ventura County has access to affirming resources, celebrating our resilience together.",
+    bio: "Relocated back to his hometown Oxnard after 18+ years in Community and Business Banking. During his corporate career, he volunteered his time with LGBT+ Centers and events in San Diego, Palm Springs, and San Francisco. Roland served as co-chair for AIDS Walk Ventura and fundraising chair for Ventura County Pride. Alongside his partner, he has completed multiple AIDS LifeCycle rides and works to grow the region's cyclist and wellness community. He is also a certified Ashtanga Vinyasa yoga instructor.",
     extendedBio: [
-      "Promoted to DCVC's first Executive Director after serving as Board President and Director, Tess brings extensive nonprofit leadership, artistic direction, and civic advocacy to the collective.",
-      "She oversees center operations at 2471 Portola Road, regional partnerships with Ventura County Behavioral Health and Public Health, and the strategic expansion of free community programs."
+      "Bringing nearly two decades of executive experience in community and business banking, Roland stewards DCVC's institutional health, governance transparency, and community development across all ten Ventura County cities.",
+      "As co-chair for AIDS Walk Ventura and fundraising lead for Ventura County Pride, he has been deeply involved in expanding DCVC's grassroots impact and wellness initiatives."
     ],
-    focusAreas: ["Executive Leadership", "Strategic Program Direction", "Nonprofit Fiduciary Stewardship", "Community Wellness & Advocacy"],
-    photo: "/images/board/tess-allen.png",
-    image: "/images/board/tess-allen.png"
+    focusAreas: ["Board Governance & Fiduciary Oversight", "AIDS Walk & Pride Fundraising", "Community & Business Banking", "Wellness & Health Equity"],
+    photo: "/images/board/roland-catabona.jpg",
+    image: "/images/board/roland-catabona.jpg"
   },
   {
     slug: "luis-andrade",

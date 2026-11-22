@@ -48,7 +48,7 @@ const APPROVED_BOARD_ORDER = [
   'steve somann',
   'celia sandhya daniels',
   'aj holmes',
-  'tess allen',
+  'roland catabona',
   'luis andrade',
   'unique dowtin'
 ];
@@ -958,7 +958,7 @@ class CmsStoreEngine {
     for (const b of baseList) {
       if (!b || !b.name) continue;
       const norm = b.name.trim().toLowerCase();
-      if (norm === 'roland catabona' || seen.has(norm)) continue;
+      if (norm === 'tess allen' || seen.has(norm)) continue;
       seen.add(norm);
       customBoard.push(b);
     }

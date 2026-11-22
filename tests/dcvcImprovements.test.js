@@ -144,7 +144,7 @@ describe('DCVC Approved Improvements: GEM Membership, Sponsorship, In-Kind, CRC 
         'Steve Somann',
         'Celia Sandhya Daniels',
         'AJ Holmes',
-        'Tess Allen',
+        'Roland Catabona',
         'Luis Andrade',
         'Unique Dowtin'
       ];
@@ -187,7 +187,7 @@ describe('DCVC Approved Improvements: GEM Membership, Sponsorship, In-Kind, CRC 
       const boardAfter = cmsStore.getBoardMembers();
       assert.equal(boardAfter.length, boardCountBefore, 'Board members count must not change when staff is added');
       assert.equal(boardAfter[0].name, 'Steve Somann');
-      assert.equal(boardAfter[3].name, 'Tess Allen');
+      assert.equal(boardAfter[3].name, 'Roland Catabona');
 
       // Verify staff member was added
       const staffList = cmsStore.getStaffMembers();
