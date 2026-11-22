@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowUpRight, Heart, MapPin, Phone, Mail, ShieldCheck, Award } from 'lucide-react';
+import { ArrowUpRight, Heart, MapPin, Phone, Mail, ShieldCheck } from 'lucide-react';
 import LanguageSelector from './LanguageSelector';
 import { orgInfo, sponsorsList } from '../data/dcvcData';
 import { cmsStore } from '../services/cmsStore';
@@ -33,133 +33,29 @@ export default function Footer() {
 
         <div className="container-clean relative z-10">
         
-        {/* Top Editorial Row: Verified Civic Alliances & Public Health Leadership */}
-        <div className="pb-14 border-b border-slate-800">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
-            <div className="flex flex-col gap-1.5 max-w-xl">
-              <span className="text-xs font-bold text-amber-400 tracking-wider uppercase flex items-center gap-2">
-                <Award className="w-4 h-4 text-amber-400" />
-                VERIFIED CIVIC ALLIANCES & PUBLIC HEALTH LEADERSHIP
-              </span>
-              <p className="text-sm text-slate-300 leading-relaxed">
-                Official Ventura County agency and public health partners delivering clinical health testing, youth programs, and community care.
-              </p>
-            </div>
-            <Link
-              to="/sponsors"
-              className="text-xs font-bold text-purple-400 hover:text-purple-300 transition-colors inline-flex items-center gap-1 shrink-0"
-            >
-              <span>View All Alliances</span>
-              <ArrowUpRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 w-full">
-            {/* VCBH */}
-            <a
-              href="https://vchca.org/behavioral-health/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group flex flex-col items-center justify-center p-4 rounded-2xl bg-white shadow-sm hover:shadow-xl border border-slate-700/60 hover:border-purple-400 transition-all text-center"
-              title="Ventura County Behavioral Health"
-            >
-              <div className="h-14 w-full flex items-center justify-center mb-2">
-                <img
-                  src="/images/vcbh-logo.jpg"
-                  alt="Ventura County Behavioral Health Logo"
-                  className="max-h-12 max-w-[85%] object-contain group-hover:scale-105 transition-transform"
-                />
-              </div>
-              <span className="text-xs font-bold text-slate-900 group-hover:text-[#5A1E65] transition-colors leading-tight">
-                Behavioral Health
-              </span>
-              <span className="text-[11px] text-slate-500 font-medium">County of Ventura</span>
-            </a>
-
-            {/* VCPH */}
-            <a
-              href="https://vchca.org/public-health/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group flex flex-col items-center justify-center p-4 rounded-2xl bg-white shadow-sm hover:shadow-xl border border-slate-700/60 hover:border-purple-400 transition-all text-center"
-              title="Ventura County Public Health"
-            >
-              <div className="h-14 w-full flex items-center justify-center mb-2">
-                <img
-                  src="/images/vcph-logo.png"
-                  alt="Ventura County Public Health Logo"
-                  className="max-h-12 max-w-[85%] object-contain group-hover:scale-105 transition-transform"
-                />
-              </div>
-              <span className="text-xs font-bold text-slate-900 group-hover:text-[#5A1E65] transition-colors leading-tight">
-                Public Health
-              </span>
-              <span className="text-[11px] text-slate-500 font-medium">STI Screening Partner</span>
-            </a>
-
-            {/* Diversity SHINES */}
-            <Link
-              to="/programs/diversity-shines"
-              className="group flex flex-col items-center justify-center p-4 rounded-2xl bg-white shadow-sm hover:shadow-xl border border-slate-700/60 hover:border-purple-400 transition-all text-center"
-              title="Diversity SHINES HIV/STI Screening Clinic"
-            >
-              <div className="h-14 w-full flex items-center justify-center mb-2">
-                <img
-                  src="/images/shines-logo.jpg"
-                  alt="Diversity SHINES Logo"
-                  className="max-h-12 max-w-[85%] object-contain group-hover:scale-105 transition-transform"
-                />
-              </div>
-              <span className="text-xs font-bold text-slate-900 group-hover:text-[#5A1E65] transition-colors leading-tight">
-                Diversity SHINES
-              </span>
-              <span className="text-[11px] text-slate-500 font-medium">Clinical Rapid Testing</span>
-            </Link>
-
-            {/* Little Unicorns */}
-            <Link
-              to="/programs/little-unicorns"
-              className="group flex flex-col items-center justify-center p-4 rounded-2xl bg-white shadow-sm hover:shadow-xl border border-slate-700/60 hover:border-purple-400 transition-all text-center"
-              title="Little Unicorns Kids & Family Initiative"
-            >
-              <div className="h-14 w-full flex items-center justify-center mb-2">
-                <img
-                  src="/images/little-unicorns.png"
-                  alt="Little Unicorns Initiative Logo"
-                  className="max-h-12 max-w-[85%] object-contain group-hover:scale-105 transition-transform"
-                />
-              </div>
-              <span className="text-xs font-bold text-slate-900 group-hover:text-[#5A1E65] transition-colors leading-tight">
-                Little Unicorns
-              </span>
-              <span className="text-[11px] text-slate-500 font-medium">Youth Ages 9–13</span>
-            </Link>
-          </div>
-
-          {/* Regional Cities Serving Ribbon in Footer */}
-          <div className="mt-8 pt-4 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3 text-xs">
-            <span className="text-slate-400 uppercase tracking-widest text-[11px] font-bold">
-              Serving Ventura County Communities:
-            </span>
-            <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5 text-slate-300 font-medium">
-              <Link to="/directory" className="hover:text-amber-300 transition-colors">Ventura</Link>
-              <span className="text-slate-700">·</span>
-              <Link to="/directory" className="hover:text-amber-300 transition-colors">Oxnard</Link>
-              <span className="text-slate-700">·</span>
-              <Link to="/directory" className="hover:text-amber-300 transition-colors">Camarillo</Link>
-              <span className="text-slate-700">·</span>
-              <Link to="/directory" className="hover:text-amber-300 transition-colors">Thousand Oaks</Link>
-              <span className="text-slate-700">·</span>
-              <Link to="/directory" className="hover:text-amber-300 transition-colors">Simi Valley</Link>
-              <span className="text-slate-700">·</span>
-              <Link to="/directory" className="hover:text-amber-300 transition-colors">Ojai Valley</Link>
-              <span className="text-slate-700">·</span>
-              <Link to="/directory" className="hover:text-amber-300 transition-colors">Moorpark</Link>
-              <span className="text-slate-700">·</span>
-              <Link to="/directory" className="hover:text-amber-300 transition-colors">Santa Paula</Link>
-              <span className="text-slate-700">·</span>
-              <Link to="/directory" className="hover:text-amber-300 transition-colors">Port Hueneme</Link>
-            </div>
+        {/* Regional Cities Serving Ribbon in Footer */}
+        <div className="pb-8 border-b border-slate-800/80 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <span className="text-slate-400 uppercase tracking-widest text-[11px] font-bold">
+            Serving Ventura County Communities:
+          </span>
+          <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5 text-slate-300 font-medium">
+            <Link to="/directory" className="hover:text-amber-300 transition-colors">Ventura</Link>
+            <span className="text-slate-700">·</span>
+            <Link to="/directory" className="hover:text-amber-300 transition-colors">Oxnard</Link>
+            <span className="text-slate-700">·</span>
+            <Link to="/directory" className="hover:text-amber-300 transition-colors">Camarillo</Link>
+            <span className="text-slate-700">·</span>
+            <Link to="/directory" className="hover:text-amber-300 transition-colors">Thousand Oaks</Link>
+            <span className="text-slate-700">·</span>
+            <Link to="/directory" className="hover:text-amber-300 transition-colors">Simi Valley</Link>
+            <span className="text-slate-700">·</span>
+            <Link to="/directory" className="hover:text-amber-300 transition-colors">Ojai Valley</Link>
+            <span className="text-slate-700">·</span>
+            <Link to="/directory" className="hover:text-amber-300 transition-colors">Moorpark</Link>
+            <span className="text-slate-700">·</span>
+            <Link to="/directory" className="hover:text-amber-300 transition-colors">Santa Paula</Link>
+            <span className="text-slate-700">·</span>
+            <Link to="/directory" className="hover:text-amber-300 transition-colors">Port Hueneme</Link>
           </div>
         </div>
 

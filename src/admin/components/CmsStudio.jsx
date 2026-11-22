@@ -42,6 +42,7 @@ import StyleCustomizer from './StyleCustomizer.jsx';
 import NewsWritingPad from './NewsWritingPad.jsx';
 import CardGradientStudio from './CardGradientStudio.jsx';
 import SponsorshipManager from './SponsorshipManager.jsx';
+import WeeklyScheduleManager from './WeeklyScheduleManager.jsx';
 import {
   getLiveCmsData,
   saveLiveCmsData,
@@ -757,6 +758,7 @@ export default function CmsStudio() {
   const subTabs = [
     { id: 'programs', label: 'Programs & Clinical Care', count: cmsData.programs?.length || 0, icon: Sparkles },
     { id: 'events', label: 'Events & Calendar', count: cmsData.events?.length || 0, icon: Calendar },
+    { id: 'weeklySchedule', label: 'Weekly Schedule', count: cmsData.weeklySchedule?.length || 8, icon: Clock },
     { id: 'trainings', label: 'P.R.I.D.E. Trainings', count: cmsData.trainings?.length || 0, icon: Award },
     { id: 'sponsors', label: 'Sponsors & Partners', count: cmsData.sponsors?.length || 0, icon: Heart },
     { id: 'sponsorshipDocs', label: 'Sponsorship Documents', count: cmsData.sponsorshipDocuments?.length || 0, icon: FileText },
@@ -1134,6 +1136,13 @@ export default function CmsStudio() {
             ))}
           </div>
         </div>
+      )}
+
+      {/* ======================================================================
+          SUB-TAB: WEEKLY RECURRING SCHEDULE
+          ====================================================================== */}
+      {activeSubTab === 'weeklySchedule' && (
+        <WeeklyScheduleManager onToast={showToast} />
       )}
 
       {/* ======================================================================

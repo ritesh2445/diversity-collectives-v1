@@ -39,6 +39,7 @@ import AutoSlideImage from '../components/AutoSlideImage.jsx';
 import NewsletterSignup from '../components/NewsletterSignup';
 import ImpactAutoPopups from '../components/ImpactAutoPopups';
 import HomeCalendarSection from '../components/HomeCalendarSection';
+import UpcomingWeekSection from '../components/UpcomingWeekSection';
 import FlexSpaceBookingSection from '../components/FlexSpaceBookingSection';
 import { usePageMeta } from '../utils/seo';
 import {
@@ -633,6 +634,12 @@ export default function Home() {
           </MobileCarousel>
         </div>
       </section>
+
+      {/* ====================================================================
+          UPCOMING PROGRAMS & EVENTS THIS WEEK
+          Positioned between Community Impact & Programs Built for Every Age & Stage
+          ==================================================================== */}
+      <UpcomingWeekSection events={cmsEvents} />
 
       {/* ====================================================================
           PROGRAMS DIRECTORY: COLLISION-PROOF EXPANDABLE CARDS

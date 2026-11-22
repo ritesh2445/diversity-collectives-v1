@@ -958,6 +958,51 @@ export default function SiteFeaturesStudio({ initialSubTab = 'forms' }) {
               </span>
             ))}
           </div>
+
+          {/* Confidential Screening Reservations List */}
+          <div className="pt-4 border-t border-slate-100">
+            <h4 className="font-display text-sm font-bold text-slate-900 mb-2">
+              Confidential Slot Reservations ({features.hivScreening.bookings?.length || 0})
+            </h4>
+            {(!features.hivScreening.bookings || features.hivScreening.bookings.length === 0) ? (
+              <p className="text-xs text-slate-500 py-3 text-center bg-slate-50 rounded-xl">
+                No HIV / STI screening reservations recorded yet.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {features.hivScreening.bookings.map((b) => (
+                  <div
+                    key={b.id}
+                    className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs"
+                  >
+                    <div>
+                      <span className="font-black text-slate-900">
+                        {b.date} · {b.slot}
+                      </span>
+                      <span className="text-slate-600 ml-2">
+                        — {b.name} ({b.contact || b.email || b.phone || 'Confidential'}) · {b.service || 'HIV/STI Screening'}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        updateFeatures((p) => ({
+                          ...p,
+                          hivScreening: {
+                            ...p.hivScreening,
+                            bookings: p.hivScreening.bookings.filter((x) => x.id !== b.id)
+                          }
+                        }), `Released screening slot ${b.date} (${b.slot})`)
+                      }
+                      className="text-rose-700 font-bold hover:underline cursor-pointer"
+                    >
+                      Release Slot
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 

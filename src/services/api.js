@@ -159,20 +159,46 @@ export async function submitInquiry(data) {
  * Submit Volunteer Application
  */
 export async function submitVolunteer(data) {
-  const { fullName, email, phone, city = 'Ventura County', areasOfInterest, roles, availability, message, skills, backgroundCheckConsent, consent, turnstileToken } = data;
+  const {
+    preferredName,
+    pronouns,
+    fullName,
+    email,
+    phone,
+    city = 'Ventura County',
+    areasOfInterest,
+    roles,
+    availability,
+    message,
+    skills,
+    backgroundCheckConsent,
+    consent,
+    turnstileToken
+  } = data;
   const resolvedRoles = roles || areasOfInterest || [];
   const resolvedConsent = Boolean(backgroundCheckConsent ?? consent);
+  const effectivePreferredName = (preferredName || '').trim();
+  const effectiveFullName = (fullName || '').trim();
+  const primaryName = effectivePreferredName || effectiveFullName;
 
-  if (!fullName?.trim()) return { success: false, message: 'Full name is required.', errors: { fullName: 'Name is required' } };
-  if (!email?.trim() || !email.includes('@')) return { success: false, message: 'Valid email address is required.', errors: { email: 'Valid email is required' } };
-  if (!resolvedConsent) return { success: false, message: 'Consent for background verification is required for youth-serving volunteer roles.', errors: { backgroundCheckConsent: 'Consent required' } };
+  if (!primaryName) {
+    return { success: false, message: 'Name is required.', errors: { fullName: 'Name is required' } };
+  }
+  if (!email?.trim() || !email.includes('@')) {
+    return { success: false, message: 'Valid email address is required.', errors: { email: 'Valid email is required' } };
+  }
+  if (!resolvedConsent) {
+    return { success: false, message: 'Consent for background verification is required for youth-serving volunteer roles.', errors: { backgroundCheckConsent: 'Consent required' } };
+  }
 
   try {
     const res = await fetch(`${API_BASE_URL}/volunteer`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        fullName,
+        preferredName: effectivePreferredName || effectiveFullName,
+        pronouns: (pronouns || '').trim(),
+        fullName: effectiveFullName || effectivePreferredName,
         email,
         phone,
         city,
@@ -190,7 +216,16 @@ export async function submitVolunteer(data) {
 
     if (res.ok) {
       const json = await res.json();
-      return { success: true, message: json.message || 'Volunteer application received!', data: json };
+      return {
+        success: true,
+        message: `Thank you, ${primaryName}! Your volunteer application has been received. Our volunteer coordinator will reach out to schedule an orientation.`,
+        data: {
+          ...json,
+          preferredName: effectivePreferredName || effectiveFullName,
+          pronouns: (pronouns || '').trim(),
+          fullName: effectiveFullName || effectivePreferredName
+        }
+      };
     } else {
       const errJson = await res.json().catch(() => ({}));
       return { success: false, message: errJson.error || errJson.details || 'Volunteer application could not be processed.' };
@@ -201,8 +236,15 @@ export async function submitVolunteer(data) {
 
   return {
     success: true,
-    message: `Thank you, ${fullName}! Your volunteer application has been received. Our volunteer coordinator will reach out to schedule an orientation.`,
-    data: { id: `vol_${Date.now()}`, fullName, email, queued: true }
+    message: `Thank you, ${primaryName}! Your volunteer application has been received. Our volunteer coordinator will reach out to schedule an orientation.`,
+    data: {
+      id: `vol_${Date.now()}`,
+      preferredName: effectivePreferredName || effectiveFullName,
+      pronouns: (pronouns || '').trim(),
+      fullName: effectiveFullName || effectivePreferredName,
+      email,
+      queued: true
+    }
   };
 }
 

@@ -39,8 +39,8 @@ const AGE_FILTERS = [
 
 export default function Programs() {
   usePageMeta({
-    title: 'LGBTQ+ Programs & Sanctuaries Sorted by Age',
-    description: 'Explore youth peer circles, children sanctuaries, adult wellness clinics, and community drop-in hours across Ventura County.',
+    title: 'LGBTQ+ Programs & Spaces Sorted by Age',
+    description: 'Explore youth peer circles, children spaces, adult wellness clinics, and community drop-in hours across Ventura County.',
     canonicalPath: '/programs'
   });
 
@@ -108,7 +108,7 @@ export default function Programs() {
           </div>
           <h1 className="font-display text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-slate-950 leading-[1.05]">
             Our Programs & <br />
-            <span className="font-serif italic font-normal text-[#5A1E65]">Affirming Sanctuaries.</span>
+            <span className="font-serif italic font-normal text-[#5A1E65]">Affirming Spaces.</span>
           </h1>
           <p className="font-serif italic text-xl md:text-2xl text-slate-700 leading-relaxed pt-2">
             Every program at Diversity Collective is created with a trauma-informed, culturally affirming approach to empower LGBTQ+ individuals from youth to elderhood.

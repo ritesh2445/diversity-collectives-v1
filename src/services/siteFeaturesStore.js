@@ -205,15 +205,51 @@ function mergeFeatures(raw) {
       ...base.broadcastPopup,
       ...(raw.broadcastPopup || {})
     },
-    formSchemas: {
-      ...base.formSchemas,
-      ...(raw.formSchemas || {})
-    }
+    formSchemas: (() => {
+      const merged = { ...base.formSchemas };
+      if (raw.formSchemas && typeof raw.formSchemas === 'object') {
+        for (const [formId, rawSchema] of Object.entries(raw.formSchemas)) {
+          if (!rawSchema || typeof rawSchema !== 'object') continue;
+          const baseSchema = base.formSchemas[formId] || {};
+          const baseFields = Array.isArray(baseSchema.fields) ? baseSchema.fields : [];
+          const rawFields = Array.isArray(rawSchema.fields) ? rawSchema.fields : [];
+
+          const mergedFields = rawFields.length > 0
+            ? rawFields.map((rf) => {
+                const bf = baseFields.find((b) => b.id === rf.id);
+                if (rf.type === 'select' && (!Array.isArray(rf.options) || rf.options.length === 0)) {
+                  return { ...rf, options: bf?.options || [] };
+                }
+                return rf;
+              })
+            : baseFields;
+
+          // Retain any default fields from baseSchema that are missing from rawFields
+          for (const bf of baseFields) {
+            if (!mergedFields.some((mf) => mf.id === bf.id)) {
+              mergedFields.push(bf);
+            }
+          }
+
+          merged[formId] = {
+            ...baseSchema,
+            ...rawSchema,
+            fields: mergedFields
+          };
+        }
+      }
+      return merged;
+    })()
   };
 }
 
+let inMemoryFeatures = null;
+
 export function getSiteFeatures() {
-  if (typeof localStorage === 'undefined') return cloneDefaults();
+  if (typeof localStorage === 'undefined') {
+    if (!inMemoryFeatures) inMemoryFeatures = cloneDefaults();
+    return inMemoryFeatures;
+  }
   try {
     const raw = localStorage.getItem(FEATURES_STORAGE_KEY);
     return raw ? mergeFeatures(JSON.parse(raw)) : cloneDefaults();
@@ -241,6 +277,7 @@ export function saveSiteFeatures(updater) {
   const current = getSiteFeatures();
   const nextRaw = typeof updater === 'function' ? updater(current) : updater;
   const next = mergeFeatures(nextRaw);
+  inMemoryFeatures = next;
   if (typeof localStorage !== 'undefined') {
     try {
       localStorage.setItem(FEATURES_STORAGE_KEY, JSON.stringify(next));

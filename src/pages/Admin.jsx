@@ -4545,7 +4545,19 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                     inquiries.map((inq) => (
                       <tr key={inq.id} className="hover:bg-slate-50/60 transition-colors">
                         <td className="py-3 px-4">
-                          <span className="font-bold text-slate-900 block">{inq.name || inq.full_name || inq.contact_name || 'Anonymous Community Member'}</span>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-bold text-slate-900 block">
+                              {inq.preferred_name || inq.preferredName || inq.name || inq.full_name || inq.contact_name || 'Anonymous Community Member'}
+                            </span>
+                            {inq.pronouns && (
+                              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-purple-100 text-purple-800">
+                                {inq.pronouns}
+                              </span>
+                            )}
+                          </div>
+                          {(inq.preferred_name || inq.preferredName) && inq.full_name && (inq.preferred_name || inq.preferredName) !== inq.full_name && (
+                            <span className="text-[10px] text-slate-400 block italic">Legal: {inq.full_name}</span>
+                          )}
                           <span className="text-[11px] text-slate-500 block">{inq.email || inq.contact_email || 'No email provided'}</span>
                           {inq.phone && <span className="text-[10px] text-slate-400 block">{inq.phone}</span>}
                         </td>
@@ -4682,10 +4694,24 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                   <div className="space-y-4 text-xs">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200">
                       <div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Contact Name</span>
-                        <span className="text-sm font-extrabold text-slate-900 block mt-0.5">
-                          {selectedInquiryView.name || selectedInquiryView.full_name || selectedInquiryView.contact_name || 'Anonymous'}
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                          {selectedInquiryView.preferred_name || selectedInquiryView.preferredName ? 'Preferred Name' : 'Contact Name'}
                         </span>
+                        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                          <span className="text-sm font-extrabold text-slate-900">
+                            {selectedInquiryView.preferred_name || selectedInquiryView.preferredName || selectedInquiryView.name || selectedInquiryView.full_name || selectedInquiryView.contact_name || 'Anonymous'}
+                          </span>
+                          {selectedInquiryView.pronouns && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800">
+                              {selectedInquiryView.pronouns}
+                            </span>
+                          )}
+                        </div>
+                        {selectedInquiryView.full_name && (selectedInquiryView.preferred_name || selectedInquiryView.preferredName) && (
+                          <span className="text-[11px] text-slate-500 block mt-1">
+                            Legal Name (Confidential): <strong className="text-slate-700">{selectedInquiryView.full_name}</strong>
+                          </span>
+                        )}
                       </div>
                       <div>
                         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Email Address</span>

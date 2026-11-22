@@ -2141,14 +2141,17 @@ export default {
           return errorResponse('Security verification failed', 400, turnstile.error, cors);
         }
 
+        const preferredName = (body.preferredName || '').trim();
+        const pronouns = (body.pronouns || '').trim();
         const fullName = (body.fullName || '').trim();
+        const effectiveDisplayName = preferredName || fullName;
         const email = (body.email || '').trim().toLowerCase();
         const phone = (body.phone || '').trim();
         const city = (body.city || 'Ventura County').trim();
         const roles = Array.isArray(body.roles) ? body.roles : (Array.isArray(body.areasOfInterest) ? body.areasOfInterest : []);
         const consent = Boolean(body.consent ?? body.backgroundCheckConsent);
 
-        if (!fullName || !email || !email.includes('@') || !consent) {
+        if (!effectiveDisplayName || !email || !email.includes('@') || !consent) {
           return errorResponse('Please complete all required fields and confirm volunteer consent.', 400, null, cors);
         }
 
@@ -2161,13 +2164,13 @@ export default {
                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             args: [
               id,
-              fullName,
+              effectiveDisplayName,
               email,
               phone || 'Not provided',
               city,
               body.availability || '',
               JSON.stringify(roles),
-              body.skills || body.message || '',
+              `Preferred: ${effectiveDisplayName}${pronouns ? ` (${pronouns})` : ''} | Legal: ${fullName}\n${body.skills || body.message || ''}`,
               body.livedExperience || '',
               1
             ]
@@ -2175,7 +2178,7 @@ export default {
         }
 
         const staffTpl = templateVolunteerStaffNotification({
-          fullName,
+          fullName: `${effectiveDisplayName}${pronouns ? ` (${pronouns})` : ''}${fullName && fullName !== effectiveDisplayName ? ` [Legal: ${fullName}]` : ''}`,
           email,
           phone: phone || 'Not provided',
           city,
@@ -2183,7 +2186,7 @@ export default {
           availability: body.availability || 'Flexible',
           reference: id
         });
-        const userTpl = templateVolunteerAcknowledgment({ fullName });
+        const userTpl = templateVolunteerAcknowledgment({ fullName: effectiveDisplayName });
 
         await Promise.allSettled([
           sendEmail({
@@ -2207,7 +2210,7 @@ export default {
 
         return jsonResponse({
           success: true,
-          message: 'Volunteer application received! Confirmation details have been sent to your email.',
+          message: `Thank you, ${effectiveDisplayName}! Your volunteer application has been received. Confirmation details have been sent to your email.`,
           reference: id
         }, 201, cors);
       }

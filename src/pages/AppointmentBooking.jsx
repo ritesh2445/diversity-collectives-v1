@@ -17,7 +17,8 @@ import {
   getSiteFeatures,
   subscribeToSiteFeatures,
   getSlotAvailability,
-  bookTimeSlot
+  bookTimeSlot,
+  DEFAULT_FORM_SCHEMAS
 } from '../services/siteFeaturesStore';
 
 function getTodayIso() {
@@ -45,7 +46,7 @@ export default function AppointmentBooking() {
     return subscribeToSiteFeatures((next) => setFeatures(next));
   }, []);
 
-  const schema = features.formSchemas?.hiv_screening;
+  const schema = features.formSchemas?.hiv_screening || DEFAULT_FORM_SCHEMAS.hiv_screening;
   const slots = getSlotAvailability('hiv', selectedDate, features);
   const totalOpenSlots = slots.reduce((sum, s) => sum + s.remaining, 0);
   const totalCapacity = slots.reduce((sum, s) => sum + s.capacity, 0);
@@ -57,6 +58,15 @@ export default function AppointmentBooking() {
       setStatus('error');
       setStatusMsg('Please choose an available screening time slot.');
       return;
+    }
+
+    // Validate all required schema fields
+    for (const f of schema.fields || []) {
+      if (f.required && !String(fieldValues[f.id] || '').trim()) {
+        setStatus('error');
+        setStatusMsg(`Please select or enter: ${f.label.replace('*', '').trim()}`);
+        return;
+      }
     }
 
     if (!confidentialityConsent) {
@@ -71,7 +81,8 @@ export default function AppointmentBooking() {
       slot: selectedSlot,
       name: fieldValues.name || 'Confidential Client',
       contact: fieldValues.contact || '',
-      service: fieldValues.service || 'Rapid HIV Screening',
+      service: fieldValues.service || 'Free Confidential HIV Screening (Rapid Fingerstick)',
+      preferredLanguage: fieldValues.preferredLanguage || 'English',
       notes: fieldValues.notes || ''
     });
 
@@ -240,17 +251,25 @@ export default function AppointmentBooking() {
                       {field.label} {field.required ? '*' : ''}
                     </label>
                     {field.type === 'select' ? (
-                      <select
-                        required={field.required}
-                        value={fieldValues[field.id] || ''}
-                        onChange={(e) => setFieldValues((p) => ({ ...p, [field.id]: e.target.value }))}
-                        className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm font-medium text-slate-900 bg-white focus:ring-2 focus:ring-purple-600 outline-none"
-                      >
-                        <option value="">Select an option...</option>
-                        {(field.options || []).map((opt) => (
-                          <option key={opt} value={opt}>{opt}</option>
-                        ))}
-                      </select>
+                      (() => {
+                        const fallbackField = DEFAULT_FORM_SCHEMAS.hiv_screening?.fields?.find((f) => f.id === field.id);
+                        const effectiveOptions = Array.isArray(field.options) && field.options.length > 0
+                          ? field.options
+                          : (fallbackField?.options || []);
+                        return (
+                          <select
+                            required={field.required}
+                            value={fieldValues[field.id] || ''}
+                            onChange={(e) => setFieldValues((p) => ({ ...p, [field.id]: e.target.value }))}
+                            className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm font-medium text-slate-900 bg-white focus:ring-2 focus:ring-purple-600 outline-none"
+                          >
+                            <option value="">Select an option...</option>
+                            {effectiveOptions.map((opt) => (
+                              <option key={opt} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                        );
+                      })()
                     ) : field.type === 'textarea' ? (
                       <textarea
                         rows={2}

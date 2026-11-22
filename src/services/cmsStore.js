@@ -265,6 +265,7 @@ import {
   replaceSanctuaryWithCenter
 } from '../data/siteDefaults.js';
 import { normalizeCmsEvent, normalizeCmsEventList } from '../utils/eventDates.js';
+import { DEFAULT_WEEKLY_SCHEDULE } from '../utils/recurringSchedule.js';
 import { SYNC_EVENTS, hasPublishedSiteState, broadcastPatch, fetchAndApplyLiveSiteState } from './liveSync.js';
 
 const CMS_STORAGE_KEY = 'dcvc_live_cms_data';
@@ -521,6 +522,7 @@ export const INITIAL_CMS_DATA = {
     youtube: orgInfo.socials?.youtube || "https://www.youtube.com/@diversitycollectivevc"
   },
   programs: programsList || [],
+  weeklySchedule: DEFAULT_WEEKLY_SCHEDULE,
   events: normalizeCmsEventList(liveEvents || []),
   news: (newsArticles || []).map((n, i) => ({
     id: n.id || n.slug || `news-${i}`,
@@ -1325,6 +1327,42 @@ class CmsStoreEngine {
     ]));
     this.saveData({ ...this.data, programs: existing, deletedPrograms: deleted });
     return existing;
+  }
+
+  // --------------------------------------------------------------------------
+  // Weekly Recurring Schedule CRUD
+  // --------------------------------------------------------------------------
+  getWeeklySchedule() {
+    if (Array.isArray(this.data?.weeklySchedule) && this.data.weeklySchedule.length > 0) {
+      return this.data.weeklySchedule;
+    }
+    return DEFAULT_WEEKLY_SCHEDULE;
+  }
+
+  saveWeeklySchedule(schedule) {
+    if (!Array.isArray(schedule)) return this.getWeeklySchedule();
+    this.saveData({ ...this.data, weeklySchedule: schedule });
+    return schedule;
+  }
+
+  saveWeeklyProgram(program) {
+    if (!program || typeof program !== 'object') return this.getWeeklySchedule();
+    const current = [...this.getWeeklySchedule()];
+    const index = current.findIndex(p => p.id === program.id);
+    if (index >= 0) {
+      current[index] = { ...current[index], ...program };
+    } else {
+      current.push({ ...program, id: program.id || `ws-${Date.now()}` });
+    }
+    this.saveWeeklySchedule(current);
+    return current;
+  }
+
+  deleteWeeklyProgram(id) {
+    if (!id) return this.getWeeklySchedule();
+    const current = this.getWeeklySchedule().filter(p => p.id !== id);
+    this.saveWeeklySchedule(current);
+    return current;
   }
 
   // --------------------------------------------------------------------------

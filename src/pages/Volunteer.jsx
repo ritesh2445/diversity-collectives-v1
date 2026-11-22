@@ -27,6 +27,8 @@ export default function Volunteer() {
   const [status, setStatus] = useState('idle'); // 'idle' | 'loading' | 'success' | 'error'
   const [statusMsg, setStatusMsg] = useState('');
   const [formData, setFormData] = useState({
+    preferredName: '',
+    pronouns: '',
     fullName: '',
     email: '',
     phone: '',
@@ -61,6 +63,18 @@ export default function Volunteer() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!formData.preferredName?.trim()) {
+      setStatus('error');
+      setStatusMsg('Please provide your preferred name.');
+      return;
+    }
+
+    if (!formData.fullName?.trim()) {
+      setStatus('error');
+      setStatusMsg('Please provide your legal name for confidential records and verification.');
+      return;
+    }
+
     if (!formData.backgroundCheckConsent) {
       setStatus('error');
       setStatusMsg('Please provide consent for our standard volunteer vetting policy.');
@@ -72,7 +86,11 @@ export default function Volunteer() {
 
     if (res.success) {
       setStatus('success');
-      setStatusMsg(res.message);
+      const confirmationGreeting = formData.preferredName || formData.fullName;
+      setStatusMsg(
+        res.message ||
+        `Thank you, ${confirmationGreeting}! Your volunteer application has been received. Our volunteer coordinator will reach out to schedule an orientation.`
+      );
       try {
         confetti({
           particleCount: 50,
@@ -182,10 +200,52 @@ export default function Volunteer() {
                 </div>
               )}
 
+              {/* Identity & Preferred Communication */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div className="space-y-1.5">
-                  <label htmlFor="name" className="text-xs font-bold uppercase tracking-wider text-slate-800 block">
-                    Full Legal Name <span className="text-rose-600">*</span>
+                  <label htmlFor="preferredName" className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center justify-between">
+                    <span>Preferred Name <span className="text-rose-600">*</span></span>
+                    <span className="text-[10px] text-purple-700 font-semibold normal-case">Primary Communication</span>
+                  </label>
+                  <input
+                    id="preferredName"
+                    type="text"
+                    required
+                    value={formData.preferredName}
+                    onChange={(e) => setFormData({ ...formData, preferredName: e.target.value })}
+                    placeholder="Jordan"
+                    className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none"
+                  />
+                  <p className="text-[11px] text-slate-500">
+                    The name our team, mentors, and community will use to address you.
+                  </p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label htmlFor="pronouns" className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center justify-between">
+                    <span>Pronouns</span>
+                    <span className="text-[10px] text-slate-400 normal-case font-normal">Optional</span>
+                  </label>
+                  <input
+                    id="pronouns"
+                    type="text"
+                    value={formData.pronouns}
+                    onChange={(e) => setFormData({ ...formData, pronouns: e.target.value })}
+                    placeholder="e.g. they/them, she/her, he/him"
+                    className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none"
+                  />
+                  <p className="text-[11px] text-slate-500">
+                    Helps us foster an affirming and respectful team environment.
+                  </p>
+                </div>
+              </div>
+
+              {/* Confidential Legal Records & Contact */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="space-y-1.5">
+                  <label htmlFor="name" className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center justify-between">
+                    <span>Full Legal Name <span className="text-rose-600">*</span></span>
+                    <span className="text-[10px] text-amber-700 font-semibold normal-case">Confidential</span>
                   </label>
                   <input
                     id="name"
@@ -193,9 +253,12 @@ export default function Volunteer() {
                     required
                     value={formData.fullName}
                     onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                    placeholder="Jordan Bailey"
+                    placeholder="Legal First and Last Name"
                     className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none"
                   />
+                  <p className="text-[11px] text-slate-500">
+                    Preserved confidentially for background verification and safety records.
+                  </p>
                 </div>
 
                 <div className="space-y-1.5">
@@ -211,6 +274,9 @@ export default function Volunteer() {
                     placeholder="jordan@example.com"
                     className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none"
                   />
+                  <p className="text-[11px] text-slate-500">
+                    Where we'll send orientation details and scheduling confirmations.
+                  </p>
                 </div>
               </div>
 

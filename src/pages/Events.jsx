@@ -21,6 +21,7 @@ import { annualSignatureEvents } from '../data/dcvcData';
 import CardSpotlight from '../components/CardSpotlight';
 import AutoSlideImage from '../components/AutoSlideImage.jsx';
 import MobileCarousel from '../components/MobileCarousel.jsx';
+import WeeklyProgramsCalendar from '../components/WeeklyProgramsCalendar.jsx';
 import { usePageMeta } from '../utils/seo';
 import {
   parseEventDate,
@@ -213,15 +214,15 @@ export default function Events() {
             </p>
           </div>
 
-          {/* View Switcher: List vs Traditional Calendar Grid */}
-          <div className="flex items-center gap-2 p-1.5 bg-slate-100 rounded-2xl border border-slate-200 self-start md:self-end flex-shrink-0">
+          {/* View Switcher: List vs Traditional Calendar Grid vs Weekly Programs */}
+          <div className="flex flex-wrap items-center gap-1 sm:gap-2 p-1.5 bg-slate-100 rounded-2xl border border-slate-200 self-start md:self-end flex-shrink-0">
             <button
               type="button"
               onClick={() => {
                 setViewMode('list');
                 setSelectedDateFilter(null);
               }}
-              className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 viewMode === 'list'
                   ? 'bg-white text-[#5A1E65] shadow-sm font-extrabold'
                   : 'text-slate-600 hover:text-slate-900'
@@ -232,15 +233,32 @@ export default function Events() {
             </button>
             <button
               type="button"
-              onClick={() => setViewMode('calendar')}
-              className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              onClick={() => {
+                setViewMode('calendar');
+              }}
+              className={`inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 viewMode === 'calendar'
                   ? 'bg-[#5A1E65] text-white shadow-sm font-extrabold'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <CalendarIcon className="w-4 h-4" />
-              <span>View Calendar</span>
+              <span>Monthly Calendar</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setViewMode('weekly');
+                setSelectedDateFilter(null);
+              }}
+              className={`inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                viewMode === 'weekly'
+                  ? 'bg-[#5A1E65] text-white shadow-sm font-extrabold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Clock className="w-4 h-4" />
+              <span>Weekly Programs</span>
             </button>
           </div>
         </div>
@@ -480,6 +498,13 @@ export default function Events() {
         </section>
       )}
 
+      {/* Weekly Programs Calendar View */}
+      {viewMode === 'weekly' && (
+        <section className="container-clean py-10">
+          <WeeklyProgramsCalendar />
+        </section>
+      )}
+
       {/* Event Cards Section */}
       <section className="container-clean py-8">
         
@@ -490,6 +515,8 @@ export default function Events() {
                 ? 'Gatherings on Selected Date'
                 : viewMode === 'calendar'
                 ? 'Events for Selected Timeframe'
+                : viewMode === 'weekly'
+                ? 'All Upcoming Gatherings'
                 : activeTab === 'upcoming'
                 ? 'Upcoming Gatherings'
                 : 'Past Gatherings Archive'}
