@@ -94,7 +94,9 @@ export default function ProgramDetail() {
                 <Clock className="w-4 h-4 text-[#5A1E65] mt-0.5 flex-shrink-0" />
                 <div>
                   <span className="font-bold text-slate-900">Meeting Time: </span>
-                  <span className="text-slate-600 font-medium">{program.schedule}</span>
+                  <span className="text-slate-600 font-medium">
+                    {program.slug === 'community-resource-center' && liveOrg.hours ? liveOrg.hours : program.schedule}
+                  </span>
                 </div>
               </div>
               <div className="flex items-start gap-2.5">

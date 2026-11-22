@@ -71,6 +71,7 @@ import {
   saveCmsSettings,
   DEFAULT_CMS_SEED
 } from '../services/cmsClient.js';
+import { getStoredUser } from '../services/adminClient.js';
 import { parseEventDate, normalizeCmsEvent } from '../../utils/eventDates.js';
 import { SYNC_EVENTS } from '../../services/liveSync.js';
 
@@ -79,6 +80,9 @@ export default function CmsStudio() {
   const [activeSubTab, setActiveSubTab] = useState('programs'); // 'programs' | 'events' | 'news' | 'resources' | 'staff' | 'gallery' | 'settings'
   const [searchQuery, setSearchQuery] = useState('');
   const [feedbackMsg, setFeedbackMsg] = useState('');
+  const [hoursValidationError, setHoursValidationError] = useState('');
+  const currentUser = getStoredUser();
+  const isAuthorizedAdmin = !currentUser || !currentUser.role || currentUser.role === 'admin';
 
   // Modals state
   const [modalType, setModalType] = useState(null); // 'program' | 'event' | 'news' | 'resource' | 'staff' | 'gallery' | 'milestone' | null
@@ -714,9 +718,24 @@ export default function CmsStudio() {
 
   const handleSaveSettingsForm = (e) => {
     e.preventDefault();
-    saveCmsSettings(cmsData.settings);
-    refreshData();
-    showToast('Site-Wide Settings & Emergency Notice updated live.');
+    if (!isAuthorizedAdmin) {
+      showToast('Unauthorized: Only administrators with the Admin role can update operating hours and site settings.', 'error');
+      return;
+    }
+    const rawHours = cmsData.settings?.hours?.trim();
+    if (!rawHours || rawHours.length < 4) {
+      setHoursValidationError('Operating hours cannot be blank. Please enter operating hours or specify closed days.');
+      showToast('Validation failed: Please specify valid operating hours.', 'error');
+      return;
+    }
+    setHoursValidationError('');
+    try {
+      saveCmsSettings(cmsData.settings);
+      refreshData();
+      showToast('Site-Wide Settings & CRC Operating Hours updated live.');
+    } catch (err) {
+      showToast(err.message || 'Failed to update settings.', 'error');
+    }
   };
 
   // Cancellation Modal Trigger
@@ -2537,20 +2556,118 @@ export default function CmsStudio() {
                 />
               </div>
 
-              <div className="md:col-span-2">
-                <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                  Clinic Hours of Operation
-                </label>
+              <div className="md:col-span-2 p-5 rounded-2xl bg-purple-50/40 border border-purple-200/80 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-[#5A1E65]" />
+                    <label className="block text-xs font-black uppercase text-slate-800 tracking-wider">
+                      Community Resource Center (CRC) Operating Hours
+                    </label>
+                  </div>
+                  {isAuthorizedAdmin ? (
+                    <span className="text-[10px] font-black uppercase text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-300 w-fit">
+                      Admin Access Granted
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-black uppercase text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-300 flex items-center gap-1 w-fit">
+                      <ShieldAlert className="w-3 h-3 text-amber-600" />
+                      Admin Role Required ({currentUser?.role || 'read_only'})
+                    </span>
+                  )}
+                </div>
+
+                <p className="text-[11px] text-slate-600 font-medium">
+                  Public operating hours for the physical center at 2471 Portola Road. Syncs live across the public footer, contact page, and program guides. Supports standard weekday drop-in schedules and explicit closed days.
+                </p>
+
                 <input
                   type="text"
                   required
+                  disabled={!isAuthorizedAdmin}
                   value={cmsData.settings?.hours || ''}
-                  onChange={(e) => setCmsData({
-                    ...cmsData,
-                    settings: { ...cmsData.settings, hours: e.target.value }
-                  })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#5A1E65] outline-none"
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setCmsData({
+                      ...cmsData,
+                      settings: { ...cmsData.settings, hours: val }
+                    });
+                    if (val.trim().length >= 4) setHoursValidationError('');
+                  }}
+                  placeholder="e.g. Monday – Friday, 1:00 PM – 5:00 PM (Weekends Closed)"
+                  className={`w-full px-3.5 py-2.5 rounded-xl border text-sm outline-none transition-all ${
+                    !isAuthorizedAdmin
+                      ? 'bg-slate-100 border-slate-300 text-slate-500 cursor-not-allowed'
+                      : 'bg-white border-slate-300 focus:ring-2 focus:ring-[#5A1E65]'
+                  } ${hoursValidationError ? 'border-rose-400 ring-1 ring-rose-300' : ''}`}
                 />
+
+                {hoursValidationError && (
+                  <p className="text-[11px] text-rose-600 font-bold flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3" />
+                    <span>{hoursValidationError}</span>
+                  </p>
+                )}
+
+                {/* Quick Presets & Closed Days Controls */}
+                {isAuthorizedAdmin && (
+                  <div className="pt-1 flex flex-wrap items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                      Quick Presets:
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCmsData({
+                          ...cmsData,
+                          settings: { ...cmsData.settings, hours: 'Monday – Friday, 1:00 PM – 5:00 PM (Weekends Closed)' }
+                        });
+                        setHoursValidationError('');
+                      }}
+                      className="px-2.5 py-1 text-[11px] font-bold rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 cursor-pointer shadow-2xs"
+                    >
+                      Standard (1–5 PM Weekdays)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCmsData({
+                          ...cmsData,
+                          settings: { ...cmsData.settings, hours: 'Monday – Friday, 10:00 AM – 6:00 PM (Weekends Closed)' }
+                        });
+                        setHoursValidationError('');
+                      }}
+                      className="px-2.5 py-1 text-[11px] font-bold rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 cursor-pointer shadow-2xs"
+                    >
+                      Expanded (10 AM–6 PM Weekdays)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCmsData({
+                          ...cmsData,
+                          settings: { ...cmsData.settings, hours: 'Closed Today for Staff Development & Facility Maintenance' }
+                        });
+                        setHoursValidationError('');
+                      }}
+                      className="px-2.5 py-1 text-[11px] font-bold rounded-lg border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 cursor-pointer shadow-2xs"
+                    >
+                      Mark Closed Today
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCmsData({
+                          ...cmsData,
+                          settings: { ...cmsData.settings, hours: '1:00 PM – 5:00 PM Weekdays (Please call for drop-in hours)' }
+                        });
+                        setHoursValidationError('');
+                      }}
+                      className="px-2.5 py-1 text-[11px] font-bold rounded-lg border border-purple-300 bg-purple-50 hover:bg-purple-100 text-[#5A1E65] cursor-pointer shadow-2xs ml-auto"
+                    >
+                      Reset to Initial Default
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="md:col-span-2">

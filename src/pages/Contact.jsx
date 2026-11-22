@@ -159,7 +159,7 @@ export default function Contact() {
                   <Clock className="w-5 h-5 text-amber-600 flex-shrink-0" />
                   <div>
                     <span className="text-[11px] text-slate-400 block font-bold uppercase">Center Drop-in Hours</span>
-                    <p className="text-slate-800 font-bold text-sm">Monday–Friday 1:00 PM – 5:00 PM</p>
+                    <p className="text-slate-800 font-bold text-sm">{orgInfo.hours}</p>
                   </div>
                 </div>
               </div>

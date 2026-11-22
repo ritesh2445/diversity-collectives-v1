@@ -4,8 +4,11 @@ import { ArrowUpRight, Heart, MapPin, Phone, Mail, ShieldCheck, Award } from 'lu
 import LanguageSelector from './LanguageSelector';
 import { orgInfo, sponsorsList } from '../data/dcvcData';
 import { cmsStore } from '../services/cmsStore';
+import { useLiveOrgInfo } from '../hooks/useCmsLive';
 
 export default function Footer() {
+  const liveOrg = useLiveOrgInfo();
+  const orgInfoData = liveOrg || orgInfo;
   const [sponsors, setSponsors] = useState(() => cmsStore.getSponsors?.() || sponsorsList);
 
   useEffect(() => {
@@ -241,7 +244,7 @@ export default function Footer() {
 
             <div className="pt-2">
               <span className="text-xs text-slate-300 block mb-1">Center Drop-in Hours:</span>
-              <p className="text-xs text-white font-semibold">{orgInfo.hours}</p>
+              <p className="text-xs text-white font-semibold">{orgInfoData.hours || orgInfo.hours}</p>
             </div>
           </div>
 

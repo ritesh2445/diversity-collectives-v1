@@ -811,7 +811,13 @@ export function deleteCmsMilestone(year) {
   return list;
 }
 
+import { getStoredUser } from './adminClient.js';
+
 export function saveCmsSettings(settingsUpdates) {
+  const user = getStoredUser();
+  if (user && user.role && user.role !== 'admin') {
+    throw new Error('Unauthorized: Only administrators with the Admin role can update CRC operating hours and site settings.');
+  }
   const data = getLiveCmsData();
   const updated = { ...data.settings, ...settingsUpdates };
   saveLiveCmsData({ ...data, settings: updated });

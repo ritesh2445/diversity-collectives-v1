@@ -8,6 +8,7 @@
 import { cmsStore } from '../../services/cmsStore.js';
 import { normalizeCmsEvent, normalizeCmsEventList } from '../../utils/eventDates.js';
 import { publishAdminSitePatch, resetAdminSiteState } from '../../services/liveSync.js';
+import { getStoredUser } from './adminClient.js';
 
 export const DEFAULT_CMS_SEED = cmsStore.getAllData();
 
@@ -130,6 +131,10 @@ export function deleteCmsMilestone(year) {
 }
 
 export function saveCmsSettings(settingsUpdates) {
+  const user = getStoredUser();
+  if (user && user.role && user.role !== 'admin') {
+    throw new Error('Unauthorized: Only administrators with the Admin role can update CRC operating hours and site settings.');
+  }
   const updated = cmsStore.saveSettings(settingsUpdates);
   publishAdminSitePatch({ cmsData: cmsStore.getData() }).catch(() => {});
   return updated;
