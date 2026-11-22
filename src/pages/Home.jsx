@@ -463,6 +463,8 @@ export default function Home() {
     { id: 'Signature Event', label: 'Signature Event' }
   ], []);
 
+  const [showAllEvents, setShowAllEvents] = useState(false);
+
   const filteredEvents = useMemo(() => {
     const list = cmsEvents || liveEvents || [];
     // Strictly filter out past events so that no past events appear in upcoming gatherings
@@ -474,6 +476,12 @@ export default function Home() {
       return cat === target || cat.includes(target) || target.includes(cat);
     });
   }, [cmsEvents, selectedEventCategory]);
+
+  const displayedEvents = useMemo(() => {
+    if (showAllEvents) return filteredEvents;
+    // Exactly 2 rows of 3 columns = 6 events
+    return filteredEvents.slice(0, 6);
+  }, [filteredEvents, showAllEvents]);
 
   const activeTierObj = donationTiers.find(t => t.amount === selectedDonationTier) || donationTiers[1];
 
@@ -1378,9 +1386,9 @@ export default function Home() {
             ))}
           </div>
 
-          {/* Events List in 3D Perspective */}
+          {/* Events List in 3D Perspective (2 balanced rows of 3 on desktop, expandable) */}
           <MobileCarousel cols={3} autoScrollMs={5000} className="perspective-1000 items-stretch" cardClassName="h-full flex flex-col">
-            {filteredEvents.map((evt, idx) => {
+            {displayedEvents.map((evt, idx) => {
               const dateGradients = [
                 'from-purple-800 via-[#5A1E65] to-indigo-900 text-white shadow-purple-500/25',
                 'from-amber-500 via-orange-500 to-rose-600 text-white shadow-amber-500/25',
@@ -1465,6 +1473,29 @@ export default function Home() {
               );
             })}
           </MobileCarousel>
+
+          {/* Centered View All Action */}
+          {filteredEvents.length > 6 && (
+            <div className="flex flex-col items-center justify-center pt-8 text-center">
+              <button
+                type="button"
+                onClick={() => setShowAllEvents((prev) => !prev)}
+                className="btn-primary py-3 px-8 text-sm font-extrabold shadow-md hover:shadow-xl inline-flex items-center gap-2 cursor-pointer transition-all hover:scale-[1.02]"
+              >
+                <span>
+                  {showAllEvents
+                    ? 'Show Less Events'
+                    : `View All Events (${filteredEvents.length - 6} More)`}
+                </span>
+                <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${showAllEvents ? 'rotate-180' : ''}`} />
+              </button>
+              <p className="text-xs text-slate-500 font-medium mt-2">
+                {showAllEvents
+                  ? `Showing all ${filteredEvents.length} upcoming gatherings`
+                  : `Showing 2 rows (${displayedEvents.length} events) · Click to reveal the remaining ${filteredEvents.length - 6} events`}
+              </p>
+            </div>
+          )}
 
         </div>
       </section>
