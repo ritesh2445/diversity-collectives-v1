@@ -3442,10 +3442,11 @@ export default function CmsStudio() {
                   </div>
 
                   <ImagePicker
-                    value={formData.photo || ''}
-                    onChange={(url) => setFormData({ ...formData, photo: url })}
+                    value={formData.photo || formData.image || ''}
+                    onChange={(url) => setFormData({ ...formData, photo: url, image: url })}
                     label="Staff / Board Member Portrait"
                     aspectRatio="aspect-[4/3]"
+                    category="avatar"
                     helpText="Upload a professional headshot or portrait photo."
                   />
 

@@ -247,7 +247,11 @@ export async function optimizeImageFile(file, options = {}) {
  * or saves to local persistent storage.
  */
 export async function uploadAndStoreImage(file, category = 'media') {
-  const optimized = await optimizeImageFile(file);
+  const isPortrait = category === 'avatar' || category === 'staff' || category === 'board';
+  const options = isPortrait
+    ? { maxWidth: 480, maxHeight: 480, quality: 0.80 }
+    : { maxWidth: 960, maxHeight: 720, quality: 0.82 };
+  const optimized = await optimizeImageFile(file, options);
   const config = getGitHubStorageConfig();
 
   // If a GitHub token is configured, push directly to GitHub repo

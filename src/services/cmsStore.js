@@ -44,6 +44,16 @@ export function mergeProgramsWithDefaults(savedPrograms = [], defaultPrograms = 
   return result;
 }
 
+const APPROVED_BOARD_ORDER = [
+  'steve somann',
+  'celia sandhya daniels',
+  'aj holmes',
+  'tess allen',
+  'luis andrade',
+  'unique dowtin'
+];
+const APPROVED_BOARD_SET = new Set(APPROVED_BOARD_ORDER);
+
 export function mergeStaffWithDefaults(savedStaff = [], defaultStaff = null, deletedIds = []) {
   const seed = Array.isArray(defaultStaff) && defaultStaff.length > 0 ? defaultStaff : [
     ...(staffMembers || []).map((s, idx) => ({
@@ -53,6 +63,7 @@ export function mergeStaffWithDefaults(savedStaff = [], defaultStaff = null, del
       title: s.title || s.role || 'Staff Member',
       role: s.role || s.title || 'Staff Member',
       photo: s.photo || s.image || '/images/volunteers.jpg',
+      image: s.photo || s.image || '/images/volunteers.jpg',
       ...s
     })),
     ...(boardMembers || []).map((b, idx) => ({
@@ -62,47 +73,104 @@ export function mergeStaffWithDefaults(savedStaff = [], defaultStaff = null, del
       title: b.title || b.role || 'Board Member',
       role: b.role || b.title || 'Board Member',
       photo: b.photo || b.image || '/images/volunteers.jpg',
+      image: b.photo || b.image || '/images/volunteers.jpg',
       ...b
     }))
   ];
 
-  const deletedSet = new Set(Array.isArray(deletedIds) ? deletedIds : []);
+  const deletedSet = new Set(Array.isArray(deletedIds) ? deletedIds.map(d => String(d).trim().toLowerCase()) : []);
 
-  if (!Array.isArray(savedStaff) || savedStaff.length === 0) {
-    return seed.filter(s => !deletedSet.has(s.id) && !deletedSet.has(s.name) && !deletedSet.has(s.slug));
-  }
+  const getKeys = (m) => {
+    const name = String(m?.name || '').trim().toLowerCase();
+    const slug = String(m?.slug || name.replace(/[^a-z0-9]+/g, '-')).toLowerCase().replace(/(^-|-$)/g, '');
+    const id = m?.id ? String(m.id).trim().toLowerCase() : '';
+    return { name, slug, id };
+  };
+
+  const isDeleted = (m) => {
+    const { name, slug, id } = getKeys(m);
+    return (
+      (id && deletedSet.has(id)) ||
+      (name && deletedSet.has(name)) ||
+      (slug && deletedSet.has(slug))
+    );
+  };
+
+  const seenKeys = new Set();
+  const seenNames = new Set();
+  const seenSlugs = new Set();
+
+  const isSeen = (m) => {
+    const { name, slug, id } = getKeys(m);
+    if (id && seenKeys.has(id)) return true;
+    if (name && seenNames.has(name)) return true;
+    if (slug && seenSlugs.has(slug)) return true;
+    return false;
+  };
+
+  const markSeen = (m) => {
+    const { name, slug, id } = getKeys(m);
+    if (id) seenKeys.add(id);
+    if (name) seenNames.add(name);
+    if (slug) seenSlugs.add(slug);
+  };
 
   const result = [];
-  const seenKeys = new Set();
 
-  // 1. Preserve all saved staff/board in their exact order
-  for (const member of savedStaff) {
-    if (!member || typeof member !== 'object') continue;
-    const memName = (member.name || '').trim();
-    const rawKey = member.id || member.slug || (memName ? `${member.category || 'staff'}-${memName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}` : '');
-    const key = rawKey ? String(rawKey).trim() : '';
+  // 1. Process and preserve saved staff/board, filtering duplicates and unapproved board members
+  if (Array.isArray(savedStaff)) {
+    for (const member of savedStaff) {
+      if (!member || typeof member !== 'object') continue;
+      const { name, slug, id } = getKeys(member);
+      if (!name && !id && !slug) continue;
 
-    if (key && !deletedSet.has(key) && !deletedSet.has(member.id) && !deletedSet.has(memName) && !seenKeys.has(key)) {
-      seenKeys.add(key);
-      const seedMatch = seed.find(s => (s.id && s.id === key) || (s.slug && member.slug && s.slug === member.slug) || (s.name && memName && s.name.toLowerCase().trim() === memName.toLowerCase()));
+      if (isDeleted(member)) continue;
+
+      // Filter unapproved old seed members (e.g. roland catabona)
+      if (member.category === 'board' && name === 'roland catabona') {
+        continue;
+      }
+
+      if (isSeen(member)) continue; // NO REPETITIONS
+
+      markSeen(member);
+
+      const seedMatch = seed.find((s) => {
+        const sKeys = getKeys(s);
+        return (id && sKeys.id === id) || (slug && sKeys.slug === slug) || (name && sKeys.name === name);
+      });
+
+      const effectivePhoto = member.photo || member.image || (seedMatch && (seedMatch.photo || seedMatch.image)) || '/images/volunteers.jpg';
+
       result.push({
         ...(seedMatch || {}),
         ...member,
-        id: member.id || (seedMatch && seedMatch.id) || key,
+        id: member.id || (seedMatch && seedMatch.id) || id || `member-${slug}`,
+        slug: member.slug || (seedMatch && seedMatch.slug) || slug,
+        name: member.name || (seedMatch && seedMatch.name) || '',
         title: member.title || member.role || (seedMatch && (seedMatch.title || seedMatch.role)) || 'Team Member',
-        photo: member.photo || member.image || (seedMatch && (seedMatch.photo || seedMatch.image)) || '/images/volunteers.jpg'
+        role: member.role || member.title || (seedMatch && (seedMatch.role || seedMatch.title)) || 'Team Member',
+        photo: effectivePhoto,
+        image: effectivePhoto
       });
     }
   }
 
-  // 2. Append any missing seed members not explicitly deleted
+  // 2. Append any missing seed members not explicitly deleted or already seen
   for (const member of seed) {
-    const memName = (member.name || '').trim();
-    const key = member.id || member.slug || (memName ? `${member.category || 'staff'}-${member.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}` : '');
-    if (key && !deletedSet.has(key) && !deletedSet.has(member.id) && !deletedSet.has(memName) && !seenKeys.has(key)) {
-      seenKeys.add(key);
-      result.push({ ...member });
+    if (!member || typeof member !== 'object') continue;
+    const { name } = getKeys(member);
+
+    // Keep only the 6 approved board members in seed
+    if (member.category === 'board' && !APPROVED_BOARD_SET.has(name)) {
+      continue;
     }
+
+    if (isDeleted(member)) continue;
+    if (isSeen(member)) continue;
+
+    markSeen(member);
+    result.push({ ...member });
   }
 
   return result;
@@ -872,13 +940,43 @@ class CmsStoreEngine {
   }
 
   getBoardMembers() {
-    const board = this.getStaff().filter((s) => s.category === 'board');
-    return board.length > 0 ? board : (boardMembers || []);
+    const rawBoard = this.getStaff().filter((s) => s.category === 'board');
+    const baseList = rawBoard.length > 0 ? rawBoard : (boardMembers || []);
+
+    // 1. First get the 6 approved board members strictly in requested order
+    const orderedApproved = APPROVED_BOARD_ORDER.map((name) => {
+      const match = baseList.find(m => m.name && m.name.trim().toLowerCase() === name);
+      if (match) return match;
+      const seedMatch = (boardMembers || []).find(m => m.name && m.name.trim().toLowerCase() === name);
+      return seedMatch ? { ...seedMatch, category: 'board' } : null;
+    }).filter(Boolean);
+
+    const seen = new Set(orderedApproved.map(m => m.name.trim().toLowerCase()));
+
+    // 2. Append any newly added custom board members (excluding unapproved old members)
+    const customBoard = [];
+    for (const b of baseList) {
+      if (!b || !b.name) continue;
+      const norm = b.name.trim().toLowerCase();
+      if (norm === 'roland catabona' || seen.has(norm)) continue;
+      seen.add(norm);
+      customBoard.push(b);
+    }
+
+    return [...orderedApproved, ...customBoard];
   }
 
   getStaffMembers() {
-    const st = this.getStaff().filter((s) => s.category === 'staff');
-    return st.length > 0 ? st : (staffMembers || []);
+    const rawStaff = this.getStaff().filter((s) => s.category === 'staff');
+    const baseList = rawStaff.length > 0 ? rawStaff : (staffMembers || []);
+    const seen = new Set();
+    return baseList.filter(s => {
+      if (!s || !s.name) return false;
+      const norm = s.name.trim().toLowerCase();
+      if (seen.has(norm)) return false;
+      seen.add(norm);
+      return true;
+    });
   }
 
   loadData() {
@@ -1364,16 +1462,31 @@ class CmsStoreEngine {
 
   saveStaff(memberOrList) {
     if (Array.isArray(memberOrList)) {
-      this.saveData({ ...this.data, staff: memberOrList });
-      return memberOrList;
+      const seen = new Set();
+      const deduped = [];
+      for (const m of memberOrList) {
+        if (!m || typeof m !== 'object') continue;
+        const norm = String(m.name || '').trim().toLowerCase();
+        const idKey = m.id ? String(m.id).trim().toLowerCase() : '';
+        const key = idKey || norm;
+        if (key && !seen.has(key)) {
+          seen.add(key);
+          if (norm) seen.add(norm);
+          deduped.push(m);
+        }
+      }
+      this.saveData({ ...this.data, staff: deduped });
+      return deduped;
     }
     const existing = mergeStaffWithDefaults(this.data.staff, INITIAL_CMS_DATA.staff, this.data.deletedStaff || []);
 
     const targetId = memberOrList.id ? String(memberOrList.id).trim() : null;
     const cleanName = (memberOrList.name || '').trim();
+    const normName = cleanName.toLowerCase();
     const targetCategory = memberOrList.category || 'staff';
-    const memberSlug = memberOrList.slug || cleanName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const memberSlug = (memberOrList.slug || cleanName.toLowerCase().replace(/[^a-z0-9]+/g, '-')).replace(/(^-|-$)/g, '');
     const memberId = targetId || `${targetCategory}-${memberSlug || Date.now()}`;
+    const effectivePhoto = memberOrList.photo || memberOrList.image || '/images/volunteers.jpg';
 
     const normalizedMember = {
       ...memberOrList,
@@ -1384,15 +1497,17 @@ class CmsStoreEngine {
       role: memberOrList.role || memberOrList.title || (targetCategory === 'board' ? 'Board Member' : 'Staff Member'),
       category: targetCategory,
       email: memberOrList.email || 'info@diversitycollective.org',
-      photo: memberOrList.photo || memberOrList.image || '/images/volunteers.jpg',
+      photo: effectivePhoto,
+      image: effectivePhoto,
       bio: memberOrList.bio || ''
     };
 
-    // STRICT MATCHING - NEVER compare empty strings or undefined!
+    // Find existing by ID, originalId, slug, OR name (ensures changing a category or editing updates the existing card without creating duplicates)
     const index = existing.findIndex(s => {
       if (targetId && s.id && String(s.id) === targetId) return true;
-      if (cleanName && s.name && s.name.toLowerCase().trim() === cleanName.toLowerCase() && s.category === targetCategory) return true;
-      if (memberSlug && s.slug && String(s.slug) === memberSlug && s.category === targetCategory) return true;
+      if (memberOrList.originalId && s.id && String(s.id) === String(memberOrList.originalId)) return true;
+      if (cleanName && s.name && s.name.toLowerCase().trim() === normName) return true;
+      if (memberSlug && s.slug && String(s.slug).toLowerCase() === memberSlug) return true;
       return false;
     });
 

@@ -21,6 +21,7 @@ export default function ImagePicker({
   onChange, 
   label = 'Picture / Cover Image',
   aspectRatio = 'aspect-[16/9]',
+  category = 'media',
   helpText = 'Upload a picture from your computer or choose from the DCVC Center library.'
 }) {
   const [showLibrary, setShowLibrary] = useState(false);
@@ -59,7 +60,7 @@ export default function ImagePicker({
     try {
       setIsOptimizing(true);
       setOptimizeStatus('Optimizing & uploading original image...');
-      const result = await uploadAndStoreImage(file);
+      const result = await uploadAndStoreImage(file, category);
       onChange(result.url);
       setOptimizeStatus('✓ Uploaded full original image (no crop)');
       setTimeout(() => setOptimizeStatus(''), 4000);
@@ -86,7 +87,7 @@ export default function ImagePicker({
       setIsOptimizing(true);
       setOptimizeStatus('Optimizing & storing cropped image...');
 
-      const result = await uploadAndStoreImage(croppedFile || previewUrl);
+      const result = await uploadAndStoreImage(croppedFile || previewUrl, category);
       onChange(result.url);
 
       const kbSaved = ((result.sizeBytes || 0) / 1024).toFixed(0);

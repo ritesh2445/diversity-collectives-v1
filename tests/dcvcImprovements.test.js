@@ -1,7 +1,7 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { searchSiteWithSuggestions } from '../src/utils/smartSiteSearch.js';
-import { cmsStore } from '../src/services/cmsStore.js';
+import { cmsStore, mergeStaffWithDefaults } from '../src/services/cmsStore.js';
 import { saveCmsSettings } from '../src/admin/services/cmsClient.js';
 import { orgInfo } from '../src/data/dcvcData.js';
 
@@ -132,6 +132,80 @@ describe('DCVC Approved Improvements: GEM Membership, Sponsorship, In-Kind, CRC 
       const deletedList = cmsStore.getAllData().deletedPrograms || [];
       assert.ok(deletedList.includes('temp-delete-test-slug'));
       assert.ok(deletedList.includes('prog-temp-delete-test'));
+    });
+  });
+
+  describe('4. Board Members Integrity, Deduplication & Isolation from Staff Edits', () => {
+    it('returns exactly the 6 approved board members in the requested order with zero duplicates', () => {
+      const board = cmsStore.getBoardMembers();
+      assert.equal(board.length, 6, `Expected exactly 6 board members, got ${board.length}`);
+
+      const expectedNames = [
+        'Steve Somann',
+        'Celia Sandhya Daniels',
+        'AJ Holmes',
+        'Tess Allen',
+        'Luis Andrade',
+        'Unique Dowtin'
+      ];
+
+      expectedNames.forEach((expectedName, idx) => {
+        assert.equal(board[idx].name, expectedName, `Expected index ${idx} to be ${expectedName}`);
+        assert.ok(board[idx].photo.includes('/images/board/'), `Missing real image for ${expectedName}`);
+        assert.ok(board[idx].email.endsWith('@diversitycollective.org'), `Invalid official email for ${expectedName}`);
+      });
+
+      // Assert no repetitions by name or slug
+      const names = board.map(b => b.name.toLowerCase());
+      assert.equal(new Set(names).size, 6, 'Duplicate board member names detected!');
+
+      const slugs = board.map(b => b.slug.toLowerCase());
+      assert.equal(new Set(slugs).size, 6, 'Duplicate board member slugs detected!');
+
+      // Assert all emails are distinct (not all having the same email)
+      const emails = board.map(b => b.email.toLowerCase());
+      assert.equal(new Set(emails).size, 6, 'Board members must not have identical emails!');
+    });
+
+    it('ensures modifying or adding staff members does not affect or duplicate board member cards', () => {
+      const boardBefore = cmsStore.getBoardMembers();
+      const boardCountBefore = boardBefore.length;
+
+      // Add a new staff member
+      const newStaff = {
+        name: 'Community Care Navigator',
+        role: 'Peer Support & Navigation Lead',
+        category: 'staff',
+        email: 'care@diversitycollective.org',
+        photo: '/images/volunteers.jpg',
+        bio: 'Providing warm handoffs and community navigation services.'
+      };
+
+      cmsStore.saveStaff(newStaff);
+
+      // Verify board members were completely untouched
+      const boardAfter = cmsStore.getBoardMembers();
+      assert.equal(boardAfter.length, boardCountBefore, 'Board members count must not change when staff is added');
+      assert.equal(boardAfter[0].name, 'Steve Somann');
+      assert.equal(boardAfter[3].name, 'Tess Allen');
+
+      // Verify staff member was added
+      const staffList = cmsStore.getStaffMembers();
+      assert.ok(staffList.some(s => s.name === 'Community Care Navigator'));
+
+      // Clean up test staff
+      cmsStore.deleteStaff('Community Care Navigator');
+    });
+
+    it('deduplicates staff and board members if duplicate records are presented', () => {
+      const duplicatedList = [
+        ...cmsStore.getBoardMembers(),
+        ...cmsStore.getBoardMembers() // duplicate entries
+      ];
+
+      const merged = mergeStaffWithDefaults(duplicatedList, null, []);
+      const boardOnly = merged.filter(m => m.category === 'board');
+      assert.equal(boardOnly.length, 6, 'mergeStaffWithDefaults must deduplicate repeated board cards');
     });
   });
 });
