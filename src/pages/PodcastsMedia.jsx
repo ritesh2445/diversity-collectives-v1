@@ -500,7 +500,10 @@ export default function PodcastsMedia() {
               <Lightbulb className="w-3.5 h-3.5" />
               <span>Community Powered</span>
             </div>
-            <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-slate-950">
+            <h2 
+              className="font-display text-2xl sm:text-3xl font-extrabold !text-slate-950"
+              style={{ color: '#020617' }}
+            >
               Have a Story or Topic We Should Feature?
             </h2>
             <p className="mt-2 text-xs sm:text-sm text-slate-600 leading-relaxed">

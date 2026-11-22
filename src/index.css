@@ -869,19 +869,19 @@ a[class*="from-indigo-"]:not([class*="from-indigo-50"]):not([class*="from-indigo
   color: #FFFFFF !important;
 }
 
-/* Ensure headings inside dark purple and gradient containers are crisp 100% white */
-[class*="from-[#5A1E65]"] h1,
-[class*="from-[#5A1E65]"] h2,
-[class*="from-[#5A1E65]"] h3,
-[class*="from-[#5A1E65]"] h4,
-[class*="from-[#5A1E65]"] h5,
-[class*="from-[#5A1E65]"] h6,
-[class*="bg-gradient-to-r"][class*="purple"] h1,
-[class*="bg-gradient-to-r"][class*="purple"] h2,
-[class*="bg-gradient-to-r"][class*="purple"] h3,
-[class*="bg-gradient-to-r"][class*="purple"] h4,
-[class*="bg-gradient-to-r"][class*="purple"] h5,
-[class*="bg-gradient-to-r"][class*="purple"] h6,
+/* Ensure headings inside dark purple and gradient containers are crisp 100% white, while preserving dark text on pastel/light backgrounds */
+[class*="from-[#5A1E65]"] h1:not([class*="text-slate-"]):not([class*="text-gray-"]):not([class*="text-zinc-"]):not([class*="text-neutral-"]):not([class*="text-black"]),
+[class*="from-[#5A1E65]"] h2:not([class*="text-slate-"]):not([class*="text-gray-"]):not([class*="text-zinc-"]):not([class*="text-neutral-"]):not([class*="text-black"]),
+[class*="from-[#5A1E65]"] h3:not([class*="text-slate-"]):not([class*="text-gray-"]):not([class*="text-zinc-"]):not([class*="text-neutral-"]):not([class*="text-black"]),
+[class*="from-[#5A1E65]"] h4:not([class*="text-slate-"]):not([class*="text-gray-"]):not([class*="text-zinc-"]):not([class*="text-neutral-"]):not([class*="text-black"]),
+[class*="from-[#5A1E65]"] h5:not([class*="text-slate-"]):not([class*="text-gray-"]):not([class*="text-zinc-"]):not([class*="text-neutral-"]):not([class*="text-black"]),
+[class*="from-[#5A1E65]"] h6:not([class*="text-slate-"]):not([class*="text-gray-"]):not([class*="text-zinc-"]):not([class*="text-neutral-"]):not([class*="text-black"]),
+[class*="bg-gradient-to-r"][class*="purple"]:not([class*="from-purple-50"]):not([class*="from-purple-100"]):not([class*="from-purple-200"]):not([class*="from-purple-300"]):not([class*="from-purple-400"]):not([class*="to-purple-50"]):not([class*="to-purple-100"]):not([class*="to-purple-200"]) h1:not([class*="text-slate-"]):not([class*="text-gray-"]):not([class*="text-zinc-"]):not([class*="text-neutral-"]):not([class*="text-black"]),
+[class*="bg-gradient-to-r"][class*="purple"]:not([class*="from-purple-50"]):not([class*="from-purple-100"]):not([class*="from-purple-200"]):not([class*="from-purple-300"]):not([class*="from-purple-400"]):not([class*="to-purple-50"]):not([class*="to-purple-100"]):not([class*="to-purple-200"]) h2:not([class*="text-slate-"]):not([class*="text-gray-"]):not([class*="text-zinc-"]):not([class*="text-neutral-"]):not([class*="text-black"]),
+[class*="bg-gradient-to-r"][class*="purple"]:not([class*="from-purple-50"]):not([class*="from-purple-100"]):not([class*="from-purple-200"]):not([class*="from-purple-300"]):not([class*="from-purple-400"]):not([class*="to-purple-50"]):not([class*="to-purple-100"]):not([class*="to-purple-200"]) h3:not([class*="text-slate-"]):not([class*="text-gray-"]):not([class*="text-zinc-"]):not([class*="text-neutral-"]):not([class*="text-black"]),
+[class*="bg-gradient-to-r"][class*="purple"]:not([class*="from-purple-50"]):not([class*="from-purple-100"]):not([class*="from-purple-200"]):not([class*="from-purple-300"]):not([class*="from-purple-400"]):not([class*="to-purple-50"]):not([class*="to-purple-100"]):not([class*="to-purple-200"]) h4:not([class*="text-slate-"]):not([class*="text-gray-"]):not([class*="text-zinc-"]):not([class*="text-neutral-"]):not([class*="text-black"]),
+[class*="bg-gradient-to-r"][class*="purple"]:not([class*="from-purple-50"]):not([class*="from-purple-100"]):not([class*="from-purple-200"]):not([class*="from-purple-300"]):not([class*="from-purple-400"]):not([class*="to-purple-50"]):not([class*="to-purple-100"]):not([class*="to-purple-200"]) h5:not([class*="text-slate-"]):not([class*="text-gray-"]):not([class*="text-zinc-"]):not([class*="text-neutral-"]):not([class*="text-black"]),
+[class*="bg-gradient-to-r"][class*="purple"]:not([class*="from-purple-50"]):not([class*="from-purple-100"]):not([class*="from-purple-200"]):not([class*="from-purple-300"]):not([class*="from-purple-400"]):not([class*="to-purple-50"]):not([class*="to-purple-100"]):not([class*="to-purple-200"]) h6:not([class*="text-slate-"]):not([class*="text-gray-"]):not([class*="text-zinc-"]):not([class*="text-neutral-"]):not([class*="text-black"]),
 .bg-gradient-to-r.text-white h1,
 .bg-gradient-to-r.text-white h2,
 .bg-gradient-to-r.text-white h3,
