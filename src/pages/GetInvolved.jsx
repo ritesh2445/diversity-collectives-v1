@@ -183,6 +183,10 @@ export default function GetInvolved() {
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
                     <span>Operating costs for the 2471 Portola Road Community Center</span>
                   </li>
+                  <li className="flex items-start gap-3 bg-emerald-50/70 p-3 rounded-xl border border-emerald-200">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                    <span>In-kind community gifts: laptops, desks, supplies, and pro-bono services</span>
+                  </li>
                 </ul>
               </CardSpotlight>
             </div>

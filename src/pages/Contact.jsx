@@ -291,6 +291,7 @@ export default function Contact() {
                         <option value="P.R.I.D.E. Training">P.R.I.D.E. Training & Education</option>
                         <option value="Volunteering">Volunteering Opportunities</option>
                         <option value="Donations & Sponsorship">Donations & Corporate Sponsorship</option>
+                        <option value="In-Kind Donations">In-Kind Donations (Equipment, Supplies, Services)</option>
                         <option value="Community Space Rental">Hosting a Meeting at the Center</option>
                       </select>
                     </div>

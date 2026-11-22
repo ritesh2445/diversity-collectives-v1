@@ -598,6 +598,10 @@ export default function Donate() {
                     <span className="font-bold text-slate-900 block">Corporate Match &amp; DAF Gifts:</span>
                     <p>Many Ventura County employers double community gifts. Ask your HR portal or reach out to <a href={`mailto:${orgInfo.email}`} className="text-[#5A1E65] font-bold underline">{orgInfo.email}</a> for direct DAF bank transfer instructions.</p>
                   </div>
+                  <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-1">
+                    <span className="font-bold text-slate-900 block">In-Kind Donations:</span>
+                    <p>DCVC welcomes broad in-kind contributions including laptops, computer workstations, desks, clinic and testing supplies, art materials, and professional services. <Link to="/contact" className="text-[#5A1E65] font-bold underline">Contact our team to arrange an in-kind gift</Link> or review our <Link to="/sponsors#in-kind" className="text-[#5A1E65] font-bold underline">in-kind guidelines</Link>.</p>
+                  </div>
                 </div>
               </div>
 
