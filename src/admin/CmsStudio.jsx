@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Building2,
   Users,
@@ -73,6 +73,7 @@ import {
 } from '../services/cmsClient.js';
 import { parseEventDate, normalizeCmsEvent } from '../../utils/eventDates.js';
 import { SYNC_EVENTS } from '../../services/liveSync.js';
+import { cmsStore } from '../../services/cmsStore.js';
 
 export default function CmsStudio() {
   const [cmsData, setCmsData] = useState(getLiveCmsData());
@@ -95,6 +96,15 @@ export default function CmsStudio() {
   const [importEventsError, setImportEventsError] = useState('');
   const [trainingViewMode, setTrainingViewMode] = useState('courses'); // 'courses' | 'pageContent'
   const [trainingPageData, setTrainingPageData] = useState(() => getCmsTrainingPageContent());
+  const [staffFilter, setStaffFilter] = useState('all'); // 'all' | 'board' | 'staff'
+
+  const boardList = useMemo(() => {
+    return cmsStore.getBoardMembers();
+  }, [cmsData]);
+
+  const operationalStaffList = useMemo(() => {
+    return cmsStore.getStaffMembers();
+  }, [cmsData]);
 
   // Reload data
   const refreshData = () => {
@@ -472,10 +482,12 @@ export default function CmsStudio() {
         id: `stf-${Date.now()}`,
         name: '',
         title: '',
-        category: 'board',
+        role: '',
+        category: 'staff',
         email: 'info@diversitycollective.org',
         bio: '',
-        photo: ''
+        photo: '',
+        image: ''
       });
     } else if (type === 'gallery') {
       setFormData({
@@ -597,11 +609,14 @@ export default function CmsStudio() {
         originalSlug: item.slug
       });
     } else if (type === 'staff') {
+      const portrait = item.photo || item.image || '';
       setFormData({
         ...item,
         originalId: item.id,
         title: item.title || item.role || '',
-        photo: item.photo || item.image || ''
+        role: item.role || item.title || '',
+        photo: portrait,
+        image: portrait
       });
     } else if (type === 'training') {
       setFormData({
@@ -659,10 +674,14 @@ export default function CmsStudio() {
       saveCmsResource(formData);
       showToast(`Resource "${formData.name}" saved.`);
     } else if (modalType === 'staff') {
+      const effectivePhoto = formData.photo || formData.image || '';
       saveCmsStaff({
         ...formData,
         originalId: editingItem?.id,
-        title: formData.title || formData.role || 'Team Member'
+        photo: effectivePhoto,
+        image: effectivePhoto,
+        title: formData.title || formData.role || 'Team Member',
+        role: formData.role || formData.title || 'Team Member'
       });
       showToast(`${formData.category === 'board' ? 'Board Member' : 'Staff Member'} "${formData.name}" saved.`);
     } else if (modalType === 'gallery') {
@@ -1428,10 +1447,10 @@ export default function CmsStudio() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h3 className="font-display text-xl font-bold text-slate-950">
-                Staff & Board Leadership Directory ({cmsData.staff?.length || 0})
+                Staff &amp; Board Leadership Directory ({boardList.length + operationalStaffList.length})
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                Manage executive leadership, program coordinators, and board of directors profiles.
+                Manage the public headshots, roles, emails, and biographies for the 6 Official Board Members and Operational Staff.
               </p>
             </div>
             <button
@@ -1444,67 +1463,212 @@ export default function CmsStudio() {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {cmsData.staff?.map((member) => (
-              <div
-                key={member.id}
-                className="p-5 rounded-3xl bg-white border border-slate-200 hover:border-purple-300 shadow-xs flex flex-col justify-between space-y-4"
-              >
-                <div className="space-y-3">
-                  <div className="aspect-square rounded-2xl overflow-hidden bg-slate-900 relative">
-                    <img
-                      src={member.photo}
-                      alt={member.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src = '/images/volunteers.jpg';
-                      }}
-                    />
-                    <span className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-slate-950/80 backdrop-blur-md text-white text-[10px] font-black uppercase">
-                      {member.category === 'board' ? 'Board of Directors' : 'Operational Staff'}
-                    </span>
-                  </div>
-
-                  <div>
-                    <h4 className="font-display text-base font-black text-slate-950">
-                      {member.name}
-                    </h4>
-                    <p className="text-xs font-bold text-purple-700 mt-0.5">
-                      {member.title}
-                    </p>
-                    <p className="text-[11px] text-slate-600 mt-2 line-clamp-3 leading-relaxed">
-                      {member.bio}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-[10px] font-mono text-slate-400 truncate max-w-[140px]">
-                    {member.email}
-                  </span>
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => openEditModal('staff', member)}
-                      className="p-1.5 text-purple-700 hover:bg-purple-50 rounded-lg transition-colors cursor-pointer"
-                      title="Edit Member"
-                    >
-                      <Edit className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteItem('staff', member.id)}
-                      className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                      title="Delete Member"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
+          {/* Section Filter Pills */}
+          <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-slate-100/90 border border-slate-200/80 w-fit">
+            <button
+              type="button"
+              onClick={() => setStaffFilter('all')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                staffFilter === 'all'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              All Team ({boardList.length + operationalStaffList.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setStaffFilter('board')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                staffFilter === 'board'
+                  ? 'bg-[#5A1E65] text-white shadow-xs'
+                  : 'text-slate-600 hover:text-purple-900'
+              }`}
+            >
+              <Award className="w-3.5 h-3.5" />
+              <span>Official Board of Directors ({boardList.length})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setStaffFilter('staff')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                staffFilter === 'staff'
+                  ? 'bg-emerald-700 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-emerald-900'
+              }`}
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>Operational Staff ({operationalStaffList.length})</span>
+            </button>
           </div>
+
+          {/* BOARD OF DIRECTORS SECTION */}
+          {(staffFilter === 'all' || staffFilter === 'board') && (
+            <div className="space-y-4">
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-50 via-white to-amber-50/50 border border-purple-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-purple-900 bg-purple-100 px-2.5 py-0.5 rounded-full border border-purple-300">
+                      Official 6 Board Members · Strictly Locked
+                    </span>
+                    <span className="text-xs font-extrabold text-slate-700">Deduplicated Roster</span>
+                  </div>
+                  <p className="text-xs text-slate-600 mt-1 font-medium">
+                    1. Steve Somann · 2. Celia Sandhya Daniels · 3. AJ Holmes · 4. Roland Catabona · 5. Luis Andrade · 6. Unique Dowtin
+                  </p>
+                </div>
+                <span className="text-xs font-bold text-purple-900 shrink-0">
+                  {boardList.length} of 6 Members Active
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {boardList.map((member) => (
+                  <div
+                    key={member.id || member.slug || member.name}
+                    className="p-5 rounded-3xl bg-white border-2 border-purple-100 hover:border-purple-300 shadow-xs flex flex-col justify-between space-y-4"
+                  >
+                    <div className="space-y-3">
+                      <div className="aspect-square rounded-2xl overflow-hidden bg-slate-900 relative">
+                        <img
+                          src={member.photo || member.image || '/images/volunteers.jpg'}
+                          alt={member.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = '/images/volunteers.jpg';
+                          }}
+                        />
+                        <span className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-slate-950/80 backdrop-blur-md text-amber-300 text-[10px] font-black uppercase tracking-wider border border-amber-300/30">
+                          Board of Directors
+                        </span>
+                      </div>
+
+                      <div>
+                        <h4 className="font-display text-base font-black text-slate-950">
+                          {member.name}
+                        </h4>
+                        <p className="text-xs font-bold text-purple-700 mt-0.5">
+                          {member.role || member.title}
+                        </p>
+                        <p className="text-[11px] text-slate-600 mt-2 line-clamp-3 leading-relaxed">
+                          {member.bio}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                      <span className="text-[10px] font-mono text-slate-400 truncate max-w-[140px]">
+                        {member.email}
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => openEditModal('staff', member)}
+                          className="p-1.5 text-purple-700 hover:bg-purple-50 rounded-lg transition-colors cursor-pointer"
+                          title="Edit Board Member"
+                        >
+                          <Edit className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteItem('staff', member.id)}
+                          className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                          title="Delete Member"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* OPERATIONAL STAFF SECTION */}
+          {(staffFilter === 'all' || staffFilter === 'staff') && (
+            <div className={`space-y-4 ${staffFilter === 'all' ? 'pt-8 border-t border-slate-200' : ''}`}>
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-50 via-white to-teal-50/50 border border-emerald-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-emerald-900 bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-300">
+                      Community Resource Center Team
+                    </span>
+                    <span className="text-xs font-extrabold text-slate-700">Operational Staff &amp; Program Leads</span>
+                  </div>
+                  <p className="text-xs text-slate-600 mt-1 font-medium">
+                    Everyday staff managing daily drop-in hours, clinics, Rainbow Umbrella youth circles, and center operations.
+                  </p>
+                </div>
+                <span className="text-xs font-bold text-emerald-900 shrink-0">
+                  {operationalStaffList.length} Operational Staff
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {operationalStaffList.map((member) => (
+                  <div
+                    key={member.id || member.slug || member.name}
+                    className="p-5 rounded-3xl bg-white border border-slate-200 hover:border-emerald-300 shadow-xs flex flex-col justify-between space-y-4"
+                  >
+                    <div className="space-y-3">
+                      <div className="aspect-square rounded-2xl overflow-hidden bg-slate-900 relative">
+                        <img
+                          src={member.photo || member.image || '/images/volunteers.jpg'}
+                          alt={member.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = '/images/volunteers.jpg';
+                          }}
+                        />
+                        <span className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-slate-950/80 backdrop-blur-md text-emerald-300 text-[10px] font-black uppercase tracking-wider border border-emerald-300/30">
+                          Operational Staff
+                        </span>
+                      </div>
+
+                      <div>
+                        <h4 className="font-display text-base font-black text-slate-950">
+                          {member.name}
+                        </h4>
+                        <p className="text-xs font-bold text-emerald-700 mt-0.5">
+                          {member.role || member.title}
+                        </p>
+                        <p className="text-[11px] text-slate-600 mt-2 line-clamp-3 leading-relaxed">
+                          {member.bio}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                      <span className="text-[10px] font-mono text-slate-400 truncate max-w-[140px]">
+                        {member.email}
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => openEditModal('staff', member)}
+                          className="p-1.5 text-purple-700 hover:bg-purple-50 rounded-lg transition-colors cursor-pointer"
+                          title="Edit Staff Member"
+                        >
+                          <Edit className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteItem('staff', member.id)}
+                          className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                          title="Delete Member"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -3325,10 +3489,11 @@ export default function CmsStudio() {
                   </div>
 
                   <ImagePicker
-                    value={formData.photo || ''}
-                    onChange={(url) => setFormData({ ...formData, photo: url })}
+                    value={formData.photo || formData.image || ''}
+                    onChange={(url) => setFormData({ ...formData, photo: url, image: url })}
                     label="Staff / Board Member Portrait"
                     aspectRatio="aspect-[4/3]"
+                    category="avatar"
                     helpText="Upload a professional headshot or portrait photo."
                   />
 

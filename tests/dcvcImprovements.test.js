@@ -207,5 +207,30 @@ describe('DCVC Approved Improvements: GEM Membership, Sponsorship, In-Kind, CRC 
       const boardOnly = merged.filter(m => m.category === 'board');
       assert.equal(boardOnly.length, 6, 'mergeStaffWithDefaults must deduplicate repeated board cards');
     });
+
+    it('persists staff photo and image updates on saveStaff and ensures synchronization', () => {
+      const staffList = cmsStore.getStaffMembers();
+      assert.ok(staffList.length > 0, 'Must have operational staff');
+      const target = staffList[0];
+      const testPhoto = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/test';
+      
+      cmsStore.saveStaff({
+        ...target,
+        photo: testPhoto,
+        image: testPhoto
+      });
+
+      const updatedList = cmsStore.getStaffMembers();
+      const updatedTarget = updatedList.find(s => s.name === target.name);
+      assert.equal(updatedTarget.photo, testPhoto);
+      assert.equal(updatedTarget.image, testPhoto);
+
+      // Restore original
+      cmsStore.saveStaff({
+        ...target,
+        photo: target.photo,
+        image: target.image
+      });
+    });
   });
 });

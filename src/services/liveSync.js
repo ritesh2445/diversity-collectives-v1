@@ -147,30 +147,59 @@ function mergeLiveSyncPrograms(incoming = [], existing = [], deleted = []) {
   return result;
 }
 
+const APPROVED_BOARD_SET = new Set([
+  'steve somann',
+  'celia sandhya daniels',
+  'aj holmes',
+  'roland catabona',
+  'luis andrade',
+  'unique dowtin'
+]);
+
 function mergeLiveSyncStaff(incoming = [], existing = [], deleted = []) {
-  const deletedSet = new Set(deleted || []);
+  const deletedSet = new Set(Array.isArray(deleted) ? deleted.map(d => String(d).trim().toLowerCase()) : []);
   const result = [];
   const seenKeys = new Set();
-  for (const s of incoming) {
-    if (!s || typeof s !== 'object') continue;
-    const nameSlug = s.name ? String(s.name).toLowerCase().replace(/[^a-z0-9]+/g, '-') : '';
-    const rawKey = s.id || s.slug || nameSlug;
-    const key = rawKey ? String(rawKey).trim() : '';
-    if (key && !deletedSet.has(key) && !deletedSet.has(s.id) && !deletedSet.has(s.name) && !seenKeys.has(key)) {
-      seenKeys.add(key);
-      result.push({ ...s, id: s.id || key });
+  const seenNames = new Set();
+
+  const processList = (list) => {
+    for (const s of list) {
+      if (!s || typeof s !== 'object') continue;
+      const name = String(s.name || '').trim().toLowerCase();
+      const nameSlug = name.replace(/[^a-z0-9]+/g, '-');
+      const rawKey = s.id || s.slug || nameSlug;
+      const key = rawKey ? String(rawKey).trim().toLowerCase() : '';
+
+      // Filter unapproved legacy members
+      if (s.category === 'board' && name === 'tess allen') {
+        continue;
+      }
+
+      if ((key && deletedSet.has(key)) || (s.id && deletedSet.has(String(s.id).toLowerCase())) || (name && deletedSet.has(name))) {
+        continue;
+      }
+
+      if ((key && seenKeys.has(key)) || (name && seenNames.has(name))) {
+        continue;
+      }
+
+      if (key) seenKeys.add(key);
+      if (name) seenNames.add(name);
+      if (s.id) seenKeys.add(String(s.id).trim().toLowerCase());
+      if (nameSlug) seenKeys.add(nameSlug);
+
+      const effectivePhoto = s.photo || s.image || '/images/volunteers.jpg';
+      result.push({
+        ...s,
+        id: s.id || key,
+        photo: effectivePhoto,
+        image: effectivePhoto
+      });
     }
-  }
-  for (const s of existing) {
-    if (!s || typeof s !== 'object') continue;
-    const nameSlug = s.name ? String(s.name).toLowerCase().replace(/[^a-z0-9]+/g, '-') : '';
-    const rawKey = s.id || s.slug || nameSlug;
-    const key = rawKey ? String(rawKey).trim() : '';
-    if (key && !deletedSet.has(key) && !deletedSet.has(s.id) && !deletedSet.has(s.name) && !seenKeys.has(key)) {
-      seenKeys.add(key);
-      result.push({ ...s, id: s.id || key });
-    }
-  }
+  };
+
+  processList(incoming);
+  processList(existing);
   return result;
 }
 

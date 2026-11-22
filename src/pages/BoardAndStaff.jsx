@@ -72,7 +72,7 @@ export default function BoardAndStaff() {
               <div className="space-y-3">
                 <div className="h-44 rounded-2xl overflow-hidden bg-purple-50 border border-slate-100">
                   <img 
-                    src={staff.image || staff.photo || "/images/volunteers.jpg"} 
+                    src={staff.photo || staff.image || "/images/volunteers.jpg"} 
                     alt={staff.name} 
                     className="w-full h-full object-cover"
                     onError={(e) => { e.target.src = "/images/volunteers.jpg"; }}

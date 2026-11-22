@@ -100,7 +100,7 @@ export default function AutoBroadcastPopup() {
       <div
         role="dialog"
         aria-label={activePopup.badge || 'Community Announcement'}
-        className="fixed bottom-20 left-3 right-3 sm:bottom-6 sm:left-auto sm:right-[155px] sm:w-[340px] sm:max-w-[350px] z-50 animate-fadeIn"
+        className="fixed bottom-24 left-3 right-3 sm:bottom-6 sm:left-6 sm:right-auto sm:w-[350px] sm:max-w-[360px] z-50 animate-fadeIn"
       >
         {/* Compact, sleek broadcast notification */}
         <div

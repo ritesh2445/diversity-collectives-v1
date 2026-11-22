@@ -126,8 +126,8 @@ export function mergeStaffWithDefaults(savedStaff = [], defaultStaff = null, del
 
       if (isDeleted(member)) continue;
 
-      // Filter unapproved old seed members (e.g. roland catabona)
-      if (member.category === 'board' && name === 'roland catabona') {
+      // Filter unapproved legacy members (e.g. tess allen who was moved to executive director)
+      if (member.category === 'board' && name === 'tess allen') {
         continue;
       }
 
@@ -170,7 +170,12 @@ export function mergeStaffWithDefaults(savedStaff = [], defaultStaff = null, del
     if (isSeen(member)) continue;
 
     markSeen(member);
-    result.push({ ...member });
+    const effectivePhoto = member.photo || member.image || '/images/volunteers.jpg';
+    result.push({
+      ...member,
+      photo: effectivePhoto,
+      image: effectivePhoto
+    });
   }
 
   return result;
@@ -535,24 +540,32 @@ export const INITIAL_CMS_DATA = {
   trainings: trainingCourses || [],
   communityGroups: communityGroups || [],
   staff: [
-    ...(staffMembers || []).map((s, idx) => ({
-      id: s.id || `staff-${(s.slug || s.name || idx).toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
-      slug: s.slug || (s.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-      category: 'staff',
-      title: s.title || s.role || 'Staff Member',
-      role: s.role || s.title || 'Staff Member',
-      photo: s.photo || s.image || '/images/volunteers.jpg',
-      ...s
-    })),
-    ...(boardMembers || []).map((b, idx) => ({
-      id: b.id || `board-${(b.slug || b.name || idx).toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
-      slug: b.slug || (b.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-      category: 'board',
-      title: b.title || b.role || 'Board Member',
-      role: b.role || b.title || 'Board Member',
-      photo: b.photo || b.image || '/images/volunteers.jpg',
-      ...b
-    }))
+    ...(staffMembers || []).map((s, idx) => {
+      const photo = s.photo || s.image || '/images/volunteers.jpg';
+      return {
+        ...s,
+        id: s.id || `staff-${(s.slug || s.name || idx).toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+        slug: s.slug || (s.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        category: 'staff',
+        title: s.title || s.role || 'Staff Member',
+        role: s.role || s.title || 'Staff Member',
+        photo,
+        image: photo
+      };
+    }),
+    ...(boardMembers || []).map((b, idx) => {
+      const photo = b.photo || b.image || '/images/volunteers.jpg';
+      return {
+        ...b,
+        id: b.id || `board-${(b.slug || b.name || idx).toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+        slug: b.slug || (b.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        category: 'board',
+        title: b.title || b.role || 'Board Member',
+        role: b.role || b.title || 'Board Member',
+        photo,
+        image: photo
+      };
+    })
   ],
   businesses: businessDirectorySeed || [],
   customKnowledge: [],
@@ -1048,24 +1061,38 @@ class CmsStoreEngine {
     const rawBoard = this.getStaff().filter((s) => s.category === 'board');
     const baseList = rawBoard.length > 0 ? rawBoard : (boardMembers || []);
 
-    // 1. First get the 6 approved board members strictly in requested order
+    // 1. First get the 6 approved board members strictly in requested order:
+    // 1. Steve Somann (Co-Founder & Board Member)
+    // 2. Celia Sandhya Daniels (Board Member)
+    // 3. AJ Holmes (Board Member)
+    // 4. Roland Catabona (President, Board of Directors)
+    // 5. Luis Andrade (Board Member / Vice President)
+    // 6. Unique Dowtin (Secretary, Board of Directors)
     const orderedApproved = APPROVED_BOARD_ORDER.map((name) => {
       const match = baseList.find(m => m.name && m.name.trim().toLowerCase() === name);
-      if (match) return match;
+      if (match) {
+        const photo = match.photo || match.image || '/images/volunteers.jpg';
+        return { ...match, photo, image: photo };
+      }
       const seedMatch = (boardMembers || []).find(m => m.name && m.name.trim().toLowerCase() === name);
-      return seedMatch ? { ...seedMatch, category: 'board' } : null;
+      if (seedMatch) {
+        const photo = seedMatch.photo || seedMatch.image || '/images/volunteers.jpg';
+        return { ...seedMatch, category: 'board', photo, image: photo };
+      }
+      return null;
     }).filter(Boolean);
 
     const seen = new Set(orderedApproved.map(m => m.name.trim().toLowerCase()));
 
-    // 2. Append any newly added custom board members (excluding unapproved old members)
+    // 2. Append newly added custom board members from admin CMS (excluding unapproved/legacy or duplicates)
     const customBoard = [];
     for (const b of baseList) {
       if (!b || !b.name) continue;
       const norm = b.name.trim().toLowerCase();
       if (norm === 'tess allen' || seen.has(norm)) continue;
       seen.add(norm);
-      customBoard.push(b);
+      const photo = b.photo || b.image || '/images/volunteers.jpg';
+      customBoard.push({ ...b, photo, image: photo });
     }
 
     return [...orderedApproved, ...customBoard];
@@ -1078,9 +1105,14 @@ class CmsStoreEngine {
     return baseList.filter(s => {
       if (!s || !s.name) return false;
       const norm = s.name.trim().toLowerCase();
+      // Ensure board members never bleed into staff
+      if (APPROVED_BOARD_SET.has(norm)) return false;
       if (seen.has(norm)) return false;
       seen.add(norm);
       return true;
+    }).map(s => {
+      const photo = s.photo || s.image || '/images/volunteers.jpg';
+      return { ...s, photo, image: photo };
     });
   }
 
