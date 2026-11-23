@@ -114,13 +114,13 @@ export default function CmsStudio() {
 
   // Reload data
   const refreshData = () => {
-    setCmsData(getLiveCmsData());
+    setCmsData({ ...getLiveCmsData() });
     setTrainingPageData(getCmsTrainingPageContent());
   };
 
   useEffect(() => {
     const onCmsUpdate = () => {
-      setCmsData(getLiveCmsData());
+      setCmsData({ ...getLiveCmsData() });
       setTrainingPageData(getCmsTrainingPageContent());
     };
     const onSubTabNav = (e) => {
@@ -1660,7 +1660,7 @@ export default function CmsStudio() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleDeleteItem('staff', member.id)}
+                      onClick={() => handleDeleteItem('staff', member.id || member.slug || member.name)}
                       className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                       title="Delete Member"
                     >

@@ -85,4 +85,41 @@ describe('Board of Directors & Staff Image Persistence and Deduplication Verific
     const rolandAfterSync = board.find(b => b.name === 'Roland Catabona');
     assert.strictEqual(rolandAfterSync.photo, testCustomPhoto, 'Custom photo must survive server sync');
   });
+
+  it('4. Deleting an operational staff member permanently removes them and persists tombstones across sync', () => {
+    const initialStaff = cmsStore.getStaffMembers();
+    const countBefore = initialStaff.length;
+    assert.ok(countBefore >= 5);
+
+    // Pick one staff member to delete, e.g. Health Navigation Specialist
+    const target = initialStaff.find(s => s.name === 'Health Navigation Specialist') || initialStaff[initialStaff.length - 1];
+    const targetName = target.name;
+    const targetId = target.id;
+
+    // Delete staff member
+    cmsStore.deleteStaff(targetId);
+
+    // Verify removed from getStaffMembers
+    const staffAfterDelete = cmsStore.getStaffMembers();
+    assert.strictEqual(staffAfterDelete.length, countBefore - 1);
+    assert.ok(!staffAfterDelete.some(s => s.name === targetName), 'Deleted staff member must no longer appear');
+
+    // Simulate incoming server sync
+    applySiteStatePayload({
+      cmsData: {
+        staff: [
+          {
+            name: targetName,
+            category: 'staff',
+            photo: '/images/volunteers.jpg'
+          }
+        ]
+      }
+    });
+
+    // Verify deleted staff member was NOT resurrected by incoming server sync
+    const staffAfterSync = cmsStore.getStaffMembers();
+    assert.strictEqual(staffAfterSync.length, countBefore - 1);
+    assert.ok(!staffAfterSync.some(s => s.name === targetName), 'Deleted staff member must not be resurrected by sync');
+  });
 });

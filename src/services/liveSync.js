@@ -196,7 +196,14 @@ function mergeLiveSyncStaff(incoming = [], existing = [], deleted = []) {
         continue;
       }
 
-      if ((key && deletedSet.has(key)) || (s.id && deletedSet.has(String(s.id).toLowerCase())) || (name && deletedSet.has(name))) {
+      if (
+        (key && deletedSet.has(key)) ||
+        (s.id && deletedSet.has(String(s.id).toLowerCase())) ||
+        (name && deletedSet.has(name)) ||
+        (nameSlug && deletedSet.has(nameSlug)) ||
+        (nameSlug && deletedSet.has(`staff-${nameSlug}`)) ||
+        (nameSlug && deletedSet.has(`board-${nameSlug}`))
+      ) {
         continue;
       }
 

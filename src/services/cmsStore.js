@@ -145,10 +145,14 @@ export function mergeStaffWithDefaults(savedStaff = [], defaultStaff = null, del
 
   const isDeleted = (m) => {
     const { name, slug, id } = getKeys(m);
+    const slugKey = name ? name.replace(/[^a-z0-9]+/g, '-') : '';
     return (
       (id && deletedSet.has(id)) ||
       (name && deletedSet.has(name)) ||
-      (slug && deletedSet.has(slug))
+      (slug && deletedSet.has(slug)) ||
+      (slugKey && deletedSet.has(slugKey)) ||
+      (slugKey && deletedSet.has(`staff-${slugKey}`)) ||
+      (slugKey && deletedSet.has(`board-${slugKey}`))
     );
   };
 
@@ -1161,12 +1165,16 @@ class CmsStoreEngine {
   }
 
   getStaffMembers() {
+    const deletedSet = new Set((this.data?.deletedStaff || []).map(d => String(d).trim().toLowerCase()));
     const rawStaff = this.getStaff().filter((s) => s.category === 'staff');
-    const baseList = rawStaff.length > 0 ? rawStaff : (staffMembers || []);
+    const baseList = rawStaff.length > 0 ? rawStaff : (deletedSet.size > 0 ? [] : (staffMembers || []));
     const seen = new Set();
     return baseList.filter(s => {
       if (!s || !s.name) return false;
       const norm = s.name.trim().toLowerCase();
+      const slug = String(s.slug || norm.replace(/[^a-z0-9]+/g, '-')).toLowerCase();
+      const id = s.id ? String(s.id).trim().toLowerCase() : '';
+      if (deletedSet.has(norm) || deletedSet.has(slug) || (id && deletedSet.has(id))) return false;
       // Ensure board members never bleed into staff
       if (APPROVED_BOARD_SET.has(norm)) return false;
       if (seen.has(norm)) return false;
@@ -1782,10 +1790,71 @@ class CmsStoreEngine {
     return existing;
   }
 
-  deleteStaff(memberId) {
-    if (!memberId) return this.getStaff();
-    const existing = this.getStaff().filter(s => s.id !== memberId && s.name !== memberId && s.slug !== memberId);
-    const deleted = Array.from(new Set([...(this.data.deletedStaff || []), memberId]));
+  deleteStaff(memberOrId) {
+    if (!memberOrId) return this.getStaff();
+    const query = typeof memberOrId === 'string'
+      ? memberOrId.trim()
+      : (typeof memberOrId === 'object' && memberOrId
+          ? (memberOrId.id || memberOrId.slug || memberOrId.name || '')
+          : '');
+    if (!query) return this.getStaff();
+
+    const normQuery = query.toLowerCase();
+    const slugQuery = normQuery.replace(/^staff-|^board-/, '').replace(/[^a-z0-9]+/g, '-');
+
+    const all = this.getStaff();
+    const matched = all.find(s => {
+      if (!s) return false;
+      const sId = String(s.id || '').trim().toLowerCase();
+      const sName = String(s.name || '').trim().toLowerCase();
+      const sSlug = String(s.slug || sName.replace(/[^a-z0-9]+/g, '-')).trim().toLowerCase();
+      return (
+        sId === normQuery ||
+        sName === normQuery ||
+        sSlug === normQuery ||
+        sSlug === slugQuery ||
+        (slugQuery && sId.includes(slugQuery))
+      );
+    }) || (typeof memberOrId === 'object' ? memberOrId : null);
+
+    const tombstones = new Set([normQuery, slugQuery]);
+    if (matched) {
+      if (matched.id) tombstones.add(String(matched.id).trim().toLowerCase());
+      if (matched.name) {
+        const n = String(matched.name).trim().toLowerCase();
+        tombstones.add(n);
+        tombstones.add(n.replace(/[^a-z0-9]+/g, '-'));
+        tombstones.add(`staff-${n.replace(/[^a-z0-9]+/g, '-')}`);
+        tombstones.add(`board-${n.replace(/[^a-z0-9]+/g, '-')}`);
+      }
+      if (matched.slug) {
+        const sl = String(matched.slug).trim().toLowerCase();
+        tombstones.add(sl);
+        tombstones.add(`staff-${sl}`);
+        tombstones.add(`board-${sl}`);
+      }
+    }
+
+    const existing = all.filter(s => {
+      if (!s) return false;
+      const sId = String(s.id || '').trim().toLowerCase();
+      const sName = String(s.name || '').trim().toLowerCase();
+      const sSlug = String(s.slug || sName.replace(/[^a-z0-9]+/g, '-')).trim().toLowerCase();
+      return !tombstones.has(sId) && !tombstones.has(sName) && !tombstones.has(sSlug);
+    });
+
+    // Remove any image overrides for deleted member
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const overrides = JSON.parse(localStorage.getItem(STAFF_IMAGE_OVERRIDES_KEY) || '{}');
+        for (const t of tombstones) {
+          delete overrides[t];
+        }
+        localStorage.setItem(STAFF_IMAGE_OVERRIDES_KEY, JSON.stringify(overrides));
+      }
+    } catch {}
+
+    const deleted = Array.from(new Set([...(this.data.deletedStaff || []), ...tombstones]));
     this.saveData({ ...this.data, staff: existing, deletedStaff: deleted });
     return existing;
   }
