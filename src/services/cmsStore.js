@@ -1120,25 +1120,44 @@ class CmsStoreEngine {
   }
 
   getBoardMembers() {
+    const deletedSet = new Set((this.data?.deletedStaff || []).map(d => String(d).trim().toLowerCase()));
     const rawBoard = this.getStaff().filter((s) => s.category === 'board');
-    const baseList = rawBoard.length > 0 ? rawBoard : (boardMembers || []);
+    const baseList = rawBoard.length > 0 ? rawBoard : (deletedSet.size > 0 ? [] : (boardMembers || []));
 
-    // 1. First get the 6 approved board members strictly in requested order:
-    // 1. Steve Somann (Co-Founder & Board Member)
-    // 2. Celia Sandhya Daniels (Board Member)
-    // 3. AJ Holmes (Board Member)
-    // 4. Roland Catabona (President, Board of Directors)
-    // 5. Luis Andrade (Board Member / Vice President)
-    // 6. Unique Dowtin (Secretary, Board of Directors)
+    const isMemberDeleted = (name, slug, id) => {
+      const n = String(name || '').trim().toLowerCase();
+      const s = String(slug || n.replace(/[^a-z0-9]+/g, '-')).trim().toLowerCase();
+      const i = String(id || '').trim().toLowerCase();
+      return (
+        deletedSet.has(n) ||
+        deletedSet.has(s) ||
+        (i && deletedSet.has(i)) ||
+        deletedSet.has(`board-${s}`) ||
+        deletedSet.has(`staff-${s}`)
+      );
+    };
+
+    // 1. First get the approved board members in requested order, unless deleted:
     const orderedApproved = APPROVED_BOARD_ORDER.map((name) => {
-      const match = baseList.find(m => m.name && m.name.trim().toLowerCase() === name);
+      if (deletedSet.has(name) || deletedSet.has(`board-${name.replace(/[^a-z0-9]+/g, '-')}`)) {
+        return null;
+      }
+      const match = baseList.find(m => {
+        if (!m || !m.name) return false;
+        const mNorm = m.name.trim().toLowerCase();
+        const mSlug = String(m.slug || mNorm.replace(/[^a-z0-9]+/g, '-')).toLowerCase();
+        const mId = m.id ? String(m.id).toLowerCase() : '';
+        return mNorm === name || mSlug === name.replace(/[^a-z0-9]+/g, '-') || mId === `board-${name.replace(/[^a-z0-9]+/g, '-')}`;
+      });
       if (match) {
+        if (isMemberDeleted(match.name, match.slug, match.id)) return null;
         const override = lookupStaffImageOverride(match.name, match.slug, match.id);
         const photo = override || match.photo || match.image || '/images/volunteers.jpg';
-        return { ...match, photo, image: photo };
+        return { ...match, category: 'board', photo, image: photo };
       }
       const seedMatch = (boardMembers || []).find(m => m.name && m.name.trim().toLowerCase() === name);
       if (seedMatch) {
+        if (isMemberDeleted(seedMatch.name, seedMatch.slug, seedMatch.id)) return null;
         const override = lookupStaffImageOverride(seedMatch.name, seedMatch.slug, seedMatch.id);
         const photo = override || seedMatch.photo || seedMatch.image || '/images/volunteers.jpg';
         return { ...seedMatch, category: 'board', photo, image: photo };
@@ -1146,19 +1165,33 @@ class CmsStoreEngine {
       return null;
     }).filter(Boolean);
 
-    const seen = new Set(orderedApproved.map(m => m.name.trim().toLowerCase()));
+    const seen = new Set();
+    for (const m of orderedApproved) {
+      if (m.name) seen.add(m.name.trim().toLowerCase());
+      if (m.id) seen.add(String(m.id).trim().toLowerCase());
+      if (m.slug) seen.add(String(m.slug).trim().toLowerCase());
+    }
 
-    // 2. Append newly added custom board members from admin CMS (excluding unapproved/legacy, operational staff, or duplicates)
+    // 2. Append newly added or edited board members from baseList (excluding deleted, operational staff, or duplicates)
     const customBoard = [];
     for (const b of baseList) {
       if (!b || !b.name) continue;
       const norm = b.name.trim().toLowerCase();
-      if (norm === 'tess allen' || KNOWN_OPERATIONAL_STAFF.has(norm) || seen.has(norm)) continue;
+      const slug = String(b.slug || norm.replace(/[^a-z0-9]+/g, '-')).toLowerCase();
+      const id = b.id ? String(b.id).trim().toLowerCase() : '';
+
+      if (isMemberDeleted(b.name, b.slug, b.id)) continue;
+      if (norm === 'tess allen' || KNOWN_OPERATIONAL_STAFF.has(norm)) continue;
+      if (seen.has(norm) || (id && seen.has(id)) || (slug && seen.has(slug))) continue;
       if (b.category !== 'board') continue;
+
       seen.add(norm);
+      if (id) seen.add(id);
+      if (slug) seen.add(slug);
+
       const override = lookupStaffImageOverride(b.name, b.slug, b.id);
       const photo = override || b.photo || b.image || '/images/volunteers.jpg';
-      customBoard.push({ ...b, photo, image: photo });
+      customBoard.push({ ...b, category: 'board', photo, image: photo });
     }
 
     return [...orderedApproved, ...customBoard];
@@ -1764,6 +1797,7 @@ class CmsStoreEngine {
       id: memberId,
       slug: memberSlug,
       name: cleanName || 'Unnamed Member',
+      pronouns: (memberOrList.pronouns || '').trim(),
       title: memberOrList.title || memberOrList.role || (targetCategory === 'board' ? 'Board Member' : 'Staff Member'),
       role: memberOrList.role || memberOrList.title || (targetCategory === 'board' ? 'Board Member' : 'Staff Member'),
       category: targetCategory,
@@ -1773,12 +1807,14 @@ class CmsStoreEngine {
       bio: memberOrList.bio || ''
     };
 
-    // Find existing by ID, originalId, slug, OR name (ensures changing a category or editing updates the existing card without creating duplicates)
+    // Find existing: prioritize exact ID match (targetId / originalId) so editing one card never mutates another or creates duplicates
     const index = existing.findIndex(s => {
       if (targetId && s.id && String(s.id) === targetId) return true;
       if (memberOrList.originalId && s.id && String(s.id) === String(memberOrList.originalId)) return true;
-      if (cleanName && s.name && s.name.toLowerCase().trim() === normName) return true;
-      if (memberSlug && s.slug && String(s.slug).toLowerCase() === memberSlug) return true;
+      if (!targetId && !memberOrList.originalId) {
+        if (cleanName && s.name && s.name.toLowerCase().trim() === normName) return true;
+        if (memberSlug && s.slug && String(s.slug).toLowerCase() === memberSlug) return true;
+      }
       return false;
     });
 
@@ -1788,7 +1824,15 @@ class CmsStoreEngine {
       existing.push(normalizedMember);
     }
 
-    const deleted = (this.data.deletedStaff || []).filter(d => d !== normalizedMember.id && d !== normalizedMember.name && d !== targetId);
+    const deleted = (this.data.deletedStaff || []).filter(d => {
+      const ld = String(d).toLowerCase();
+      return ld !== normalizedMember.id.toLowerCase() &&
+             ld !== normalizedMember.name.toLowerCase() &&
+             (!targetId || ld !== targetId.toLowerCase()) &&
+             (!memberSlug || ld !== memberSlug.toLowerCase()) &&
+             (!memberSlug || ld !== `board-${memberSlug.toLowerCase()}`) &&
+             (!memberSlug || ld !== `staff-${memberSlug.toLowerCase()}`);
+    });
     this.saveData({ ...this.data, staff: existing, deletedStaff: deleted });
     return existing;
   }

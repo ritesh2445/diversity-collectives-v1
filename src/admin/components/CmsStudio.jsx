@@ -487,6 +487,7 @@ export default function CmsStudio() {
       setFormData({
         id: `stf-${Date.now()}`,
         name: '',
+        pronouns: '',
         title: '',
         role: '',
         category: 'staff',
@@ -619,6 +620,7 @@ export default function CmsStudio() {
       setFormData({
         ...item,
         originalId: item.id,
+        pronouns: item.pronouns || '',
         title: item.title || item.role || '',
         role: item.role || item.title || '',
         photo: portrait,
@@ -684,6 +686,7 @@ export default function CmsStudio() {
       saveCmsStaff({
         ...formData,
         originalId: editingItem?.id,
+        pronouns: (formData.pronouns || '').trim(),
         photo: effectivePhoto,
         image: effectivePhoto,
         title: formData.title || formData.role || 'Team Member',
@@ -777,16 +780,16 @@ export default function CmsStudio() {
   const subTabs = [
     { id: 'programs', label: 'Programs & Clinical Care', count: cmsData.programs?.length || 0, icon: Sparkles },
     { id: 'events', label: 'Events & Calendar', count: cmsData.events?.length || 0, icon: Calendar },
-    { id: 'weeklySchedule', label: 'Weekly Schedule', count: cmsData.weeklySchedule?.length || 8, icon: Clock },
-    { id: 'trainings', label: 'P.R.I.D.E. Trainings', count: cmsData.trainings?.length || 0, icon: Award },
-    { id: 'sponsors', label: 'Sponsors & Partners', count: cmsData.sponsors?.length || 0, icon: Heart },
-    { id: 'sponsorshipDocs', label: 'Sponsorship Documents', count: cmsData.sponsorshipDocuments?.length || 0, icon: FileText },
-    { id: 'podcasts', label: 'Podcasts & Media', count: cmsData.podcasts?.length || 0, icon: Mic },
-    { id: 'news', label: 'News & Articles', count: cmsData.news?.length || 0, icon: FileText },
-    { id: 'resources', label: 'Community Resources', count: cmsData.resources?.length || 0, icon: BookOpen },
+    { id: 'weeklySchedule', label: 'Weekly Schedule', count: cmsData.weeklySchedule?.length ?? 0, icon: Clock },
+    { id: 'trainings', label: 'P.R.I.D.E. Trainings', count: cmsData.trainings?.length ?? 0, icon: Award },
+    { id: 'sponsors', label: 'Sponsors & Partners', count: cmsData.sponsors?.length ?? 0, icon: Heart },
+    { id: 'sponsorshipDocs', label: 'Sponsorship Documents', count: cmsData.sponsorshipDocuments?.length ?? 0, icon: FileText },
+    { id: 'podcasts', label: 'Podcasts & Media', count: cmsData.podcasts?.length ?? 0, icon: Mic },
+    { id: 'news', label: 'News & Articles', count: cmsData.news?.length ?? 0, icon: FileText },
+    { id: 'resources', label: 'Community Resources', count: cmsData.resources?.length ?? 0, icon: BookOpen },
     { id: 'cardThemes', label: 'Card Gradients & Themes', count: null, icon: Palette },
-    { id: 'board', label: 'Board of Directors', count: 6, icon: Award },
-    { id: 'staff', label: 'Operational Staff', count: operationalStaffList.length || 5, icon: Users },
+    { id: 'board', label: 'Board of Directors', count: boardList.length, icon: Award },
+    { id: 'staff', label: 'Operational Staff', count: operationalStaffList.length, icon: Users },
     { id: 'gallery', label: 'Gallery & Memory Lane', count: (cmsData.gallery?.length || 0) + (cmsData.memoryLane?.length || 0), icon: Camera },
     { id: 'settings', label: 'Global Site Settings', count: null, icon: Settings }
   ];
@@ -1479,19 +1482,38 @@ export default function CmsStudio() {
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-display text-xl font-bold text-slate-950">
-                  Official Board of Directors (Strictly 6 Members)
+                  Board of Directors ({boardList.length} Members)
                 </h3>
                 <span className="text-[10px] font-black uppercase tracking-wider text-purple-900 bg-purple-100 px-2.5 py-0.5 rounded-full border border-purple-300">
-                  Locked &amp; Deduplicated
+                  Official Governance
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                Manage the public portraits, roles, emails, and biographies for the 6 Official DCVC Board Members. All changes save persistently and reflect immediately.
+                Manage public portraits, pronouns, roles, emails, and biographies for the DCVC Board of Directors. All changes save persistently and reflect immediately.
               </p>
             </div>
-            <span className="text-xs font-bold text-purple-900 bg-purple-50 px-3 py-1.5 rounded-xl border border-purple-200 shrink-0">
-              {boardList.length} of 6 Members Active
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-purple-900 bg-purple-50 px-3 py-1.5 rounded-xl border border-purple-200 shrink-0">
+                {boardList.length} Members Active
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  openCreateModal('staff');
+                  setFormData(prev => ({
+                    ...prev,
+                    category: 'board',
+                    title: 'Board Member',
+                    role: 'Board Member',
+                    pronouns: ''
+                  }));
+                }}
+                className="px-4 py-2.5 rounded-xl bg-[#5A1E65] hover:bg-purple-900 text-white font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer shrink-0"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add Board Member</span>
+              </button>
+            </div>
           </div>
 
           <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-50 via-white to-amber-50/50 border border-purple-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -1500,7 +1522,7 @@ export default function CmsStudio() {
                 Official Roster: 1. Steve Somann · 2. Celia Sandhya Daniels · 3. AJ Holmes · 4. Roland Catabona · 5. Luis Andrade · 6. Unique Dowtin
               </p>
               <p className="text-[11px] text-slate-500 mt-0.5">
-                Click &quot;Edit &amp; Photo&quot; or hover over any portrait and click &quot;Change Headshot&quot; to update headshots.
+                Click &quot;Edit &amp; Photo&quot; to update headshots, names, pronouns, or bio. Click the trash icon to remove any card.
               </p>
             </div>
           </div>
@@ -1537,9 +1559,16 @@ export default function CmsStudio() {
                   </div>
 
                   <div>
-                    <h4 className="font-display text-base font-black text-slate-950">
-                      {member.name}
-                    </h4>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h4 className="font-display text-base font-black text-slate-950">
+                        {member.name}
+                      </h4>
+                      {member.pronouns && (
+                        <span className="text-[10px] font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
+                          {member.pronouns}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs font-bold text-purple-700 mt-0.5">
                       {member.role || member.title}
                     </p>
@@ -1562,6 +1591,14 @@ export default function CmsStudio() {
                     >
                       <Edit className="w-3.5 h-3.5" />
                       <span>Edit &amp; Photo</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteItem('staff', member.id || member.slug || member.name)}
+                      className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                      title="Delete Board Member"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
@@ -1632,9 +1669,16 @@ export default function CmsStudio() {
                   </div>
 
                   <div>
-                    <h4 className="font-display text-base font-black text-slate-950">
-                      {member.name}
-                    </h4>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h4 className="font-display text-base font-black text-slate-950">
+                        {member.name}
+                      </h4>
+                      {member.pronouns && (
+                        <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                          {member.pronouns}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs font-bold text-emerald-700 mt-0.5">
                       {member.role || member.title}
                     </p>
@@ -3585,14 +3629,25 @@ export default function CmsStudio() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">Email</label>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Pronouns (e.g. they/them, she/her, he/him)</label>
                       <input
-                        type="email"
-                        value={formData.email || ''}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        type="text"
+                        placeholder="e.g. she/they, he/him, they/them"
+                        value={formData.pronouns || ''}
+                        onChange={(e) => setFormData({ ...formData, pronouns: e.target.value })}
                         className="w-full px-3 py-2 border rounded-xl text-xs"
                       />
                     </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Email</label>
+                    <input
+                      type="email"
+                      value={formData.email || ''}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
                   </div>
 
                   <ImagePicker

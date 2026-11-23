@@ -82,7 +82,14 @@ export default function BoardAndStaff() {
                   <span className="text-[10px] font-black uppercase tracking-wider text-[#5A1E65] bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
                     {staff.role || staff.title || 'Staff'}
                   </span>
-                  <h3 className="font-display text-lg font-black text-slate-900 mt-2">{staff.name}</h3>
+                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                    <h3 className="font-display text-lg font-black text-slate-900">{staff.name}</h3>
+                    {staff.pronouns && (
+                      <span className="text-[10px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
+                        {staff.pronouns}
+                      </span>
+                    )}
+                  </div>
                   <span className="text-xs text-slate-500 font-medium block">{staff.department || 'Community Resource Center'}</span>
                 </div>
                 <p className="text-xs text-slate-600 leading-relaxed font-medium">
@@ -157,9 +164,16 @@ export default function BoardAndStaff() {
                     </div>
 
                     <div className="text-center sm:text-left">
-                      <h3 className="font-display text-xl sm:text-2xl font-black text-slate-950 tracking-tight group-hover:text-[#5A1E65] transition-colors">
-                        {member.name}
-                      </h3>
+                      <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
+                        <h3 className="font-display text-xl sm:text-2xl font-black text-slate-950 tracking-tight group-hover:text-[#5A1E65] transition-colors">
+                          {member.name}
+                        </h3>
+                        {member.pronouns && (
+                          <span className="text-[11px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
+                            {member.pronouns}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-medium mt-2 line-clamp-4">
                         {member.bio}
                       </p>
