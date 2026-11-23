@@ -18,7 +18,7 @@ export async function onRequest(context) {
   const proxyRequest = new Request(targetUrl, {
     method: context.request.method,
     headers,
-    body: context.request.body,
+    body: ['GET', 'HEAD'].includes(context.request.method.toUpperCase()) ? undefined : context.request.body,
     redirect: 'manual'
   });
 

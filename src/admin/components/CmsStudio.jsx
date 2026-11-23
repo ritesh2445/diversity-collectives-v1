@@ -409,7 +409,7 @@ export default function CmsStudio() {
   // --------------------------------------------------------------------------
   // Modal Handlers
   // --------------------------------------------------------------------------
-  const openCreateModal = (type) => {
+  const openCreateModal = (type, overrides = {}) => {
     setModalType(type);
     setEditingItem(null);
     if (type === 'program') {
@@ -436,7 +436,8 @@ export default function CmsStudio() {
         amenities: [],
         contactEmail: 'info@diversitycollective.org',
         contactPhone: '(805) 644-5428',
-        active: true
+        active: true,
+        ...overrides
       });
     } else if (type === 'event') {
       setFormData({
@@ -484,17 +485,19 @@ export default function CmsStudio() {
         urgent: false
       });
     } else if (type === 'staff') {
+      const cat = overrides.category || 'staff';
       setFormData({
-        id: `stf-${Date.now()}`,
+        id: overrides.id || `${cat}-${Date.now()}`,
         name: '',
         pronouns: '',
-        title: '',
-        role: '',
-        category: 'staff',
+        title: cat === 'board' ? 'Board Member' : 'Staff Member',
+        role: cat === 'board' ? 'Board Member' : 'Staff Member',
+        category: cat,
         email: 'info@diversitycollective.org',
         bio: '',
         photo: '',
-        image: ''
+        image: '',
+        ...overrides
       });
     } else if (type === 'gallery') {
       setFormData({
@@ -619,10 +622,13 @@ export default function CmsStudio() {
       const portrait = item.photo || item.image || '';
       setFormData({
         ...item,
-        originalId: item.id,
+        originalId: item.id || item.slug || item.name,
+        originalName: item.name || '',
+        originalSlug: item.slug || '',
         pronouns: item.pronouns || '',
-        title: item.title || item.role || '',
-        role: item.role || item.title || '',
+        title: item.title || item.role || (item.category === 'board' ? 'Board Member' : 'Staff Member'),
+        role: item.role || item.title || (item.category === 'board' ? 'Board Member' : 'Staff Member'),
+        category: item.category || 'staff',
         photo: portrait,
         image: portrait
       });
@@ -685,14 +691,16 @@ export default function CmsStudio() {
       const effectivePhoto = formData.photo || formData.image || '';
       saveCmsStaff({
         ...formData,
-        originalId: editingItem?.id,
+        originalId: editingItem?.id || formData.originalId,
+        originalName: editingItem?.name || formData.originalName,
+        originalSlug: editingItem?.slug || formData.originalSlug,
         pronouns: (formData.pronouns || '').trim(),
         photo: effectivePhoto,
         image: effectivePhoto,
-        title: formData.title || formData.role || 'Team Member',
-        role: formData.role || formData.title || 'Team Member'
+        title: formData.title || formData.role || (formData.category === 'board' ? 'Board Member' : 'Team Member'),
+        role: formData.role || formData.title || (formData.category === 'board' ? 'Board Member' : 'Team Member')
       });
-      showToast(`${formData.category === 'board' ? 'Board Member' : 'Staff Member'} "${formData.name}" saved.`);
+      showToast(`${formData.category === 'board' ? 'Board Member' : 'Staff Member'} "${formData.name}" saved & synced.`);
     } else if (modalType === 'gallery') {
       saveCmsGalleryPhoto(formData);
       showToast(`Gallery photo "${formData.title}" saved.`);
@@ -1499,14 +1507,12 @@ export default function CmsStudio() {
               <button
                 type="button"
                 onClick={() => {
-                  openCreateModal('staff');
-                  setFormData(prev => ({
-                    ...prev,
+                  openCreateModal('staff', {
                     category: 'board',
                     title: 'Board Member',
                     role: 'Board Member',
                     pronouns: ''
-                  }));
+                  });
                 }}
                 className="px-4 py-2.5 rounded-xl bg-[#5A1E65] hover:bg-purple-900 text-white font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer shrink-0"
               >

@@ -1146,8 +1146,7 @@ class CmsStoreEngine {
         if (!m || !m.name) return false;
         const mNorm = m.name.trim().toLowerCase();
         const mSlug = String(m.slug || mNorm.replace(/[^a-z0-9]+/g, '-')).toLowerCase();
-        const mId = m.id ? String(m.id).toLowerCase() : '';
-        return mNorm === name || mSlug === name.replace(/[^a-z0-9]+/g, '-') || mId === `board-${name.replace(/[^a-z0-9]+/g, '-')}`;
+        return mNorm === name || mSlug === name.replace(/[^a-z0-9]+/g, '-');
       });
       if (match) {
         if (isMemberDeleted(match.name, match.slug, match.id)) return null;
@@ -1181,7 +1180,7 @@ class CmsStoreEngine {
       const id = b.id ? String(b.id).trim().toLowerCase() : '';
 
       if (isMemberDeleted(b.name, b.slug, b.id)) continue;
-      if (norm === 'tess allen' || KNOWN_OPERATIONAL_STAFF.has(norm)) continue;
+      if (norm === 'tess allen' || KNOWN_OPERATIONAL_STAFF.has(norm) || APPROVED_BOARD_SET.has(norm)) continue;
       if (seen.has(norm) || (id && seen.has(id)) || (slug && seen.has(slug))) continue;
       if (b.category !== 'board') continue;
 
@@ -1782,19 +1781,30 @@ class CmsStoreEngine {
     const normName = cleanName.toLowerCase();
     const targetCategory = memberOrList.category || 'staff';
     const memberSlug = (memberOrList.slug || cleanName.toLowerCase().replace(/[^a-z0-9]+/g, '-')).replace(/(^-|-$)/g, '');
-    const memberId = targetId || `${targetCategory}-${memberSlug || Date.now()}`;
+
+    // Safety guard against approved board member identity hijacking:
+    // If originalId belonged to an approved board member, but the new name is NOT that approved board member,
+    // generate a separate ID so the approved board member is never accidentally wiped or overwritten.
+    const originalNorm = String(memberOrList.originalName || '').trim().toLowerCase();
+    const isApprovedOriginal = originalNorm && APPROVED_BOARD_SET.has(originalNorm);
+    const isNameChangedAwayFromApproved = isApprovedOriginal && normName !== originalNorm;
+
+    const resolvedMemberId = (isNameChangedAwayFromApproved || !targetId || targetId.startsWith('stf-') || targetId.startsWith('board-1'))
+      ? `${targetCategory}-${memberSlug || Date.now()}`
+      : targetId;
+
     const effectivePhoto = memberOrList.photo || memberOrList.image || '/images/volunteers.jpg';
 
     if (cleanName && effectivePhoto) {
       setStaffImageOverride(cleanName, effectivePhoto);
       if (memberSlug) setStaffImageOverride(memberSlug, effectivePhoto);
-      if (memberId) setStaffImageOverride(memberId, effectivePhoto);
+      if (resolvedMemberId) setStaffImageOverride(resolvedMemberId, effectivePhoto);
       if (targetId) setStaffImageOverride(targetId, effectivePhoto);
     }
 
     const normalizedMember = {
       ...memberOrList,
-      id: memberId,
+      id: resolvedMemberId,
       slug: memberSlug,
       name: cleanName || 'Unnamed Member',
       pronouns: (memberOrList.pronouns || '').trim(),
@@ -1809,17 +1819,24 @@ class CmsStoreEngine {
 
     // Find existing: prioritize exact ID match (targetId / originalId) so editing one card never mutates another or creates duplicates
     const index = existing.findIndex(s => {
-      if (targetId && s.id && String(s.id) === targetId) return true;
-      if (memberOrList.originalId && s.id && String(s.id) === String(memberOrList.originalId)) return true;
-      if (!targetId && !memberOrList.originalId) {
-        if (cleanName && s.name && s.name.toLowerCase().trim() === normName) return true;
-        if (memberSlug && s.slug && String(s.slug).toLowerCase() === memberSlug) return true;
+      if (!s) return false;
+      const sNorm = String(s.name || '').trim().toLowerCase();
+      const sSlug = String(s.slug || sNorm.replace(/[^a-z0-9]+/g, '-')).toLowerCase();
+      const sId = String(s.id || '').trim();
+
+      if (isNameChangedAwayFromApproved && sNorm === originalNorm) {
+        return false;
       }
+
+      if (resolvedMemberId && sId === resolvedMemberId) return true;
+      if (memberOrList.originalId && !isNameChangedAwayFromApproved && sId === String(memberOrList.originalId)) return true;
+      if (cleanName && sNorm === normName) return true;
+      if (memberSlug && sSlug === memberSlug) return true;
       return false;
     });
 
     if (index >= 0) {
-      existing[index] = { ...existing[index], ...normalizedMember };
+      existing[index] = { ...existing[index], ...normalizedMember, id: resolvedMemberId, slug: memberSlug };
     } else {
       existing.push(normalizedMember);
     }

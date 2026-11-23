@@ -282,12 +282,16 @@ export function applySiteStatePayload(state, { broadcast = false } = {}) {
     const hasIncomingPrograms = Array.isArray(state.cmsData.programs);
     const incomingPrograms = hasIncomingPrograms ? state.cmsData.programs : (existing.programs || []);
     const existingPrograms = hasIncomingPrograms ? [] : (Array.isArray(existing.programs) ? existing.programs : []);
-    const deletedSlugs = Array.from(new Set([...(state.cmsData.deletedPrograms || []), ...(existing.deletedPrograms || [])]));
+    const deletedSlugs = Array.isArray(state.cmsData.deletedPrograms)
+      ? state.cmsData.deletedPrograms
+      : Array.from(new Set([...(state.cmsData.deletedPrograms || []), ...(existing.deletedPrograms || [])]));
     const mergedPrograms = mergeLiveSyncPrograms(incomingPrograms, existingPrograms, deletedSlugs);
 
     const incomingStaff = Array.isArray(state.cmsData.staff) ? state.cmsData.staff : (existing.staff || []);
     const existingStaff = Array.isArray(existing.staff) ? existing.staff : [];
-    const deletedStaff = Array.from(new Set([...(state.cmsData.deletedStaff || []), ...(existing.deletedStaff || [])]));
+    const deletedStaff = Array.isArray(state.cmsData.deletedStaff)
+      ? state.cmsData.deletedStaff
+      : Array.from(new Set([...(state.cmsData.deletedStaff || []), ...(existing.deletedStaff || [])]));
     const mergedStaff = mergeLiveSyncStaff(incomingStaff, existingStaff, deletedStaff);
 
     // Reconcile and propagate custom uploaded staff headshots across domains
@@ -496,10 +500,12 @@ export async function publishAdminSitePatch(patch) {
     }
 
     const errMsg = data?.error || `Server returned ${res.status}`;
-    notifyWindowEvent(SYNC_EVENTS.STATUS_CHANGED, { status: 'local_only', error: errMsg });
+    console.warn('[LiveSync] Failed to publish site patch to backend:', errMsg, res.status);
+    notifyWindowEvent(SYNC_EVENTS.STATUS_CHANGED, { status: res.status === 401 ? 'unauthorized' : 'local_only', error: errMsg });
     return { success: false, syncedToServer: false, localSaved: true, error: errMsg };
   } catch (err) {
     const errMsg = err?.message || 'Network unavailable';
+    console.warn('[LiveSync] Network exception publishing site patch:', errMsg);
     notifyWindowEvent(SYNC_EVENTS.STATUS_CHANGED, { status: 'local_only', error: errMsg });
     return { success: false, syncedToServer: false, localSaved: true, error: errMsg };
   }
