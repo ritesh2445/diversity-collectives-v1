@@ -12,7 +12,7 @@ const SAFE_FONT_NAME_RE = /^[A-Za-z0-9 _-]{1,64}$/;
 const SAFE_COLOR_RE = /^(#[0-9a-f]{3,8}|rgba?\([^;{}<>]+\)|linear-gradient\([^;{}<>]+\))$/i;
 const SAFE_UNIT_RE = /^\d+(?:\.\d+)?(px|rem|em|%)?$/i;
 
-const MAX_STATE_BYTES = 750 * 1024; // 750 KB cap on serialized live state
+const MAX_STATE_BYTES = 5 * 1024 * 1024; // 5 MB cap on serialized live state
 
 export function sanitizePublicUrl(value, fallback = '') {
   if (typeof value !== 'string') return fallback;
@@ -136,7 +136,9 @@ const CMS_ALLOWED_KEYS = new Set([
   'lastUpdated',
   'deletedPrograms',
   'deletedEvents',
-  'deletedStaff'
+  'deletedStaff',
+  'staffImageOverrides',
+  'imageOverrides'
 ]);
 
 const SAFE_STATUS_TYPE_RE = /^(live|launch_timer|maintenance|custom)$/i;

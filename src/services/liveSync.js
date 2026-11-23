@@ -223,7 +223,8 @@ function mergeLiveSyncStaff(incoming = [], existing = [], deleted = []) {
       const existingMatch = isIncoming ? findExistingMatch(s) : null;
       const localPhoto = existingMatch ? (existingMatch.photo || existingMatch.image) : null;
 
-      const effectivePhoto = overridePhoto || localPhoto || s.photo || s.image || '/images/volunteers.jpg';
+      // Authoritative server photo and explicit override take precedence over stale cached localPhoto
+      const effectivePhoto = overridePhoto || (s.photo || s.image) || localPhoto || '/images/volunteers.jpg';
       const effectiveBio = (existingMatch && existingMatch.bio && existingMatch.bio !== s.bio) ? existingMatch.bio : s.bio;
 
       result.push({
@@ -288,6 +289,19 @@ export function applySiteStatePayload(state, { broadcast = false } = {}) {
     const existingStaff = Array.isArray(existing.staff) ? existing.staff : [];
     const deletedStaff = Array.from(new Set([...(state.cmsData.deletedStaff || []), ...(existing.deletedStaff || [])]));
     const mergedStaff = mergeLiveSyncStaff(incomingStaff, existingStaff, deletedStaff);
+
+    // Reconcile and propagate custom uploaded staff headshots across domains
+    if (state.cmsData.staffImageOverrides && typeof state.cmsData.staffImageOverrides === 'object') {
+      try {
+        if (typeof localStorage !== 'undefined') {
+          const current = JSON.parse(localStorage.getItem('dcvc_staff_image_overrides') || '{}') || {};
+          const mergedOverrides = { ...current, ...state.cmsData.staffImageOverrides };
+          localStorage.setItem('dcvc_staff_image_overrides', JSON.stringify(mergedOverrides));
+        }
+      } catch (e) {
+        // Ignore quota
+      }
+    }
 
     const mergedCms = {
       ...existing,
@@ -414,6 +428,27 @@ export async function publishAdminSitePatch(patch) {
     return { success: true, syncedToServer: false, localOnly: true };
   }
 
+  // Include local staff image overrides in outgoing CMS patch so other domains receive them
+  let effectivePatch = patch;
+  if (patch && patch.cmsData && typeof patch.cmsData === 'object') {
+    let localOverrides = {};
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localOverrides = JSON.parse(localStorage.getItem('dcvc_staff_image_overrides') || '{}') || {};
+      }
+    } catch {}
+    effectivePatch = {
+      ...patch,
+      cmsData: {
+        ...patch.cmsData,
+        staffImageOverrides: {
+          ...(patch.cmsData.staffImageOverrides || {}),
+          ...localOverrides
+        }
+      }
+    };
+  }
+
   const token = getAdminSessionToken();
 
   try {
@@ -424,7 +459,7 @@ export async function publishAdminSitePatch(patch) {
         ...(token ? { Authorization: `Bearer ${token}` } : {})
       },
       credentials: 'include',
-      body: JSON.stringify(patch)
+      body: JSON.stringify(effectivePatch)
     });
 
     const data = await res.json().catch(() => ({}));

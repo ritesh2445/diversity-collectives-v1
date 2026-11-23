@@ -405,7 +405,7 @@ export function templateDonorAppreciationEmail({
     badge: badge || tierName || 'DCVC Supporter',
     tagline: tagline || 'Powering LGBTQ+ Programs Across Ventura County',
     impact: impact || 'Your generosity fuels health clinics, youth circles, and community safe spaces.',
-    cardUrl: cardUrl || 'https://diversitycollectivevc.org/donate',
+    cardUrl: cardUrl || 'https://diversitycollective.org/donate',
     frequency: frequencyLabel || 'One-Time',
     frequencyLabel: frequencyLabel || 'One-Time',
     designation: designation || 'General Fund',

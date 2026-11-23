@@ -479,7 +479,10 @@ export default function Home() {
   }, [cmsEvents, selectedEventCategory]);
 
   const displayedEvents = useMemo(() => {
-    if (showAllEvents) return filteredEvents;
+    if (showAllEvents) {
+      // 2 rows (6) + next 9 events = 15 events total so the homepage remains clean and concise
+      return filteredEvents.slice(0, 15);
+    }
     // Exactly 2 rows of 3 columns = 6 events
     return filteredEvents.slice(0, 6);
   }, [filteredEvents, showAllEvents]);
@@ -1481,7 +1484,7 @@ export default function Home() {
 
           {/* Centered View All Action */}
           {filteredEvents.length > 6 && (
-            <div className="flex flex-col items-center justify-center pt-8 text-center">
+            <div className="flex flex-col items-center justify-center pt-8 text-center gap-3">
               <button
                 type="button"
                 onClick={() => setShowAllEvents((prev) => !prev)}
@@ -1490,15 +1493,29 @@ export default function Home() {
                 <span>
                   {showAllEvents
                     ? 'Show Less Events'
-                    : `View All Events (${filteredEvents.length - 6} More)`}
+                    : `View All Events (${Math.min(filteredEvents.length - 6, 9)} More)`}
                 </span>
                 <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${showAllEvents ? 'rotate-180' : ''}`} />
               </button>
-              <p className="text-xs text-slate-500 font-medium mt-2">
-                {showAllEvents
-                  ? `Showing all ${filteredEvents.length} upcoming gatherings`
-                  : `Showing 2 rows (${displayedEvents.length} events) · Click to reveal the remaining ${filteredEvents.length - 6} events`}
-              </p>
+              <div className="flex items-center gap-3 flex-wrap justify-center">
+                <p className="text-xs text-slate-500 font-medium">
+                  {showAllEvents
+                    ? `Showing ${displayedEvents.length} upcoming gatherings`
+                    : `Showing 2 rows (${displayedEvents.length} events)`}
+                </p>
+                {filteredEvents.length > 15 && showAllEvents && (
+                  <>
+                    <span className="text-slate-300">·</span>
+                    <Link
+                      to="/events"
+                      className="text-xs font-bold text-[#5A1E65] hover:underline inline-flex items-center gap-1"
+                    >
+                      <span>Open Full Calendar ({filteredEvents.length} total)</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </Link>
+                  </>
+                )}
+              </div>
             </div>
           )}
 

@@ -122,6 +122,8 @@ const TRUSTED_EXACT_ORIGINS = new Set([
   'https://diversitycollectivevc.org',
   'https://www.diversitycollectivevc.org',
   'https://diversitycollective.pages.dev',
+  'https://diversity-collective-vc.pages.dev',
+  'https://dcvc.pages.dev',
   'https://dcvc-api.diversity-collective-vc.workers.dev'
 ]);
 
@@ -136,13 +138,14 @@ function isTrustedOrigin(origin, env) {
   if (configured.includes(origin)) return true;
   if (TRUSTED_EXACT_ORIGINS.has(origin)) return true;
   if (/^https:\/\/[a-z0-9-]+\.diversitycollective\.pages\.dev$/i.test(origin)) return true;
+  if (/^https:\/\/[a-z0-9-]+\.pages\.dev$/i.test(origin)) return true;
   if (/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)) return true;
   return false;
 }
 
 function getCorsHeaders(request, env) {
   const origin = request.headers.get('Origin') || '';
-  const fallbackOrigin = String(env.ALLOWED_ORIGIN || 'https://diversitycollectivevc.org')
+  const fallbackOrigin = String(env.ALLOWED_ORIGIN || 'https://diversitycollective.org')
     .split(',')[0]
     .trim();
   const originAllowed = isTrustedOrigin(origin, env);
@@ -1186,7 +1189,7 @@ export default {
           }
         }
 
-        const frontendBase = env.FRONTEND_BASE_URL || 'https://diversitycollectivevc.org';
+        const frontendBase = env.FRONTEND_BASE_URL || 'https://diversitycollective.org';
         const cardUrl = `${frontendBase}/appreciation-card/${cardToken}`;
         const donationDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
@@ -1875,7 +1878,7 @@ export default {
         }
 
         const durationFormatted = `${Math.floor(durationSeconds / 60)}m ${durationSeconds % 60}s`;
-        const adminUrl = `${env.FRONTEND_BASE_URL || 'https://diversitycollectivevc.org'}/admin`;
+        const adminUrl = `${env.FRONTEND_BASE_URL || 'https://diversitycollective.org'}/admin`;
 
         try {
           await sendEmail({
@@ -2398,7 +2401,7 @@ export default {
 
         const id = crypto.randomUUID();
         const db = getDb(env);
-        const baseUrl = env.FRONTEND_BASE_URL || 'https://diversitycollectivevc.org';
+        const baseUrl = env.FRONTEND_BASE_URL || 'https://diversitycollective.org';
         const unsubscribeUrl = `${baseUrl}/api/newsletter/unsubscribe?email=${encodeURIComponent(email)}`;
 
         if (db) {
@@ -2465,7 +2468,7 @@ export default {
               <span class="badge">Preferences Updated</span>
               <h1>You Have Been Unsubscribed</h1>
               <p>You have been removed from our community newsletter mailing list (${email || 'your email'}). You can resubscribe at any time on our website.</p>
-              <a href="${env.FRONTEND_BASE_URL || 'https://diversitycollectivevc.org'}" class="btn">Return to Diversity Collective</a>
+              <a href="${env.FRONTEND_BASE_URL || 'https://diversitycollective.org'}" class="btn">Return to Diversity Collective</a>
             </div>
           </body>
           </html>
@@ -4208,7 +4211,7 @@ export default {
           }).catch(err => console.warn('Could not save initial onboarding OTP in DB:', err.message));
 
           // Dispatch onboarding invite email with OTP code via Resend
-          const panelUrl = `${env.FRONTEND_BASE_URL || 'https://diversitycollectivevc.org'}/admin`;
+          const panelUrl = `${env.FRONTEND_BASE_URL || 'https://diversitycollective.org'}/admin`;
           const emailContent = templateAdminUserInviteOtp({
             name: cleanName,
             email: cleanEmail,
@@ -4308,7 +4311,7 @@ export default {
             args: [otpJti, targetUser.email, otpCode, emailOtpHash, otpSalt, otpExp]
           });
 
-          const panelUrl = `${env.FRONTEND_BASE_URL || 'https://diversitycollectivevc.org'}/admin`;
+          const panelUrl = `${env.FRONTEND_BASE_URL || 'https://diversitycollective.org'}/admin`;
           const emailContent = templateAdminUserInviteOtp({
             name: targetUser.name,
             email: targetUser.email,
@@ -5698,7 +5701,7 @@ export default {
           }
 
           const db = getDb(env);
-          const baseUrl = env.FRONTEND_BASE_URL || 'https://diversitycollectivevc.org';
+          const baseUrl = env.FRONTEND_BASE_URL || 'https://diversitycollective.org';
 
           // Convert simple paragraph breaks into clean HTML paragraphs if plain text
           const formattedContentHtml = content.includes('<p>') || content.includes('<div>')
@@ -5897,7 +5900,7 @@ export default {
             badge: 'CHAMPION CIRCLE',
             tagline: 'Fostering LGBTQ+ Youth Resiliency & Safe Spaces',
             impact: 'Funds 1 full month of art supplies & refreshments for Rainbow Umbrella youth gatherings.',
-            cardUrl: `${env.FRONTEND_BASE_URL || 'https://diversitycollectivevc.org'}/appreciation-card/preview`,
+            cardUrl: `${env.FRONTEND_BASE_URL || 'https://diversitycollective.org'}/appreciation-card/preview`,
             frequency: 'monthly',
             designation: 'Diversity SHINES Healthcare & Testing',
             date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
@@ -5988,7 +5991,7 @@ export default {
 
           const tierInfo = resolveAppreciationTier(Math.round(row.amount_cents / 100), env);
           const formattedAmount = `$${(row.amount_cents / 100).toFixed(2)}`;
-          const cardUrl = `${env.FRONTEND_BASE_URL || 'https://diversitycollectivevc.org'}/appreciation-card/${row.card_token}`;
+          const cardUrl = `${env.FRONTEND_BASE_URL || 'https://diversitycollective.org'}/appreciation-card/${row.card_token}`;
 
           let notes = {};
           try { notes = JSON.parse(row.admin_notes || '{}'); } catch {}
@@ -6079,7 +6082,7 @@ export default {
             }).catch(err => console.warn('Manual Card DB insert error:', err.message));
           }
 
-          const frontendBase = env.FRONTEND_BASE_URL || 'https://diversitycollectivevc.org';
+          const frontendBase = env.FRONTEND_BASE_URL || 'https://diversitycollective.org';
           const cardUrl = `${frontendBase}/appreciation-card/${cardToken}`;
 
           let emailDispatched = false;

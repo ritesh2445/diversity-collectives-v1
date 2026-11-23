@@ -364,6 +364,16 @@ export function upgradeOrNormalizePageLayout(rawBlocks) {
     !normalized.some((b) => b?.type === 'flex_space');
 
   if (!hasLegacyStatusOnly && !isLegacyHeroShape && !(hasFullLegacyOrder && missingV3Sections)) {
+    // Ensure upcoming_week is always present in full homepage layouts even from legacy saved orders
+    if (normalized.length >= 6 && !normalized.some((b) => b?.type === 'upcoming_week')) {
+      const statsIdx = normalized.findIndex((b) => b?.type === 'impact_stats');
+      const upcomingBlock = DEFAULT_PAGE_BLOCKS.find((b) => b.type === 'upcoming_week');
+      if (statsIdx >= 0) {
+        normalized.splice(statsIdx + 1, 0, { ...upcomingBlock });
+      } else {
+        normalized.splice(1, 0, { ...upcomingBlock });
+      }
+    }
     return replaceSanctuaryWithCenter(normalized);
   }
 

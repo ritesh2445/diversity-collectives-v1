@@ -1292,7 +1292,10 @@ class CmsStoreEngine {
   }
 
   getData() {
-    return this.data;
+    return {
+      ...this.data,
+      staffImageOverrides: getStaffImageOverrides()
+    };
   }
 
   // --------------------------------------------------------------------------

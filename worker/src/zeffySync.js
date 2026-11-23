@@ -317,7 +317,7 @@ async function processSingleZeffyPayment(payment, env, db, ctx, sendEmailFn = nu
 
   // Automatically deliver Personalized Appreciation Card (+ heartfelt message for recurring sustainers)
   if (donorEmail && donorEmail.includes('@')) {
-    const frontendBase = env.FRONTEND_BASE_URL || 'https://diversitycollectivevc.org';
+    const frontendBase = env.FRONTEND_BASE_URL || 'https://diversitycollective.org';
     const cardUrl = `${frontendBase}/appreciation-card/${cardToken}`;
     const formattedAmount = `$${amountDollars.toFixed(amountDollars % 1 === 0 ? 0 : 2)}`;
 

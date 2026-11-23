@@ -118,7 +118,7 @@ test('sanitizeSiteStatePatch enforces structure, strips unsafe URLs, and rejects
   assert.throws(() => sanitizeSiteStatePatch({ heroTheme: '../bad' }), /Invalid heroTheme/);
   assert.throws(() => sanitizeSiteStatePatch({ layoutBlocks: [] }), /non-empty array/);
 
-  const hugeString = 'x'.repeat(800 * 1024);
+  const hugeString = 'x'.repeat(6 * 1024 * 1024);
   assert.throws(
     () =>
       sanitizeSiteStatePatch({

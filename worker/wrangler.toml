@@ -16,15 +16,15 @@ crons = ["*/5 * * * *"]
 
 [vars]
 ENVIRONMENT = "production"
-ALLOWED_ORIGIN = "https://diversitycollectivevc.org"
-FRONTEND_BASE_URL = "https://diversitycollectivevc.org"
+ALLOWED_ORIGIN = "https://diversitycollective.org,https://www.diversitycollective.org,https://diversitycollective.pages.dev,https://diversitycollectivevc.org"
+FRONTEND_BASE_URL = "https://diversitycollective.org"
 DCVC_STAFF_EMAIL = "info@diversitycollective.org"
 RESEND_FROM_EMAIL = "Diversity Collective <noreply@diversitycollective.org>"
 
 # Auth0 OIDC / PKCE Single Sign-On (Admin Panel)
 AUTH0_DOMAIN = "dev-ekslx0d2qyju2u1v.us.auth0.com"
 AUTH0_CLIENT_ID = "tgdziPMdxjoHh6LrNrJ82NI3MidPHaLC"
-AUTH0_AUDIENCE = "https://api.diversitycollectivevc.org"
+AUTH0_AUDIENCE = "https://api.diversitycollective.org"
 AUTH0_ENFORCE_SSO = "false"
 
 
