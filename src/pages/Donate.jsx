@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Heart, 
@@ -90,6 +90,48 @@ export default function Donate() {
 
   const effectiveAmount = customAmount ? Number(customAmount) : selectedTier;
   const currentAppreciationTier = getTierForAmount(effectiveAmount);
+
+  // Extract name parts for Zeffy pre-fill
+  const nameParts = donorName.trim().split(/\s+/);
+  const firstName = nameParts[0] || '';
+  const lastName = nameParts.slice(1).join(' ') || '';
+
+  // Generate dynamic Zeffy form URL with pre-filled donor parameters
+  const zeffyEmbedUrl = useMemo(() => {
+    let url = `https://www.zeffy.com/embed/donation-form/diversity-collective-general-fund?frequency=${frequency}&amount=${effectiveAmount}`;
+    if (donorEmail && donorEmail.includes('@')) {
+      url += `&email=${encodeURIComponent(donorEmail.trim())}`;
+    }
+    if (firstName && !isAnonymous) {
+      url += `&firstName=${encodeURIComponent(firstName)}`;
+      if (lastName) {
+        url += `&lastName=${encodeURIComponent(lastName)}`;
+      }
+    }
+    return url;
+  }, [frequency, effectiveAmount, donorEmail, firstName, lastName, isAnonymous]);
+
+  // Synchronize donation intent with worker for deterministic certificate name matching
+  useEffect(() => {
+    if (!donorEmail || !donorEmail.includes('@')) return;
+    const timer = setTimeout(async () => {
+      try {
+        const apiUrl = import.meta.env?.VITE_API_URL || '/api';
+        await fetch(`${apiUrl}/donations/intent`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            donorName: isAnonymous ? 'Anonymous Supporter' : (donorName.trim() || 'Affirming Friend of DCVC'),
+            donorEmail: donorEmail.trim().toLowerCase(),
+            amount: effectiveAmount,
+            frequency: frequency === 'monthly' ? 'monthly' : 'one-time',
+            isAnonymous
+          })
+        });
+      } catch {}
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [donorName, donorEmail, effectiveAmount, frequency, isAnonymous]);
 
   const handleConfetti = () => {
     if (!prefersReducedMotion) {
@@ -474,11 +516,76 @@ export default function Donate() {
                 </p>
               </div>
 
+              {/* 04. PERSONALIZED APPRECIATION CERTIFICATE */}
+              <div className="space-y-4 pt-4 border-t border-slate-100">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                  <span className="text-xs font-black uppercase tracking-wider text-slate-700 block">
+                    04. YOUR NAME ON APPRECIATION CERTIFICATE &amp; RECEIPT
+                  </span>
+                  <span className="text-[11px] text-purple-700 font-bold flex items-center gap-1">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Inscribed on Keepsake Card</span>
+                  </span>
+                </div>
+
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Enter your name exactly as you would like it to appear on your official digital certificate keepsake. We will automatically generate your certificate and send it to your email via Resend upon completion.
+                </p>
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-bold text-slate-700 block mb-1">
+                      Full Name for Certificate:
+                    </label>
+                    <div className="relative">
+                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <input
+                        type="text"
+                        placeholder="e.g. Roland Catabona or The Somann Family"
+                        value={isAnonymous ? '' : donorName}
+                        disabled={isAnonymous}
+                        onChange={(e) => setDonorName(e.target.value)}
+                        className={`w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none text-sm font-bold ${
+                          isAnonymous ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-white text-slate-900'
+                        }`}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-slate-700 block mb-1">
+                      Email Address (for certificate delivery &amp; official tax receipt):
+                    </label>
+                    <div className="relative">
+                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <input
+                        type="email"
+                        placeholder="your.email@example.com"
+                        value={donorEmail}
+                        onChange={(e) => setDonorEmail(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none text-sm font-bold bg-white text-slate-900"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Anonymous Checkbox */}
+                  <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-600 select-none pt-1">
+                    <input
+                      type="checkbox"
+                      checked={isAnonymous}
+                      onChange={(e) => setIsAnonymous(e.target.checked)}
+                      className="rounded border-slate-300 text-[#5A1E65] focus:ring-purple-200"
+                    />
+                    <span>Keep my name anonymous (certificate will read "Affirming Friend of DCVC")</span>
+                  </label>
+                </div>
+              </div>
+
               {/* Official In-Page Zeffy 100% Zero-Fee Checkout (No External Redirection) */}
               <div className="space-y-4 pt-4 border-t border-slate-100">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <span className="text-xs font-black uppercase tracking-wider text-slate-700 block">
-                    04. SECURE IN-PAGE CHECKOUT (POWERED STRICTLY BY ZEFFY)
+                    05. SECURE IN-PAGE CHECKOUT (POWERED STRICTLY BY ZEFFY)
                   </span>
                   <span className="text-[11px] text-emerald-700 font-bold flex items-center gap-1">
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
@@ -490,7 +597,7 @@ export default function Donate() {
                 <div className="w-full rounded-2xl overflow-hidden border-2 border-purple-200/90 shadow-xl bg-white relative">
                   <iframe
                     title="Zeffy Zero-Fee 100% Tax-Deductible Donation Checkout"
-                    src={`https://www.zeffy.com/embed/donation-form/diversity-collective-general-fund?frequency=${frequency}&amount=${effectiveAmount}`}
+                    src={zeffyEmbedUrl}
                     className="w-full h-[760px] sm:h-[720px] border-none"
                     allow="payment"
                   />
@@ -514,13 +621,16 @@ export default function Donate() {
                   <Sparkles className="w-5 h-5 animate-pulse" />
                 </div>
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                     <span className="text-xs font-extrabold uppercase tracking-wider text-purple-950">
                       Unlocks: {currentAppreciationTier.title} ({currentAppreciationTier.circleName})
                     </span>
+                    <span className="text-[11px] font-bold text-[#5A1E65] bg-purple-100/80 px-2 py-0.5 rounded-md">
+                      Certificate Inscription: <strong>{isAnonymous ? 'Affirming Friend of DCVC' : (donorName.trim() || 'Your Name')}</strong>
+                    </span>
                   </div>
                   <p className="text-xs text-slate-600 leading-relaxed">
-                    Your personalized digital DCVC Appreciation Card featuring your name is minted &amp; automatically emailed to you immediately upon contribution via Zeffy.
+                    Your personalized digital DCVC Appreciation Card featuring your inscribed name will be minted &amp; automatically delivered to your inbox via Resend upon completion.
                   </p>
                 </div>
               </div>

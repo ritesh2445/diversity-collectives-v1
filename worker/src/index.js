@@ -1211,6 +1211,7 @@ export default {
 
         // 5. Send automated email via Resend
         let emailSent = false;
+        let emailError = null;
         if (env?.RESEND_API_KEY) {
           try {
             await sendEmail({
@@ -1225,7 +1226,10 @@ export default {
             emailSent = true;
           } catch (err) {
             console.error('Failed to dispatch donor appreciation email:', err.message);
+            emailError = err.message;
           }
+        } else {
+          emailError = 'RESEND_API_KEY is not configured';
         }
 
         return jsonResponse({
@@ -1239,6 +1243,7 @@ export default {
           frequency,
           designation,
           emailSent,
+          emailError,
           message: 'Thank you for your generous tax-deductible gift! A receipt and digital keepsake have been emailed to you.'
         }, 201, cors);
       }
