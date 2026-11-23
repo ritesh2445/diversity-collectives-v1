@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Calendar, Clock, CheckCircle2, MapPin, AlertCircle, Users } from 'lucide-react';
 import {
   getSiteFeatures,
@@ -8,11 +8,12 @@ import {
   bookTimeSlot
 } from '../services/siteFeaturesStore';
 import { submitInquiry } from '../services/api';
-
-function getTodayIso() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
+import BookingCalendarPicker from './BookingCalendarPicker';
+import {
+  getTodayIso,
+  isDateAllowedForFlex,
+  getUpcomingFlexSpaceDates
+} from '../utils/calendarBooking.js';
 
 /**
  * Section #11: Flex Space (replaces workspace segment)
@@ -20,7 +21,13 @@ function getTodayIso() {
  */
 export default function FlexSpaceBookingSection({ props = {}, style = {} }) {
   const [features, setFeatures] = useState(getSiteFeatures);
-  const [selectedDate, setSelectedDate] = useState(getTodayIso);
+  const flexCfg = features.flexSpace;
+  const initialDate = useMemo(() => {
+    const list = getUpcomingFlexSpaceDates(30, flexCfg?.allowedDates, flexCfg?.blockedDates);
+    return list[0] || getTodayIso();
+  }, [flexCfg]);
+
+  const [selectedDate, setSelectedDate] = useState(initialDate);
   const [selectedSlot, setSelectedSlot] = useState('');
   const [formValues, setFormValues] = useState({});
   const [statusMsg, setStatusMsg] = useState(null);
@@ -29,7 +36,6 @@ export default function FlexSpaceBookingSection({ props = {}, style = {} }) {
     return subscribeToSiteFeatures((next) => setFeatures(next));
   }, []);
 
-  const flexCfg = features.flexSpace;
   const schema = features.formSchemas?.flex_space;
   const liveStatus = computeFlexSpaceStatus(flexCfg);
   const slots = getSlotAvailability('flex', selectedDate, features);
@@ -41,6 +47,13 @@ export default function FlexSpaceBookingSection({ props = {}, style = {} }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     setStatusMsg(null);
+
+    const check = isDateAllowedForFlex(selectedDate, flexCfg);
+    if (!check.allowed) {
+      setStatusMsg({ ok: false, text: check.reason });
+      return;
+    }
+
     if (!selectedSlot) {
       setStatusMsg({ ok: false, text: 'Please select an available Flex Space time slot.' });
       return;
@@ -155,26 +168,29 @@ export default function FlexSpaceBookingSection({ props = {}, style = {} }) {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-800 mb-1.5 flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-[#5A1E65]" /> Select Date *
+                    <Calendar className="w-3.5 h-3.5 text-[#5A1E65]" /> 1. Select Available Weekday (Mon–Fri, 1–5 PM) *
                   </label>
-                  <input
-                    type="date"
-                    required
-                    min={getTodayIso()}
-                    value={selectedDate}
-                    onChange={(e) => {
-                      setSelectedDate(e.target.value);
+                  <BookingCalendarPicker
+                    selectedDate={selectedDate}
+                    onSelectDate={(newDate) => {
+                      setSelectedDate(newDate);
                       setSelectedSlot('');
                     }}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold text-slate-900 focus:border-[#5A1E65] outline-none"
+                    mode="flex"
+                    config={flexCfg}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-800 mb-1.5">
-                    Available Time Slots *
+                  <label className="block text-xs font-bold text-slate-800 mb-1.5 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-[#5A1E65]" /> 2. Available Time Slots *
+                    </span>
+                    <span className="text-[11px] text-purple-900 font-semibold lowercase">
+                      (1:00 PM – 5:00 PM)
+                    </span>
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {slots.map((s) => (
@@ -183,7 +199,7 @@ export default function FlexSpaceBookingSection({ props = {}, style = {} }) {
                         type="button"
                         disabled={s.isFull}
                         onClick={() => setSelectedSlot(s.slot)}
-                        className={`px-2.5 py-2 rounded-xl border text-left text-xs font-bold transition-all cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed ${
+                        className={`px-3 py-2.5 rounded-xl border text-left text-xs font-bold transition-all cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed ${
                           selectedSlot === s.slot
                             ? 'bg-[#5A1E65] text-white border-[#5A1E65] shadow-sm'
                             : s.isFull
@@ -191,8 +207,8 @@ export default function FlexSpaceBookingSection({ props = {}, style = {} }) {
                               : 'bg-white text-slate-800 border-slate-300 hover:border-purple-400'
                         }`}
                       >
-                        <div className="truncate">{s.slot}</div>
-                        <div className={`text-[10px] font-semibold ${selectedSlot === s.slot ? 'text-amber-200' : s.isFull ? 'text-rose-600' : 'text-emerald-700'}`}>
+                        <div className="truncate font-extrabold text-xs sm:text-sm">{s.slot}</div>
+                        <div className={`text-[10px] font-semibold mt-0.5 ${selectedSlot === s.slot ? 'text-amber-200' : s.isFull ? 'text-rose-600' : 'text-emerald-700'}`}>
                           {s.isFull ? 'Booked' : `${s.remaining} slot left`}
                         </div>
                       </button>

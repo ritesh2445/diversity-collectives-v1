@@ -21,7 +21,8 @@ import {
   Printer,
   ChevronDown,
   Info,
-  Gift
+  Gift,
+  ExternalLink
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useLiveOrgInfo } from '../hooks/useCmsLive';
@@ -62,8 +63,8 @@ export default function Donate() {
   const [honoreeName, setHonoreeName] = useState('');
   const [dedicationNote, setDedicationNote] = useState('');
 
-  // Payment method: 'card' (integrated direct card) | 'zeffy_embed' (integrated zero-fee embed)
-  const [paymentMode, setPaymentMode] = useState('card');
+  // Payment method: 'zeffy_embed' (integrated zero-fee embed) | 'card' (integrated direct card)
+  const [paymentMode, setPaymentMode] = useState('zeffy_embed');
   const [cardNumber, setCardNumber] = useState('');
   const [cardExpiry, setCardExpiry] = useState('');
   const [cardCvc, setCardCvc] = useState('');
@@ -97,19 +98,35 @@ export default function Donate() {
   const lastName = nameParts.slice(1).join(' ') || '';
 
   // Generate dynamic Zeffy form URL with pre-filled donor parameters
-  const zeffyEmbedUrl = useMemo(() => {
-    let url = `https://www.zeffy.com/embed/donation-form/diversity-collective-general-fund?frequency=${frequency}&amount=${effectiveAmount}`;
+  const { zeffyEmbedUrl, zeffyDirectUrl } = useMemo(() => {
+    const rawUrl = (orgInfo?.zeffyDonationUrl || orgInfo?.zeffyUrl || '').trim();
+    let base = rawUrl;
+    if (!base) {
+      base = 'https://www.zeffy.com/donation-form/diversity-collective-general-fund';
+    } else if (!base.startsWith('http://') && !base.startsWith('https://')) {
+      base = `https://www.zeffy.com/donation-form/${base}`;
+    }
+
+    const direct = base.replace('/embed/donation-form/', '/donation-form/');
+    const embed = direct.replace('/donation-form/', '/embed/donation-form/');
+
+    const queryChar = embed.includes('?') ? '&' : '?';
+    let params = `frequency=${frequency}&amount=${effectiveAmount}`;
     if (donorEmail && donorEmail.includes('@')) {
-      url += `&email=${encodeURIComponent(donorEmail.trim())}`;
+      params += `&email=${encodeURIComponent(donorEmail.trim())}`;
     }
     if (firstName && !isAnonymous) {
-      url += `&firstName=${encodeURIComponent(firstName)}`;
+      params += `&firstName=${encodeURIComponent(firstName)}`;
       if (lastName) {
-        url += `&lastName=${encodeURIComponent(lastName)}`;
+        params += `&lastName=${encodeURIComponent(lastName)}`;
       }
     }
-    return url;
-  }, [frequency, effectiveAmount, donorEmail, firstName, lastName, isAnonymous]);
+
+    return {
+      zeffyEmbedUrl: `${embed}${queryChar}${params}`,
+      zeffyDirectUrl: `${direct}${queryChar}${params}`
+    };
+  }, [orgInfo, frequency, effectiveAmount, donorEmail, firstName, lastName, isAnonymous]);
 
   // Synchronize donation intent with worker for deterministic certificate name matching
   useEffect(() => {
@@ -581,38 +598,173 @@ export default function Donate() {
                 </div>
               </div>
 
-              {/* Official In-Page Zeffy 100% Zero-Fee Checkout (No External Redirection) */}
+              {/* Official In-Page Checkout (Zeffy Zero-Fee or Direct Card) */}
               <div className="space-y-4 pt-4 border-t border-slate-100">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <span className="text-xs font-black uppercase tracking-wider text-slate-700 block">
-                    05. SECURE IN-PAGE CHECKOUT (POWERED STRICTLY BY ZEFFY)
+                    05. SECURE CHECKOUT &amp; PAYMENT
                   </span>
-                  <span className="text-[11px] text-emerald-700 font-bold flex items-center gap-1">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>100% Zero Platform &amp; Card Fees</span>
-                  </span>
-                </div>
-
-                {/* Embedded Zeffy Frame (Integrated In-Page, Zero Navigation Offsite) */}
-                <div className="w-full rounded-2xl overflow-hidden border-2 border-purple-200/90 shadow-xl bg-white relative">
-                  <iframe
-                    title="Zeffy Zero-Fee 100% Tax-Deductible Donation Checkout"
-                    src={zeffyEmbedUrl}
-                    className="w-full h-[760px] sm:h-[720px] border-none"
-                    allow="payment"
-                  />
-                </div>
-
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500 pt-1 px-1">
-                  <div className="flex items-center gap-1.5 font-medium">
-                    <Lock className="w-3.5 h-3.5 text-slate-400" />
-                    <span>256-Bit SSL Encrypted • Zero off-site redirect</span>
-                  </div>
                   <div className="flex items-center gap-2">
-                    <CreditCard className="w-4 h-4 text-purple-700" />
-                    <span className="font-semibold text-slate-700">Credit / Debit Card, Apple Pay &amp; Google Pay accepted</span>
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMode('zeffy_embed')}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                        paymentMode === 'zeffy_embed'
+                          ? 'bg-[#5A1E65] text-white shadow-xs'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      <span>⚡ Zeffy Zero-Fee</span>
+                      <span className="text-[10px] bg-emerald-400 text-slate-950 font-black px-1.5 py-0.2 rounded-md">0% Fees</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMode('card')}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                        paymentMode === 'card'
+                          ? 'bg-[#5A1E65] text-white shadow-xs'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      <CreditCard className="w-3.5 h-3.5" />
+                      <span>Direct Card</span>
+                    </button>
                   </div>
                 </div>
+
+                {submitError && (
+                  <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium">
+                    {submitError}
+                  </div>
+                )}
+
+                {paymentMode === 'zeffy_embed' ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-xs text-slate-600 bg-purple-50/70 p-3 rounded-xl border border-purple-200/70">
+                      <span className="font-semibold text-purple-950 flex items-center gap-1.5">
+                        <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                        100% of your gift reaches DCVC · Zeffy charges 0% fees
+                      </span>
+                      <a
+                        href={zeffyDirectUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-[#5A1E65] hover:text-purple-900 font-bold underline shrink-0 ml-2"
+                      >
+                        <span>Open in Zeffy Window</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+
+                    {/* Embedded Zeffy Frame (Integrated In-Page, Zero Navigation Offsite) */}
+                    <div className="w-full rounded-2xl overflow-hidden border-2 border-purple-200/90 shadow-xl bg-white relative">
+                      <iframe
+                        title="Zeffy Zero-Fee 100% Tax-Deductible Donation Checkout"
+                        src={zeffyEmbedUrl}
+                        className="w-full h-[760px] sm:h-[720px] border-none"
+                        allow="payment"
+                      />
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500 pt-1 px-1">
+                      <div className="flex items-center gap-1.5 font-medium">
+                        <Lock className="w-3.5 h-3.5 text-slate-400" />
+                        <span>256-Bit SSL Encrypted • Zero off-site redirect</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="w-4 h-4 text-purple-700" />
+                        <span className="font-semibold text-slate-700">Credit / Debit Card, Apple Pay &amp; Google Pay accepted</span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* Direct Integrated Card Form */
+                  <form onSubmit={handleSubmitDonation} className="space-y-4 p-5 sm:p-6 rounded-2xl border-2 border-purple-200 bg-purple-50/30">
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-xs font-bold text-slate-700 block mb-1">Name on Card *</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. Roland Catabona"
+                          value={cardholderName}
+                          onChange={(e) => setCardholderName(e.target.value)}
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold outline-none focus:border-[#5A1E65] bg-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-bold text-slate-700 block mb-1">Card Number *</label>
+                        <input
+                          type="text"
+                          required
+                          maxLength={19}
+                          placeholder="4242 •••• •••• 4242"
+                          value={cardNumber}
+                          onChange={handleCardNumberChange}
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold font-mono outline-none focus:border-[#5A1E65] bg-white"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2.5">
+                        <div>
+                          <label className="text-xs font-bold text-slate-700 block mb-1">Expires *</label>
+                          <input
+                            type="text"
+                            required
+                            maxLength={5}
+                            placeholder="MM/YY"
+                            value={cardExpiry}
+                            onChange={handleCardExpiryChange}
+                            className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold text-center outline-none focus:border-[#5A1E65] bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-bold text-slate-700 block mb-1">CVC *</label>
+                          <input
+                            type="password"
+                            required
+                            maxLength={4}
+                            placeholder="CVC"
+                            value={cardCvc}
+                            onChange={(e) => setCardCvc(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                            className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold text-center outline-none focus:border-[#5A1E65] bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-bold text-slate-700 block mb-1">Postal Code *</label>
+                          <input
+                            type="text"
+                            required
+                            maxLength={10}
+                            placeholder="ZIP / Postal"
+                            value={cardPostal}
+                            onChange={(e) => setCardPostal(e.target.value)}
+                            className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold text-center outline-none focus:border-[#5A1E65] bg-white"
+                          />
+                        </div>
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={submitting}
+                        className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-[#5A1E65] to-purple-800 hover:from-[#471850] hover:to-purple-900 text-white font-extrabold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                      >
+                        {submitting ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                            <span>Processing Tax-Deductible Donation...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Lock className="w-4 h-4" />
+                            <span>Complete ${effectiveAmount} {frequency === 'monthly' ? 'Monthly GEM' : 'One-Time'} Donation</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                )}
               </div>
 
               {/* Appreciation Card Unlock Spotlight */}

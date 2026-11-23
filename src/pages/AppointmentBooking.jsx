@@ -20,11 +20,12 @@ import {
   bookTimeSlot,
   DEFAULT_FORM_SCHEMAS
 } from '../services/siteFeaturesStore';
-
-function getTodayIso() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
+import BookingCalendarPicker from '../components/BookingCalendarPicker';
+import {
+  getTodayIso,
+  isDateAllowedForHiv,
+  getUpcomingHivClinicDates
+} from '../utils/calendarBooking.js';
 
 export default function AppointmentBooking() {
   usePageMeta({
@@ -34,7 +35,12 @@ export default function AppointmentBooking() {
   });
 
   const [features, setFeatures] = useState(getSiteFeatures);
-  const [selectedDate, setSelectedDate] = useState(getTodayIso);
+  const initialClinicDate = useMemo(() => {
+    const list = getUpcomingHivClinicDates(12, features?.hivScreening?.allowedDates, features?.hivScreening?.blockedDates);
+    return list[0] || getTodayIso();
+  }, [features]);
+
+  const [selectedDate, setSelectedDate] = useState(initialClinicDate);
   const [selectedSlot, setSelectedSlot] = useState('');
   const [fieldValues, setFieldValues] = useState({});
   const [confidentialityConsent, setConfidentialityConsent] = useState(false);
@@ -53,6 +59,13 @@ export default function AppointmentBooking() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const dateValidation = isDateAllowedForHiv(selectedDate, features?.hivScreening);
+    if (!dateValidation.allowed) {
+      setStatus('error');
+      setStatusMsg(dateValidation.reason);
+      return;
+    }
 
     if (!selectedSlot) {
       setStatus('error');
@@ -196,36 +209,40 @@ export default function AppointmentBooking() {
                 </div>
               )}
 
-              {/* Date & Live Slot Picker */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Real Interactive Calendar Picker & Live Slot Selector */}
+              <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-[#5A1E65]" /> Screening Date *
+                    <Calendar className="w-3.5 h-3.5 text-[#5A1E65]" /> 1. Select Official DCVC Clinic Date *
                   </label>
-                  <input
-                    type="date"
-                    required
-                    min={getTodayIso()}
-                    value={selectedDate}
-                    onChange={(e) => {
-                      setSelectedDate(e.target.value);
+                  <BookingCalendarPicker
+                    selectedDate={selectedDate}
+                    onSelectDate={(newDate) => {
+                      setSelectedDate(newDate);
                       setSelectedSlot('');
                     }}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-purple-600 outline-none"
+                    mode="hiv"
+                    config={features.hivScreening}
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5 text-[#5A1E65]" /> Available Time Slots *
+
+                <div className="pt-2">
+                  <label className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-2 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-[#5A1E65]" /> 2. Select Screening Time Slot *
+                    </span>
+                    <span className="text-[11px] text-purple-900 font-semibold lowercase">
+                      (Clinic runs 3:00 PM – 7:00 PM)
+                    </span>
                   </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     {slots.map((s) => (
                       <button
                         key={s.slot}
                         type="button"
                         disabled={s.isFull}
                         onClick={() => setSelectedSlot(s.slot)}
-                        className={`px-3 py-2.5 rounded-xl border text-left text-xs font-bold transition-all cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed ${
+                        className={`p-3 rounded-xl border text-left text-xs font-bold transition-all cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed ${
                           selectedSlot === s.slot
                             ? 'bg-[#5A1E65] text-white border-[#5A1E65] shadow-sm'
                             : s.isFull
@@ -233,8 +250,8 @@ export default function AppointmentBooking() {
                               : 'bg-white text-slate-800 border-slate-300 hover:border-purple-400'
                         }`}
                       >
-                        <div className="truncate">{s.slot}</div>
-                        <div className={`text-[10px] font-semibold ${selectedSlot === s.slot ? 'text-amber-200' : s.isFull ? 'text-rose-600' : 'text-emerald-700'}`}>
+                        <div className="font-extrabold text-sm">{s.slot}</div>
+                        <div className={`text-[11px] font-semibold mt-0.5 ${selectedSlot === s.slot ? 'text-amber-200' : s.isFull ? 'text-rose-600' : 'text-emerald-700'}`}>
                           {s.isFull ? 'Slot Full' : `${s.remaining} of ${s.capacity} slots left`}
                         </div>
                       </button>

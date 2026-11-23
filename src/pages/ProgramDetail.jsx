@@ -31,7 +31,8 @@ export default function ProgramDetail() {
     return unsub;
   }, []);
 
-  const program = programs.find(p => p.slug === slug || p.id === slug) || programsList.find(p => p.slug === slug || p.id === slug);
+  const allPrograms = programs.length > 0 ? programs : programsList;
+  const program = allPrograms.find(p => p.slug === slug || p.id === slug) || programsList.find(p => p.slug === slug || p.id === slug);
 
   if (!program) {
     return <Navigate to="/programs" replace />;

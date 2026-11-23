@@ -87,9 +87,20 @@ export default function BoardMemberProfile() {
   const focusAreas = member.focusAreas && member.focusAreas.length > 0
     ? member.focusAreas
     : ['501(c)(3) Institutional Stewardship', 'LGBTQ+ Center Advocacy', 'Community Partnership Building', 'Ventura County Equity'];
-  const paragraphs = member.extendedBio && member.extendedBio.length > 0
-    ? member.extendedBio
-    : [member.bio];
+
+  // Resolve biography paragraphs: if member.bio is customized, use it as paragraphs; otherwise fall back to extendedBio
+  const paragraphs = (() => {
+    if (member.bio && typeof member.bio === 'string' && member.bio.trim()) {
+      const split = member.bio.split(/\n\s*\n|\r\n\r\n|\n/).map(p => p.trim()).filter(Boolean);
+      if (split.length > 0) return split;
+    }
+    if (Array.isArray(member.extendedBio) && member.extendedBio.length > 0) {
+      return member.extendedBio.filter(Boolean);
+    }
+    if (member.bio) return [String(member.bio).trim()];
+    return [];
+  })();
+
   const ordinal = String(resolvedIndex + 1).padStart(2, '0');
   const totalCount = String(list.length).padStart(2, '0');
 

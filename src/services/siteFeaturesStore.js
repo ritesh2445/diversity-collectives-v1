@@ -8,6 +8,7 @@
  */
 
 import { publishAdminSitePatch } from './liveSync.js';
+import { isDateAllowedForHiv, isDateAllowedForFlex } from '../utils/calendarBooking.js';
 
 const FEATURES_STORAGE_KEY = 'dcvc_site_features_v1';
 const FEATURES_EVENT = 'dcvc-site-features-updated';
@@ -376,11 +377,27 @@ export function getSlotAvailability(kind, dateStr, features = getSiteFeatures())
   });
 }
 
-export function bookTimeSlot(kind, { date, slot, name, contact, email, phone, purpose, service, notes }) {
+export function bookTimeSlot(kind, { date, slot, name, contact, email, phone, purpose, service, notes, validateDate = false }) {
   if (!date || !slot) {
     return { ok: false, error: 'Please choose both a date and an available time slot.' };
   }
   const features = getSiteFeatures();
+
+  // Strict date validation by service kind when enabled
+  if (validateDate) {
+    if (kind === 'hiv') {
+      const check = isDateAllowedForHiv(date, features.hivScreening);
+      if (!check.allowed) {
+        return { ok: false, error: check.reason };
+      }
+    } else if (kind === 'flex') {
+      const check = isDateAllowedForFlex(date, features.flexSpace);
+      if (!check.allowed) {
+        return { ok: false, error: check.reason };
+      }
+    }
+  }
+
   const avail = getSlotAvailability(kind, date, features).find((s) => s.slot === slot);
   if (!avail || avail.remaining <= 0) {
     return { ok: false, error: `Sorry, the "${slot}" slot on ${date} is now full. Please select another slot.` };

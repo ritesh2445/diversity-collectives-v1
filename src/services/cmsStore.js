@@ -203,6 +203,15 @@ export function mergeStaffWithDefaults(savedStaff = [], defaultStaff = null, del
       const override = lookupStaffImageOverride(member.name || (seedMatch && seedMatch.name), slug, id);
       const effectivePhoto = override || member.photo || member.image || (seedMatch && (seedMatch.photo || seedMatch.image)) || '/images/volunteers.jpg';
 
+      const effectiveBio = (member.bio !== undefined && member.bio !== null && member.bio !== '')
+        ? member.bio
+        : (seedMatch && seedMatch.bio);
+      const effectiveExtendedBio = (member.bio && typeof member.bio === 'string' && member.bio.trim())
+        ? member.bio.split(/\n\s*\n|\r\n\r\n|\n/).map(p => p.trim()).filter(Boolean)
+        : ((member.extendedBio && member.extendedBio.length > 0)
+            ? member.extendedBio
+            : (seedMatch && seedMatch.extendedBio));
+
       result.push({
         ...(seedMatch || {}),
         ...member,
@@ -212,7 +221,9 @@ export function mergeStaffWithDefaults(savedStaff = [], defaultStaff = null, del
         title: member.title || member.role || (seedMatch && (seedMatch.title || seedMatch.role)) || 'Team Member',
         role: member.role || member.title || (seedMatch && (seedMatch.role || seedMatch.title)) || 'Team Member',
         photo: effectivePhoto,
-        image: effectivePhoto
+        image: effectivePhoto,
+        bio: effectiveBio,
+        extendedBio: effectiveExtendedBio
       });
     }
   }
@@ -583,6 +594,7 @@ export const INITIAL_CMS_DATA = {
     bannerAlertText: "Center Open Today · Mon–Fri 1:00 PM – 5:00 PM · HIV/STI Screenings 1st Mon 3–7 PM",
     bannerAlertLink: "/events",
     donationUrl: orgInfo.donationUrl || "/donate",
+    zeffyDonationUrl: orgInfo.zeffyDonationUrl || "",
     volunteerUrl: orgInfo.volunteerUrl || "/volunteer",
     facebook: orgInfo.socials?.facebook || "https://www.facebook.com/diversitycollectivevc",
     instagram: orgInfo.socials?.instagram || "https://www.instagram.com/diversitycollectivevc",
@@ -1802,6 +1814,11 @@ class CmsStoreEngine {
       if (targetId) setStaffImageOverride(targetId, effectivePhoto);
     }
 
+    const cleanBio = (memberOrList.bio || '').trim();
+    const bioParagraphs = cleanBio
+      ? cleanBio.split(/\n\s*\n|\r\n\r\n|\n/).map(p => p.trim()).filter(Boolean)
+      : (Array.isArray(memberOrList.extendedBio) && memberOrList.extendedBio.length > 0 ? memberOrList.extendedBio : []);
+
     const normalizedMember = {
       ...memberOrList,
       id: resolvedMemberId,
@@ -1814,7 +1831,8 @@ class CmsStoreEngine {
       email: memberOrList.email || 'info@diversitycollective.org',
       photo: effectivePhoto,
       image: effectivePhoto,
-      bio: memberOrList.bio || ''
+      bio: cleanBio,
+      extendedBio: bioParagraphs
     };
 
     // Find existing: prioritize exact ID match (targetId / originalId) so editing one card never mutates another or creates duplicates

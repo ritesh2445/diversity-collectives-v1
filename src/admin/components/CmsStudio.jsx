@@ -620,8 +620,10 @@ export default function CmsStudio() {
       });
     } else if (type === 'staff') {
       const portrait = item.photo || item.image || '';
+      const existingBio = item.bio || (Array.isArray(item.extendedBio) ? item.extendedBio.join('\n\n') : '');
       setFormData({
         ...item,
+        bio: existingBio,
         originalId: item.id || item.slug || item.name,
         originalName: item.name || '',
         originalSlug: item.slug || '',
@@ -689,8 +691,12 @@ export default function CmsStudio() {
       showToast(`Resource "${formData.name}" saved.`);
     } else if (modalType === 'staff') {
       const effectivePhoto = formData.photo || formData.image || '';
+      const cleanBio = (formData.bio || '').trim();
+      const bioParagraphs = cleanBio ? cleanBio.split(/\n\s*\n|\r\n\r\n|\n/).map(p => p.trim()).filter(Boolean) : [];
       saveCmsStaff({
         ...formData,
+        bio: cleanBio,
+        extendedBio: bioParagraphs,
         originalId: editingItem?.id || formData.originalId,
         originalName: editingItem?.name || formData.originalName,
         originalSlug: editingItem?.slug || formData.originalSlug,
@@ -2949,6 +2955,42 @@ export default function CmsStudio() {
                   })}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#5A1E65] outline-none"
                 />
+              </div>
+            </div>
+          </div>
+
+          {/* Zeffy Integration & Donation Portal Settings */}
+          <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-4">
+            <div>
+              <h3 className="font-display text-lg font-bold text-slate-950 flex items-center gap-2">
+                <span>Zeffy Zero-Fee Donation Form &amp; Integration Settings</span>
+                <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">
+                  Zero Platform Fees
+                </span>
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Configure the official Zeffy form URL or campaign slug for 100% tax-deductible donations.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                  Zeffy Donation Form URL or Campaign Slug
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. https://www.zeffy.com/donation-form/diversity-collective-general-fund or your campaign slug"
+                  value={cmsData.settings?.zeffyDonationUrl || ''}
+                  onChange={(e) => setCmsData({
+                    ...cmsData,
+                    settings: { ...cmsData.settings, zeffyDonationUrl: e.target.value }
+                  })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#5A1E65] outline-none"
+                />
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Copy and paste the donation link from your Zeffy dashboard. The website automatically formats it for seamless, secure in-page checkout.
+                </p>
               </div>
             </div>
           </div>
