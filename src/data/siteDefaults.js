@@ -120,7 +120,7 @@ export const DEFAULT_PAGE_BLOCKS = [
       eyebrow: 'THIS WEEK ACROSS VENTURA COUNTY',
       headline: 'Upcoming Programs & Events This Week',
       description: 'Explore verified weekly peer circles, youth spaces, recovery meetings, and special gatherings scheduled across Ventura County.',
-      ctaText: 'View All Gatherings'
+      ctaText: 'View Events'
     }
   },
   {
