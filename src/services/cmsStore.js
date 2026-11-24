@@ -449,7 +449,7 @@ function groupSanityResources(resources = []) {
 export const DEFAULT_TRAINING_PAGE_CONTENT = {
   // Hero section
   heroEyebrow: "P.R.I.D.E. EDUCATION & ACCREDITATION",
-  heroTitle: "Empower Your Team with LGBTQ+ Competency & Earn the DCVC Approved Seal",
+  heroTitle: "LGBTQ+ Competency & DCVC Approved Seal",
   heroSubtitle: "Ventura County's accredited workshops transforming workplaces, clinics, educators, and local storefronts into authentically affirming spaces.",
   stat1Number: "40+",
   stat1Label: "Accredited Ventura County Businesses",
