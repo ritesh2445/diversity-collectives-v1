@@ -122,10 +122,10 @@ export default function UpcomingWeekSection({
           <div className="flex items-center gap-3">
             <Link
               to="/events"
-              className="py-3 px-6 rounded-full text-xs sm:text-sm font-extrabold text-white bg-gradient-to-r from-[#5A1E65] via-purple-700 to-fuchsia-600 hover:brightness-110 hover:-translate-y-0.5 transition-all duration-300 inline-flex items-center justify-center gap-2 shadow-lg shadow-purple-500/25"
+              className="py-3 px-6 rounded-full text-xs sm:text-sm font-extrabold !text-white bg-gradient-to-r from-[#5A1E65] via-purple-700 to-fuchsia-600 hover:brightness-110 hover:-translate-y-0.5 transition-all duration-300 inline-flex items-center justify-center gap-2 shadow-lg shadow-purple-500/25"
             >
               <span>{ctaLabel}</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-4 h-4 !text-white" />
             </Link>
           </div>
         </div>
