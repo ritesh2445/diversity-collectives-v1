@@ -24,6 +24,53 @@ import DynamicSchemaFields, {
 import { orgInfo } from '../data/dcvcData';
 import { usePageMeta } from '../utils/seo';
 
+const VOLUNTEER_PATHWAYS = [
+  {
+    icon: '🏠',
+    badge: 'Drop-In & Care',
+    title: 'Center Hospitality',
+    description: 'Welcoming drop-in guests, assisting with computer lab access, and answering community telephone inquiries.',
+    cardClass: 'bg-gradient-to-br from-purple-50/95 via-white to-fuchsia-50/75 border-purple-200 hover:border-purple-400 hover:shadow-[0_14px_34px_-10px_rgba(147,51,234,0.38)]',
+    stripClass: 'from-purple-600 via-fuchsia-500 to-purple-400',
+    glowClass: 'bg-purple-400/20',
+    iconBgClass: 'bg-purple-100 border-purple-200',
+    badgeClass: 'text-purple-800 bg-purple-100/80 border-purple-200'
+  },
+  {
+    icon: '🌈',
+    badge: 'Youth Ages 9–23',
+    title: 'Youth Mentorship',
+    description: 'Supporting adult facilitation for Friday Rainbow Umbrella circles and craft workshops for Little Unicorns.',
+    cardClass: 'bg-gradient-to-br from-rose-50/95 via-white to-pink-50/75 border-rose-200 hover:border-rose-400 hover:shadow-[0_14px_34px_-10px_rgba(244,63,94,0.34)]',
+    stripClass: 'from-rose-500 via-fuchsia-500 to-amber-400',
+    glowClass: 'bg-rose-400/20',
+    iconBgClass: 'bg-rose-100 border-rose-200',
+    badgeClass: 'text-rose-800 bg-rose-100/80 border-rose-200'
+  },
+  {
+    icon: '🩺',
+    badge: 'Diversity SHINES',
+    title: 'Health & Outreach',
+    description: "Packing 'SHINE With Me' safer-sex kits and tabling at local college wellness fairs and community festivals.",
+    cardClass: 'bg-gradient-to-br from-emerald-50/95 via-white to-teal-50/75 border-emerald-200 hover:border-emerald-400 hover:shadow-[0_14px_34px_-10px_rgba(16,185,129,0.38)]',
+    stripClass: 'from-emerald-500 via-teal-500 to-cyan-400',
+    glowClass: 'bg-emerald-400/20',
+    iconBgClass: 'bg-emerald-100 border-emerald-200',
+    badgeClass: 'text-emerald-800 bg-emerald-100/80 border-emerald-200'
+  },
+  {
+    icon: '🎉',
+    badge: 'Events & Pride',
+    title: 'Pride & Galas',
+    description: 'Ventura County Pride staging, ticketing, green-room coordination, and AIDS Walk operations.',
+    cardClass: 'bg-gradient-to-br from-amber-50/95 via-white to-orange-50/75 border-amber-200 hover:border-amber-400 hover:shadow-[0_14px_34px_-10px_rgba(245,158,11,0.40)]',
+    stripClass: 'from-amber-500 via-orange-500 to-rose-500',
+    glowClass: 'bg-amber-400/20',
+    iconBgClass: 'bg-amber-100 border-amber-200',
+    badgeClass: 'text-amber-900 bg-amber-100/80 border-amber-200'
+  }
+];
+
 const STANDARD_VOLUNTEER_FIELDS = [
   'preferredName',
   'pronouns',
@@ -148,28 +195,40 @@ export default function Volunteer() {
       </section>
 
       {/* Volunteer Pathways Showcase */}
-      <section className="container-clean py-14">
+      <section className="container-clean py-12">
         <MobileCarousel cols={4} autoScrollMs={0} cardClassName="h-full flex flex-col">
-          <div className="p-6 rounded-3xl bg-white border-2 border-slate-200 shadow-sm space-y-3 h-full">
-            <span className="text-2xl">🏠</span>
-            <h3 className="font-display text-lg font-bold text-slate-950">Center Hospitality</h3>
-            <p className="text-xs text-slate-600 leading-relaxed font-medium">Welcoming drop-in guests, assisting with computer lab access, and answering community telephone inquiries.</p>
-          </div>
-          <div className="p-6 rounded-3xl bg-white border-2 border-slate-200 shadow-sm space-y-3 h-full">
-            <span className="text-2xl">🌈</span>
-            <h3 className="font-display text-lg font-bold text-slate-950">Youth Mentorship</h3>
-            <p className="text-xs text-slate-600 leading-relaxed font-medium">Supporting adult facilitation for Friday Rainbow Umbrella circles and craft workshops for Little Unicorns.</p>
-          </div>
-          <div className="p-6 rounded-3xl bg-white border-2 border-slate-200 shadow-sm space-y-3 h-full">
-            <span className="text-2xl">🩺</span>
-            <h3 className="font-display text-lg font-bold text-slate-950">Health & Outreach</h3>
-            <p className="text-xs text-slate-600 leading-relaxed font-medium">Packing 'SHINE With Me' safer-sex kits and tabling at local college wellness fairs and community festivals.</p>
-          </div>
-          <div className="p-6 rounded-3xl bg-white border-2 border-slate-200 shadow-sm space-y-3 h-full">
-            <span className="text-2xl">🎉</span>
-            <h3 className="font-display text-lg font-bold text-slate-950">Pride & Galas</h3>
-            <p className="text-xs text-slate-600 leading-relaxed font-medium">Ventura County Pride staging, ticketing, green-room coordination, and AIDS Walk operations.</p>
-          </div>
+          {VOLUNTEER_PATHWAYS.map((pathway) => (
+            <div
+              key={pathway.title}
+              className={`group relative overflow-hidden p-6 rounded-3xl border-2 shadow-sm hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between gap-3.5 h-full ${pathway.cardClass}`}
+            >
+              {/* Top vibrant accent bar */}
+              <div className={`absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r ${pathway.stripClass}`} />
+
+              {/* Soft radial cursor-hover halo */}
+              <div
+                className={`absolute -top-10 -right-10 w-32 h-32 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none ${pathway.glowClass}`}
+                aria-hidden="true"
+              />
+
+              <div className="relative z-10 space-y-3 pt-1">
+                <div className="flex items-center justify-between gap-2">
+                  <span className={`w-11 h-11 rounded-2xl border flex items-center justify-center text-2xl shadow-2xs group-hover:scale-110 transition-transform duration-300 ${pathway.iconBgClass}`}>
+                    {pathway.icon}
+                  </span>
+                  <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${pathway.badgeClass}`}>
+                    {pathway.badge}
+                  </span>
+                </div>
+                <h3 className="font-display text-lg font-extrabold text-slate-950 tracking-tight">
+                  {pathway.title}
+                </h3>
+                <p className="text-xs sm:text-[13px] text-slate-700 leading-relaxed font-medium">
+                  {pathway.description}
+                </p>
+              </div>
+            </div>
+          ))}
         </MobileCarousel>
       </section>
 

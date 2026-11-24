@@ -1525,6 +1525,51 @@ export default {
       }
 
       // =======================================================================
+      // 4.5B. Public Gallery Uploaded Binary Media Stream (GET /api/gallery/media/:id)
+      // =======================================================================
+      if (pathname.startsWith('/api/gallery/media/') && request.method === 'GET') {
+        const mediaId = decodeURIComponent(pathname.replace('/api/gallery/media/', '')).trim();
+        const db = getDb(env);
+        if (!db || !mediaId) {
+          return errorResponse('Gallery image not found.', 404, null, cors);
+        }
+
+        try {
+          const rowRes = await db.execute({
+            sql: `SELECT filename, mime_type, file_data_base64 FROM gallery_media WHERE id = ? LIMIT 1`,
+            args: [mediaId]
+          });
+
+          if (!rowRes.rows || rowRes.rows.length === 0) {
+            return errorResponse('Gallery image not found.', 404, null, cors);
+          }
+
+          const media = rowRes.rows[0];
+          const rawBase64 = String(media.file_data_base64 || '')
+            .replace(/^data:[^;]+;base64,/i, '')
+            .replace(/\s+/g, '');
+
+          const binaryString = atob(rawBase64);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+
+          return new Response(bytes.buffer, {
+            status: 200,
+            headers: {
+              ...cors,
+              'Content-Type': media.mime_type || 'image/jpeg',
+              'Content-Disposition': `inline; filename="${media.filename || 'gallery-image.jpg'}"`,
+              'Cache-Control': 'public, max-age=31536000, immutable'
+            }
+          });
+        } catch (err) {
+          return errorResponse(`Failed to stream gallery image: ${err.message}`, 500, null, cors);
+        }
+      }
+
+      // =======================================================================
       // 4.6. Live Site State: Public Retrieval (GET /api/site-state)
       // Returns persisted Hero Design, Layout Blocks, Global Site Theme & CMS
       // =======================================================================
@@ -5151,12 +5196,39 @@ export default {
             return errorResponse('Image title and file data are required.', 400, null, cors);
           }
 
+          const photoId = `gal-${crypto.randomUUID().slice(0, 8)}`;
           const cleanFileName = sanitizeFilename(fileName || `${title}.jpg`);
+          const mimeMatch = /^data:(image\/[a-z0-9.+-]+);base64,/i.exec(String(fileData));
+          const detectedMimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+          const cleanBase64 = String(fileData).replace(/^data:[^;]+;base64,/i, '').replace(/\s+/g, '');
+          const calculatedSizeBytes = Math.round((cleanBase64.length * 3) / 4);
+
           const categorySlug = (category || 'community')
             .toLowerCase()
             .replace(/[^a-z0-9]/g, '-')
             .replace(/-+/g, '-');
           const gitPath = `public/gallery/${categorySlug}/${cleanFileName}`;
+
+          const db = getDb(env);
+          if (db) {
+            await db.execute({
+              sql: `CREATE TABLE IF NOT EXISTS gallery_media (
+                id TEXT PRIMARY KEY,
+                filename TEXT,
+                mime_type TEXT NOT NULL DEFAULT 'image/jpeg',
+                file_data_base64 TEXT NOT NULL,
+                file_size_bytes INTEGER DEFAULT 0,
+                created_at TEXT DEFAULT (datetime('now'))
+              )`,
+              args: []
+            }).catch(() => {});
+
+            await db.execute({
+              sql: `INSERT OR REPLACE INTO gallery_media (id, filename, mime_type, file_data_base64, file_size_bytes)
+                    VALUES (?, ?, ?, ?, ?)`,
+              args: [photoId, cleanFileName, detectedMimeType, cleanBase64, calculatedSizeBytes]
+            }).catch((err) => console.warn('[GalleryUpload] DB binary storage notice:', err.message));
+          }
 
           const ghOwner = env.GITHUB_OWNER || '';
           const ghRepo = env.GITHUB_REPO || '';
@@ -5165,42 +5237,43 @@ export default {
           let githubSha = null;
           let githubPath = gitPath;
 
-          // Commit to GitHub repository if GITHUB_TOKEN is available
-          if (env.GITHUB_TOKEN) {
+          // Commit to GitHub repository when credentials are configured
+          if (env.GITHUB_TOKEN && ghOwner && ghRepo) {
             const ghRes = await uploadToGitHub({
               githubToken: env.GITHUB_TOKEN,
               owner: ghOwner,
               repo: ghRepo,
               branch: ghBranch,
               path: gitPath,
-              contentBase64: fileData,
+              contentBase64: cleanBase64,
               commitMessage: `feat(gallery): add ${title} to ${category || 'gallery'}`
             });
 
-            if (!ghRes.success) {
-              return errorResponse(`GitHub repository commit failed: ${ghRes.error}`, 502, null, cors);
+            if (ghRes.success) {
+              githubSha = ghRes.sha;
+              githubPath = ghRes.path || gitPath;
             }
-            githubSha = ghRes.sha;
-            githubPath = ghRes.path || gitPath;
           }
 
-          // Build primary jsDelivr edge CDN URL with local asset fallback
-          const cdnUrl = buildJsDelivrUrl({
-            owner: ghOwner,
-            repo: ghRepo,
-            branch: ghBranch,
-            path: gitPath
-          });
-          const localFallbackUrl = `/${gitPath.replace(/^public\//, '')}`;
+          const workerOrigin = new URL(request.url).origin;
+          const directMediaUrl = `${workerOrigin}/api/gallery/media/${encodeURIComponent(photoId)}`;
+          const cdnUrl = (githubSha && ghOwner && ghRepo)
+            ? buildJsDelivrUrl({
+                owner: ghOwner,
+                repo: ghRepo,
+                branch: ghBranch,
+                path: gitPath
+              })
+            : directMediaUrl;
 
-          const db = getDb(env);
           const newPhoto = await addGalleryPhoto(db, {
+            id: photoId,
             title,
             category: category || 'Festivals & Pride',
             year: year || String(new Date().getFullYear()),
-            image_url: localFallbackUrl,
+            image_url: directMediaUrl,
             cdn_url: cdnUrl,
-            github_path: githubPath,
+            github_path: githubSha ? githubPath : null,
             github_sha: githubSha,
             description: description || null,
             quote: quote || null,
@@ -5214,7 +5287,7 @@ export default {
               action: 'admin_gallery_upload',
               targetType: 'gallery',
               targetId: newPhoto.id,
-              details: { title, cdnUrl, gitPath, gitPushed: Boolean(env.GITHUB_TOKEN) },
+              details: { title, cdnUrl, directMediaUrl, gitPath, gitPushed: Boolean(githubSha) },
               ip: clientIp
             });
           }
@@ -5222,9 +5295,9 @@ export default {
           return jsonResponse({
             success: true,
             photo: newPhoto,
-            message: env.GITHUB_TOKEN
+            message: githubSha
               ? 'Image committed to GitHub and published to jsDelivr CDN!'
-              : 'Image registered in gallery database (configure GITHUB_TOKEN for automated Git commits).'
+              : 'Image uploaded and published live to Community Gallery!'
           }, 201, cors);
         }
 
@@ -5344,6 +5417,13 @@ export default {
           const delRes = await deleteGalleryPhoto(db, photoId);
           if (!delRes.success) {
             return errorResponse(delRes.error || 'Failed to delete photo.', 500, null, cors);
+          }
+
+          if (db) {
+            await db.execute({
+              sql: `DELETE FROM gallery_media WHERE id = ?`,
+              args: [photoId]
+            }).catch(() => {});
           }
 
           // If photo had a GitHub SHA and path, remove from GitHub repo

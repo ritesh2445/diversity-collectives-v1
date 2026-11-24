@@ -1027,11 +1027,34 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
     }
 
     setUploadFileName(file.name);
-    setUploadPreviewUrl(URL.createObjectURL(file));
+    const previewUrl = URL.createObjectURL(file);
+    setUploadPreviewUrl(previewUrl);
 
     const reader = new FileReader();
     reader.onload = () => {
-      setUploadFileData(reader.result);
+      const dataUrl = reader.result;
+      // Downscale oversized photos (>1MB) gently so Turso/Worker persistence always stays fast & reliable
+      if (file.size > 1024 * 1024 && typeof document !== 'undefined') {
+        const img = new Image();
+        img.onload = () => {
+          const maxDim = 1600;
+          const scale = Math.min(1, maxDim / Math.max(img.width || 1, img.height || 1));
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.round((img.width || 800) * scale);
+          canvas.height = Math.round((img.height || 600) * scale);
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            setUploadFileData(canvas.toDataURL('image/webp', 0.85));
+            return;
+          }
+          setUploadFileData(dataUrl);
+        };
+        img.onerror = () => setUploadFileData(dataUrl);
+        img.src = dataUrl;
+      } else {
+        setUploadFileData(dataUrl);
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -7176,11 +7199,25 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         loading="lazy"
                         onError={(e) => {
-                          if (e.target.src !== photo.image_url) {
+                          if (!e.target.dataset.fallbackTried && photo.image_url && e.target.getAttribute('src') !== photo.image_url) {
+                            e.target.dataset.fallbackTried = '1';
                             e.target.src = photo.image_url;
+                          } else {
+                            e.target.style.display = 'none';
+                            if (e.target.nextElementSibling?.dataset?.missingPlaceholder) {
+                              e.target.nextElementSibling.style.display = 'flex';
+                            }
                           }
                         }}
                       />
+                      <div
+                        data-missing-placeholder="1"
+                        style={{ display: 'none' }}
+                        className="w-full h-full flex-col items-center justify-center gap-1.5 bg-slate-100 text-slate-500 p-4 text-center"
+                      >
+                        <ImageIcon className="w-7 h-7 text-slate-400" />
+                        <span className="text-[11px] font-bold text-slate-600">Image missing — Delete &amp; re-upload</span>
+                      </div>
                       <div className="absolute top-3 left-3 flex items-center gap-1.5">
                         <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-slate-900/80 backdrop-blur-xs text-white">
                           {photo.category}

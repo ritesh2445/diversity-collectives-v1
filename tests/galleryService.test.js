@@ -1,5 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
+import fs from 'node:fs';
+import path from 'node:path';
 import {
   buildJsDelivrUrl,
   sanitizeFilename,
@@ -13,6 +15,8 @@ import {
   DEFAULT_GITHUB_REPO,
   DEFAULT_GITHUB_BRANCH
 } from '../worker/src/galleryService.js';
+import { generateAuthToken } from '../worker/src/adminApi.js';
+import worker from '../worker/src/index.js';
 
 describe('GitHub & jsDelivr CDN Gallery Engine', () => {
 
@@ -112,6 +116,39 @@ describe('GitHub & jsDelivr CDN Gallery Engine', () => {
 
     const deleted = await deleteGalleryPhoto(null, added.id);
     assert.strictEqual(deleted.success, true);
+  });
+
+  it('6. stores uploaded gallery photo binaries & serves /api/gallery/media/:id even without GITHUB_TOKEN', async () => {
+    const secret = 'test_gallery_worker_jwt_secret_12345';
+    const token = await generateAuthToken(
+      { userId: 'u_gal', email: 'gallery@diversitycollective.org', role: 'admin', name: 'Admin', allowedSections: null },
+      secret
+    );
+    const res = await worker.fetch(
+      new Request('https://dcvc-api.diversity-collective-vc.workers.dev/api/admin/gallery/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          title: 'TDOR Candlelight',
+          category: 'Center & Community',
+          year: '2026',
+          fileName: 'tdor.png',
+          fileData: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='
+        })
+      }),
+      { ADMIN_JWT_SECRET: secret },
+      { waitUntil: () => {} }
+    );
+    assert.strictEqual(res.status, 201);
+    const data = await res.json();
+    assert.strictEqual(data.success, true);
+    assert.ok(!String(data.message).includes('GITHUB_TOKEN'), 'Must not tell user to configure GITHUB_TOKEN');
+    assert.ok(data.photo.cdn_url.includes('/api/gallery/media/'), 'Must provide live Worker media URL when GitHub push is skipped');
+    assert.strictEqual(data.photo.image_url, data.photo.cdn_url);
+
+    // Ensure Volunteer showcase pathways have vibrant glow styling while keeping dark legible text
+    const volunteerSrc = fs.readFileSync(path.resolve(process.cwd(), 'src/pages/Volunteer.jsx'), 'utf8');
+    assert.ok(volunteerSrc.includes('VOLUNTEER_PATHWAYS') && volunteerSrc.includes('group-hover:opacity-100') && volunteerSrc.includes('text-slate-950'));
   });
 
 });

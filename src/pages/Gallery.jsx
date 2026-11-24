@@ -61,8 +61,8 @@ export default function Gallery() {
     const fetchLiveGallery = async () => {
       try {
         const apiBase = typeof window !== 'undefined' && window.location.origin
-          ? (import.meta.env?.VITE_API_URL || import.meta.env?.VITE_API_BASE_URL || '/api')
-          : '/api';
+          ? (import.meta.env?.VITE_API_URL || import.meta.env?.VITE_API_BASE_URL || 'https://dcvc-api.diversity-collective-vc.workers.dev/api')
+          : 'https://dcvc-api.diversity-collective-vc.workers.dev/api';
         const res = await fetch(`${apiBase}/gallery`);
         if (res.ok) {
           const data = await res.json();
