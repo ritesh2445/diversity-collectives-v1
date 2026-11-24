@@ -6888,17 +6888,32 @@ export default {
           }
         }
 
-        // 15.12 Admin Audit Logs & Undo History (GET /api/admin/audit-logs)
+        // 15.12 Admin Audit Logs & Undo History (GET/DELETE /api/admin/audit-logs)
         if (pathname === '/api/admin/audit-logs' && request.method === 'GET') {
           const db = getDb(env);
           if (!db) return jsonResponse({ success: true, logs: [], undoHistory: [] }, 200, adminCors);
 
+          await db.execute({
+            sql: `DELETE FROM admin_audit_logs WHERE created_at < datetime('now', '-30 days')`,
+            args: []
+          }).catch(() => {});
+
           const res = await db.execute({
-            sql: `SELECT * FROM admin_audit_logs ORDER BY created_at DESC LIMIT 100`,
+            sql: `SELECT * FROM admin_audit_logs WHERE created_at >= datetime('now', '-30 days') ORDER BY created_at DESC LIMIT 200`,
             args: []
           });
           const undoHistory = await getUndoHistory(db, 5);
           return jsonResponse({ success: true, logs: res.rows || [], undoHistory }, 200, adminCors);
+        }
+
+        if (pathname === '/api/admin/audit-logs' && request.method === 'DELETE') {
+          if (authUser.role === 'read_only') {
+            return errorResponse('Forbidden: Write access required to delete logs.', 403, null, adminCors);
+          }
+          const db = getDb(env);
+          if (!db) return jsonResponse({ success: true, deleted: true }, 200, adminCors);
+          await db.execute({ sql: `DELETE FROM admin_audit_logs`, args: [] });
+          return jsonResponse({ success: true, deleted: true }, 200, adminCors);
         }
 
         // 15.13 System Migration Runner (POST /api/admin/system/migrate)

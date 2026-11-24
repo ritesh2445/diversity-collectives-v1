@@ -791,6 +791,31 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
     }
   };
 
+  const handleDeleteAuditLogs = async () => {
+    if (!window.confirm('Are you sure you want to delete all recorded activity logs? This cannot be undone.')) {
+      return;
+    }
+    setLogsLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/audit-logs`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: buildAuthHeaders()
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
+        setAuditLogs([]);
+        setUndoFeedback({ type: 'success', text: 'All activity logs deleted.' });
+      } else {
+        setUndoFeedback({ type: 'error', text: data.error || 'Could not delete logs.' });
+      }
+    } catch (err) {
+      setUndoFeedback({ type: 'error', text: err?.message || 'Network error while deleting logs.' });
+    } finally {
+      setLogsLoading(false);
+    }
+  };
+
   const handleConfirmUndo = async () => {
     if (undoLoading) return;
     setUndoLoading(true);
@@ -7689,14 +7714,14 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                     <History className="w-5 h-5" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-extrabold text-slate-900">Admin & User Activity Logs</h2>
+                    <h2 className="text-lg font-extrabold text-slate-900">Admin & User Activity Logs (Last 30 Days)</h2>
                     <p className="text-xs text-slate-500">
-                      Chronological audit trail of logins, content edits, deletions, resets, and undo actions across all team members.
+                      Chronological audit trail of logins, content edits, deletions, resets, and undo actions across all team members. Logs older than 30 days are automatically purged.
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <div className="relative">
                     <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
@@ -7716,6 +7741,17 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                     <RefreshCw className={`w-3.5 h-3.5 ${logsLoading ? 'animate-spin' : ''}`} />
                     <span>Refresh</span>
                   </button>
+                  {user?.role !== 'read_only' && (
+                    <button
+                      type="button"
+                      onClick={handleDeleteAuditLogs}
+                      disabled={logsLoading || auditLogs.length === 0}
+                      className="px-3.5 py-2 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-xs font-bold text-rose-700 inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Delete Logs</span>
+                    </button>
+                  )}
                 </div>
               </div>
 

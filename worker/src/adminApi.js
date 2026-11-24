@@ -295,7 +295,7 @@ export function requireRole(userRole, allowedRoles = []) {
   return allowedRoles.includes(userRole);
 }
 
-// Record Audit Log entry
+// Record Audit Log entry (retains last 30 days only)
 export async function logAdminAction(db, { userId, userEmail, action, targetType, targetId, details, ip }) {
   if (!db) return;
   try {
@@ -313,6 +313,11 @@ export async function logAdminAction(db, { userId, userEmail, action, targetType
         ip || null
       ]
     });
+    // Prune logs older than 30 days
+    await db.execute({
+      sql: `DELETE FROM admin_audit_logs WHERE created_at < datetime('now', '-30 days')`,
+      args: []
+    }).catch(() => {});
   } catch (err) {
     console.error('Audit log failed to write:', err);
   }
