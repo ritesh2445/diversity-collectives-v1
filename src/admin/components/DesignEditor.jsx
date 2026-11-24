@@ -48,8 +48,102 @@ import {
   resolveHeroTheme
 } from '../../services/heroThemeStore';
 import { SYNC_EVENTS } from '../../services/liveSync';
+import { cmsStore } from '../../services/cmsStore';
+import { saveCmsSettings } from '../services/cmsClient.js';
 import HeroShowcase from '../../components/HeroShowcase';
 import DevicePreviewFrame, { VIEWPORT_WIDTHS } from './DevicePreviewFrame';
+
+const SITE_PAGES_CONFIG = [
+  { key: 'home', label: 'Homepage (Drag & Drop)', path: '/' },
+  {
+    key: 'events',
+    label: 'Events Page',
+    path: '/events',
+    eyebrow: 'OFFICIAL CALENDAR & CULTURAL LIFE',
+    headline: 'Cultural Calendar & Upcoming Events.',
+    description: 'From weekly youth circles and free testing clinics to seaside Pride and annual galas, explore upcoming events across Ventura County.'
+  },
+  {
+    key: 'news',
+    label: 'News & Blog Page',
+    path: '/news',
+    eyebrow: 'EDITORIAL & ADVOCACY DISPATCHES',
+    headline: 'Stories, Updates & Advocacy.',
+    description: 'Dispatches from the front lines of LGBTQ+ wellness, youth empowerment, and community celebration across Ventura County.'
+  },
+  {
+    key: 'directory',
+    label: 'Business Directory',
+    path: '/directory',
+    eyebrow: 'VENTURA COUNTY AFFIRMING NETWORK',
+    headline: 'LGBTQ+ Business Directory.',
+    description: 'Discover verified welcoming spaces, healthcare providers, and local services across all 10 Ventura County cities.'
+  },
+  {
+    key: 'programs',
+    label: 'Programs Page',
+    path: '/programs',
+    eyebrow: 'COMMUNITY CARE & CLINICAL SERVICES',
+    headline: 'Our Programs & Affirming Spaces.',
+    description: 'Every program at Diversity Collective is created with a trauma-informed, culturally affirming approach to empower LGBTQ+ individuals from youth to elderhood.'
+  },
+  {
+    key: 'training',
+    label: 'P.R.I.D.E. Trainings',
+    path: '/training',
+    eyebrow: 'P.R.I.D.E. EDUCATION & ACCREDITATION',
+    headline: 'LGBTQ+ Competency',
+    description: "Ventura County's accredited workshops transforming workplaces, clinics, educators, and local storefronts into authentically affirming spaces."
+  },
+  {
+    key: 'resources',
+    label: 'Resources Page',
+    path: '/resources',
+    eyebrow: 'VERIFIED DIRECTORY & COMMUNITY CARE',
+    headline: 'Care & Crisis Resource Directory.',
+    description: 'A vetted network of affirming mental health clinicians, healthcare navigators, legal clinics, and basic needs programs serving Ventura County.'
+  },
+  {
+    key: 'about',
+    label: 'About Us Page',
+    path: '/about',
+    eyebrow: 'ESTABLISHED 2014 · 501(C)(3) NONPROFIT',
+    headline: 'Advocacy, safety & celebration since 2014.',
+    description: '"We believe that all people deserve a diverse, inclusive, accepting, and welcoming safe space. In lifting each other up even when it\'s hard, we build allies, opportunities, and resources to live our best lives."'
+  },
+  {
+    key: 'community',
+    label: 'Community Circles',
+    path: '/community',
+    eyebrow: 'AFFIRMING PEER CIRCLES & GATHERINGS',
+    headline: 'Find Your Community & Authentic Belonging.',
+    description: '"We believe in the freedom to be your authentic self, both at home & in the community." Connect with peer support groups meeting regularly at our Community Resource Center.'
+  },
+  {
+    key: 'getInvolved',
+    label: 'Get Involved Page',
+    path: '/get-involved',
+    eyebrow: 'PARTICIPATION & SUSTAINABILITY',
+    headline: 'Get Involved & Support Our Mission.',
+    description: '"We do what we do, because of you." Join our passionate network of sponsors, donors, and grassroots volunteers building safety, care, and visibility across Ventura County.'
+  },
+  {
+    key: 'contact',
+    label: 'Contact Page',
+    path: '/contact',
+    eyebrow: 'LOCATION & CONTACT',
+    headline: 'Get in Touch & Visit Our Center.',
+    description: 'Whether you have questions about our youth peer groups, want to book an HIV/STI screening, or wish to connect with our team, we are here for you.'
+  },
+  {
+    key: 'donate',
+    label: 'Donate Page',
+    path: '/donate',
+    eyebrow: 'TAX-DEDUCTIBLE 501(C)(3) SUPPORT · 0% PLATFORM FEES',
+    headline: 'Powering Center & Lifesaving Care.',
+    description: 'Every dollar directly funds free rapid health screenings, weekly youth peer circles, harm reduction supplies, and community advocacy across Ventura County.'
+  }
+];
 
 const DISPLAYABLE_HERO_THEMES = HERO_THEMES.filter((t) => t.id !== 'default');
 const CORE_HERO_THEMES = DISPLAYABLE_HERO_THEMES.filter((t) => t.category !== 'festival');
@@ -64,6 +158,8 @@ const QUICK_HERO_PHOTOS = [
 ];
 
 export default function DesignEditor({ onPublishSuccess }) {
+  const [selectedPageKey, setSelectedPageKey] = useState('home');
+  const [cmsSettings, setCmsSettings] = useState(() => cmsStore.getSettings() || {});
   const [blocks, setBlocks] = useState(getSavedPageLayout);
   const [selectedBlockId, setSelectedBlockId] = useState(
     () => getSavedPageLayout()[0]?.id || 'block-hero'
@@ -397,6 +493,128 @@ export default function DesignEditor({ onPublishSuccess }) {
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start">
         {/* LEFT COLUMN: Unified Studio Sidebar with Tab Switcher */}
         <div className={`${canvasMode === 'wide' ? 'hidden' : 'xl:col-span-4'} space-y-4`}>
+          {/* Page Selector (Switch between Homepage & All Sub-Pages) */}
+          <div className="bg-white rounded-2xl border-2 border-purple-200 p-3 shadow-xs space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-[10px] font-black uppercase tracking-wider text-[#5A1E65]">
+                Editing Website Page
+              </label>
+              <span className="text-[10px] font-bold text-slate-500">Live Preview + Tap to Edit</span>
+            </div>
+            <select
+              value={selectedPageKey}
+              onChange={(e) => setSelectedPageKey(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-extrabold text-slate-900 bg-purple-50/40 focus:border-[#5A1E65] outline-none cursor-pointer"
+            >
+              {SITE_PAGES_CONFIG.map((pg) => (
+                <option key={pg.key} value={pg.key}>
+                  {pg.label} ({pg.path})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {selectedPageKey !== 'home' ? (
+            (() => {
+              const activePg = SITE_PAGES_CONFIG.find((p) => p.key === selectedPageKey) || SITE_PAGES_CONFIG[1];
+              const currentCopy = cmsSettings?.pageCopy?.[activePg.key] || {};
+              const updatePageCopyField = (field, val) => {
+                const nextSettings = {
+                  ...cmsSettings,
+                  pageCopy: {
+                    ...(cmsSettings?.pageCopy || {}),
+                    [activePg.key]: {
+                      ...currentCopy,
+                      [field]: val
+                    }
+                  }
+                };
+                setCmsSettings(nextSettings);
+                cmsStore.saveSettings(nextSettings);
+              };
+              const publishPageCopy = async () => {
+                saveCmsSettings(cmsSettings);
+                setSaveToast({ type: 'success', text: `Published ${activePg.label} live!` });
+                setTimeout(() => setSaveToast(null), 3500);
+                if (iframeRef.current?.contentWindow) {
+                  iframeRef.current.contentWindow.location.reload();
+                }
+              };
+              return (
+                <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                    <div>
+                      <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
+                        {activePg.label}
+                      </h4>
+                      <span className="text-[10px] text-slate-500 font-mono">{activePg.path}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPageKey('home')}
+                      className="text-[11px] font-bold text-[#5A1E65] hover:underline cursor-pointer"
+                    >
+                      ← Homepage
+                    </button>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Eyebrow Pill</label>
+                    <input
+                      type="text"
+                      value={currentCopy.eyebrow !== undefined ? currentCopy.eyebrow : activePg.eyebrow}
+                      onChange={(e) => updatePageCopyField('eyebrow', e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Main Headline</label>
+                    <input
+                      type="text"
+                      value={currentCopy.headline !== undefined ? currentCopy.headline : activePg.headline}
+                      onChange={(e) => updatePageCopyField('headline', e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-bold bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Intro Paragraph</label>
+                    <textarea
+                      rows={4}
+                      value={currentCopy.description !== undefined ? currentCopy.description : activePg.description}
+                      onChange={(e) => updatePageCopyField('description', e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs bg-white leading-relaxed"
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={publishPageCopy}
+                    className="w-full py-2.5 px-4 rounded-xl bg-[#5A1E65] hover:bg-purple-900 text-white text-xs font-extrabold flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+                  >
+                    <Check className="w-4 h-4" />
+                    <span>Publish {activePg.label} Live</span>
+                  </button>
+
+                  {activePg.key === 'training' && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        window.dispatchEvent(
+                          new CustomEvent('dcvc_navigate_admin_tab', {
+                            detail: { tab: 'cms', subTab: 'trainings' }
+                          })
+                        );
+                      }}
+                      className="w-full py-2 px-3 rounded-xl border border-purple-300 bg-purple-50 hover:bg-purple-100 text-[#5A1E65] text-xs font-extrabold cursor-pointer"
+                    >
+                      Edit Welcome Kit Images &amp; Training Sections →
+                    </button>
+                  )}
+                </div>
+              );
+            })()
+          ) : (
+          <>
           {/* Tab Navigation: [1. Hero Themes & Sections] | [2. Edit Content] */}
           <div className="bg-white rounded-2xl border border-slate-200 p-1.5 shadow-xs flex items-center gap-1.5">
             <button
@@ -1160,6 +1378,8 @@ export default function DesignEditor({ onPublishSuccess }) {
             )}
           </div>
         )}
+          </>
+          )}
       </div>
 
       {/* RIGHT PREVIEW COLUMN: Expansive Responsive Live Canvas */}
@@ -1203,8 +1423,8 @@ export default function DesignEditor({ onPublishSuccess }) {
           >
             <DevicePreviewFrame
               viewport={viewport}
-              title="Admin Live Homepage Preview"
-              previewUrl="/?admin_preview=1"
+              title="Admin Live Website Preview"
+              previewUrl={`${(SITE_PAGES_CONFIG.find((p) => p.key === selectedPageKey)?.path || '/')}?admin_preview=1`}
               iframeRef={iframeRef}
               onIframeLoad={postPreviewSync}
             />
