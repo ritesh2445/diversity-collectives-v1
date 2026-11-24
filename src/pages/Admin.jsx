@@ -53,7 +53,9 @@ import {
   Volume2,
   Play,
   Pause,
-  Lightbulb
+  Lightbulb,
+  History,
+  RotateCcw
 } from 'lucide-react';
 import { businessDirectorySeed } from '../data/dcvcData';
 import { usePageMeta } from '../utils/seo';
@@ -68,7 +70,7 @@ import SiteStatusManager from '../admin/components/SiteStatusManager.jsx';
 import DonationSettingsStudio from '../admin/components/DonationSettingsStudio.jsx';
 import SponsorshipManager from '../admin/components/SponsorshipManager.jsx';
 import VoicemailItemRow from '../components/VoicemailItemRow.jsx';
-import { getSiteStateMeta, SYNC_EVENTS, fetchAndApplyLiveSiteState } from '../services/liveSync.js';
+import { getSiteStateMeta, SYNC_EVENTS, fetchAndApplyLiveSiteState, applySiteStatePayload } from '../services/liveSync.js';
 import { cmsStore } from '../services/cmsStore.js';
 import { getMediaSuggestions, updateMediaSuggestion, deleteMediaSuggestion } from '../admin/services/cmsClient.js';
 import { setStoredToken } from '../admin/services/adminClient.js';
@@ -505,10 +507,19 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
   const [pwdStatus, setPwdStatus] = useState(null);
   const [logoutAllLoading, setLogoutAllLoading] = useState(false);
 
-  // Active Tab: 'hero' | 'appearance' | 'cms' | 'inbox' | 'gallery' | 'security'
+  // Active Tab: 'hero' | 'appearance' | 'cms' | 'inbox' | 'gallery' | 'logs' | 'security'
   const [activeTab, setActiveTab] = useState('hero');
   const [appearanceSubTab, setAppearanceSubTab] = useState('theme'); // 'theme' | 'cards'
   const [inboxSubTab, setInboxSubTab] = useState('directory'); // 'directory' | 'inquiries' | 'newsletter'
+
+  // Activity Logs & 5-Step Undo State
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [undoHistory, setUndoHistory] = useState([]);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [logsSearch, setLogsSearch] = useState('');
+  const [undoConfirmOpen, setUndoConfirmOpen] = useState(false);
+  const [undoLoading, setUndoLoading] = useState(false);
+  const [undoFeedback, setUndoFeedback] = useState(null);
 
   useEffect(() => {
     const handleNav = (e) => {
@@ -751,7 +762,69 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
     }
     if (activeTab === 'gallery' && canAccessAdminTab(user, 'gallery')) fetchAdminGallery();
     if (activeTab === 'security' && user.role === 'admin') fetchTeamUsers();
+    if (activeTab === 'logs') fetchAuditLogs();
   }, [user, activeTab, inboxSubTab, inquiryType]);
+
+  // Keep undo availability count in sync after live state changes
+  useEffect(() => {
+    if (user) {
+      fetchAuditLogs();
+    }
+  }, [user, liveSyncStatus.version]);
+
+  const fetchAuditLogs = async () => {
+    setLogsLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/audit-logs`, {
+        credentials: 'include',
+        headers: buildAuthHeaders()
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAuditLogs(Array.isArray(data.logs) ? data.logs : []);
+        setUndoHistory(Array.isArray(data.undoHistory) ? data.undoHistory : []);
+      }
+    } catch {
+      // Ignore network hiccup cleanly
+    } finally {
+      setLogsLoading(false);
+    }
+  };
+
+  const handleConfirmUndo = async () => {
+    if (undoLoading) return;
+    setUndoLoading(true);
+    setUndoFeedback(null);
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/site-state/undo`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: buildAuthHeaders()
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) {
+        setUndoFeedback({ type: 'error', text: data.error || 'Could not undo change.' });
+        setUndoConfirmOpen(false);
+        return;
+      }
+      if (data.state && typeof data.state === 'object') {
+        applySiteStatePayload(data.state, { broadcast: true });
+      }
+      await fetchAndApplyLiveSiteState({ force: true });
+      setUndoHistory(Array.isArray(data.undoHistory) ? data.undoHistory : []);
+      setUndoFeedback({
+        type: 'success',
+        text: `Reverted "${data.revertedEntry?.actionLabel || 'recent change'}" (now at v${data.version}).`
+      });
+      setUndoConfirmOpen(false);
+      await fetchAuditLogs();
+    } catch (err) {
+      setUndoFeedback({ type: 'error', text: err?.message || 'Network error while undoing.' });
+      setUndoConfirmOpen(false);
+    } finally {
+      setUndoLoading(false);
+    }
+  };
 
   const fetchTeamUsers = async () => {
     if (user?.role !== 'admin') return;
@@ -3505,6 +3578,34 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                 ? `Live Synced · v${liveSyncStatus.version}`
                 : 'Live Sync Ready'}
             </span>
+            {user?.role !== 'read_only' && (
+              <button
+                type="button"
+                onClick={() => {
+                  setUndoFeedback(null);
+                  setUndoConfirmOpen(true);
+                }}
+                disabled={undoHistory.length === 0 || undoLoading}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-extrabold transition-all cursor-pointer ${
+                  undoHistory.length > 0
+                    ? 'bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-300 shadow-2xs'
+                    : 'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed'
+                }`}
+                title={
+                  undoHistory.length > 0
+                    ? `Undo most recent change (${undoHistory.length}/5 available)`
+                    : 'No recent changes available to undo'
+                }
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Undo</span>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+                  undoHistory.length > 0 ? 'bg-amber-200 text-amber-950' : 'bg-slate-200 text-slate-500'
+                }`}>
+                  {undoHistory.length}/5
+                </span>
+              </button>
+            )}
             <a
               href="/"
               target="_blank"
@@ -3670,6 +3771,24 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
             <span>Site Status & Countdown</span>
           </button>
           )}
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('logs')}
+            className={`py-3 px-4 text-xs font-extrabold border-b-2 flex items-center gap-2 whitespace-nowrap cursor-pointer transition-all ${
+              activeTab === 'logs'
+                ? 'border-[#5A1E65] text-[#5A1E65] bg-purple-50/50'
+                : 'border-transparent text-slate-600 hover:text-slate-950'
+            }`}
+          >
+            <History className="w-4 h-4" />
+            <span>Activity Logs</span>
+            {undoHistory.length > 0 && (
+              <span className="ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] bg-amber-100 text-amber-900 font-bold">
+                {undoHistory.length}/5
+              </span>
+            )}
+          </button>
 
           <button
             type="button"
@@ -7468,6 +7587,223 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
         )}
 
         {/* ================================================================= */}
+        {/* TAB 3.8: ACTIVITY LOGS & 5-STEP UNDO                              */}
+        {/* ================================================================= */}
+        {activeTab === 'logs' && (
+          <div className="space-y-6">
+            {/* Undo 5 Most Recent Changes Card */}
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-amber-200/90 shadow-xs space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
+                    <RotateCcw className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-extrabold text-slate-900">
+                      Undo Recent Site Changes ({undoHistory.length}/5 Available)
+                    </h2>
+                    <p className="text-xs text-slate-500">
+                      Each tap reverts 1 change at a time (up to the 5 most recent published changes). Confirmation is required before reverting.
+                    </p>
+                  </div>
+                </div>
+
+                {user?.role !== 'read_only' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUndoFeedback(null);
+                      setUndoConfirmOpen(true);
+                    }}
+                    disabled={undoHistory.length === 0 || undoLoading}
+                    className={`px-5 py-2.5 rounded-xl text-xs font-extrabold inline-flex items-center gap-2 transition-all cursor-pointer shrink-0 ${
+                      undoHistory.length > 0
+                        ? 'bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-300 hover:to-orange-300 text-slate-950 shadow-sm'
+                        : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                    }`}
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    <span>Undo Most Recent Change</span>
+                  </button>
+                )}
+              </div>
+
+              {undoFeedback && (
+                <div
+                  className={`p-3.5 rounded-xl border text-xs font-bold flex items-center gap-2 ${
+                    undoFeedback.type === 'success'
+                      ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                      : 'bg-rose-50 border-rose-200 text-rose-800'
+                  }`}
+                >
+                  {undoFeedback.type === 'success' ? (
+                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                  )}
+                  <span>{undoFeedback.text}</span>
+                </div>
+              )}
+
+              {undoHistory.length === 0 ? (
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs text-slate-500 text-center">
+                  No recent site-state changes are currently queued for undo. Make any edit in Hero, Appearance, CMS, or Features to create an undo checkpoint.
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {undoHistory.map((item, idx) => (
+                    <div
+                      key={item.id}
+                      className={`p-3.5 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs ${
+                        idx === 0
+                          ? 'bg-amber-50/70 border-amber-300 text-slate-900'
+                          : 'bg-slate-50/70 border-slate-200 text-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-black shrink-0 ${
+                          idx === 0 ? 'bg-amber-200 text-amber-950' : 'bg-slate-200 text-slate-700'
+                        }`}>
+                          #{idx + 1} {idx === 0 ? '· Next Undo' : ''}
+                        </span>
+                        <span className="font-bold truncate">{item.actionLabel}</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-[11px] text-slate-500 shrink-0">
+                        <span className="font-semibold text-slate-700">{item.actorEmail}</span>
+                        <span>·</span>
+                        <span>v{item.prevVersion} → v{item.newVersion}</span>
+                        <span>·</span>
+                        <span>{item.createdAt ? new Date(item.createdAt).toLocaleString() : 'Just now'}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Full Admin & User Audit Logs */}
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xs space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-2xl bg-purple-100 text-[#5A1E65] flex items-center justify-center shrink-0">
+                    <History className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-extrabold text-slate-900">Admin & User Activity Logs</h2>
+                    <p className="text-xs text-slate-500">
+                      Chronological audit trail of logins, content edits, deletions, resets, and undo actions across all team members.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={logsSearch}
+                      onChange={(e) => setLogsSearch(e.target.value)}
+                      placeholder="Filter by user or action..."
+                      className="pl-8 pr-3 py-2 rounded-xl border border-slate-200 text-xs font-medium text-slate-800 outline-none focus:border-[#5A1E65] w-48 sm:w-56"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={fetchAuditLogs}
+                    disabled={logsLoading}
+                    className="px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-xs font-bold text-slate-700 inline-flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${logsLoading ? 'animate-spin' : ''}`} />
+                    <span>Refresh</span>
+                  </button>
+                </div>
+              </div>
+
+              {logsLoading && auditLogs.length === 0 ? (
+                <div className="py-10 text-center text-xs text-slate-500 font-medium">
+                  Loading activity logs...
+                </div>
+              ) : auditLogs.length === 0 ? (
+                <div className="py-10 text-center text-xs text-slate-500 font-medium">
+                  No activity logs recorded yet.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-200 text-[11px] uppercase tracking-wider text-slate-500">
+                        <th className="py-2.5 pr-4 font-bold">Time</th>
+                        <th className="py-2.5 pr-4 font-bold">User / Admin</th>
+                        <th className="py-2.5 pr-4 font-bold">Action</th>
+                        <th className="py-2.5 pr-4 font-bold">Target</th>
+                        <th className="py-2.5 pr-4 font-bold">Details</th>
+                        <th className="py-2.5 font-bold">IP</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {auditLogs
+                        .filter((log) => {
+                          if (!logsSearch.trim()) return true;
+                          const q = logsSearch.toLowerCase();
+                          return (
+                            String(log.user_email || '').toLowerCase().includes(q) ||
+                            String(log.action || '').toLowerCase().includes(q) ||
+                            String(log.target_type || '').toLowerCase().includes(q) ||
+                            String(log.details || '').toLowerCase().includes(q)
+                          );
+                        })
+                        .map((log) => {
+                          let parsedDetails = log.details;
+                          try {
+                            if (typeof log.details === 'string' && log.details.startsWith('{')) {
+                              const obj = JSON.parse(log.details);
+                              parsedDetails = Object.entries(obj)
+                                .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
+                                .join(' · ');
+                            }
+                          } catch {}
+                          return (
+                            <tr key={log.id} className="hover:bg-slate-50/80 transition-colors">
+                              <td className="py-2.5 pr-4 whitespace-nowrap text-slate-500 font-mono text-[11px]">
+                                {log.created_at ? new Date(log.created_at).toLocaleString() : '—'}
+                              </td>
+                              <td className="py-2.5 pr-4 font-bold text-slate-800 whitespace-nowrap">
+                                {log.user_email || 'system'}
+                              </td>
+                              <td className="py-2.5 pr-4 whitespace-nowrap">
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                  String(log.action || '').includes('undo')
+                                    ? 'bg-amber-100 text-amber-900'
+                                    : String(log.action || '').includes('delete') || String(log.action || '').includes('reset')
+                                    ? 'bg-rose-100 text-rose-800'
+                                    : String(log.action || '').includes('login')
+                                    ? 'bg-sky-100 text-sky-800'
+                                    : 'bg-purple-100 text-[#5A1E65]'
+                                }`}>
+                                  {log.action}
+                                </span>
+                              </td>
+                              <td className="py-2.5 pr-4 text-slate-600 whitespace-nowrap">
+                                {log.target_type}{log.target_id ? ` (${log.target_id})` : ''}
+                              </td>
+                              <td className="py-2.5 pr-4 text-slate-600 max-w-xs truncate" title={String(parsedDetails || '')}>
+                                {parsedDetails || '—'}
+                              </td>
+                              <td className="py-2.5 text-slate-400 font-mono text-[11px] whitespace-nowrap">
+                                {log.ip_address || '—'}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ================================================================= */}
         {/* TAB 4: SECURITY, TEAM ACCESS & AUTHENTICATION                     */}
         {/* ================================================================= */}
         {activeTab === 'security' && (
@@ -8684,6 +9020,63 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                   <>
                     <Send className="w-4 h-4" />
                     <span>Send Broadcast Now</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Undo Confirmation Modal */}
+      {undoConfirmOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 border border-amber-200 shadow-2xl space-y-5">
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center mx-auto">
+                <RotateCcw className="w-6 h-6" />
+              </div>
+              <h3 className="font-display text-xl font-black text-slate-950">
+                Confirm Undo Change
+              </h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Are you sure you want to undo the most recent published change? This will immediately restore the previous live state ({undoHistory.length}/5 undo steps available).
+              </p>
+              {undoHistory[0] && (
+                <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-left text-xs text-slate-800 space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-amber-800 block">Change to Revert:</span>
+                  <span className="font-extrabold block">{undoHistory[0].actionLabel}</span>
+                  <span className="text-[11px] text-slate-600 block">
+                    By {undoHistory[0].actorEmail} · v{undoHistory[0].prevVersion} → v{undoHistory[0].newVersion}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                disabled={undoLoading}
+                onClick={() => setUndoConfirmOpen(false)}
+                className="flex-1 py-3 px-4 rounded-xl border border-slate-300 text-slate-700 font-bold text-xs hover:bg-slate-50 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={undoLoading || undoHistory.length === 0}
+                onClick={handleConfirmUndo}
+                className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-300 hover:to-orange-300 text-slate-950 font-extrabold text-xs shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                {undoLoading ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Reverting...</span>
+                  </>
+                ) : (
+                  <>
+                    <RotateCcw className="w-4 h-4" />
+                    <span>Confirm Undo</span>
                   </>
                 )}
               </button>

@@ -18,7 +18,9 @@ import { runAllMigrations } from './schemaMigrations.js';
 import {
   readSiteState,
   writeSiteStatePatch,
-  resetSiteState
+  resetSiteState,
+  getUndoHistory,
+  undoLastSiteStateChange
 } from './siteStateService.js';
 import {
   parseAllowedSections,
@@ -6718,19 +6720,56 @@ export default {
           });
         }
 
-        // 15.12 Admin Audit Logs (GET /api/admin/audit-logs)
-        if (pathname === '/api/admin/audit-logs' && request.method === 'GET') {
-          if (authUser.role !== 'admin' && Array.isArray(authUser.allowedSections)) {
-            return errorResponse('Forbidden: Full administrator access required to view audit logs.', 403, null, cors);
+        // 15.7d Undo Most Recent Site State Change (POST /api/admin/site-state/undo)
+        if (pathname === '/api/admin/site-state/undo' && request.method === 'POST') {
+          if (authUser.role === 'read_only') {
+            return errorResponse('Forbidden: Write access required to undo changes.', 403, null, adminCors);
           }
+          if (!db) {
+            return errorResponse('Database connection not available', 503, null, adminCors);
+          }
+          try {
+            const result = await undoLastSiteStateChange(db, authUser.email);
+            await logAdminAction(db, {
+              userId: authUser.id || authUser.userId,
+              userEmail: authUser.email,
+              action: 'undo_site_state',
+              targetType: 'site_state',
+              targetId: 'live',
+              details: {
+                version: result.version,
+                revertedAction: result.revertedEntry?.actionLabel,
+                revertedAuthor: result.revertedEntry?.actorEmail,
+                revertedVersion: result.revertedEntry?.newVersion
+              },
+              ip: clientIp
+            }).catch(() => { });
+
+            return jsonResponse({
+              success: true,
+              version: result.version,
+              updatedAt: result.updatedAt,
+              updatedBy: result.updatedBy,
+              state: result.state,
+              revertedEntry: result.revertedEntry,
+              undoHistory: result.undoHistory
+            }, 200, adminCors);
+          } catch (err) {
+            return errorResponse(err.message || 'Nothing available to undo.', 400, null, adminCors);
+          }
+        }
+
+        // 15.12 Admin Audit Logs & Undo History (GET /api/admin/audit-logs)
+        if (pathname === '/api/admin/audit-logs' && request.method === 'GET') {
           const db = getDb(env);
-          if (!db) return jsonResponse({ success: true, logs: [] }, 200, cors);
+          if (!db) return jsonResponse({ success: true, logs: [], undoHistory: [] }, 200, adminCors);
 
           const res = await db.execute({
             sql: `SELECT * FROM admin_audit_logs ORDER BY created_at DESC LIMIT 100`,
             args: []
           });
-          return jsonResponse({ success: true, logs: res.rows }, 200, cors);
+          const undoHistory = await getUndoHistory(db, 5);
+          return jsonResponse({ success: true, logs: res.rows || [], undoHistory }, 200, adminCors);
         }
 
         // 15.13 System Migration Runner (POST /api/admin/system/migrate)

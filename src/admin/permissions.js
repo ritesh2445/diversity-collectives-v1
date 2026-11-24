@@ -126,7 +126,7 @@ export function canAccessInboxSubTab(user, inboxSubTabId) {
 
 export function canAccessAdminTab(user, tabId) {
   if (!user) return false;
-  if (tabId === 'security') return true; // Every authenticated staff member keeps access to personal 2FA & password settings
+  if (tabId === 'security' || tabId === 'logs') return true; // Every authenticated staff member keeps access to personal security & activity logs
   if (user.role === 'admin') return true;
   if (!Array.isArray(user.allowedSections)) return true;
 

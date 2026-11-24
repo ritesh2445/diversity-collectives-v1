@@ -443,6 +443,55 @@ async function ensureSiteStateTable(db) {
   });
 }
 
+async function ensureSiteStateHistoryTable(db) {
+  await db.execute({
+    sql: `CREATE TABLE IF NOT EXISTS site_state_history (
+      id TEXT PRIMARY KEY,
+      prev_payload_json TEXT NOT NULL,
+      prev_version INTEGER NOT NULL,
+      new_version INTEGER NOT NULL,
+      action_label TEXT NOT NULL,
+      changed_keys TEXT,
+      actor_email TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      undone_at TEXT,
+      undone_by TEXT
+    )`,
+    args: []
+  });
+}
+
+async function recordSiteStateSnapshot(db, { prevState, prevVersion, newVersion, actionLabel, changedKeys, actorEmail }) {
+  if (!db || !prevState || typeof prevState !== 'object') return;
+  try {
+    await ensureSiteStateHistoryTable(db);
+    await db.execute({
+      sql: `INSERT INTO site_state_history (id, prev_payload_json, prev_version, new_version, action_label, changed_keys, actor_email, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [
+        crypto.randomUUID(),
+        JSON.stringify(prevState),
+        Number(prevVersion || 0),
+        Number(newVersion || 1),
+        actionLabel || 'Updated site state',
+        JSON.stringify(Array.isArray(changedKeys) ? changedKeys : []),
+        actorEmail || 'admin@diversitycollective.org',
+        new Date().toISOString()
+      ]
+    });
+    // Prune older snapshots beyond the 30 most recent entries
+    await db.execute({
+      sql: `DELETE FROM site_state_history
+            WHERE id NOT IN (
+              SELECT id FROM site_state_history ORDER BY created_at DESC LIMIT 30
+            )`,
+      args: []
+    });
+  } catch (err) {
+    console.warn('[SiteState] Failed to record snapshot:', err.message);
+  }
+}
+
 export async function readSiteState(db) {
   if (!db) {
     return { version: 0, updatedAt: null, updatedBy: null, state: {} };
@@ -512,6 +561,20 @@ export async function writeSiteStatePatch(db, patch, actorEmail = 'admin@diversi
   fixStaleCtaText(nextState);
   const nextVersion = Number(current.version || 0) + 1;
   const nowIso = new Date().toISOString();
+  const changedKeys = Object.keys(patch || {}).filter((k) =>
+    ['heroTheme', 'layoutBlocks', 'siteTheme', 'cmsData', 'cardThemes', 'siteStatus', 'siteFeatures'].includes(k)
+  );
+
+  if (Number(current.version || 0) > 0) {
+    await recordSiteStateSnapshot(db, {
+      prevState: current.state,
+      prevVersion: current.version,
+      newVersion: nextVersion,
+      actionLabel: `Updated ${changedKeys.join(', ') || 'site state'}`,
+      changedKeys,
+      actorEmail
+    });
+  }
 
   await db.execute({
     sql: `INSERT INTO site_state (state_key, payload_json, version, updated_by, updated_at)
@@ -551,6 +614,17 @@ export async function resetSiteState(db, scope = 'all', actorEmail = 'admin@dive
   const nextVersion = Number(current.version || 0) + 1;
   const nowIso = new Date().toISOString();
 
+  if (Number(current.version || 0) > 0) {
+    await recordSiteStateSnapshot(db, {
+      prevState: current.state,
+      prevVersion: current.version,
+      newVersion: nextVersion,
+      actionLabel: `Reset ${scope} state`,
+      changedKeys: [scope],
+      actorEmail
+    });
+  }
+
   await db.execute({
     sql: `INSERT INTO site_state (state_key, payload_json, version, updated_by, updated_at)
           VALUES ('live', ?, ?, ?, ?)
@@ -567,6 +641,109 @@ export async function resetSiteState(db, scope = 'all', actorEmail = 'admin@dive
     updatedAt: nowIso,
     updatedBy: actorEmail,
     state: nextState
+  };
+}
+
+export async function getUndoHistory(db, limit = 5) {
+  if (!db) return [];
+  try {
+    await ensureSiteStateHistoryTable(db);
+    const res = await db.execute({
+      sql: `SELECT id, prev_version, new_version, action_label, changed_keys, actor_email, created_at
+            FROM site_state_history
+            WHERE undone_at IS NULL
+            ORDER BY new_version DESC, created_at DESC
+            LIMIT ?`,
+      args: [Math.min(Math.max(1, Number(limit) || 5), 5)]
+    });
+    return (res.rows || []).map((r) => {
+      let keys = [];
+      try {
+        keys = JSON.parse(r.changed_keys || '[]');
+      } catch {
+        keys = [];
+      }
+      return {
+        id: r.id,
+        prevVersion: Number(r.prev_version || 0),
+        newVersion: Number(r.new_version || 0),
+        actionLabel: r.action_label || 'Updated site state',
+        changedKeys: Array.isArray(keys) ? keys : [],
+        actorEmail: r.actor_email || 'admin',
+        createdAt: r.created_at
+      };
+    });
+  } catch (err) {
+    console.warn('[SiteState] getUndoHistory failed:', err.message);
+    return [];
+  }
+}
+
+export async function undoLastSiteStateChange(db, actorEmail = 'admin@diversitycollective.org') {
+  if (!db) {
+    throw new Error('Database connection not available');
+  }
+  await ensureSiteStateTable(db);
+  await ensureSiteStateHistoryTable(db);
+
+  // Only allow undoing within the 5 most recent un-undone changes
+  const histRes = await db.execute({
+    sql: `SELECT id, prev_payload_json, prev_version, new_version, action_label, changed_keys, actor_email, created_at
+          FROM site_state_history
+          WHERE undone_at IS NULL
+          ORDER BY new_version DESC, created_at DESC
+          LIMIT 5`,
+    args: []
+  });
+
+  if (!histRes.rows || histRes.rows.length === 0) {
+    throw new Error('No recent changes available to undo.');
+  }
+
+  const target = histRes.rows[0];
+  let prevState = {};
+  try {
+    prevState = JSON.parse(target.prev_payload_json || '{}');
+  } catch {
+    prevState = {};
+  }
+
+  const current = await readSiteState(db);
+  const nextVersion = Number(current.version || 0) + 1;
+  const nowIso = new Date().toISOString();
+
+  await db.execute({
+    sql: `INSERT INTO site_state (state_key, payload_json, version, updated_by, updated_at)
+          VALUES ('live', ?, ?, ?, ?)
+          ON CONFLICT(state_key) DO UPDATE SET
+            payload_json = excluded.payload_json,
+            version = excluded.version,
+            updated_by = excluded.updated_by,
+            updated_at = excluded.updated_at`,
+    args: [JSON.stringify(prevState), nextVersion, actorEmail, nowIso]
+  });
+
+  await db.execute({
+    sql: `UPDATE site_state_history SET undone_at = ?, undone_by = ? WHERE id = ?`,
+    args: [nowIso, actorEmail, target.id]
+  });
+
+  const remaining = await getUndoHistory(db, 5);
+
+  return {
+    version: nextVersion,
+    updatedAt: nowIso,
+    updatedBy: actorEmail,
+    state: prevState,
+    revertedEntry: {
+      id: target.id,
+      actionLabel: target.action_label || 'Updated site state',
+      actorEmail: target.actor_email || 'admin',
+      prevVersion: Number(target.prev_version || 0),
+      newVersion: Number(target.new_version || 0),
+      createdAt: target.created_at
+    },
+    undoHistory: remaining
   };
 }
 
