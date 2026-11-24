@@ -20,20 +20,7 @@ export const communityDetailsData = {
       "Zero tolerance for harassment, bullying, or bigotry.",
       "Youth voices lead the space with adult facilitator supervision for safety."
     ],
-    announcements: [
-      {
-        id: "ru-ann-1",
-        date: "March 15, 2026",
-        title: "🎨 Spring Arts & Expression Night This Friday!",
-        content: "Join us this Friday at 5:30 PM for our monthly creative arts workshop. All painting, sketching, and collage materials provided free. Snacks and tea served!"
-      },
-      {
-        id: "ru-ann-2",
-        date: "March 28, 2026",
-        title: "🌟 Youth Leadership Committee Opening",
-        content: "High school and college youth interested in planning Ventura County Pride Youth Zone and Pride Prom 2026: sign-ups open at the end of this Friday's circle."
-      }
-    ],
+    announcements: [],
     blogPosts: []
   },
   "little-unicorns": {
@@ -51,14 +38,7 @@ export const communityDetailsData = {
       "Every kid is celebrated exactly as they are.",
       "Parents and caregivers remain on-site in the caregiver lounge."
     ],
-    announcements: [
-      {
-        id: "lu-ann-1",
-        date: "March 20, 2026",
-        title: "🧺 Spring Outdoor Park Gathering at Hobart Park",
-        content: "Weather permitting, our March gathering will take place in the shaded picnic pavilion at Hobart Park with lawn games, bubble art, and sidewalk chalk."
-      }
-    ],
+    announcements: [],
     blogPosts: []
   },
   "queer-adulting": {
@@ -76,14 +56,7 @@ export const communityDetailsData = {
       "Unsolicited advice is discouraged; sharing lived experience is encouraged.",
       "All relationship styles, career backgrounds, and identities welcome."
     ],
-    announcements: [
-      {
-        id: "qa-ann-1",
-        date: "March 10, 2026",
-        title: "💼 LGBTQ+ Affirming Financial Literacy Roundtable",
-        content: "This Wednesday, certified financial educator guest will join our circle to discuss first-time home buying, credit building, and retirement planning for queer households."
-      }
-    ],
+    announcements: [],
     blogPosts: []
   },
   "transverse": {
@@ -101,14 +74,7 @@ export const communityDetailsData = {
       "Center trans joy, mutual respect, and lived experiences.",
       "Free affirming clothing and binder exchange available on request."
     ],
-    announcements: [
-      {
-        id: "tv-ann-1",
-        date: "March 22, 2026",
-        title: "🏳️‍⚧️ Trans Day of Visibility Community Potluck",
-        content: "Join us Sunday at 4 PM for our annual TDOV gathering celebrating our community's beauty, endurance, and future. Affirming clothing swap open during the event."
-      }
-    ],
+    announcements: [],
     blogPosts: []
   },
   "silver-collective": {
@@ -126,14 +92,7 @@ export const communityDetailsData = {
       "Accessible seating, large print materials, and hearing-assisted devices provided.",
       "Warm tea, light refreshments, and fellowship at every meeting."
     ],
-    announcements: [
-      {
-        id: "sc-ann-1",
-        date: "March 12, 2026",
-        title: "☕ Senior Memory Lane Coffee & Storytelling",
-        content: "This Thursday, we invite members to bring photo albums or personal keepsakes from early Ventura County Pride and California LGBTQ+ history to digitize for our archives."
-      }
-    ],
+    announcements: [],
     blogPosts: []
   },
   "diversity-toastmasters": {
@@ -150,14 +109,7 @@ export const communityDetailsData = {
       "Constructive, uplifting evaluations that build confidence.",
       "Safe space to speak on personal identity and authentic experiences."
     ],
-    announcements: [
-      {
-        id: "dt-ann-1",
-        date: "March 18, 2026",
-        title: "🎙️ Impromptu Table Topics & Storytelling Night",
-        content: "Practice rapid-fire thinking and confident delivery with our fun LGBTQ+ history themed Table Topics session this Tuesday evening."
-      }
-    ],
+    announcements: [],
     blogPosts: []
   },
   "pflag-ventura": {
@@ -174,14 +126,7 @@ export const communityDetailsData = {
       "Open to all parents, family members, educators, and allies.",
       "Meeting with empathy and practical resources for family affirmation."
     ],
-    announcements: [
-      {
-        id: "pf-ann-1",
-        date: "March 10, 2026",
-        title: "🤝 School Board Ally & Inclusive Curriculum Workshop",
-        content: "Join us this Tuesday for a panel discussion on supporting inclusive policies in Ventura County school districts and creating safe campuses for all kids."
-      }
-    ],
+    announcements: [],
     blogPosts: []
   },
   "narcotics-anonymous": {
@@ -199,14 +144,7 @@ export const communityDetailsData = {
       "What you share here remains strictly in confidence.",
       "The only requirement for membership is a desire to stop using."
     ],
-    announcements: [
-      {
-        id: "na-ann-1",
-        date: "March 16, 2026",
-        title: "🕯️ Candlelight Recovery Fellowship Meeting",
-        content: "Join us Monday evening at 7:00 PM for our weekly LGBTQ+ affirming 12-step meeting. All recovery pathways respected."
-      }
-    ],
+    announcements: [],
     blogPosts: []
   }
 };
@@ -244,14 +182,7 @@ export function getCommunityGroupData(groupNameOrSlug) {
       "Confidentiality and peer respect are strictly observed.",
       "All identities, backgrounds, and pronouns respected."
     ],
-    announcements: [
-      {
-        id: "gen-ann-1",
-        date: "Spring 2026",
-        title: "📢 Monthly Community Gathering Schedule",
-        content: "Check our central events calendar or contact facilitators for upcoming gathering dates and meeting agendas."
-      }
-    ],
+    announcements: [],
     blogPosts: []
   };
 }
