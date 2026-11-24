@@ -950,9 +950,27 @@ export default function SiteFeaturesStudio({ initialSubTab = 'forms' }) {
 
           {/* Card 5: Booked Reservations */}
           <div className="bg-white rounded-3xl border border-slate-200 p-6 space-y-3 shadow-xs">
-            <h4 className="text-xs font-black uppercase tracking-wider text-slate-600">
-              Booked Flex Space Slots ({features.flexSpace.bookings?.length || 0})
-            </h4>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h4 className="text-xs font-black uppercase tracking-wider text-slate-600">
+                Booked Flex Space Slots ({features.flexSpace.bookings?.length || 0})
+              </h4>
+              {(features.flexSpace.bookings || []).length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!window.confirm(`Delete all ${features.flexSpace.bookings.length} Flex Space booked slots?`)) return;
+                    updateFeatures((p) => ({
+                      ...p,
+                      flexSpace: { ...p.flexSpace, bookings: [] }
+                    }), 'Cleared all Flex Space booked slots');
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 text-[11px] font-bold inline-flex items-center gap-1 cursor-pointer transition-colors"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>Delete All ({features.flexSpace.bookings.length})</span>
+                </button>
+              )}
+            </div>
 
             {(features.flexSpace.bookings || []).length === 0 ? (
               <p className="text-xs text-slate-500 py-3 text-center bg-slate-50 rounded-xl">
@@ -963,7 +981,7 @@ export default function SiteFeaturesStudio({ initialSubTab = 'forms' }) {
                 {features.flexSpace.bookings.map((b) => (
                   <div
                     key={b.id}
-                    className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs"
+                    className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex flex-wrap items-center justify-between gap-2 text-xs"
                   >
                     <div>
                       <span className="font-black text-slate-900">
@@ -975,18 +993,20 @@ export default function SiteFeaturesStudio({ initialSubTab = 'forms' }) {
                     </div>
                     <button
                       type="button"
-                      onClick={() =>
+                      onClick={() => {
+                        if (!window.confirm(`Delete booking for ${b.name || 'visitor'} on ${b.date} (${b.slot}) and release the slot?`)) return;
                         updateFeatures((p) => ({
                           ...p,
                           flexSpace: {
                             ...p.flexSpace,
                             bookings: p.flexSpace.bookings.filter((x) => x.id !== b.id)
                           }
-                        }), `Released slot ${b.date} (${b.slot})`)
-                      }
-                      className="text-rose-700 font-bold hover:underline cursor-pointer"
+                        }), `Deleted booking & released slot ${b.date} (${b.slot})`);
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 font-bold inline-flex items-center gap-1 cursor-pointer transition-colors"
                     >
-                      Release Slot
+                      <Trash2 className="w-3 h-3" />
+                      <span>Delete / Release Slot</span>
                     </button>
                   </div>
                 ))}
