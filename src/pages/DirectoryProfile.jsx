@@ -46,6 +46,15 @@ function getStoredBusinesses() {
   return businessDirectorySeed;
 }
 
+function isValidBusinessWebsite(url) {
+  if (!url || typeof url !== 'string') return false;
+  const lower = url.toLowerCase().trim();
+  if (lower === '' || lower.includes('example.com') || lower.includes('example.org') || lower.includes('.example') || lower === '#' || lower === 'http://' || lower === 'https://') {
+    return false;
+  }
+  return lower.startsWith('http://') || lower.startsWith('https://');
+}
+
 export default function DirectoryProfile() {
   const { slug } = useParams();
   const [business, setBusiness] = useState(() => {
@@ -482,7 +491,7 @@ export default function DirectoryProfile() {
                   </div>
                 )}
 
-                {business.website && (
+                {isValidBusinessWebsite(business.website) && (
                   <div className="flex items-start gap-3">
                     <Globe className="w-4 h-4 text-purple-600 flex-shrink-0 mt-0.5" />
                     <div>
@@ -512,7 +521,7 @@ export default function DirectoryProfile() {
                   <span>Rate This Business (★ {stats.rating})</span>
                 </button>
 
-                {business.website && (
+                {isValidBusinessWebsite(business.website) && (
                   <a
                     href={business.website}
                     target="_blank"

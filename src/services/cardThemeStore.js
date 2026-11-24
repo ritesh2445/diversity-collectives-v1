@@ -5,6 +5,8 @@
  * All category palettes are 100% editable from the Admin Studio and sync live in real-time.
  */
 
+import { publishAdminSitePatch } from './liveSync.js';
+
 const STORAGE_KEY = 'dcvc_card_category_themes';
 const BROADCAST_CHANNEL = 'dcvc_card_themes_sync';
 
@@ -381,11 +383,16 @@ export function getAllCardThemes() {
 /**
  * Save all category themes to localStorage and broadcast
  */
-export function saveAllCardThemes(themes) {
+export function saveAllCardThemes(themes, { broadcast = true, publish = true } = {}) {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(themes));
-    notifyCardThemesChanged();
+    if (broadcast) {
+      notifyCardThemesChanged();
+    }
+    if (publish) {
+      publishAdminSitePatch({ cardThemes: themes }).catch(() => {});
+    }
   } catch (err) {
     console.error('Failed to save card themes:', err);
   }
@@ -394,25 +401,28 @@ export function saveAllCardThemes(themes) {
 /**
  * Update a specific category theme
  */
-export function updateCategoryTheme(type, category, themeData) {
+export function updateCategoryTheme(type, category, themeData, { publish = true } = {}) {
   const current = getAllCardThemes();
   const targetGroup = type === 'community' ? 'community' : 'resources';
   current[targetGroup][category] = {
     ...(current[targetGroup][category] || {}),
     ...themeData
   };
-  saveAllCardThemes(current);
+  saveAllCardThemes(current, { broadcast: true, publish });
   return current[targetGroup][category];
 }
 
 /**
  * Reset card themes to default factory values
  */
-export function resetCardThemes() {
+export function resetCardThemes({ publish = true } = {}) {
   if (typeof window === 'undefined') return;
   try {
     localStorage.removeItem(STORAGE_KEY);
     notifyCardThemesChanged();
+    if (publish) {
+      publishAdminSitePatch({ cardThemes: null }).catch(() => {});
+    }
   } catch {}
 }
 

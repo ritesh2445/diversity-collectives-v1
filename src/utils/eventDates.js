@@ -185,7 +185,23 @@ export function normalizeCmsEvent(evt) {
 
 export function normalizeCmsEventList(events) {
   if (!Array.isArray(events)) return [];
-  return events.map(normalizeCmsEvent);
+  const normalized = events.map(normalizeCmsEvent);
+  const seen = new Set();
+  const deduped = [];
+
+  for (const evt of normalized) {
+    const titleKey = (evt.title || '').trim().toLowerCase();
+    const dateKey = (evt.isoDate || evt.date || `${evt.year}-${evt.month}-${evt.day}`).trim().toLowerCase();
+    const timeKey = (evt.time || '').trim().toLowerCase();
+    const key = `${titleKey}__${dateKey}__${timeKey}`;
+
+    if (!seen.has(key)) {
+      seen.add(key);
+      deduped.push(evt);
+    }
+  }
+
+  return deduped;
 }
 
 /**

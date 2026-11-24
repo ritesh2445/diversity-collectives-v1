@@ -425,9 +425,9 @@ export default function HeroShowcase({
   const themeStyle = getHeroContainerStyle(resolvedId, activeThemeObj);
   const isDark = themeStyle.dark;
 
-  const statusHeadline = centerStatus?.isOpenNow
+  const statusHeadline = centerStatus?.headline || (centerStatus?.isOpenNow
     ? 'Center Open Now'
-    : merged.statusHeadline || 'Center Open Today';
+    : merged.statusHeadline || 'Center Open Today');
   const statusSchedule = merged.statusSchedule || 'Mon–Fri 1:00 PM – 5:00 PM';
   const statusTag = merged.statusTag || 'HIV/STI Screenings 1st Mon 3–7 PM';
   const helplineText = merged.helplineText || 'Helpline: (805) 644-5428 · 24/7 Crisis: Dial 988';
@@ -655,10 +655,16 @@ export default function HeroShowcase({
               >
                 <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 max-w-full">
                   <span className="relative flex h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-80"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 sm:h-3.5 sm:w-3.5 bg-gradient-to-tr from-emerald-600 to-teal-400 shadow-[0_0_10px_rgba(16,185,129,0.7)]"></span>
+                    {centerStatus?.isOpenNow && (
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-80"></span>
+                    )}
+                    <span className={`relative inline-flex rounded-full h-3 w-3 sm:h-3.5 sm:w-3.5 ${
+                      centerStatus?.isOpenNow
+                        ? 'bg-gradient-to-tr from-emerald-600 to-teal-400 shadow-[0_0_10px_rgba(16,185,129,0.7)]'
+                        : 'bg-gradient-to-tr from-amber-500 to-purple-400'
+                    }`}></span>
                   </span>
-                  <span className={`text-xs sm:text-sm font-bold leading-snug ${isMobile ? 'truncate max-w-[290px]' : 'whitespace-nowrap truncate'} block min-w-0`}>
+                  <span className={`text-xs sm:text-sm font-bold leading-snug ${isMobile ? 'break-words' : 'whitespace-nowrap truncate'} block min-w-0`}>
                     <strong className={isDark ? 'text-emerald-300 font-extrabold' : centerStatus?.isOpenNow ? 'text-emerald-700 font-extrabold' : 'text-[#5A1E65] font-extrabold'}>
                       {statusHeadline}
                     </strong>{' '}

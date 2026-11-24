@@ -34,33 +34,7 @@ export const communityDetailsData = {
         content: "High school and college youth interested in planning Ventura County Pride Youth Zone and Pride Prom 2026: sign-ups open at the end of this Friday's circle."
       }
     ],
-    blogPosts: [
-      {
-        id: "ru-blog-1",
-        title: "Why Having a Friday Safe Space Saved My High School Years",
-        author: "Alex (RU Peer Member, Age 17)",
-        date: "February 24, 2026",
-        readTime: "3 min read",
-        excerpt: "Growing up queer in Ventura County can feel isolating until you walk through the doors at Portola Road and realize you are surrounded by chosen family.",
-        content: `
-          <p>Walking into Rainbow Umbrella for the first time two years ago, my heart was racing. I had spent all week feeling invisible at school, constantly adjusting how I walked, talked, and dressed just to avoid unwanted attention.</p>
-          <p>The moment I sat in the circle and everyone went around with their names and pronouns, the weight just lifted off my shoulders. Nobody had to explain themselves. We played board games, talked about school stress, and laughed until our stomachs hurt.</p>
-          <p>Rainbow Umbrella taught me that I don't have to shrink myself to fit into this world. To any youth out there wondering if you belong here: there is a chair with your name on it every single Friday.</p>
-        `
-      },
-      {
-        id: "ru-blog-2",
-        title: "Creative Resistance: How Art Brings Us Together",
-        author: "Jordan (RU Facilitator)",
-        date: "January 18, 2026",
-        readTime: "4 min read",
-        excerpt: "Art has always been central to LGBTQ+ youth culture. Here's a look at our winter collaborative mural project.",
-        content: `
-          <p>Over the past month, our youth collaborated on a 6-foot canvas celebrating queer joy and trans resilience in Ventura County. Each section reflects a different youth's journey — from coming out to self-discovery to future dreams.</p>
-          <p>When youth are given freedom, resources, and affirmation, their creativity is limitless. Come see the completed mural hanging in the Resource Center lobby!</p>
-        `
-      }
-    ]
+    blogPosts: []
   },
   "little-unicorns": {
     slug: "little-unicorns",
@@ -85,20 +59,7 @@ export const communityDetailsData = {
         content: "Weather permitting, our March gathering will take place in the shaded picnic pavilion at Hobart Park with lawn games, bubble art, and sidewalk chalk."
       }
     ],
-    blogPosts: [
-      {
-        id: "lu-blog-1",
-        title: "Watching My Child Blossom: A Parent's Reflection",
-        author: "Sarah M. (Ventura Parent)",
-        date: "February 12, 2026",
-        readTime: "3 min read",
-        excerpt: "Finding Little Unicorns gave our 10-year-old child the gift of other kids who simply get it.",
-        content: `
-          <p>When our daughter expressed her authentic gender identity in 4th grade, our primary goal was ensuring she never felt alone or misunderstood. Little Unicorns gave her that haven.</p>
-          <p>While the kids play games and do art, the parents talk about navigating school IEPs, sports teams, and pediatric care. Little Unicorns isn't just a group for our children — it's a lifeline for whole families.</p>
-        `
-      }
-    ]
+    blogPosts: []
   },
   "queer-adulting": {
     slug: "queer-adulting",
@@ -123,20 +84,7 @@ export const communityDetailsData = {
         content: "This Wednesday, certified financial educator guest will join our circle to discuss first-time home buying, credit building, and retirement planning for queer households."
       }
     ],
-    blogPosts: [
-      {
-        id: "qa-blog-1",
-        title: "Building Adult Chosen Family Outside the Bar Scene",
-        author: "Marcus T. (Group Member)",
-        date: "January 29, 2026",
-        readTime: "4 min read",
-        excerpt: "Finding sober, grounded spaces to make genuine LGBTQ+ adult friends in Ventura County.",
-        content: `
-          <p>After college, making close adult friends is notoriously tough — especially when you don't drink or want to hang out in noisy bars. Queer Adulting gave me a community of people who want to talk about real life over tea and board games.</p>
-          <p>We've helped each other through job changes, breakups, and moving apartments. It is proof that chosen family is real and accessible right here in our county.</p>
-        `
-      }
-    ]
+    blogPosts: []
   },
   "transverse": {
     slug: "transverse",
@@ -161,20 +109,7 @@ export const communityDetailsData = {
         content: "Join us Sunday at 4 PM for our annual TDOV gathering celebrating our community's beauty, endurance, and future. Affirming clothing swap open during the event."
       }
     ],
-    blogPosts: [
-      {
-        id: "tv-blog-1",
-        title: "The Transformative Power of Trans Euphoria",
-        author: "River S. (The Transverse)",
-        date: "February 04, 2026",
-        readTime: "4 min read",
-        excerpt: "Why centering joy, laughter, and community care is our most radical act of resilience.",
-        content: `
-          <p>Too often, narratives about trans lives focus solely on tragedy or struggle. At Trans Peer Group, while we hold space for each other's pain, our favorite moments are those of gender euphoria.</p>
-          <p>Whether it's someone wearing their new suit for the first time, getting legal name change papers approved, or finding a haircut that feels just right, we celebrate every single step together.</p>
-        `
-      }
-    ]
+    blogPosts: []
   },
   "silver-collective": {
     slug: "silver-collective",
@@ -199,20 +134,7 @@ export const communityDetailsData = {
         content: "This Thursday, we invite members to bring photo albums or personal keepsakes from early Ventura County Pride and California LGBTQ+ history to digitize for our archives."
       }
     ],
-    blogPosts: [
-      {
-        id: "sc-blog-1",
-        title: "Standing on the Shoulders of Giants: A Senior's Perspective",
-        author: "Eleanor V. (Silver Collective Member, Age 72)",
-        date: "January 14, 2026",
-        readTime: "4 min read",
-        excerpt: "Reflecting on forty years of LGBTQ+ visibility in Ventura County and why our elder community matters.",
-        content: `
-          <p>Forty years ago, meeting openly as gay or lesbian in Ventura County carried immense personal risk. To walk into the DCVC Community Resource Center today and see our rainbow flag flying proudly on Portola Road brings tears to my eyes.</p>
-          <p>Silver Collective reminds us that getting older as an LGBTQ+ person is an honor. We built this road, and we love walking alongside the younger generations who are carrying the torch forward.</p>
-        `
-      }
-    ]
+    blogPosts: []
   },
   "diversity-toastmasters": {
     slug: "diversity-toastmasters",
@@ -236,19 +158,7 @@ export const communityDetailsData = {
         content: "Practice rapid-fire thinking and confident delivery with our fun LGBTQ+ history themed Table Topics session this Tuesday evening."
       }
     ],
-    blogPosts: [
-      {
-        id: "dt-blog-1",
-        title: "Finding My Voice: From Stage Fright to Pride Speaker",
-        author: "David K. (Club VP of Education)",
-        date: "February 19, 2026",
-        readTime: "3 min read",
-        excerpt: "How a weekly speaking group helped me overcome workplace anxiety and speak up with pride.",
-        content: `
-          <p>I used to freeze up whenever my boss asked me to present in executive staff meetings. Joining Diversity Toastmasters gave me a warm, zero-judgment environment to practice speech after speech until confidence became second nature.</p>
-        `
-      }
-    ]
+    blogPosts: []
   },
   "pflag-ventura": {
     slug: "pflag-ventura",
@@ -272,19 +182,7 @@ export const communityDetailsData = {
         content: "Join us this Tuesday for a panel discussion on supporting inclusive policies in Ventura County school districts and creating safe campuses for all kids."
       }
     ],
-    blogPosts: [
-      {
-        id: "pf-blog-1",
-        title: "Loving Our LGBTQ+ Children Fiercely and Publicly",
-        author: "Patricia & Robert L. (PFLAG Parents)",
-        date: "January 22, 2026",
-        readTime: "4 min read",
-        excerpt: "What unconditional parental support looks like in practice and how community transforms hearts.",
-        content: `
-          <p>When our child came out as non-binary, we had questions and wanted to make sure we were using the right terminology and supporting them in every way possible. PFLAG Ventura connected us with parents who had walked this path before us.</p>
-        `
-      }
-    ]
+    blogPosts: []
   },
   "narcotics-anonymous": {
     slug: "narcotics-anonymous",
@@ -309,19 +207,7 @@ export const communityDetailsData = {
         content: "Join us Monday evening at 7:00 PM for our weekly LGBTQ+ affirming 12-step meeting. All recovery pathways respected."
       }
     ],
-    blogPosts: [
-      {
-        id: "na-blog-1",
-        title: "Clean and Proud: The Intersection of Sobriety and Identity",
-        author: "Anonymous Fellowship Member",
-        date: "February 08, 2026",
-        readTime: "3 min read",
-        excerpt: "Why finding an LGBTQ+ affirming recovery room made all the difference in staying clean.",
-        content: `
-          <p>For years I thought I had to hide parts of who I was just to stay sober. Finding this room at Diversity Collective allowed me to bring my whole self to recovery: my identity, my past, and my hopes for tomorrow.</p>
-        `
-      }
-    ]
+    blogPosts: []
   }
 };
 
@@ -366,17 +252,7 @@ export function getCommunityGroupData(groupNameOrSlug) {
         content: "Check our central events calendar or contact facilitators for upcoming gathering dates and meeting agendas."
       }
     ],
-    blogPosts: [
-      {
-        id: "gen-blog-1",
-        title: "The Heart of Community Connection in Ventura County",
-        author: "DCVC Program Team",
-        date: "March 2026",
-        readTime: "3 min read",
-        excerpt: "Every peer group at Diversity Collective exists to ensure nobody in our county ever walks alone.",
-        content: "<p>Diversity Collective Ventura County is committed to providing free, accessible, and affirming center spaces for all LGBTQ+ individuals, families, and allies.</p>"
-      }
-    ]
+    blogPosts: []
   };
 }
 

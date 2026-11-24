@@ -14,7 +14,8 @@ import {
   X,
   Play,
   Pause,
-  ExternalLink
+  ExternalLink,
+  Crop
 } from 'lucide-react';
 import { DCVC_IMAGE_LIBRARY, uploadAndStoreImage, optimizeImageFile } from '../services/imageService.js';
 import ImageCropperModal from './ImageCropperModal.jsx';
@@ -52,6 +53,7 @@ export default function MultiImagePicker({
   const [urlInput, setUrlInput] = useState('');
   const [showCropper, setShowCropper] = useState(false);
   const [cropperSource, setCropperSource] = useState(null);
+  const [editingIndex, setEditingIndex] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
   const [showLivePreview, setShowLivePreview] = useState(false);
@@ -129,22 +131,46 @@ export default function MultiImagePicker({
     }
   };
 
+  // Edit existing image in the list
+  const handleEditExisting = (index) => {
+    const target = normalizedImages[index];
+    if (!target) return;
+    setEditingIndex(index);
+    setCropperSource(target);
+    setShowCropper(true);
+  };
+
   // Cropper apply
   const handleCropperApply = async (croppedFile, previewUrl) => {
     setShowCropper(false);
+    const targetIdx = editingIndex;
+    setEditingIndex(null);
     setCropperSource(null);
     try {
       setIsUploading(true);
-      setStatusMsg('Saving cropped photo...');
+      setStatusMsg(targetIdx !== null ? 'Updating edited photo...' : 'Saving cropped photo...');
       const result = await uploadAndStoreImage(croppedFile || previewUrl);
-      const updated = [...normalizedImages, result.url];
-      updateImages(updated);
-      setStatusMsg('✓ Cropped photo added to slideshow');
+      if (targetIdx !== null && targetIdx >= 0 && targetIdx < normalizedImages.length) {
+        const updated = [...normalizedImages];
+        updated[targetIdx] = result.url;
+        updateImages(updated);
+        setStatusMsg('✓ Photo updated');
+      } else {
+        const updated = [...normalizedImages, result.url];
+        updateImages(updated);
+        setStatusMsg('✓ Cropped photo added to slideshow');
+      }
       setTimeout(() => setStatusMsg(''), 4000);
     } catch (err) {
       console.warn('[MultiImagePicker] Save notice:', err);
       if (previewUrl) {
-        updateImages([...normalizedImages, previewUrl]);
+        if (targetIdx !== null && targetIdx >= 0 && targetIdx < normalizedImages.length) {
+          const updated = [...normalizedImages];
+          updated[targetIdx] = previewUrl;
+          updateImages(updated);
+        } else {
+          updateImages([...normalizedImages, previewUrl]);
+        }
       }
     } finally {
       setIsUploading(false);
@@ -311,6 +337,14 @@ export default function MultiImagePicker({
                       <Star className="w-3 h-3" />
                     </button>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => handleEditExisting(idx)}
+                    title="Edit & crop this photo"
+                    className="p-1 rounded text-purple-700 hover:bg-purple-100 cursor-pointer font-bold"
+                  >
+                    <Crop className="w-3 h-3" />
+                  </button>
                 </div>
 
                 <button
@@ -475,14 +509,15 @@ export default function MultiImagePicker({
       )}
 
       {/* Cropper Modal with Free Crop & Presets */}
-      {showCropper && cropperSource && (
+      {showCropper && (
         <ImageCropperModal
-          imageSource={cropperSource}
-          aspectRatio="aspect-[16/9]"
+          imageSrc={cropperSource || null}
+          initialAspect="original"
           onApply={handleCropperApply}
           onCancel={() => {
             setShowCropper(false);
             setCropperSource(null);
+            setEditingIndex(null);
           }}
         />
       )}

@@ -104,6 +104,9 @@ export const SCHEMA_STATEMENTS = [
   `CREATE TABLE IF NOT EXISTS volunteer_applications (
     id TEXT PRIMARY KEY,
     full_name TEXT NOT NULL,
+    preferred_name TEXT,
+    pronouns TEXT,
+    legal_name TEXT,
     email TEXT NOT NULL,
     phone TEXT NOT NULL,
     city TEXT NOT NULL,
@@ -448,7 +451,48 @@ export const SCHEMA_STATEMENTS = [
     updated_at TEXT DEFAULT (datetime('now'))
   )`,
 
-  `CREATE INDEX IF NOT EXISTS idx_media_suggestions_status_date ON media_suggestions (status, created_at DESC)`
+  `CREATE INDEX IF NOT EXISTS idx_media_suggestions_status_date ON media_suggestions (status, created_at DESC)`,
+
+  // 17. Community Group Joins & Members
+  `CREATE TABLE IF NOT EXISTS community_group_joins (
+    id TEXT PRIMARY KEY,
+    group_slug TEXT NOT NULL,
+    group_name TEXT NOT NULL,
+    name TEXT NOT NULL,
+    preferred_name TEXT,
+    email TEXT NOT NULL,
+    pronouns TEXT,
+    accessibility_notes TEXT,
+    email_consent INTEGER DEFAULT 0,
+    email_consent_timestamp TEXT,
+    unsubscribe_token TEXT UNIQUE,
+    is_unsubscribed INTEGER DEFAULT 0,
+    unsubscribed_at TEXT,
+    status TEXT DEFAULT 'submitted' CHECK(status IN ('submitted', 'active', 'inactive', 'archived')),
+    admin_notes TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now'))
+  )`,
+
+  `CREATE INDEX IF NOT EXISTS idx_group_joins_slug_status ON community_group_joins (group_slug, status, created_at DESC)`,
+  `CREATE INDEX IF NOT EXISTS idx_group_joins_email ON community_group_joins (email)`,
+  `CREATE INDEX IF NOT EXISTS idx_group_joins_unsub_token ON community_group_joins (unsubscribe_token)`,
+
+  // 18. Community Group Broadcasts Log
+  `CREATE TABLE IF NOT EXISTS community_group_broadcasts (
+    id TEXT PRIMARY KEY,
+    group_slug TEXT NOT NULL,
+    group_name TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    content TEXT NOT NULL,
+    sent_by_email TEXT NOT NULL,
+    recipient_count INTEGER DEFAULT 0,
+    delivery_status TEXT DEFAULT 'sent' CHECK(delivery_status IN ('sent', 'partial', 'failed')),
+    idempotency_key TEXT UNIQUE,
+    sent_at TEXT DEFAULT (datetime('now'))
+  )`,
+
+  `CREATE INDEX IF NOT EXISTS idx_group_broadcasts_slug_date ON community_group_broadcasts (group_slug, sent_at DESC)`
 ];
 
 export const INITIAL_SEEDS = [
@@ -572,6 +616,29 @@ export async function runAllMigrations(db) {
     } catch {
       // Column already exists on migrated databases
     }
+  }
+
+  // Backfill historical community joins from contact_submissions (consent strictly 0)
+  try {
+    await db.execute({
+      sql: `INSERT OR IGNORE INTO community_group_joins (id, group_slug, group_name, name, email, accessibility_notes, email_consent, unsubscribe_token, status, created_at)
+            SELECT 
+              id,
+              'general',
+              REPLACE(REPLACE(subject, '[COMMUNITY_JOIN] ', ''), 'Join Circle: ', ''),
+              name,
+              email,
+              message,
+              0,
+              lower(hex(randomblob(16))),
+              'submitted',
+              created_at
+            FROM contact_submissions
+            WHERE subject LIKE '%[COMMUNITY_JOIN]%' OR subject LIKE '%Join Circle%'`,
+      args: []
+    });
+  } catch {
+    // Ignore if table not ready or already populated
   }
 
   // Run Baseline Seeds

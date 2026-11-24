@@ -231,7 +231,7 @@ export default function TrainingRoiCalculator({ content }) {
         </div>
 
         <Link
-          to={`/training/dcvc-affirming-business/book?sector=${sector}&size=${teamSize}`}
+          to={`/training/dcvc-affirming-business/book?sector=${sector}&size=${teamSize}&accreditation=true`}
           className="btn-primary py-2.5 px-6 text-xs font-bold whitespace-nowrap inline-flex items-center gap-2 shadow-sm"
         >
           <span>Request Custom Proposal</span>

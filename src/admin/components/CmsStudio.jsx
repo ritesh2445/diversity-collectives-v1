@@ -32,7 +32,15 @@ import {
   FolderOpen,
   Palette,
   Mic,
-  Radio
+  Radio,
+  Loader2,
+  Send,
+  Pin,
+  Bell,
+  FileSpreadsheet,
+  CheckCircle,
+  MessageSquare,
+  Shield
 } from 'lucide-react';
 import ImagePicker from './ImagePicker.jsx';
 import MultiImagePicker from './MultiImagePicker.jsx';
@@ -54,6 +62,7 @@ import {
   toggleCmsEventCancel,
   saveCmsArticle,
   deleteCmsArticle,
+  deleteAllCmsArticles,
   saveCmsResource,
   deleteCmsResource,
   saveCmsStaff,
@@ -70,10 +79,20 @@ import {
   saveCmsTrainingPageContent,
   saveCmsPodcast,
   deleteCmsPodcast,
+  deleteAllCmsPodcasts,
+  saveCmsCommunityGroup,
+  deleteCmsCommunityGroup,
   saveCmsSettings,
   DEFAULT_CMS_SEED
 } from '../services/cmsClient.js';
-import { getStoredUser } from '../services/adminClient.js';
+import {
+  getStoredUser,
+  fetchCommunityGroupMembers,
+  updateCommunityGroupMember,
+  deleteCommunityGroupMember,
+  broadcastCommunityGroupUpdate,
+  fetchCommunityGroupBroadcasts
+} from '../services/adminClient.js';
 import { parseEventDate, normalizeCmsEvent } from '../../utils/eventDates.js';
 import { SYNC_EVENTS } from '../../services/liveSync.js';
 import { cmsStore } from '../../services/cmsStore.js';
@@ -91,6 +110,7 @@ export default function CmsStudio() {
   const [modalType, setModalType] = useState(null); // 'program' | 'event' | 'news' | 'resource' | 'staff' | 'gallery' | 'milestone' | null
   const [editingItem, setEditingItem] = useState(null);
   const [formData, setFormData] = useState({});
+  const [isSavingModal, setIsSavingModal] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
   const [cancelModalEvent, setCancelModalEvent] = useState(null);
   const [cancelNoticeText, setCancelNoticeText] = useState('');
@@ -103,6 +123,25 @@ export default function CmsStudio() {
   const [trainingViewMode, setTrainingViewMode] = useState('courses'); // 'courses' | 'pageContent'
   const [trainingPageData, setTrainingPageData] = useState(() => getCmsTrainingPageContent());
   const [staffFilter, setStaffFilter] = useState('all'); // 'all' | 'board' | 'staff'
+
+  // Community Group Dedicated Sub-Managers State
+  const [activeCommunityGroupManager, setActiveCommunityGroupManager] = useState(null); // { group, mode: 'announcements' | 'stories' | 'members' | 'broadcast' }
+  const [groupAnnouncements, setGroupAnnouncements] = useState([]);
+  const [editingAnnouncement, setEditingAnnouncement] = useState(null);
+  const [announcementForm, setAnnouncementForm] = useState({ title: '', content: '', date: '', isPinned: false, published: true });
+
+  const [groupStories, setGroupStories] = useState([]);
+  const [editingStory, setEditingStory] = useState(null);
+  const [storyForm, setStoryForm] = useState({ title: '', excerpt: '', content: '', author: '', date: '', coverImage: '', published: true });
+
+  const [groupMembers, setGroupMembers] = useState([]);
+  const [groupMemberStats, setGroupMemberStats] = useState({});
+  const [isLoadingMembers, setIsLoadingMembers] = useState(false);
+  const [memberSearchTerm, setMemberSearchTerm] = useState('');
+  const [memberStatusFilter, setMemberStatusFilter] = useState('all');
+
+  const [broadcastForm, setBroadcastForm] = useState({ subject: '', content: '', testEmail: '', isSending: false, statusMsg: '' });
+  const [pastBroadcasts, setPastBroadcasts] = useState([]);
 
   const boardList = useMemo(() => {
     return cmsStore.getBoardMembers();
@@ -161,7 +200,7 @@ export default function CmsStudio() {
   // --------------------------------------------------------------------------
   const downloadSampleEventsCsv = () => {
     const csvSample = `title,date,time,location,address,category,description,rsvpUrl,contactEmail,featured
-"Oceanside Pride Sunset Gala","August 15, 2026","5:00 PM – 9:00 PM","Ventura Promenade","Ventura Beach Boardwalk, Ventura, CA","Community Celebration","Annual sunset gala celebrating community resilience and LGBTQ+ pride.","https://diversitycollectivevc.org/events","events@diversitycollective.org",true
+"Oceanside Pride Sunset Gala","August 15, 2026","5:00 PM – 9:00 PM","Ventura Promenade","Ventura Beach Boardwalk, Ventura, CA","Community Celebration","Annual sunset gala celebrating community resilience and LGBTQ+ pride.","https://diversitycollective.org/events","events@diversitycollective.org",true
 "Youth Creative Arts & Open Mic","September 12, 2026","4:00 PM – 6:30 PM","Community Resource Center","2471 Portola Road, Suite 100, Ventura, CA","Youth","An affirming creative space for LGBTQ+ youth and allies to share poetry, art, and music.","/events","youth@diversitycollective.org",false
 "Trans & Nonbinary Wellness Circle","October 10, 2026","6:00 PM – 7:30 PM","Community Resource Center","2471 Portola Road, Suite 100, Ventura, CA","Health & Wellness","Monthly peer support, wellbeing resources, and guided discussion for trans and nonbinary community members.","/events","info@diversitycollective.org",false`;
 
@@ -421,8 +460,8 @@ export default function CmsStudio() {
         tagline: '',
         slug: '',
         chapter: chapterStr,
-        heroImage: '/images/crc-building.jpg',
-        images: ['/images/crc-building.jpg'],
+        heroImage: '',
+        images: [],
         imageFit: 'contain',
         accent: '#5A1E65',
         fontSize: 'base',
@@ -449,8 +488,8 @@ export default function CmsStudio() {
         location: 'Ventura County, CA',
         category: 'Community Celebration',
         description: '',
-        image: '/images/community-gathering.jpg',
-        images: ['/images/community-gathering.jpg'],
+        image: '',
+        images: [],
         fontSize: 'base',
         fontColor: '#0F172A',
         rsvpUrl: '/events',
@@ -459,19 +498,27 @@ export default function CmsStudio() {
         featured: false
       });
     } else if (type === 'news') {
+      const todayFormatted = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
       setFormData({
+        id: `news-${Date.now()}`,
         title: '',
         slug: '',
         category: 'Community & Advocacy',
-        publishDate: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+        publishedAt: todayFormatted,
+        publishDate: todayFormatted,
+        date: todayFormatted,
         author: 'Diversity Collective Team',
+        readingTime: '3 min read',
         readTime: '3 min read',
-        image: '/images/community-gathering.jpg',
-        images: ['/images/community-gathering.jpg'],
+        image: '',
+        images: [],
         fontSize: 'base',
         fontColor: '#0F172A',
         excerpt: '',
-        tags: 'Advocacy, Community, Ventura'
+        tags: 'Advocacy, Community, Ventura',
+        body: '',
+        content: '',
+        status: 'published'
       });
     } else if (type === 'resource') {
       setFormData({
@@ -480,7 +527,7 @@ export default function CmsStudio() {
         description: '',
         phone: '(805) 644-5428',
         address: '2471 Portola Road, Suite 100, Ventura, CA',
-        website: 'https://www.diversitycollectivevc.org',
+        website: 'https://diversitycollective.org',
         verified: true,
         urgent: false
       });
@@ -528,7 +575,7 @@ export default function CmsStudio() {
         name: '',
         shortName: '',
         role: 'Community Health & Center Partner',
-        url: 'https://diversitycollectivevc.org',
+        url: 'https://diversitycollective.org',
         logo: '/images/vcph-logo.png'
       });
     } else if (type === 'training') {
@@ -561,10 +608,30 @@ export default function CmsStudio() {
         date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
         link: '',
         audioUrl: '',
-        coverImage: '/images/community-gathering.jpg',
+        coverImage: '',
         summary: '',
         description: '',
         featured: false
+      });
+    } else if (type === 'community') {
+      setFormData({
+        id: `cg-${Date.now()}`,
+        name: '',
+        slug: '',
+        category: 'Adult Peer Support',
+        ages: 'Ages 18+',
+        frequency: 'Weekly · DCVC Community Resource Center',
+        location: 'DCVC Community Resource Center, 2471 Portola Road, Suite 100, Ventura, CA 93003',
+        description: '',
+        overview: '',
+        facilitator: 'DCVC Staff & Mentors',
+        guidelines: 'Safe and affirming space for all identities.\nRespect confidentiality and personal lived experiences.\nUse respectful pronouns and agreed language.',
+        image: '',
+        images: [],
+        contact: 'info@diversitycollective.org',
+        link: '/community',
+        externalLink: '',
+        active: true
       });
     }
   };
@@ -576,18 +643,54 @@ export default function CmsStudio() {
       setFormData({
         ...item
       });
+    } else if (type === 'community') {
+      const groupImages = Array.isArray(item.images) && item.images.length > 0
+        ? item.images
+        : (item.image ? [item.image] : ['/images/community-gathering.jpg']);
+      const rawGuidelines = item.guidelines;
+      const formattedGuidelines = Array.isArray(rawGuidelines)
+        ? rawGuidelines.join('\n')
+        : (typeof rawGuidelines === 'string' ? rawGuidelines : '');
+      setFormData({
+        ...item,
+        name: item.name || item.title || '',
+        category: item.category || 'Adult Peer Support',
+        ages: item.ages || 'Ages 18+',
+        frequency: item.frequency || '',
+        location: item.location || 'DCVC Community Resource Center',
+        description: item.description || '',
+        overview: item.overview || '',
+        facilitator: item.facilitator || '',
+        guidelines: formattedGuidelines,
+        images: groupImages,
+        image: item.image || groupImages[0],
+        contact: item.contact || item.contactEmail || 'info@diversitycollective.org',
+        link: item.link || '/community',
+        externalLink: item.externalLink || '',
+        active: item.active !== false,
+        originalId: item.id || item.slug,
+        originalSlug: item.slug
+      });
     } else if (type === 'news') {
       const newsImages = Array.isArray(item.images) && item.images.length > 0
         ? item.images
         : (item.image ? [item.image] : ['/images/community-gathering.jpg']);
+      const formattedDate = item.publishedAt || item.publishDate || item.date || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      const formattedReadTime = item.readingTime || item.readTime || '3 min read';
       setFormData({
         ...item,
         images: newsImages,
         image: item.image || newsImages[0],
         originalId: item.id || item.slug,
         originalSlug: item.slug,
+        publishedAt: formattedDate,
+        publishDate: formattedDate,
+        date: formattedDate,
+        readingTime: formattedReadTime,
+        readTime: formattedReadTime,
         body: item.body || item.content || '',
         content: item.content || item.body || '',
+        status: item.status || (item.isDraft ? 'draft' : 'published'),
         tags: Array.isArray(item.tags) ? item.tags.join(', ') : (item.tags || '')
       });
     } else if (type === 'milestone') {
@@ -645,7 +748,7 @@ export default function CmsStudio() {
     }
   };
 
-  const handleSaveModal = (e) => {
+  const handleSaveModal = async (e) => {
     e.preventDefault();
     if (modalType === 'program') {
       const cleanTitle = (formData.title || '').trim();
@@ -673,19 +776,61 @@ export default function CmsStudio() {
       saveCmsEvent(normalizedEvent);
       showToast(`Event "${normalizedEvent.title}" saved & synced to website Calendar.`);
     } else if (modalType === 'news') {
+      const cleanTitle = (formData.title || '').trim();
+      if (!cleanTitle) {
+        showToast('Please provide an article headline.', 'error');
+        return;
+      }
+      const fallbackSlug = cleanTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      const articleSlug = (formData.slug || '').trim() || fallbackSlug || `article-${Date.now()}`;
       const formattedTags = typeof formData.tags === 'string'
         ? formData.tags.split(',').map(t => t.trim()).filter(Boolean)
-        : formData.tags;
+        : (Array.isArray(formData.tags) ? formData.tags : []);
       const articleImg = formData.images?.[0] || formData.image || '/images/community-gathering.jpg';
-      saveCmsArticle({
+      const effectiveDate = formData.publishedAt || formData.publishDate || formData.date || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      const effectiveReadTime = formData.readingTime || formData.readTime || '3 min read';
+      const effectiveBody = formData.body || formData.content || '';
+
+      const articlePayload = {
         ...formData,
+        id: formData.id || editingItem?.id || articleSlug,
+        slug: articleSlug,
+        title: cleanTitle,
+        category: formData.category || 'Community & Advocacy',
+        author: formData.author || 'Diversity Collective Team',
+        publishedAt: effectiveDate,
+        date: effectiveDate,
+        publishDate: effectiveDate,
+        readingTime: effectiveReadTime,
+        readTime: effectiveReadTime,
+        body: effectiveBody,
+        content: effectiveBody,
+        excerpt: formData.excerpt || (effectiveBody ? effectiveBody.replace(/<[^>]+>/g, '').slice(0, 160) : '') || '',
         image: articleImg,
         images: Array.isArray(formData.images) && formData.images.length > 0 ? formData.images : [articleImg],
         originalId: editingItem?.id || editingItem?.slug,
         originalSlug: editingItem?.slug,
-        tags: formattedTags
-      });
-      showToast(`Article "${formData.title}" saved.`);
+        tags: formattedTags,
+        status: formData.status || 'published'
+      };
+
+      setIsSavingModal(true);
+      try {
+        const res = await saveCmsArticle(articlePayload);
+        if (res && res.success === false) {
+          showToast(`Saved locally. Server notification: ${res.error || 'Server error'}`, 'warning');
+        } else {
+          showToast(`Article "${cleanTitle}" saved & published live.`);
+        }
+        refreshData();
+        setModalType(null);
+        setEditingItem(null);
+      } catch (err) {
+        showToast(`Failed to save article: ${err.message}`, 'error');
+      } finally {
+        setIsSavingModal(false);
+      }
+      return;
     } else if (modalType === 'resource') {
       saveCmsResource(formData);
       showToast(`Resource "${formData.name}" saved.`);
@@ -732,17 +877,55 @@ export default function CmsStudio() {
     } else if (modalType === 'podcast') {
       saveCmsPodcast(formData);
       showToast(`Podcast episode "${formData.title}" saved.`);
+    } else if (modalType === 'community') {
+      const groupImg = formData.images?.[0] || formData.image || '/images/community-gathering.jpg';
+      const cleanName = (formData.name || formData.title || '').trim();
+      const fallbackSlug = cleanName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      const groupSlug = (formData.slug || '').trim() || fallbackSlug || `community-${Date.now()}`;
+      const rawGuidelines = formData.guidelines;
+      const formattedGuidelines = Array.isArray(rawGuidelines)
+        ? rawGuidelines
+        : (typeof rawGuidelines === 'string' && rawGuidelines.trim() ? rawGuidelines.split('\n').map(s => s.trim()).filter(Boolean) : []);
+      saveCmsCommunityGroup({
+        ...formData,
+        name: cleanName,
+        title: cleanName,
+        slug: groupSlug,
+        overview: (formData.overview || '').trim(),
+        facilitator: (formData.facilitator || '').trim(),
+        guidelines: formattedGuidelines,
+        image: groupImg,
+        images: Array.isArray(formData.images) && formData.images.length > 0 ? formData.images : [groupImg],
+        originalId: editingItem?.id || editingItem?.slug,
+        originalSlug: editingItem?.slug
+      });
+      showToast(`Community Circle "${cleanName}" saved & synced live.`);
     }
     refreshData();
     setModalType(null);
     setEditingItem(null);
   };
 
-  const handleDeleteItem = (type, idOrYear) => {
+  const handleDeleteItem = async (type, idOrYear) => {
     if (!window.confirm('Are you sure you want to delete this content item? This action immediately updates the public website.')) return;
     if (type === 'program') deleteCmsProgram(idOrYear);
+    else if (type === 'community') deleteCmsCommunityGroup(idOrYear);
     else if (type === 'event') deleteCmsEvent(idOrYear);
-    else if (type === 'news') deleteCmsArticle(idOrYear);
+    else if (type === 'news') {
+      setIsSavingModal(true);
+      try {
+        const res = await deleteCmsArticle(idOrYear);
+        if (res && res.success === false) {
+          showToast(`Deleted locally. Server notification: ${res.error}`, 'warning');
+        } else {
+          showToast('Article deleted successfully.');
+        }
+      } finally {
+        setIsSavingModal(false);
+      }
+      refreshData();
+      return;
+    }
     else if (type === 'resource') deleteCmsResource(idOrYear);
     else if (type === 'staff') deleteCmsStaff(idOrYear);
     else if (type === 'gallery') deleteCmsGalleryPhoto(idOrYear);
@@ -752,6 +935,357 @@ export default function CmsStudio() {
     else if (type === 'podcast') deleteCmsPodcast(idOrYear);
     refreshData();
     showToast('Content item deleted & synced live.');
+  };
+
+  // --------------------------------------------------------------------------
+  // Community Group Dedicated Sub-Managers (Announcements, Stories, Members, Broadcast)
+  // --------------------------------------------------------------------------
+  const openGroupSubManager = (group, mode) => {
+    setActiveCommunityGroupManager({ group, mode });
+    if (mode === 'announcements') {
+      setGroupAnnouncements(Array.isArray(group.announcements) ? [...group.announcements] : []);
+      setEditingAnnouncement(null);
+      setAnnouncementForm({
+        title: '',
+        content: '',
+        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        isPinned: false,
+        published: true
+      });
+    } else if (mode === 'stories') {
+      const existingStories = Array.isArray(group.stories || group.blogPosts) ? [...(group.stories || group.blogPosts)] : [];
+      setGroupStories(existingStories);
+      setEditingStory(null);
+      setStoryForm({
+        title: '',
+        excerpt: '',
+        content: '',
+        author: 'DCVC Community Facilitator',
+        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        coverImage: '',
+        published: true
+      });
+    } else if (mode === 'members') {
+      loadGroupMembers(group.slug || group.name);
+    } else if (mode === 'broadcast') {
+      loadGroupMembers(group.slug || group.name);
+      loadPastBroadcasts(group.slug || group.name);
+      setBroadcastForm({
+        subject: `Upcoming Gathering & Updates: ${group.name}`,
+        content: `Hello Circle Members,\n\nHere are the latest updates for our upcoming gathering at the DCVC Community Resource Center...\n\nWarmly,\nDiversity Collective Team`,
+        testEmail: currentUser?.email || '',
+        isSending: false,
+        statusMsg: ''
+      });
+    }
+  };
+
+  const loadGroupMembers = async (slug) => {
+    setIsLoadingMembers(true);
+    try {
+      const res = await fetchCommunityGroupMembers(slug, { status: memberStatusFilter, search: memberSearchTerm });
+      setGroupMembers(res.members || []);
+      setGroupMemberStats(res.stats || {});
+    } catch (err) {
+      console.warn('Failed to load group members:', err);
+    } finally {
+      setIsLoadingMembers(false);
+    }
+  };
+
+  const loadPastBroadcasts = async (slug) => {
+    try {
+      const res = await fetchCommunityGroupBroadcasts(slug);
+      setPastBroadcasts(res.broadcasts || []);
+    } catch (err) {
+      console.warn('Failed to load past broadcasts:', err);
+    }
+  };
+
+  // Announcements CRUD for active group
+  const handleSaveAnnouncement = (e) => {
+    e.preventDefault();
+    if (!activeCommunityGroupManager?.group) return;
+    const group = activeCommunityGroupManager.group;
+    const cleanTitle = announcementForm.title.trim();
+    if (!cleanTitle) {
+      showToast('Announcement title is required.', 'error');
+      return;
+    }
+    const currentList = [...groupAnnouncements];
+    const annId = editingAnnouncement?.id || `ann-${Date.now()}`;
+    const payload = {
+      id: annId,
+      title: cleanTitle,
+      content: announcementForm.content.trim(),
+      date: announcementForm.date || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      isPinned: Boolean(announcementForm.isPinned),
+      pinned: Boolean(announcementForm.isPinned),
+      published: announcementForm.published !== false,
+      active: announcementForm.published !== false
+    };
+
+    const idx = currentList.findIndex(a => a.id === annId);
+    if (idx >= 0) {
+      currentList[idx] = payload;
+    } else {
+      currentList.unshift(payload);
+    }
+
+    setGroupAnnouncements(currentList);
+    saveCmsCommunityGroup({
+      ...group,
+      announcements: currentList
+    });
+    refreshData();
+    setEditingAnnouncement(null);
+    setAnnouncementForm({
+      title: '',
+      content: '',
+      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      isPinned: false,
+      published: true
+    });
+    showToast(`Announcement "${cleanTitle}" saved for ${group.name}.`);
+  };
+
+  const handleDeleteAnnouncement = (annId) => {
+    if (!window.confirm('Delete this announcement? It will be removed from the public website.')) return;
+    const group = activeCommunityGroupManager.group;
+    const currentList = groupAnnouncements.filter(a => a.id !== annId);
+    setGroupAnnouncements(currentList);
+    saveCmsCommunityGroup({
+      ...group,
+      announcements: currentList
+    });
+    refreshData();
+    showToast('Announcement removed.');
+  };
+
+  const handleTogglePinAnnouncement = (annId) => {
+    const group = activeCommunityGroupManager.group;
+    const currentList = groupAnnouncements.map(a => {
+      if (a.id === annId) {
+        const next = !(a.isPinned || a.pinned);
+        return { ...a, isPinned: next, pinned: next };
+      }
+      return a;
+    });
+    setGroupAnnouncements(currentList);
+    saveCmsCommunityGroup({
+      ...group,
+      announcements: currentList
+    });
+    refreshData();
+    showToast('Pinned status updated.');
+  };
+
+  const handleTogglePublishAnnouncement = (annId) => {
+    const group = activeCommunityGroupManager.group;
+    const currentList = groupAnnouncements.map(a => {
+      if (a.id === annId) {
+        const next = a.published === false ? true : false;
+        return { ...a, published: next, active: next };
+      }
+      return a;
+    });
+    setGroupAnnouncements(currentList);
+    saveCmsCommunityGroup({
+      ...group,
+      announcements: currentList
+    });
+    refreshData();
+    showToast('Publication status updated.');
+  };
+
+  // Stories CRUD for active group
+  const handleSaveStory = (e) => {
+    e.preventDefault();
+    if (!activeCommunityGroupManager?.group) return;
+    const group = activeCommunityGroupManager.group;
+    const cleanTitle = storyForm.title.trim();
+    if (!cleanTitle) {
+      showToast('Story title is required.', 'error');
+      return;
+    }
+    const currentList = [...groupStories];
+    const storyId = editingStory?.id || `story-${Date.now()}`;
+    const payload = {
+      id: storyId,
+      title: cleanTitle,
+      excerpt: (storyForm.excerpt || '').trim(),
+      content: storyForm.content.trim(),
+      author: storyForm.author.trim() || 'DCVC Community',
+      date: storyForm.date || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      readTime: '3 min read',
+      coverImage: storyForm.coverImage || '',
+      published: storyForm.published !== false,
+      active: storyForm.published !== false
+    };
+
+    const idx = currentList.findIndex(s => s.id === storyId);
+    if (idx >= 0) {
+      currentList[idx] = payload;
+    } else {
+      currentList.unshift(payload);
+    }
+
+    setGroupStories(currentList);
+    saveCmsCommunityGroup({
+      ...group,
+      stories: currentList,
+      blogPosts: currentList
+    });
+    refreshData();
+    setEditingStory(null);
+    setStoryForm({
+      title: '',
+      excerpt: '',
+      content: '',
+      author: 'DCVC Community Facilitator',
+      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      coverImage: '',
+      published: true
+    });
+    showToast(`Story "${cleanTitle}" saved for ${group.name}.`);
+  };
+
+  const handleDeleteStory = (storyId) => {
+    if (!window.confirm('Delete this story reflection? It will be removed from the public website.')) return;
+    const group = activeCommunityGroupManager.group;
+    const currentList = groupStories.filter(s => s.id !== storyId);
+    setGroupStories(currentList);
+    saveCmsCommunityGroup({
+      ...group,
+      stories: currentList,
+      blogPosts: currentList
+    });
+    refreshData();
+    showToast('Story removed.');
+  };
+
+  const handleTogglePublishStory = (storyId) => {
+    const group = activeCommunityGroupManager.group;
+    const currentList = groupStories.map(s => {
+      if (s.id === storyId) {
+        const next = s.published === false ? true : false;
+        return { ...s, published: next, active: next };
+      }
+      return s;
+    });
+    setGroupStories(currentList);
+    saveCmsCommunityGroup({
+      ...group,
+      stories: currentList,
+      blogPosts: currentList
+    });
+    refreshData();
+    showToast('Story publication status updated.');
+  };
+
+  // Members status update
+  const handleUpdateMemberStatus = async (memberId, nextStatus) => {
+    if (!activeCommunityGroupManager?.group) return;
+    const slug = activeCommunityGroupManager.group.slug || activeCommunityGroupManager.group.name;
+    const updated = groupMembers.map(m => m.id === memberId ? { ...m, status: nextStatus } : m);
+    setGroupMembers(updated);
+    try {
+      await updateCommunityGroupMember(slug, memberId, { status: nextStatus });
+      showToast(`Member status changed to ${nextStatus}.`);
+    } catch (e) {
+      showToast('Failed to update member status.', 'error');
+    }
+  };
+
+  const handleDeleteMember = async (memberId) => {
+    if (!window.confirm('Permanently remove this member join request?')) return;
+    if (!activeCommunityGroupManager?.group) return;
+    const slug = activeCommunityGroupManager.group.slug || activeCommunityGroupManager.group.name;
+    setGroupMembers(groupMembers.filter(m => m.id !== memberId));
+    try {
+      await deleteCommunityGroupMember(slug, memberId);
+      showToast('Member record removed.');
+    } catch (e) {
+      showToast('Failed to delete member record.', 'error');
+    }
+  };
+
+  const handleExportMembersCsv = (slug) => {
+    const escapeCsv = (val) => {
+      if (val === null || val === undefined) return '""';
+      return `"${String(val).replace(/"/g, '""')}"`;
+    };
+    const headers = ['ID', 'Group Slug', 'Group Name', 'Name', 'Preferred Name', 'Email', 'Pronouns', 'Status', 'Email Consent', 'Consent Timestamp', 'Created At', 'Accessibility Notes'];
+    const lines = [headers.join(',')];
+    groupMembers.forEach(m => {
+      lines.push([
+        escapeCsv(m.id),
+        escapeCsv(m.group_slug || slug),
+        escapeCsv(m.group_name || activeCommunityGroupManager?.group?.name),
+        escapeCsv(m.name),
+        escapeCsv(m.preferred_name),
+        escapeCsv(m.email),
+        escapeCsv(m.pronouns),
+        escapeCsv(m.status),
+        escapeCsv(m.email_consent ? 'Yes' : 'No'),
+        escapeCsv(m.email_consent_timestamp || ''),
+        escapeCsv(m.created_at || ''),
+        escapeCsv(m.accessibility_notes || '')
+      ].join(','));
+    });
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `community-members-${slug}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast(`Exported ${groupMembers.length} member records to CSV.`);
+  };
+
+  // Broadcast dispatch
+  const handleSendBroadcast = async (isTest = false) => {
+    if (!activeCommunityGroupManager?.group) return;
+    const group = activeCommunityGroupManager.group;
+    const slug = group.slug || group.name;
+    if (!broadcastForm.subject.trim() || !broadcastForm.content.trim()) {
+      showToast('Subject and broadcast message are required.', 'error');
+      return;
+    }
+
+    if (!isTest) {
+      const consentedCount = groupMembers.filter(m => m.email_consent).length;
+      if (!window.confirm(`Transmit broadcast to ${consentedCount} verified consented members of ${group.name}?`)) {
+        return;
+      }
+    }
+
+    setBroadcastForm(prev => ({ ...prev, isSending: true, statusMsg: isTest ? 'Sending test preview to your email...' : 'Dispatched broadcast to circle members...' }));
+
+    try {
+      const idempotencyKey = isTest ? '' : `bcast-${slug}-${Date.now()}`;
+      const res = await broadcastCommunityGroupUpdate(slug, {
+        subject: broadcastForm.subject.trim(),
+        content: broadcastForm.content.trim(),
+        groupName: group.name,
+        isTest,
+        testEmail: broadcastForm.testEmail,
+        idempotencyKey
+      });
+
+      if (res.success) {
+        showToast(res.message || (isTest ? 'Test email dispatched.' : 'Broadcast sent!'));
+        if (!isTest) {
+          loadPastBroadcasts(slug);
+        }
+      } else {
+        showToast(res.error || 'Broadcast failed to dispatch.', 'error');
+      }
+    } catch (err) {
+      showToast(`Broadcast dispatch error: ${err.message}`, 'error');
+    } finally {
+      setBroadcastForm(prev => ({ ...prev, isSending: false, statusMsg: '' }));
+    }
   };
 
   const handleSaveSettingsForm = (e) => {
@@ -793,6 +1327,7 @@ export default function CmsStudio() {
   // Sub-tab definitions
   const subTabs = [
     { id: 'programs', label: 'Programs & Clinical Care', count: cmsData.programs?.length || 0, icon: Sparkles },
+    { id: 'community', label: 'Community Groups', count: cmsData.communityGroups?.length ?? 0, icon: Users },
     { id: 'events', label: 'Events & Calendar', count: cmsData.events?.length || 0, icon: Calendar },
     { id: 'weeklySchedule', label: 'Weekly Schedule', count: cmsData.weeklySchedule?.length ?? 0, icon: Clock },
     { id: 'trainings', label: 'P.R.I.D.E. Trainings', count: cmsData.trainings?.length ?? 0, icon: Award },
@@ -1042,6 +1577,1023 @@ export default function CmsStudio() {
       )}
 
       {/* ======================================================================
+          SUB-TAB: COMMUNITY CIRCLES & PEER GROUPS
+          ====================================================================== */}
+      {activeSubTab === 'community' && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h3 className="font-display text-xl font-bold text-slate-950">
+                Community Circles & Peer Support Groups ({cmsData.communityGroups?.length || 0})
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Manage weekly community circles, peer support groups, age categories, meeting schedules, locations, and cover pictures.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => openCreateModal('community')}
+              className="px-4 py-2.5 rounded-xl bg-[#5A1E65] hover:bg-[#43144A] text-white font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Create Community Group</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {(cmsData.communityGroups || []).map((group) => {
+              const groupImg = group.image || (Array.isArray(group.images) && group.images[0]) || '/images/community-gathering.jpg';
+              return (
+                <div
+                  key={group.id || group.slug || group.name}
+                  className="p-5 rounded-3xl bg-white border-2 border-slate-200/80 hover:border-purple-300 shadow-xs hover:shadow-lg transition-all flex flex-col justify-between space-y-4"
+                >
+                  <div className="space-y-3">
+                    <div className="relative aspect-[16/10] rounded-2xl overflow-hidden bg-slate-900 border border-slate-100">
+                      <img
+                        src={groupImg}
+                        alt={group.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => { e.currentTarget.src = '/images/community-gathering.jpg'; }}
+                      />
+                      <div className="absolute top-2 left-2 px-2.5 py-1 rounded-full bg-[#5A1E65]/90 backdrop-blur-md text-[10px] font-extrabold uppercase text-white shadow-2xs">
+                        {group.category || 'Peer Support'}
+                      </div>
+                      <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/90 backdrop-blur-md text-slate-800 shadow-2xs">
+                        {group.active !== false ? '● Active' : '○ Draft'}
+                      </div>
+                    </div>
+
+                    <div>
+                      {group.ages && (
+                        <span className="inline-block text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border mb-1.5 shadow-2xs text-purple-700 bg-purple-50 border-purple-200">
+                          {group.ages}
+                        </span>
+                      )}
+                      <h4 className="font-display text-lg font-black text-slate-950 leading-tight">
+                        {group.name}
+                      </h4>
+                      <p className="text-xs text-slate-600 mt-2 line-clamp-3 leading-relaxed">
+                        {group.description}
+                      </p>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-500 space-y-1">
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-purple-700 shrink-0" />
+                        <span className="truncate">{group.frequency}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-purple-700 shrink-0" />
+                        <span className="truncate">{group.location}</span>
+                      </div>
+                    </div>
+
+                    {/* Community Group Sub-Actions */}
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
+                      <button
+                        type="button"
+                        onClick={() => openGroupSubManager(group, 'announcements')}
+                        className="py-1.5 px-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 text-[11px] font-bold flex items-center justify-between transition-colors border border-amber-200/70 cursor-pointer"
+                        title="Manage Announcements"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <Bell className="w-3.5 h-3.5 text-amber-700" />
+                          <span>Announce</span>
+                        </span>
+                        <span className="px-1.5 py-0.2 rounded-full bg-amber-200/80 text-[10px] font-extrabold text-amber-950">
+                          {group.announcements?.length || 0}
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => openGroupSubManager(group, 'stories')}
+                        className="py-1.5 px-2.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-900 text-[11px] font-bold flex items-center justify-between transition-colors border border-purple-200/70 cursor-pointer"
+                        title="Manage Stories & Reflections"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <BookOpen className="w-3.5 h-3.5 text-[#5A1E65]" />
+                          <span>Stories</span>
+                        </span>
+                        <span className="px-1.5 py-0.2 rounded-full bg-purple-200/80 text-[10px] font-extrabold text-[#5A1E65]">
+                          {(group.stories || group.blogPosts)?.length || 0}
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => openGroupSubManager(group, 'members')}
+                        className="py-1.5 px-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-900 text-[11px] font-bold flex items-center justify-between transition-colors border border-blue-200/70 cursor-pointer"
+                        title="Manage Join Requests & Circle Members"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <Users className="w-3.5 h-3.5 text-blue-700" />
+                          <span>Members</span>
+                        </span>
+                        <span className="px-1.5 py-0.2 rounded-full bg-blue-200/80 text-[10px] font-extrabold text-blue-950">
+                          Join
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => openGroupSubManager(group, 'broadcast')}
+                        className="py-1.5 px-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-900 text-[11px] font-bold flex items-center justify-between transition-colors border border-emerald-200/70 cursor-pointer"
+                        title="Broadcast Email Update to Circle"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <Send className="w-3.5 h-3.5 text-emerald-700" />
+                          <span>Broadcast</span>
+                        </span>
+                        <span className="text-[10px] font-black text-emerald-700">
+                          ✉
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                    <a
+                      href="/community"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="p-2 text-slate-500 hover:text-purple-700 rounded-lg hover:bg-slate-50 text-xs font-bold flex items-center gap-1"
+                      title="Preview on Live Site"
+                    >
+                      <Eye className="w-4 h-4" />
+                      <span>Live Site</span>
+                    </a>
+
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => openEditModal('community', group)}
+                        className="p-2 text-purple-700 hover:bg-purple-50 rounded-xl transition-colors cursor-pointer"
+                        title="Edit Community Group"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteItem('community', group.id || group.slug || group.name)}
+                        className="p-2 text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+                        title="Delete Community Group"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* ====================================================================
+              COMMUNITY GROUP DEDICATED SUB-MANAGER MODAL
+              (Announcements, Stories & Reflections, Members & Joins, Broadcast)
+              ==================================================================== */}
+          {activeCommunityGroupManager && (
+            <div className="fixed inset-0 z-[1000] bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-hidden">
+              <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl border border-purple-100 overflow-hidden animate-in zoom-in-95 duration-200">
+                {/* Docked Sticky Header */}
+                <div className="bg-white/95 backdrop-blur-md border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0 sticky top-0 z-20">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-[#5A1E65] bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
+                        Community Circle Hub
+                      </span>
+                      <span className="text-xs font-bold text-slate-500">
+                        {activeCommunityGroupManager.group.category || 'Peer Support'}
+                      </span>
+                    </div>
+                    <h3 className="font-display text-xl font-black text-slate-950">
+                      {activeCommunityGroupManager.group.name}
+                    </h3>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveCommunityGroupManager(null)}
+                    className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Sub-Manager Navigation Tabs */}
+                <div className="flex border-b border-slate-200 bg-slate-50/80 px-6 gap-2 shrink-0 overflow-x-auto py-2">
+                  <button
+                    type="button"
+                    onClick={() => setActiveCommunityGroupManager({ ...activeCommunityGroupManager, mode: 'announcements' })}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                      activeCommunityGroupManager.mode === 'announcements'
+                        ? 'bg-[#5A1E65] text-white shadow-xs'
+                        : 'text-slate-600 hover:bg-white'
+                    }`}
+                  >
+                    <Bell className="w-3.5 h-3.5" />
+                    <span>Announcements ({groupAnnouncements.length})</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveCommunityGroupManager({ ...activeCommunityGroupManager, mode: 'stories' })}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                      activeCommunityGroupManager.mode === 'stories'
+                        ? 'bg-[#5A1E65] text-white shadow-xs'
+                        : 'text-slate-600 hover:bg-white'
+                    }`}
+                  >
+                    <BookOpen className="w-3.5 h-3.5" />
+                    <span>Stories & Reflections ({groupStories.length})</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveCommunityGroupManager({ ...activeCommunityGroupManager, mode: 'members' });
+                      loadGroupMembers(activeCommunityGroupManager.group.slug || activeCommunityGroupManager.group.name);
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                      activeCommunityGroupManager.mode === 'members'
+                        ? 'bg-[#5A1E65] text-white shadow-xs'
+                        : 'text-slate-600 hover:bg-white'
+                    }`}
+                  >
+                    <Users className="w-3.5 h-3.5" />
+                    <span>Members & Join Requests</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveCommunityGroupManager({ ...activeCommunityGroupManager, mode: 'broadcast' });
+                      loadGroupMembers(activeCommunityGroupManager.group.slug || activeCommunityGroupManager.group.name);
+                      loadPastBroadcasts(activeCommunityGroupManager.group.slug || activeCommunityGroupManager.group.name);
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                      activeCommunityGroupManager.mode === 'broadcast'
+                        ? 'bg-[#5A1E65] text-white shadow-xs'
+                        : 'text-slate-600 hover:bg-white'
+                    }`}
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    <span>Email Broadcast</span>
+                  </button>
+                </div>
+
+                {/* Scrollable Body */}
+                <div className="overflow-y-auto flex-1 p-6 space-y-6 overscroll-contain">
+                  
+                  {/* MODE 1: ANNOUNCEMENTS */}
+                  {activeCommunityGroupManager.mode === 'announcements' && (
+                    <div className="space-y-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-display font-bold text-slate-900 text-sm">
+                            Circle Announcements & Gatherings
+                          </h4>
+                          <p className="text-xs text-slate-500">
+                            Announcements appear live on the public group modal under Announcements & Gatherings.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingAnnouncement({ id: '' });
+                            setAnnouncementForm({
+                              title: '',
+                              content: '',
+                              date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+                              isPinned: false,
+                              published: true
+                            });
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs flex items-center gap-1 transition-colors shadow-2xs cursor-pointer"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>New Announcement</span>
+                        </button>
+                      </div>
+
+                      {/* Announcement Edit / Create Form */}
+                      {editingAnnouncement && (
+                        <form onSubmit={handleSaveAnnouncement} className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-3.5">
+                          <h5 className="font-display font-black text-amber-950 text-xs uppercase tracking-wide">
+                            {editingAnnouncement.id ? 'Edit Announcement' : 'Post New Announcement'}
+                          </h5>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div className="sm:col-span-2">
+                              <label className="block text-xs font-bold text-slate-700 mb-1">Announcement Title *</label>
+                              <input
+                                type="text"
+                                required
+                                value={announcementForm.title}
+                                onChange={(e) => setAnnouncementForm({ ...announcementForm, title: e.target.value })}
+                                placeholder="e.g. Next Gathering Meeting in Room B"
+                                className="w-full px-3 py-2 text-xs border rounded-xl bg-white"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-bold text-slate-700 mb-1">Date Display</label>
+                              <input
+                                type="text"
+                                value={announcementForm.date}
+                                onChange={(e) => setAnnouncementForm({ ...announcementForm, date: e.target.value })}
+                                placeholder="e.g. Nov 28, 2026"
+                                className="w-full px-3 py-2 text-xs border rounded-xl bg-white"
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-700 mb-1">Announcement Content *</label>
+                            <textarea
+                              rows={3}
+                              required
+                              value={announcementForm.content}
+                              onChange={(e) => setAnnouncementForm({ ...announcementForm, content: e.target.value })}
+                              placeholder="Write announcement details for circle members..."
+                              className="w-full px-3 py-2 text-xs border rounded-xl bg-white"
+                            />
+                          </div>
+                          <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                            <div className="flex items-center gap-4">
+                              <label className="flex items-center gap-1.5 text-xs font-bold text-slate-700 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={announcementForm.isPinned}
+                                  onChange={(e) => setAnnouncementForm({ ...announcementForm, isPinned: e.target.checked })}
+                                  className="rounded text-purple-600"
+                                />
+                                <span>📌 Pin to Top</span>
+                              </label>
+                              <label className="flex items-center gap-1.5 text-xs font-bold text-slate-700 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={announcementForm.published}
+                                  onChange={(e) => setAnnouncementForm({ ...announcementForm, published: e.target.checked })}
+                                  className="rounded text-purple-600"
+                                />
+                                <span>Published (Visible publicly)</span>
+                              </label>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setEditingAnnouncement(null)}
+                                className="px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="submit"
+                                className="px-4 py-1.5 rounded-xl bg-[#5A1E65] text-white text-xs font-bold shadow-xs hover:bg-[#43144A]"
+                              >
+                                Save Announcement
+                              </button>
+                            </div>
+                          </div>
+                        </form>
+                      )}
+
+                      {/* Announcement List */}
+                      {groupAnnouncements.length === 0 ? (
+                        <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200 text-xs text-slate-500">
+                          No announcements posted yet for this group. Click "+ New Announcement" above to publish one.
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {groupAnnouncements.map((ann) => (
+                            <div
+                              key={ann.id}
+                              className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-start justify-between gap-3 ${
+                                ann.isPinned || ann.pinned
+                                  ? 'bg-purple-50/60 border-purple-200'
+                                  : 'bg-white border-slate-200'
+                              }`}
+                            >
+                              <div className="space-y-1 flex-1">
+                                <div className="flex items-center gap-2">
+                                  {(ann.isPinned || ann.pinned) && (
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-100 text-[#5A1E65]">
+                                      📌 Pinned
+                                    </span>
+                                  )}
+                                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                    ann.published !== false ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
+                                  }`}>
+                                    {ann.published !== false ? '● Published' : '○ Draft'}
+                                  </span>
+                                  <span className="text-[11px] text-slate-400 font-semibold">
+                                    {ann.date || ''}
+                                  </span>
+                                </div>
+                                <h5 className="font-display font-bold text-slate-900 text-sm">
+                                  {ann.title}
+                                </h5>
+                                <p className="text-xs text-slate-600 whitespace-pre-line leading-relaxed">
+                                  {ann.content}
+                                </p>
+                              </div>
+
+                              <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-start">
+                                <button
+                                  type="button"
+                                  onClick={() => handleTogglePinAnnouncement(ann.id)}
+                                  className="p-1.5 text-purple-700 hover:bg-purple-100 rounded-lg transition-colors cursor-pointer"
+                                  title="Toggle Pin"
+                                >
+                                  <Pin className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleTogglePublishAnnouncement(ann.id)}
+                                  className="p-1.5 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                                  title="Toggle Published"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingAnnouncement(ann);
+                                    setAnnouncementForm({
+                                      title: ann.title || '',
+                                      content: ann.content || '',
+                                      date: ann.date || '',
+                                      isPinned: Boolean(ann.isPinned || ann.pinned),
+                                      published: ann.published !== false
+                                    });
+                                  }}
+                                  className="p-1.5 text-blue-700 hover:bg-blue-100 rounded-lg transition-colors cursor-pointer"
+                                  title="Edit Announcement"
+                                >
+                                  <Edit className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteAnnouncement(ann.id)}
+                                  className="p-1.5 text-rose-600 hover:bg-rose-100 rounded-lg transition-colors cursor-pointer"
+                                  title="Delete Announcement"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* MODE 2: STORIES & REFLECTIONS */}
+                  {activeCommunityGroupManager.mode === 'stories' && (
+                    <div className="space-y-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-display font-bold text-slate-900 text-sm">
+                            Circle Stories & Community Reflections
+                          </h4>
+                          <p className="text-xs text-slate-500">
+                            Reflections and member testimonials appear live under the Stories & Blog Reflections tab.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingStory({ id: '' });
+                            setStoryForm({
+                              title: '',
+                              excerpt: '',
+                              content: '',
+                              author: 'DCVC Community Member',
+                              date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+                              coverImage: '',
+                              published: true
+                            });
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs flex items-center gap-1 transition-colors shadow-2xs cursor-pointer"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>New Story</span>
+                        </button>
+                      </div>
+
+                      {/* Story Edit / Create Form */}
+                      {editingStory && (
+                        <form onSubmit={handleSaveStory} className="p-4 rounded-2xl bg-purple-50/70 border border-purple-200 space-y-3.5">
+                          <h5 className="font-display font-black text-purple-950 text-xs uppercase tracking-wide">
+                            {editingStory.id ? 'Edit Story / Reflection' : 'Author New Reflection'}
+                          </h5>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-xs font-bold text-slate-700 mb-1">Story Title *</label>
+                              <input
+                                type="text"
+                                required
+                                value={storyForm.title}
+                                onChange={(e) => setStoryForm({ ...storyForm, title: e.target.value })}
+                                placeholder="e.g. Finding Warmth in our Transverse Gathering"
+                                className="w-full px-3 py-2 text-xs border rounded-xl bg-white"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-bold text-slate-700 mb-1">Author Name / Attribution</label>
+                              <input
+                                type="text"
+                                value={storyForm.author}
+                                onChange={(e) => setStoryForm({ ...storyForm, author: e.target.value })}
+                                placeholder="e.g. Jo R. or DCVC Peer Facilitator"
+                                className="w-full px-3 py-2 text-xs border rounded-xl bg-white"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-xs font-bold text-slate-700 mb-1">Publication Date</label>
+                              <input
+                                type="text"
+                                value={storyForm.date}
+                                onChange={(e) => setStoryForm({ ...storyForm, date: e.target.value })}
+                                placeholder="e.g. November 2026"
+                                className="w-full px-3 py-2 text-xs border rounded-xl bg-white"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-bold text-slate-700 mb-1">Cover Image URL (Optional)</label>
+                              <input
+                                type="text"
+                                value={storyForm.coverImage}
+                                onChange={(e) => setStoryForm({ ...storyForm, coverImage: e.target.value })}
+                                placeholder="https://... or /images/community-gathering.jpg"
+                                className="w-full px-3 py-2 text-xs border rounded-xl bg-white"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-bold text-slate-700 mb-1">Short Excerpt (Highlights key quote)</label>
+                            <input
+                              type="text"
+                              value={storyForm.excerpt}
+                              onChange={(e) => setStoryForm({ ...storyForm, excerpt: e.target.value })}
+                              placeholder="Brief highlight or quote from the reflection..."
+                              className="w-full px-3 py-2 text-xs border rounded-xl bg-white"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-bold text-slate-700 mb-1">Story Content *</label>
+                            <textarea
+                              rows={4}
+                              required
+                              value={storyForm.content}
+                              onChange={(e) => setStoryForm({ ...storyForm, content: e.target.value })}
+                              placeholder="Full story or reflection text..."
+                              className="w-full px-3 py-2 text-xs border rounded-xl bg-white"
+                            />
+                          </div>
+
+                          <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                            <label className="flex items-center gap-1.5 text-xs font-bold text-slate-700 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={storyForm.published}
+                                onChange={(e) => setStoryForm({ ...storyForm, published: e.target.checked })}
+                                className="rounded text-purple-600"
+                              />
+                              <span>Published (Visible publicly on live site)</span>
+                            </label>
+
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setEditingStory(null)}
+                                className="px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="submit"
+                                className="px-4 py-1.5 rounded-xl bg-[#5A1E65] text-white text-xs font-bold shadow-xs hover:bg-[#43144A]"
+                              >
+                                Save Story
+                              </button>
+                            </div>
+                          </div>
+                        </form>
+                      )}
+
+                      {/* Stories List */}
+                      {groupStories.length === 0 ? (
+                        <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200 text-xs text-slate-500">
+                          No stories or reflections published yet for this group. Click "+ New Story" above to author one.
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {groupStories.map((post) => (
+                            <div
+                              key={post.id}
+                              className="p-4 rounded-2xl border border-slate-200 bg-white flex flex-col sm:flex-row sm:items-start justify-between gap-4"
+                            >
+                              <div className="flex items-start gap-3.5 flex-1">
+                                {(post.coverImage || post.image) && (
+                                  <div className="w-16 h-16 rounded-xl bg-slate-100 shrink-0 overflow-hidden border border-slate-200">
+                                    <img
+                                      src={post.coverImage || post.image}
+                                      alt=""
+                                      className="w-full h-full object-cover"
+                                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                    />
+                                  </div>
+                                )}
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                      post.published !== false ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
+                                    }`}>
+                                      {post.published !== false ? '● Published' : '○ Draft'}
+                                    </span>
+                                    <span className="text-[11px] text-purple-700 font-bold">
+                                      By {post.author || 'DCVC Community'}
+                                    </span>
+                                    <span className="text-[11px] text-slate-400">
+                                      {post.date || ''}
+                                    </span>
+                                  </div>
+                                  <h5 className="font-display font-bold text-slate-900 text-sm">
+                                    {post.title}
+                                  </h5>
+                                  {post.excerpt && (
+                                    <p className="text-xs font-semibold text-purple-900/80 italic line-clamp-1">
+                                      "{post.excerpt}"
+                                    </p>
+                                  )}
+                                  <p className="text-xs text-slate-600 line-clamp-2">
+                                    {post.content?.replace(/<[^>]+>/g, '')}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-start">
+                                <button
+                                  type="button"
+                                  onClick={() => handleTogglePublishStory(post.id)}
+                                  className="p-1.5 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                                  title="Toggle Published"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingStory(post);
+                                    setStoryForm({
+                                      title: post.title || '',
+                                      excerpt: post.excerpt || '',
+                                      content: post.content || '',
+                                      author: post.author || '',
+                                      date: post.date || '',
+                                      coverImage: post.coverImage || post.image || '',
+                                      published: post.published !== false
+                                    });
+                                  }}
+                                  className="p-1.5 text-blue-700 hover:bg-blue-100 rounded-lg transition-colors cursor-pointer"
+                                  title="Edit Story"
+                                >
+                                  <Edit className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteStory(post.id)}
+                                  className="p-1.5 text-rose-600 hover:bg-rose-100 rounded-lg transition-colors cursor-pointer"
+                                  title="Delete Story"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* MODE 3: MEMBERS & JOIN REQUESTS */}
+                  {activeCommunityGroupManager.mode === 'members' && (
+                    <div className="space-y-5">
+                      {/* Stats Banner */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div className="p-3 bg-purple-50/70 border border-purple-200/80 rounded-2xl">
+                          <p className="text-[10px] font-black uppercase text-purple-900 tracking-wider">Total Joins</p>
+                          <p className="text-xl font-black text-purple-950 mt-0.5">{groupMemberStats.total || groupMembers.length}</p>
+                        </div>
+                        <div className="p-3 bg-amber-50/70 border border-amber-200/80 rounded-2xl">
+                          <p className="text-[10px] font-black uppercase text-amber-900 tracking-wider">Submitted (Pending)</p>
+                          <p className="text-xl font-black text-amber-950 mt-0.5">{groupMemberStats.submitted || groupMembers.filter(m => (m.status || 'submitted') === 'submitted').length}</p>
+                        </div>
+                        <div className="p-3 bg-emerald-50/70 border border-emerald-200/80 rounded-2xl">
+                          <p className="text-[10px] font-black uppercase text-emerald-900 tracking-wider">Active Members</p>
+                          <p className="text-xl font-black text-emerald-950 mt-0.5">{groupMemberStats.active || groupMembers.filter(m => m.status === 'active').length}</p>
+                        </div>
+                        <div className="p-3 bg-blue-50/70 border border-blue-200/80 rounded-2xl">
+                          <p className="text-[10px] font-black uppercase text-blue-900 tracking-wider">Updates Consented</p>
+                          <p className="text-xl font-black text-blue-950 mt-0.5">{groupMemberStats.consented || groupMembers.filter(m => m.email_consent).length}</p>
+                        </div>
+                      </div>
+
+                      {/* Filter & Export Controls */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+                        <div className="flex items-center gap-2 flex-1">
+                          <div className="relative flex-1 max-w-xs">
+                            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <input
+                              type="text"
+                              value={memberSearchTerm}
+                              onChange={(e) => {
+                                setMemberSearchTerm(e.target.value);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') loadGroupMembers(activeCommunityGroupManager.group.slug || activeCommunityGroupManager.group.name);
+                              }}
+                              placeholder="Search name, preferred name, email..."
+                              className="w-full pl-8 pr-3 py-1.5 text-xs border rounded-xl bg-white"
+                            />
+                          </div>
+
+                          <select
+                            value={memberStatusFilter}
+                            onChange={(e) => {
+                              setMemberStatusFilter(e.target.value);
+                            }}
+                            className="px-3 py-1.5 text-xs border rounded-xl bg-white font-bold"
+                          >
+                            <option value="all">All Statuses</option>
+                            <option value="submitted">Submitted Only</option>
+                            <option value="active">Active Only</option>
+                            <option value="inactive">Inactive Only</option>
+                            <option value="archived">Archived Only</option>
+                          </select>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => loadGroupMembers(activeCommunityGroupManager.group.slug || activeCommunityGroupManager.group.name)}
+                            className="px-3 py-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
+                          >
+                            Refresh
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleExportMembersCsv(activeCommunityGroupManager.group.slug || activeCommunityGroupManager.group.name)}
+                            className="px-3.5 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs flex items-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
+                          >
+                            <FileSpreadsheet className="w-3.5 h-3.5" />
+                            <span>Export CSV</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Members List Table / Cards */}
+                      {isLoadingMembers ? (
+                        <div className="p-8 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin text-purple-700" />
+                          <span>Loading members...</span>
+                        </div>
+                      ) : groupMembers.length === 0 ? (
+                        <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200 text-xs text-slate-500">
+                          No member join requests recorded for this circle yet. Members who submit the Join Circle form on the live site will automatically appear here.
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {groupMembers
+                            .filter(m => {
+                              if (memberStatusFilter !== 'all' && (m.status || 'submitted') !== memberStatusFilter) return false;
+                              if (memberSearchTerm) {
+                                const q = memberSearchTerm.toLowerCase();
+                                const n = (m.name || '').toLowerCase();
+                                const pn = (m.preferred_name || '').toLowerCase();
+                                const em = (m.email || '').toLowerCase();
+                                return n.includes(q) || pn.includes(q) || em.includes(q);
+                              }
+                              return true;
+                            })
+                            .map((member) => (
+                              <div
+                                key={member.id}
+                                className="p-4 rounded-2xl border border-slate-200 bg-white space-y-2.5 hover:border-purple-200 transition-colors shadow-2xs"
+                              >
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <h5 className="font-display font-black text-slate-950 text-sm">
+                                        {member.preferred_name || member.name}
+                                      </h5>
+                                      {member.preferred_name && member.name && member.preferred_name !== member.name && (
+                                        <span className="text-[10px] text-slate-500">
+                                          (Legal: {member.name})
+                                        </span>
+                                      )}
+                                      {member.pronouns && (
+                                        <span className="px-2 py-0.2 rounded-full text-[10px] font-bold bg-purple-50 text-purple-800 border border-purple-200">
+                                          {member.pronouns}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <p className="text-xs text-slate-500 font-mono mt-0.5">
+                                      {member.email} · Submitted {member.created_at ? new Date(member.created_at).toLocaleDateString() : 'Recently'}
+                                    </p>
+                                  </div>
+
+                                  <div className="flex items-center gap-2">
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                      member.email_consent
+                                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                        : 'bg-slate-100 text-slate-500 border border-slate-200'
+                                    }`}>
+                                      {member.email_consent ? '✓ Updates Consented' : 'No Update Consent'}
+                                    </span>
+
+                                    <select
+                                      value={member.status || 'submitted'}
+                                      onChange={(e) => handleUpdateMemberStatus(member.id, e.target.value)}
+                                      className={`px-2.5 py-1 text-[11px] font-bold rounded-xl border cursor-pointer ${
+                                        member.status === 'active'
+                                          ? 'bg-emerald-50 text-emerald-900 border-emerald-300'
+                                          : member.status === 'inactive'
+                                            ? 'bg-slate-100 text-slate-600 border-slate-300'
+                                            : member.status === 'archived'
+                                              ? 'bg-rose-50 text-rose-800 border-rose-300'
+                                              : 'bg-amber-50 text-amber-900 border-amber-300'
+                                      }`}
+                                    >
+                                      <option value="submitted">Submitted (Pending)</option>
+                                      <option value="active">Active Member</option>
+                                      <option value="inactive">Inactive</option>
+                                      <option value="archived">Archived</option>
+                                    </select>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteMember(member.id)}
+                                      className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors"
+                                      title="Remove Join Record"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {/* Confidential Accessibility Notes */}
+                                {(member.accessibility_notes || member.notes) && (
+                                  <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-700">
+                                    <span className="font-bold text-slate-900 text-[11px] flex items-center gap-1 mb-0.5">
+                                      <Shield className="w-3 h-3 text-[#5A1E65]" />
+                                      <span>Confidential Facilitator / Accessibility Notes:</span>
+                                    </span>
+                                    <p className="font-medium text-slate-600 text-[11px] whitespace-pre-line">
+                                      {member.accessibility_notes || member.notes}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* MODE 4: EMAIL BROADCAST */}
+                  {activeCommunityGroupManager.mode === 'broadcast' && (
+                    <div className="space-y-6">
+                      <div className="p-4 bg-emerald-50/70 border border-emerald-200 rounded-2xl space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-emerald-900 bg-emerald-100 px-2.5 py-0.5 rounded-full">
+                            Resend Email Infrastructure
+                          </span>
+                          <span className="text-xs font-bold text-emerald-950">
+                            Verified Consented Recipients: {groupMembers.filter(m => m.email_consent).length}
+                          </span>
+                        </div>
+                        <p className="text-xs text-emerald-900 leading-relaxed font-medium">
+                          Broadcast updates are delivered individually to verified opted-in members of <strong>{activeCommunityGroupManager.group.name}</strong>. Members who have not opted in or who clicked 1-click unsubscribe are automatically protected and excluded.
+                        </p>
+                      </div>
+
+                      {/* Broadcast Form */}
+                      <div className="space-y-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">Broadcast Email Subject *</label>
+                          <input
+                            type="text"
+                            value={broadcastForm.subject}
+                            onChange={(e) => setBroadcastForm({ ...broadcastForm, subject: e.target.value })}
+                            placeholder="e.g. Next Gathering Reminder & Room Change"
+                            className="w-full px-3 py-2 text-xs border rounded-xl font-bold text-slate-900 bg-slate-50 focus:bg-white"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">Message Content (Plain text or HTML) *</label>
+                          <textarea
+                            rows={6}
+                            value={broadcastForm.content}
+                            onChange={(e) => setBroadcastForm({ ...broadcastForm, content: e.target.value })}
+                            placeholder="Write message to circle members. Double line-breaks become paragraphs automatically..."
+                            className="w-full px-3 py-2 text-xs border rounded-xl font-mono text-slate-800 bg-slate-50 focus:bg-white leading-relaxed"
+                          />
+                          <p className="text-[11px] text-slate-400 mt-1">
+                            An official DCVC header, greeting, physical address, and a certified 1-click unsubscribe link are automatically attached to every email.
+                          </p>
+                        </div>
+
+                        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-slate-500 font-bold">Admin Preview:</span>
+                            <input
+                              type="email"
+                              value={broadcastForm.testEmail}
+                              onChange={(e) => setBroadcastForm({ ...broadcastForm, testEmail: e.target.value })}
+                              placeholder="admin@diversitycollective.org"
+                              className="px-2.5 py-1 text-xs border rounded-lg max-w-[200px]"
+                            />
+                            <button
+                              type="button"
+                              disabled={broadcastForm.isSending}
+                              onClick={() => handleSendBroadcast(true)}
+                              className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-colors cursor-pointer"
+                            >
+                              Send Test to Me
+                            </button>
+                          </div>
+
+                          <button
+                            type="button"
+                            disabled={broadcastForm.isSending || groupMembers.filter(m => m.email_consent).length === 0}
+                            onClick={() => handleSendBroadcast(false)}
+                            className="btn-primary py-2 px-5 text-xs font-bold shadow-sm inline-flex items-center gap-1.5 disabled:opacity-50"
+                          >
+                            <Send className="w-3.5 h-3.5" />
+                            <span>Send Broadcast to {groupMembers.filter(m => m.email_consent).length} Consented Members</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Past Broadcast History */}
+                      <div className="space-y-3">
+                        <h4 className="font-display font-bold text-slate-900 text-sm">
+                          Past Broadcast History
+                        </h4>
+                        {pastBroadcasts.length === 0 ? (
+                          <div className="p-6 text-center bg-slate-50 rounded-2xl border border-slate-200 text-xs text-slate-500">
+                            No past broadcasts logged for this community group.
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {pastBroadcasts.map((b) => (
+                              <div key={b.id} className="p-3 bg-white rounded-xl border border-slate-200 text-xs flex items-center justify-between">
+                                <div>
+                                  <p className="font-bold text-slate-900">{b.subject}</p>
+                                  <p className="text-[11px] text-slate-500">
+                                    Dispatched to {b.recipient_count} recipients on {b.sent_at ? new Date(b.sent_at).toLocaleString() : 'Recently'} by {b.sent_by_email}
+                                  </p>
+                                </div>
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                                  {b.delivery_status || 'Delivered'}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                </div>
+
+                {/* Docked Sticky Footer */}
+                <div className="bg-slate-50 border-t border-slate-200 px-6 py-3 flex items-center justify-between shrink-0 sticky bottom-0 z-20">
+                  <span className="text-xs text-slate-500 font-medium">
+                    All updates sync in real-time with the live public site and D1 database.
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setActiveCommunityGroupManager(null)}
+                    className="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    Close Hub
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ======================================================================
           SUB-TAB 2: EVENTS & CALENDAR (WITH CANCELLATION TOGGLE)
           ====================================================================== */}
       {activeSubTab === 'events' && (
@@ -1196,105 +2748,133 @@ export default function CmsStudio() {
                 Create podcast episodes and paste streaming links (YouTube, Spotify, Apple Podcasts, audio URLs).
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => openCreateModal('podcast')}
-              className="px-4 py-2.5 rounded-xl bg-[#5A1E65] hover:bg-[#43144A] text-white text-xs font-extrabold flex items-center gap-1.5 shadow-sm cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Add Podcast Episode</span>
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {(cmsData.podcasts || []).map((pod) => (
-              <div
-                key={pod.id || pod.slug}
-                className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between gap-3"
+            <div className="flex items-center gap-2">
+              {cmsData.podcasts && cmsData.podcasts.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (window.confirm(`Are you sure you want to delete ALL ${cmsData.podcasts.length} podcast episodes? This will clear all podcasts down to zero on the live site.`)) {
+                      deleteAllCmsPodcasts();
+                      refreshData();
+                      showToast('All podcasts removed. Collection is now zero.');
+                    }
+                  }}
+                  className="px-3.5 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                  <span>Delete All ({cmsData.podcasts.length})</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => openCreateModal('podcast')}
+                className="px-4 py-2.5 rounded-xl bg-[#5A1E65] hover:bg-[#43144A] text-white text-xs font-extrabold flex items-center gap-1.5 shadow-sm cursor-pointer"
               >
-                <div>
-                  <div className="relative h-36 rounded-xl overflow-hidden mb-3 bg-slate-900">
-                    <img
-                      src={pod.coverImage || '/images/community-gathering.jpg'}
-                      alt={pod.title}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-sm text-[10px] font-bold text-amber-300">
-                      Ep {pod.episodeNumber || 1}
-                    </div>
-                    {pod.category && (
-                      <div className="absolute top-2 right-2 px-2 py-0.5 rounded-md bg-purple-900/80 backdrop-blur-sm text-[10px] font-bold text-purple-200">
-                        {pod.category}
-                      </div>
-                    )}
-                    {pod.duration && (
-                      <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-sm text-[10px] font-medium text-white flex items-center gap-1">
-                        <Clock className="w-3 h-3 text-amber-300" />
-                        <span>{pod.duration}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <h4 className="font-display text-sm font-extrabold text-slate-950 line-clamp-2">
-                    {pod.title}
-                  </h4>
-                  {pod.guests && (
-                    <p className="text-[11px] text-slate-500 font-medium mt-1 truncate">
-                      Guests: {pod.guests}
-                    </p>
-                  )}
-                  <p className="text-xs text-slate-600 mt-2 line-clamp-2">
-                    {pod.summary || pod.description}
-                  </p>
-
-                  {pod.link && (
-                    <div className="mt-3">
-                      <a
-                        href={pod.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-[11px] font-bold text-[#5A1E65] hover:underline truncate max-w-full"
-                      >
-                        <ExternalLink className="w-3 h-3 shrink-0" />
-                        <span className="truncate">{pod.link}</span>
-                      </a>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-                  <a
-                    href={`/media#${pod.slug}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[11px] font-bold text-slate-500 hover:text-[#5A1E65] flex items-center gap-1"
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                    <span>Preview</span>
-                  </a>
-
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => openEditModal('podcast', pod)}
-                      className="p-1.5 text-purple-800 hover:bg-purple-50 rounded-lg cursor-pointer"
-                      title="Edit episode"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteItem('podcast', pod.slug || pod.id)}
-                      className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg cursor-pointer"
-                      title="Delete episode"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
+                <Plus className="w-4 h-4" />
+                <span>Add Podcast Episode</span>
+              </button>
+            </div>
           </div>
+
+          {(!cmsData.podcasts || cmsData.podcasts.length === 0) ? (
+            <div className="p-12 text-center bg-white rounded-3xl border border-dashed border-slate-300">
+              <Headphones className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+              <h4 className="font-bold text-slate-700 text-base">Zero Podcasts Published</h4>
+              <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                All episodes have been cleared. Click "Add Podcast Episode" above whenever you want to publish genuine audio or video content.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {cmsData.podcasts.map((pod) => (
+                <div
+                  key={pod.id || pod.slug}
+                  className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between gap-3"
+                >
+                  <div>
+                    <div className="relative h-36 rounded-xl overflow-hidden mb-3 bg-slate-900">
+                      <img
+                        src={pod.coverImage || '/images/community-gathering.jpg'}
+                        alt={pod.title}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-sm text-[10px] font-bold text-amber-300">
+                        Ep {pod.episodeNumber || 1}
+                      </div>
+                      {pod.category && (
+                        <div className="absolute top-2 right-2 px-2 py-0.5 rounded-md bg-purple-900/80 backdrop-blur-sm text-[10px] font-bold text-purple-200">
+                          {pod.category}
+                        </div>
+                      )}
+                      {pod.duration && (
+                        <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-sm text-[10px] font-medium text-white flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-amber-300" />
+                          <span>{pod.duration}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <h4 className="font-display text-sm font-extrabold text-slate-950 line-clamp-2">
+                      {pod.title}
+                    </h4>
+                    {pod.guests && (
+                      <p className="text-[11px] text-slate-500 font-medium mt-1 truncate">
+                        Guests: {pod.guests}
+                      </p>
+                    )}
+                    <p className="text-xs text-slate-600 mt-2 line-clamp-2">
+                      {pod.summary || pod.description}
+                    </p>
+
+                    {pod.link && (
+                      <div className="mt-3">
+                        <a
+                          href={pod.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-[11px] font-bold text-[#5A1E65] hover:underline truncate max-w-full"
+                        >
+                          <ExternalLink className="w-3 h-3 shrink-0" />
+                          <span className="truncate">{pod.link}</span>
+                        </a>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                    <a
+                      href={`/media#${pod.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] font-bold text-slate-500 hover:text-[#5A1E65] flex items-center gap-1"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>Preview</span>
+                    </a>
+
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => openEditModal('podcast', pod)}
+                        className="p-1.5 text-purple-800 hover:bg-purple-50 rounded-lg cursor-pointer"
+                        title="Edit episode"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteItem('podcast', pod.slug || pod.id)}
+                        className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg cursor-pointer"
+                        title="Delete episode"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -1312,87 +2892,122 @@ export default function CmsStudio() {
                 Publish clinical updates, youth impact narratives, and policy press releases.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => openCreateModal('news')}
-              className="px-4 py-2.5 rounded-xl bg-[#5A1E65] hover:bg-[#43144A] text-white font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Write New Article</span>
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {cmsData.news?.map((art) => (
-              <div
-                key={art.id || art.slug}
-                className="p-5 rounded-3xl bg-white border-2 border-slate-200/80 hover:border-purple-300 shadow-xs hover:shadow-lg transition-all flex flex-col justify-between space-y-4"
+            <div className="flex flex-wrap items-center gap-2">
+              {cmsData.news?.length > 0 && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!window.confirm(`Are you sure you want to delete all ${cmsData.news.length} news articles and set the count to zero? This action updates the live website immediately.`)) return;
+                    setIsSavingModal(true);
+                    try {
+                      await deleteAllCmsArticles();
+                      showToast('All news articles deleted successfully.');
+                    } finally {
+                      setIsSavingModal(false);
+                    }
+                    refreshData();
+                  }}
+                  className="px-3.5 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs flex items-center gap-1.5 transition-colors border border-rose-200 cursor-pointer"
+                  title="Delete all articles down to zero"
+                >
+                  <Trash2 className="w-4 h-4 text-rose-600" />
+                  <span>Delete All ({cmsData.news.length})</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => openCreateModal('news')}
+                className="px-4 py-2.5 rounded-xl bg-[#5A1E65] hover:bg-[#43144A] text-white font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
               >
-                <div className="space-y-3">
-                  <div className="aspect-[16/9] rounded-2xl overflow-hidden bg-slate-900 relative">
-                    <img
-                      src={art.image}
-                      alt={art.title}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src = '/images/community-gathering.jpg';
-                      }}
-                    />
-                    <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full bg-slate-950/80 backdrop-blur-md text-white text-[10px] font-bold">
-                      {art.category}
-                    </span>
-                  </div>
-
-                  <div>
-                    <span className="text-[10px] font-bold text-purple-700">
-                      {art.publishDate} · {art.readTime}
-                    </span>
-                    <h4 className="font-display text-base font-black text-slate-950 mt-1 leading-snug line-clamp-2">
-                      {art.title}
-                    </h4>
-                    <p className="text-xs text-slate-600 mt-1.5 line-clamp-3 leading-relaxed">
-                      {art.excerpt}
-                    </p>
-                  </div>
-
-                  {art.tags && (
-                    <div className="flex flex-wrap gap-1 pt-1">
-                      {(Array.isArray(art.tags) ? art.tags : []).map(t => (
-                        <span key={t} className="text-[9px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-medium">
-                          #{t}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-[11px] font-semibold text-slate-500">
-                    By {art.author}
-                  </span>
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => openEditModal('news', art)}
-                      className="p-2 text-purple-700 hover:bg-purple-50 rounded-xl transition-colors cursor-pointer"
-                      title="Edit Article"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteItem('news', art.id || art.slug)}
-                      className="p-2 text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
-                      title="Delete Article"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
+                <Plus className="w-4 h-4" />
+                <span>Write New Article</span>
+              </button>
+            </div>
           </div>
+
+          {(!cmsData.news || cmsData.news.length === 0) ? (
+            <div className="p-12 text-center rounded-3xl bg-white border border-slate-200 space-y-2">
+              <div className="w-12 h-12 rounded-full bg-purple-50 text-[#5A1E65] flex items-center justify-center mx-auto mb-3">
+                <FileText className="w-6 h-6" />
+              </div>
+              <p className="text-sm font-bold text-slate-800">Zero Articles Published</p>
+              <p className="text-xs text-slate-500 max-w-md mx-auto">
+                All articles have been cleared from the database. Click "Write New Article" above whenever you are ready to publish genuine stories or announcements.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {cmsData.news.map((art) => (
+                <div
+                  key={art.id || art.slug}
+                  className="p-5 rounded-3xl bg-white border-2 border-slate-200/80 hover:border-purple-300 shadow-xs hover:shadow-lg transition-all flex flex-col justify-between space-y-4"
+                >
+                  <div className="space-y-3">
+                    <div className="aspect-[16/9] rounded-2xl overflow-hidden bg-slate-900 relative">
+                      <img
+                        src={art.image}
+                        alt={art.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = '/images/community-gathering.jpg';
+                        }}
+                      />
+                      <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full bg-slate-950/80 backdrop-blur-md text-white text-[10px] font-bold">
+                        {art.category}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-[10px] font-bold text-purple-700">
+                        {art.publishDate} · {art.readTime}
+                      </span>
+                      <h4 className="font-display text-base font-black text-slate-950 mt-1 leading-snug line-clamp-2">
+                        {art.title}
+                      </h4>
+                      <p className="text-xs text-slate-600 mt-1.5 line-clamp-3 leading-relaxed">
+                        {art.excerpt}
+                      </p>
+                    </div>
+
+                    {art.tags && (
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        {(Array.isArray(art.tags) ? art.tags : []).map(t => (
+                          <span key={t} className="text-[9px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-medium">
+                            #{t}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-slate-500">
+                      By {art.author}
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => openEditModal('news', art)}
+                        className="p-2 text-purple-700 hover:bg-purple-50 rounded-xl transition-colors cursor-pointer"
+                        title="Edit Article"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteItem('news', art.id || art.slug)}
+                        className="p-2 text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+                        title="Delete Article"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -1646,6 +3261,37 @@ export default function CmsStudio() {
             >
               <Plus className="w-4 h-4" />
               <span>Add Staff Member</span>
+            </button>
+          </div>
+
+          {/* Operational Staff on /about Visibility Control */}
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-50/80 to-slate-50 border border-emerald-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-emerald-700" />
+                <span>Show Operational Staff on Public /about Page</span>
+              </div>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                Toggle to show or completely hide the Operational Staff section and navigation tab on the public /about page.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                const current = cmsData.settings?.showOperationalStaff !== false;
+                const nextSettings = { ...(cmsData.settings || {}), showOperationalStaff: !current };
+                saveCmsSettings(nextSettings);
+                refreshData();
+                showToast(!current ? 'Operational Staff is now visible on /about' : 'Operational Staff is now hidden on /about');
+              }}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+                cmsData.settings?.showOperationalStaff !== false
+                  ? 'bg-emerald-700 text-white hover:bg-emerald-800 shadow-xs'
+                  : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+              }`}
+            >
+              <Check className="w-3.5 h-3.5" />
+              <span>{cmsData.settings?.showOperationalStaff !== false ? 'Section Visible on /about' : 'Section Hidden on /about'}</span>
             </button>
           </div>
 
@@ -3020,24 +4666,221 @@ export default function CmsStudio() {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200"
+          className="fixed inset-0 z-[1000] bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200"
         >
-          <div className="max-w-2xl w-full bg-white rounded-3xl overflow-hidden shadow-2xl border border-purple-200 flex flex-col max-h-[90vh]">
+          <div className="max-w-2xl w-full bg-white rounded-3xl overflow-hidden shadow-2xl border border-purple-200 flex flex-col max-h-[90vh] my-auto">
 
-            <div className="p-5 bg-gradient-to-r from-purple-950 via-[#5A1E65] to-indigo-950 text-white flex items-center justify-between">
+            <div className="p-5 bg-gradient-to-r from-purple-950 via-[#5A1E65] to-indigo-950 text-white flex items-center justify-between shrink-0">
               <h3 className="font-display text-lg font-bold">
-                {editingItem ? `Edit ${modalType}` : `Create New ${modalType}`}
+                {editingItem
+                  ? `Edit ${modalType === 'community' ? 'Community Group' : modalType === 'podcast' ? 'Podcast Episode' : modalType}`
+                  : `Create New ${modalType === 'community' ? 'Community Group' : modalType === 'podcast' ? 'Podcast Episode' : modalType}`}
               </h3>
               <button
                 type="button"
                 onClick={() => setModalType(null)}
-                className="text-white/80 hover:text-white p-1"
+                className="text-white/80 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveModal} className="p-6 overflow-y-auto space-y-4 flex-1">
+            <form onSubmit={handleSaveModal} className="flex flex-col flex-1 overflow-hidden min-h-0">
+              <div className="p-6 overflow-y-auto space-y-4 flex-1 overscroll-contain">
+
+              {/* Community Group Form Fields */}
+              {modalType === 'community' && (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Group / Circle Name <span className="text-rose-500">*</span></label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.name || ''}
+                        onChange={(e) => {
+                          const name = e.target.value;
+                          const autoSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+                          setFormData({
+                            ...formData,
+                            name,
+                            slug: formData.slug || autoSlug
+                          });
+                        }}
+                        placeholder="e.g. Silver Collective"
+                        className="w-full px-3 py-2 border rounded-xl text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">URL Identifier (Slug)</label>
+                      <input
+                        type="text"
+                        value={formData.slug || ''}
+                        onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                        placeholder="e.g. silver-collective"
+                        className="w-full px-3 py-2 border rounded-xl text-xs font-mono text-slate-600"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Category</label>
+                      <select
+                        value={formData.category || 'Adult Peer Support'}
+                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                        className="w-full px-3 py-2 border rounded-xl text-xs bg-white"
+                      >
+                        <option value="Youth Peer Support">Youth Peer Support</option>
+                        <option value="Adult Peer Support">Adult Peer Support</option>
+                        <option value="Trans & Non-Binary Support">Trans & Non-Binary Support</option>
+                        <option value="Seniors / 55+">Seniors / 55+</option>
+                        <option value="Professional & Personal Growth">Professional & Personal Growth</option>
+                        <option value="Family & Ally Support">Family & Ally Support</option>
+                        <option value="Recovery & Wellness">Recovery & Wellness</option>
+                        <option value="Affirming Community Circle">Affirming Community Circle</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Age Range / Target Audience</label>
+                      <input
+                        type="text"
+                        value={formData.ages || ''}
+                        onChange={(e) => setFormData({ ...formData, ages: e.target.value })}
+                        placeholder="e.g. Ages 18+ or Adults 55+ or Ages 13–23"
+                        className="w-full px-3 py-2 border rounded-xl text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Meeting Schedule / Frequency</label>
+                      <input
+                        type="text"
+                        value={formData.frequency || ''}
+                        onChange={(e) => setFormData({ ...formData, frequency: e.target.value })}
+                        placeholder="e.g. 2nd Thursday of the Month, 6:00 PM – 7:30 PM"
+                        className="w-full px-3 py-2 border rounded-xl text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Meeting Location</label>
+                      <input
+                        type="text"
+                        value={formData.location || ''}
+                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                        placeholder="e.g. DCVC Community Resource Center, Suite 100"
+                        className="w-full px-3 py-2 border rounded-xl text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Contact Email</label>
+                      <input
+                        type="email"
+                        value={formData.contact || ''}
+                        onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
+                        placeholder="e.g. info@diversitycollective.org"
+                        className="w-full px-3 py-2 border rounded-xl text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">External Registration / Resource Link (Optional)</label>
+                      <input
+                        type="url"
+                        value={formData.externalLink || ''}
+                        onChange={(e) => setFormData({ ...formData, externalLink: e.target.value })}
+                        placeholder="https://..."
+                        className="w-full px-3 py-2 border rounded-xl text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Picture using ImagePicker with Cropping / Framing Studio */}
+                  <div>
+                    <ImagePicker
+                      value={formData.image || ''}
+                      onChange={(url) => setFormData({ ...formData, image: url, images: [url] })}
+                      aspectRatio="aspect-[16/10]"
+                      label="Community Group Picture (Admins can upload, crop, or choose pictures)"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Brief Description (Card Summary)</label>
+                    <textarea
+                      rows={2}
+                      value={formData.description || ''}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      placeholder="Brief card summary shown on circle listing..."
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">In-Depth Circle Overview (Details Modal)</label>
+                    <textarea
+                      rows={3}
+                      value={formData.overview || ''}
+                      onChange={(e) => setFormData({ ...formData, overview: e.target.value })}
+                      placeholder="Comprehensive overview of this peer circle, who it serves, and meeting format..."
+                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Facilitator / Host Info</label>
+                      <input
+                        type="text"
+                        value={formData.facilitator || ''}
+                        onChange={(e) => setFormData({ ...formData, facilitator: e.target.value })}
+                        placeholder="e.g. Jordan River & DCVC Mentors"
+                        className="w-full px-3 py-2 border rounded-xl text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">External Registration / Resource Link (Optional)</label>
+                      <input
+                        type="url"
+                        value={formData.externalLink || ''}
+                        onChange={(e) => setFormData({ ...formData, externalLink: e.target.value })}
+                        placeholder="https://..."
+                        className="w-full px-3 py-2 border rounded-xl text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Safe Space Guidelines & Agreements <span className="font-normal text-slate-500">(One agreement per line)</span>
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={formData.guidelines || ''}
+                      onChange={(e) => setFormData({ ...formData, guidelines: e.target.value })}
+                      placeholder="e.g.&#10;Safe and affirming space for all identities.&#10;Respect confidentiality and personal lived experiences.&#10;Listen actively and speak from personal experience."
+                      className="w-full px-3 py-2 border rounded-xl text-xs font-mono"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-2">
+                    <input
+                      type="checkbox"
+                      id="cg-active"
+                      checked={formData.active !== false}
+                      onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
+                      className="rounded text-purple-600 focus:ring-purple-500"
+                    />
+                    <label htmlFor="cg-active" className="text-xs font-bold text-slate-700">
+                      Active on Live Website (Check to display on /community)
+                    </label>
+                  </div>
+                </>
+              )}
 
               {/* Program Form Fields */}
               {modalType === 'program' && (
@@ -3442,27 +5285,57 @@ export default function CmsStudio() {
               {/* News / Article Form Fields */}
               {modalType === 'news' && (
                 <>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Article Headline</label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.title || ''}
-                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-xl text-xs"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">Category</label>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Article Headline <span className="text-rose-500">*</span>
+                      </label>
                       <input
                         type="text"
                         required
-                        value={formData.category || ''}
-                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                        value={formData.title || ''}
+                        onChange={(e) => {
+                          const title = e.target.value;
+                          const autoSlug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+                          setFormData(prev => ({
+                            ...prev,
+                            title,
+                            slug: (!editingItem || !prev.slug) ? autoSlug : prev.slug
+                          }));
+                        }}
                         className="w-full px-3 py-2 border rounded-xl text-xs"
                       />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        URL Slug (Public Link: /news/slug)
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.slug || ''}
+                        onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value }))}
+                        className="w-full px-3 py-2 border rounded-xl text-xs bg-slate-50 font-mono text-[11px]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Category</label>
+                      <select
+                        value={formData.category || 'Community & Advocacy'}
+                        onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                        className="w-full px-3 py-2 border rounded-xl text-xs bg-white"
+                      >
+                        <option value="Community & Advocacy">Community & Advocacy</option>
+                        <option value="Health & Wellness">Health & Wellness</option>
+                        <option value="Youth & Education">Youth & Education</option>
+                        <option value="Pride & Culture">Pride & Culture</option>
+                        <option value="Programs & Services">Programs & Services</option>
+                        <option value="Policy & Civic Action">Policy & Civic Action</option>
+                        <option value="General News">General News</option>
+                      </select>
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1">Author</label>
@@ -3470,16 +5343,50 @@ export default function CmsStudio() {
                         type="text"
                         required
                         value={formData.author || ''}
-                        onChange={(e) => setFormData({ ...formData, author: e.target.value })}
+                        onChange={(e) => setFormData(prev => ({ ...prev, author: e.target.value }))}
                         className="w-full px-3 py-2 border rounded-xl text-xs"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">Read Time</label>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Publication Date</label>
                       <input
                         type="text"
-                        value={formData.readTime || '3 min read'}
-                        onChange={(e) => setFormData({ ...formData, readTime: e.target.value })}
+                        value={formData.publishedAt || formData.publishDate || formData.date || ''}
+                        onChange={(e) => setFormData(prev => ({ ...prev, publishedAt: e.target.value, publishDate: e.target.value, date: e.target.value }))}
+                        placeholder="e.g. October 12, 2026"
+                        className="w-full px-3 py-2 border rounded-xl text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Status</label>
+                      <select
+                        value={formData.status || 'published'}
+                        onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
+                        className="w-full px-3 py-2 border rounded-xl text-xs bg-white font-bold"
+                      >
+                        <option value="published">Published (Live)</option>
+                        <option value="draft">Draft (Admin Only)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Read Time Estimate</label>
+                      <input
+                        type="text"
+                        value={formData.readingTime || formData.readTime || '3 min read'}
+                        onChange={(e) => setFormData(prev => ({ ...prev, readingTime: e.target.value, readTime: e.target.value }))}
+                        className="w-full px-3 py-2 border rounded-xl text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Tags (Comma-separated)</label>
+                      <input
+                        type="text"
+                        value={formData.tags || ''}
+                        onChange={(e) => setFormData(prev => ({ ...prev, tags: e.target.value }))}
+                        placeholder="Advocacy, Community, Ventura"
                         className="w-full px-3 py-2 border rounded-xl text-xs"
                       />
                     </div>
@@ -3488,39 +5395,30 @@ export default function CmsStudio() {
                   <MultiImagePicker
                     images={formData.images || (formData.image ? [formData.image] : [])}
                     primaryImage={formData.image || ''}
-                    onChange={(newImages) => setFormData({ ...formData, images: newImages, image: newImages[0] || '' })}
-                    onPrimaryChange={(url) => setFormData({ ...formData, image: url })}
-                    label="Article Feature & Gallery Photos"
-                    helpText="Upload or choose multiple article photos. They will automatically slide on article cards."
+                    onChange={(newImages) => setFormData(prev => ({ ...prev, images: newImages, image: newImages[0] || '' }))}
+                    onPrimaryChange={(url) => setFormData(prev => ({ ...prev, image: url }))}
+                    label="Article Feature & Cover Photos"
+                    helpText="Upload or choose cover & gallery photos. Crop freely without white frames."
                     aspectRatio="aspect-[16/9]"
                   />
 
                   <StyleCustomizer
                     fontSize={formData.fontSize || 'base'}
                     fontColor={formData.fontColor || '#0F172A'}
-                    onFontSizeChange={(size) => setFormData({ ...formData, fontSize: size })}
-                    onFontColorChange={(color) => setFormData({ ...formData, fontColor: color })}
+                    onFontSizeChange={(size) => setFormData(prev => ({ ...prev, fontSize: size }))}
+                    onFontColorChange={(color) => setFormData(prev => ({ ...prev, fontColor: color }))}
                     label="Article Headline Typography"
                   />
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Excerpt</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Excerpt / Summary</label>
                     <textarea
                       rows={3}
                       required
                       value={formData.excerpt || ''}
-                      onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
+                      onChange={(e) => setFormData(prev => ({ ...prev, excerpt: e.target.value }))}
                       className="w-full px-3 py-2 border rounded-xl text-xs"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Tags (Comma-separated)</label>
-                    <input
-                      type="text"
-                      value={formData.tags || ''}
-                      onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-xl text-xs"
+                      placeholder="Short synopsis shown on the story card on /news"
                     />
                   </div>
 
@@ -3532,7 +5430,7 @@ export default function CmsStudio() {
                     <NewsWritingPad
                       value={formData.body || formData.content || ''}
                       onChange={(html) => setFormData(prev => ({ ...prev, body: html, content: html }))}
-                      onReadTimeCalculated={(time) => setFormData(prev => ({ ...prev, readTime: time }))}
+                      onReadTimeCalculated={(time) => setFormData(prev => ({ ...prev, readTime: time, readingTime: time }))}
                     />
                   </div>
                 </>
@@ -4197,20 +6095,23 @@ export default function CmsStudio() {
                   </div>
                 </>
               )}
+              </div>
 
-              <div className="pt-4 border-t border-slate-200 flex items-center justify-end gap-2">
+              <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2 shrink-0 rounded-b-3xl">
                 <button
                   type="button"
                   onClick={() => setModalType(null)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors"
+                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#5A1E65] hover:bg-[#43144A] text-white text-xs font-bold shadow-xs transition-colors"
+                  disabled={isSavingModal}
+                  className="px-5 py-2 rounded-xl bg-[#5A1E65] hover:bg-[#43144A] disabled:opacity-50 text-white text-xs font-bold shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
-                  Save & Publish Live
+                  {isSavingModal && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>{isSavingModal ? 'Saving...' : 'Save & Publish Live'}</span>
                 </button>
               </div>
 

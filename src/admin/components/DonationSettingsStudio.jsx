@@ -1,3 +1,4 @@
+import { cmsStore } from '../../services/cmsStore';
 import React, { useState, useEffect } from 'react';
 import { 
   Heart, 
@@ -21,7 +22,8 @@ import {
   Download,
   Plus,
   Search,
-  X
+  X,
+  FileText
 } from 'lucide-react';
 import { 
   getDonationEmailTemplate, 
@@ -46,7 +48,16 @@ const AVAILABLE_VARIABLES = [
 ];
 
 export default function DonationSettingsStudio({ currentUser }) {
-  const [activeSubTab, setActiveSubTab] = useState('template'); // 'template' | 'donations'
+  const [activeSubTab, setActiveSubTab] = useState('campaigns'); // 'campaigns' | 'template' | 'donations'
+  const [zeffyGeneralUrl, setZeffyGeneralUrl] = useState(() => {
+    return cmsStore.getSettings?.()?.zeffyGeneralUrl || cmsStore.getSettings?.()?.zeffyDonationUrl || 'https://www.zeffy.com/donation-form/diversity-collective-general-fund';
+  });
+  const [zeffyGemUrl, setZeffyGemUrl] = useState(() => {
+    return cmsStore.getSettings?.()?.zeffyGemUrl || 'https://www.zeffy.com/donation-form/diversity-collective-gem-membership';
+  });
+  const [campaignUrlError, setCampaignUrlError] = useState(null);
+  const [savingCampaigns, setSavingCampaigns] = useState(false);
+  const [campaignSaveSuccess, setCampaignSaveSuccess] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -57,6 +68,25 @@ export default function DonationSettingsStudio({ currentUser }) {
   // Search & Filter state for donations table
   const [donorSearch, setDonorSearch] = useState('');
   const [exportingCsv, setExportingCsv] = useState(false);
+
+  // Editable Donation Page & Form Info
+  const [donationPageContent, setDonationPageContent] = useState(() => {
+    const saved = cmsStore.getSettings?.()?.donationPageContent;
+    return saved || {
+      eyebrow: 'TAX-DEDUCTIBLE 501(C)(3) SUPPORT',
+      title: 'Powering Center & Lifesaving Care.',
+      subtitle: 'Every dollar directly funds free rapid health screenings, weekly youth peer circles, harm reduction supplies, and community advocacy across Ventura County.',
+      taxNotice: 'Diversity Collective Ventura County, Inc. is a 501(c)(3) tax-exempt public charity (Federal EIN: 46-1234567). All contributions are tax-deductible to the full extent permitted by law.',
+      funds: [
+        { id: 'general', title: 'Greatest Need & General Fund', desc: 'Directs funds where our community needs them most urgently.' },
+        { id: 'shines', title: 'Diversity SHINES Healthcare Clinics', desc: 'Provides 100% free confidential rapid HIV/STI screenings & harm reduction.' },
+        { id: 'rainbow_umbrella', title: 'Rainbow Umbrella Youth Sanctuary', desc: 'Underwrites peer circles, warm meals, and safe harbor for LGBTQ+ youth.' },
+        { id: 'resource_center', title: 'Ventura Community Resource Center', desc: 'Maintains free public computers, library, support groups & community space.' }
+      ]
+    };
+  });
+  const [savingDonationContent, setSavingDonationContent] = useState(false);
+  const [donationContentSuccess, setDonationContentSuccess] = useState(false);
 
   // Manual In-Person Donation Modal state
   const [showManualModal, setShowManualModal] = useState(false);
@@ -100,6 +130,12 @@ export default function DonationSettingsStudio({ currentUser }) {
       ]);
       if (tplRes?.template) {
         setTemplate(prev => ({ ...prev, ...tplRes.template }));
+        if (tplRes.template.zeffyGeneralUrl) {
+          setZeffyGeneralUrl(tplRes.template.zeffyGeneralUrl);
+        }
+        if (tplRes.template.zeffyGemUrl) {
+          setZeffyGemUrl(tplRes.template.zeffyGemUrl);
+        }
       }
       if (donRes?.donations) {
         setDonations(donRes.donations);
@@ -108,6 +144,72 @@ export default function DonationSettingsStudio({ currentUser }) {
       console.warn('Error loading donation studio data:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveCampaigns = async (e) => {
+    if (e) e.preventDefault();
+    setCampaignUrlError(null);
+
+    const validateZeffy = (url) => {
+      if (!url) return true;
+      try {
+        const parsed = new URL(url.trim());
+        return (parsed.protocol === 'https:' || parsed.protocol === 'http:') &&
+               (parsed.hostname === 'www.zeffy.com' || parsed.hostname === 'zeffy.com');
+      } catch {
+        return false;
+      }
+    };
+
+    if (zeffyGeneralUrl && !validateZeffy(zeffyGeneralUrl)) {
+      setCampaignUrlError('General Donations URL must be a valid Zeffy campaign URL (e.g. https://www.zeffy.com/donation-form/...)');
+      return;
+    }
+
+    if (zeffyGemUrl && !validateZeffyGemUrl(zeffyGemUrl)) {
+      setCampaignUrlError('GEM Membership URL must be a valid Zeffy campaign URL (e.g. https://www.zeffy.com/donation-form/...)');
+      return;
+    }
+
+    setSavingCampaigns(true);
+    setCampaignSaveSuccess(false);
+
+    try {
+      const trimmedGeneral = zeffyGeneralUrl.trim();
+      const trimmedGem = zeffyGemUrl.trim();
+
+      cmsStore.saveSettings({
+        ...cmsStore.getSettings(),
+        zeffyGeneralUrl: trimmedGeneral,
+        zeffyGemUrl: trimmedGem,
+        zeffyDonationUrl: trimmedGeneral
+      });
+
+      await saveDonationEmailTemplate({
+        ...template,
+        zeffyGeneralUrl: trimmedGeneral,
+        zeffyGemUrl: trimmedGem,
+        zeffyDonationUrl: trimmedGeneral
+      });
+
+      setCampaignSaveSuccess(true);
+      setTimeout(() => setCampaignSaveSuccess(false), 4000);
+    } catch (err) {
+      setCampaignUrlError('Failed to save campaign URLs: ' + err.message);
+    } finally {
+      setSavingCampaigns(false);
+    }
+  };
+
+  const validateZeffyGemUrl = (url) => {
+    if (!url) return true;
+    try {
+      const parsed = new URL(url.trim());
+      return (parsed.protocol === 'https:' || parsed.protocol === 'http:') &&
+             (parsed.hostname === 'www.zeffy.com' || parsed.hostname === 'zeffy.com');
+    } catch {
+      return false;
     }
   };
 
@@ -165,6 +267,24 @@ export default function DonationSettingsStudio({ currentUser }) {
       alert('Failed to export donations CSV: ' + err.message);
     } finally {
       setExportingCsv(false);
+    }
+  };
+
+  const handleSaveDonationContent = (e) => {
+    e?.preventDefault?.();
+    setSavingDonationContent(true);
+    setDonationContentSuccess(false);
+    try {
+      cmsStore.saveSettings({
+        ...cmsStore.getSettings(),
+        donationPageContent
+      });
+      setDonationContentSuccess(true);
+      setTimeout(() => setDonationContentSuccess(false), 3500);
+    } catch (err) {
+      alert('Failed to save donation form content: ' + err.message);
+    } finally {
+      setSavingDonationContent(false);
     }
   };
 
@@ -233,7 +353,7 @@ export default function DonationSettingsStudio({ currentUser }) {
     tier_name: 'Rainbow Champion',
     date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
     reference: 'DCVC-DON-92841',
-    card_url: 'https://diversitycollectivevc.org/appreciation-card/preview',
+    card_url: 'https://diversitycollective.org/appreciation-card/preview',
     ein: '46-1234567'
   };
 
@@ -274,6 +394,18 @@ export default function DonationSettingsStudio({ currentUser }) {
         <div className="flex items-center gap-1.5 p-1.5 bg-slate-100 rounded-2xl shrink-0">
           <button
             type="button"
+            onClick={() => setActiveSubTab('campaigns')}
+            className={`py-2 px-3.5 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
+              activeSubTab === 'campaigns'
+                ? 'bg-[#5A1E65] text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>Zeffy Campaign Routing</span>
+          </button>
+          <button
+            type="button"
             onClick={() => setActiveSubTab('template')}
             className={`py-2 px-3.5 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
               activeSubTab === 'template'
@@ -283,6 +415,18 @@ export default function DonationSettingsStudio({ currentUser }) {
           >
             <Mail className="w-3.5 h-3.5" />
             <span>Automated Email Template</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveSubTab('content')}
+            className={`py-2 px-3.5 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
+              activeSubTab === 'content'
+                ? 'bg-[#5A1E65] text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <FileText className="w-3.5 h-3.5" />
+            <span>Donation Form Info & Copy</span>
           </button>
           <button
             type="button"
@@ -300,6 +444,327 @@ export default function DonationSettingsStudio({ currentUser }) {
       </div>
 
       {/* ===================================================================== */}
+      {/* TAB 0: ZEFFY CAMPAIGN DESTINATIONS (ONE-TIME & RECURRING GEM)          */}
+      {/* ===================================================================== */}
+      {activeSubTab === 'campaigns' && (
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-xs p-6 sm:p-10 space-y-8 max-w-4xl">
+          <div className="space-y-2 border-b border-slate-100 pb-5">
+            <div className="flex items-center gap-2">
+              <span className="p-2 rounded-xl bg-purple-100 text-[#5A1E65]">
+                <ShieldCheck className="w-5 h-5 text-emerald-600" />
+              </span>
+              <h3 className="text-xl font-black text-slate-950">
+                Official Zeffy Campaign Destinations
+              </h3>
+            </div>
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+              Configure and maintain the two official Zeffy campaign URLs. Selecting <strong>Give One-Time</strong> on the public site opens General Donations, and selecting <strong>Monthly Sustainer (GEM Membership)</strong> opens the GEM campaign. Changes take effect immediately without code deployment.
+            </p>
+          </div>
+
+          {campaignUrlError && (
+            <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+              <span>{campaignUrlError}</span>
+            </div>
+          )}
+
+          {campaignSaveSuccess && (
+            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>✓ Zeffy Campaign URLs saved successfully and active live on the public website!</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSaveCampaigns} className="space-y-6">
+            {/* Field 1: General Donations (One-Time) */}
+            <div className="p-5 sm:p-6 rounded-2xl bg-slate-50/80 border border-slate-200 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <label className="text-sm font-black text-slate-900 block">
+                    1. General Donations Campaign URL (One-Time Contributions)
+                  </label>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Destination for one-time contributions (opens when donor selects Give One-Time).
+                  </p>
+                </div>
+                {zeffyGeneralUrl && (
+                  <a
+                    href={zeffyGeneralUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-[#5A1E65] hover:text-purple-900 bg-white px-3 py-1.5 rounded-xl border border-purple-200 shadow-2xs self-start sm:self-auto"
+                  >
+                    <span>Test Campaign Link</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                )}
+              </div>
+              <input
+                type="url"
+                required
+                placeholder="https://www.zeffy.com/donation-form/diversity-collective-general-fund"
+                value={zeffyGeneralUrl}
+                onChange={(e) => setZeffyGeneralUrl(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-slate-300 text-xs sm:text-sm font-mono bg-white outline-none focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200"
+              />
+            </div>
+
+            {/* Field 2: GEM Membership (Monthly Recurring) */}
+            <div className="p-5 sm:p-6 rounded-2xl bg-slate-50/80 border border-slate-200 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <label className="text-sm font-black text-slate-900 block">
+                    2. GEM Membership Campaign URL (Monthly Recurring Sustainers)
+                  </label>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Destination for monthly recurring sustainers (opens when donor selects Monthly Sustainer).
+                  </p>
+                </div>
+                {zeffyGemUrl && (
+                  <a
+                    href={zeffyGemUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-[#5A1E65] hover:text-purple-900 bg-white px-3 py-1.5 rounded-xl border border-purple-200 shadow-2xs self-start sm:self-auto"
+                  >
+                    <span>Test Campaign Link</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                )}
+              </div>
+              <input
+                type="url"
+                required
+                placeholder="https://www.zeffy.com/donation-form/diversity-collective-gem-membership"
+                value={zeffyGemUrl}
+                onChange={(e) => setZeffyGemUrl(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-slate-300 text-xs sm:text-sm font-mono bg-white outline-none focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200"
+              />
+            </div>
+
+            <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <button
+                type="submit"
+                disabled={savingCampaigns}
+                className="py-3 px-6 rounded-xl bg-[#5A1E65] hover:bg-purple-950 text-white font-black text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                {savingCampaigns ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Saving Campaign Destinations...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4" />
+                    <span>Save Zeffy Campaign Links</span>
+                  </>
+                )}
+              </button>
+
+              <span className="text-xs text-slate-400">
+                Persistent in D1 &amp; updates public website instantly
+              </span>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* ===================================================================== */}
+      {/* TAB 0.5: DONATION PAGE & FORM CONTENT EDITOR                           */}
+      {/* ===================================================================== */}
+      {activeSubTab === 'content' && (
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-xs p-6 sm:p-10 space-y-8 max-w-4xl animate-fadeIn">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-5">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="p-2 rounded-xl bg-purple-100 text-[#5A1E65]">
+                  <FileText className="w-5 h-5 text-[#5A1E65]" />
+                </span>
+                <h3 className="text-xl font-black text-slate-950">
+                  Donation Form Copy &amp; Giving Funds
+                </h3>
+              </div>
+              <p className="text-xs sm:text-sm text-slate-600">
+                Customize public headlines, mission messaging, and designated fund options on the <code className="text-[#5A1E65] font-bold">/donate</code> page.
+              </p>
+            </div>
+            <a
+              href="/donate"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-purple-200 bg-purple-50 text-[#5A1E65] hover:bg-purple-100 text-xs font-bold transition-colors self-start sm:self-auto"
+            >
+              <span>View Public /donate Page</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
+
+          <form onSubmit={handleSaveDonationContent} className="space-y-6">
+            {/* Eyebrow */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-black uppercase tracking-wider text-slate-700 block">
+                Top Eyebrow Badge
+              </label>
+              <input
+                type="text"
+                value={donationPageContent.eyebrow || ''}
+                onChange={(e) => setDonationPageContent({ ...donationPageContent, eyebrow: e.target.value })}
+                placeholder="e.g. TAX-DEDUCTIBLE 501(C)(3) SUPPORT"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm bg-white outline-none focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200"
+              />
+            </div>
+
+            {/* Page Title */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-black uppercase tracking-wider text-slate-700 block">
+                Main Page Headline
+              </label>
+              <input
+                type="text"
+                value={donationPageContent.title || ''}
+                onChange={(e) => setDonationPageContent({ ...donationPageContent, title: e.target.value })}
+                placeholder="e.g. Powering Center & Lifesaving Care."
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm font-bold bg-white outline-none focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200"
+              />
+            </div>
+
+            {/* Subtitle / Mission */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-black uppercase tracking-wider text-slate-700 block">
+                Mission Statement / Intro Paragraph
+              </label>
+              <textarea
+                rows={3}
+                value={donationPageContent.subtitle || ''}
+                onChange={(e) => setDonationPageContent({ ...donationPageContent, subtitle: e.target.value })}
+                placeholder="Describe how donations directly fuel free health clinics, youth circles, and community care..."
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm bg-white outline-none focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200"
+              />
+            </div>
+
+            {/* Tax Notice & EIN */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-black uppercase tracking-wider text-slate-700 block">
+                501(c)(3) Tax Exemption &amp; EIN Notice
+              </label>
+              <textarea
+                rows={2}
+                value={donationPageContent.taxNotice || ''}
+                onChange={(e) => setDonationPageContent({ ...donationPageContent, taxNotice: e.target.value })}
+                placeholder="Diversity Collective Ventura County, Inc. is a 501(c)(3) tax-exempt public charity (Federal EIN: 46-1234567)..."
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm bg-white outline-none focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200"
+              />
+            </div>
+
+            {/* Designated Giving Funds */}
+            <div className="space-y-3 pt-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-xs font-black uppercase tracking-wider text-slate-700 block">
+                    Designated Giving Funds ({donationPageContent.funds?.length || 0})
+                  </label>
+                  <p className="text-xs text-slate-500">
+                    Programs and sanctuary initiatives donors can select on the donation form.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newFund = {
+                      id: `fund-${Date.now()}`,
+                      title: 'New Dedicated Fund',
+                      desc: 'Supports targeted community projects and mutual aid.'
+                    };
+                    setDonationPageContent({
+                      ...donationPageContent,
+                      funds: [...(donationPageContent.funds || []), newFund]
+                    });
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-purple-50 text-[#5A1E65] hover:bg-purple-100 text-xs font-bold border border-purple-200 flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Fund</span>
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {(donationPageContent.funds || []).map((fund, idx) => (
+                  <div key={fund.id || idx} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                        Fund Option #{idx + 1}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = donationPageContent.funds.filter((_, i) => i !== idx);
+                          setDonationPageContent({ ...donationPageContent, funds: updated });
+                        }}
+                        className="text-slate-400 hover:text-rose-600 p-1 rounded-lg"
+                        title="Remove Fund"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      value={fund.title || ''}
+                      onChange={(e) => {
+                        const updated = [...donationPageContent.funds];
+                        updated[idx] = { ...updated[idx], title: e.target.value };
+                        setDonationPageContent({ ...donationPageContent, funds: updated });
+                      }}
+                      placeholder="Fund Title (e.g. Diversity SHINES Healthcare Clinics)"
+                      className="w-full px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold bg-white"
+                    />
+                    <input
+                      type="text"
+                      value={fund.desc || ''}
+                      onChange={(e) => {
+                        const updated = [...donationPageContent.funds];
+                        updated[idx] = { ...updated[idx], desc: e.target.value };
+                        setDonationPageContent({ ...donationPageContent, funds: updated });
+                      }}
+                      placeholder="Short description of where the funds go..."
+                      className="w-full px-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-600"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
+              <button
+                type="submit"
+                disabled={savingDonationContent}
+                className="py-3 px-6 rounded-xl bg-[#5A1E65] hover:bg-purple-950 text-white font-black text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                {savingDonationContent ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Saving Content...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4" />
+                    <span>Save Donation Form Info</span>
+                  </>
+                )}
+              </button>
+
+              {donationContentSuccess && (
+                <div className="flex items-center gap-1.5 text-xs font-black text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 animate-fadeIn">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span>Donation page content updated live!</span>
+                </div>
+              )}
+            </div>
+          </form>
+        </div>
+      )}
+
+            {/* ===================================================================== */}
       {/* TAB 1: AUTOMATED EMAIL TEMPLATE EDITOR                                 */}
       {/* ===================================================================== */}
       {activeSubTab === 'template' && (

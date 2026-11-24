@@ -62,7 +62,7 @@ export default function NotFound() {
             <span className="font-bold text-slate-900 text-sm block group-hover:text-[#5A1E65] transition-colors">
               Cultural Calendar
             </span>
-            <span className="text-xs text-slate-500">Upcoming gatherings, circles, and festivals.</span>
+            <span className="text-xs text-slate-500">Upcoming events, circles, and festivals.</span>
           </Link>
 
           <Link

@@ -77,12 +77,12 @@ export default function NewsArticle() {
             </span>
             <span className="text-slate-500 font-bold flex items-center gap-1">
               <Calendar className="w-3.5 h-3.5 text-amber-500" />
-              <span>{article.publishedAt}</span>
+              <span>{article.publishedAt || article.publishDate || article.date}</span>
             </span>
             <span className="text-slate-400">·</span>
             <span className="text-slate-500 font-bold flex items-center gap-1">
               <Clock className="w-3.5 h-3.5 text-purple-600" />
-              <span>{article.readingTime}</span>
+              <span>{article.readingTime || article.readTime || '3 min read'}</span>
             </span>
           </div>
 
@@ -97,10 +97,11 @@ export default function NewsArticle() {
         </header>
 
         {/* Hero Photo */}
-        <div className="my-8 rounded-3xl overflow-hidden aspect-[16/9] shadow-xl border-2 border-slate-200">
+        <div className="my-8 rounded-3xl overflow-hidden aspect-[16/9] shadow-xl border-2 border-slate-200 bg-slate-900">
           <img
-            src={article.image}
+            src={article.image || article.images?.[0] || '/images/community-gathering.jpg'}
             alt={article.title}
+            onError={(e) => { e.currentTarget.src = '/images/community-gathering.jpg'; }}
             className="w-full h-full object-cover"
           />
         </div>

@@ -19,7 +19,7 @@ const KIT_ITEMS = [
     title: 'Physical Storefront Window Decal Cling',
     category: 'Storefront Visibility',
     badge: 'Weatherproof UV Vinyl',
-    image: '/images/pride-event-crowd.jpg',
+    image: '/images/crc-building.jpg',
     description: 'Heavy-duty 5" x 5" double-sided static-cling storefront decal reading "Proudly DCVC Approved Affirming Space". Visible from the street, signaling immediate safety to prospective patrons.',
     highlights: [
       'UV-fade resistant & weather-durable vinyl',
@@ -58,7 +58,7 @@ const KIT_ITEMS = [
     title: 'Digital Verified Seal & Web Embed Kit',
     category: 'Online & Digital Presence',
     badge: 'SVG, PNG & HTML Embed',
-    image: '/images/education-workshop.jpg',
+    image: '/images/accessibility-badge.png',
     description: 'High-resolution digital badge assets ready for your website footer, online menu, email signatures, Yelp profile, and Google Business Profile listing.',
     highlights: [
       'Vector SVG and transparent PNG formats',

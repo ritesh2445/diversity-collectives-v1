@@ -138,6 +138,25 @@ function AppLayout() {
   }, []);
 
 
+  // Automatic modal body scroll lock detection
+  useEffect(() => {
+    const checkModals = () => {
+      const modal = document.querySelector('.fixed.inset-0:not(.pointer-events-none):not([class*="pointer-events-none"])');
+      const shouldLock = Boolean(modal);
+      document.documentElement.classList.toggle('modal-open', shouldLock);
+      document.body.classList.toggle('modal-open', shouldLock);
+    };
+
+    const observer = new MutationObserver(checkModals);
+    observer.observe(document.body, { childList: true, subtree: true });
+    checkModals();
+    return () => {
+      observer.disconnect();
+      document.documentElement.classList.remove('modal-open');
+      document.body.classList.remove('modal-open');
+    };
+  }, []);
+
   const isAdminPreview = location.search.includes('admin_preview=1');
 
   useEffect(() => {
@@ -150,7 +169,7 @@ function AppLayout() {
   // If site is in non-live status, show full-screen overlay instead of normal content (except for admin route)
   if (!isAdminRoute && siteStatus && siteStatus.type !== 'live') {
     return (
-      <div className="min-h-screen w-full bg-slate-50 text-slate-900 font-sans">
+      <div className="min-h-screen w-full max-w-full overflow-x-clip bg-slate-50 text-slate-900 font-sans">
         <SiteStatusOverlay status={siteStatus} />
       </div>
     );
@@ -158,9 +177,9 @@ function AppLayout() {
 
   if (isAdminRoute) {
     return (
-      <div className="admin-workspace bg-slate-50 text-slate-900 min-h-screen font-sans selection:bg-purple-600 selection:text-white">
+      <div className="admin-workspace w-full max-w-full overflow-x-clip bg-slate-50 text-slate-900 min-h-screen font-sans selection:bg-purple-600 selection:text-white">
         <ScrollToTop />
-        <main id="main-content" tabIndex="-1" className="min-h-screen focus:outline-none">
+        <main id="main-content" tabIndex="-1" className="min-h-screen w-full max-w-full overflow-x-clip focus:outline-none">
           <Suspense fallback={
             <div className="min-h-screen flex items-center justify-center bg-slate-50 text-[#5A1E65]" role="status" aria-label="Loading Admin">
               <div className="flex flex-col items-center gap-3">
@@ -311,17 +330,24 @@ function AppLayout() {
               <Route path="/error" element={<GeneralError />} />
 
               {/* Canonical Legacy URL In-App Route Resolutions (Never redirect to external websites) */}
+              <Route path="/programs/silver-collectives" element={<Navigate to="/programs/silver-collective" replace />} />
               <Route path="/crc-resources" element={<Navigate to="/resources" replace />} />
               <Route path="/services" element={<Navigate to="/programs" replace />} />
               <Route path="/services/youth-services" element={<Navigate to="/programs/rainbow-umbrella" replace />} />
               <Route path="/services/gsa-resources" element={<Navigate to="/resources" replace />} />
               <Route path="/youth-programs" element={<Navigate to="/programs" replace />} />
               <Route path="/adult-programs" element={<Navigate to="/community" replace />} />
+              <Route path="/community-groups" element={<Navigate to="/community" replace />} />
+              <Route path="/peer-groups" element={<Navigate to="/community" replace />} />
               <Route path="/virtual-vendors" element={<Navigate to="/directory" replace />} />
               <Route path="/pride-vendor" element={<Navigate to="/directory" replace />} />
               <Route path="/sponsor" element={<Navigate to="/sponsors" replace />} />
               <Route path="/venturapride" element={<Navigate to="/events" replace />} />
               <Route path="/dcvc-events" element={<Navigate to="/events" replace />} />
+              <Route path="/calendar" element={<Navigate to="/events" replace />} />
+              <Route path="/schedule" element={<Navigate to="/events" replace />} />
+              <Route path="/give" element={<Navigate to="/donate" replace />} />
+              <Route path="/donate-now" element={<Navigate to="/donate" replace />} />
               <Route path="/shines" element={<Navigate to="/programs/diversity-shines" replace />} />
               <Route path="/rainbow-umbrella" element={<Navigate to="/programs/rainbow-umbrella" replace />} />
               <Route path="/schedule-your-appointment" element={<Navigate to="/appointments" replace />} />

@@ -39,23 +39,23 @@ export default function Footer() {
             Serving Ventura County Communities:
           </span>
           <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5 text-slate-300 font-medium">
-            <Link to="/directory" className="hover:text-amber-300 transition-colors">Ventura</Link>
+            <Link to="/directory?city=Ventura" className="hover:text-amber-300 transition-colors">Ventura</Link>
             <span className="text-slate-700">·</span>
-            <Link to="/directory" className="hover:text-amber-300 transition-colors">Oxnard</Link>
+            <Link to="/directory?city=Oxnard" className="hover:text-amber-300 transition-colors">Oxnard</Link>
             <span className="text-slate-700">·</span>
-            <Link to="/directory" className="hover:text-amber-300 transition-colors">Camarillo</Link>
+            <Link to="/directory?city=Camarillo" className="hover:text-amber-300 transition-colors">Camarillo</Link>
             <span className="text-slate-700">·</span>
-            <Link to="/directory" className="hover:text-amber-300 transition-colors">Thousand Oaks</Link>
+            <Link to="/directory?city=Thousand%20Oaks" className="hover:text-amber-300 transition-colors">Thousand Oaks</Link>
             <span className="text-slate-700">·</span>
-            <Link to="/directory" className="hover:text-amber-300 transition-colors">Simi Valley</Link>
+            <Link to="/directory?city=Simi%20Valley" className="hover:text-amber-300 transition-colors">Simi Valley</Link>
             <span className="text-slate-700">·</span>
-            <Link to="/directory" className="hover:text-amber-300 transition-colors">Ojai Valley</Link>
+            <Link to="/directory?city=Ojai" className="hover:text-amber-300 transition-colors">Ojai Valley</Link>
             <span className="text-slate-700">·</span>
-            <Link to="/directory" className="hover:text-amber-300 transition-colors">Moorpark</Link>
+            <Link to="/directory?city=Moorpark" className="hover:text-amber-300 transition-colors">Moorpark</Link>
             <span className="text-slate-700">·</span>
-            <Link to="/directory" className="hover:text-amber-300 transition-colors">Santa Paula</Link>
+            <Link to="/directory?city=Santa%20Paula" className="hover:text-amber-300 transition-colors">Santa Paula</Link>
             <span className="text-slate-700">·</span>
-            <Link to="/directory" className="hover:text-amber-300 transition-colors">Port Hueneme</Link>
+            <Link to="/directory?city=Port%20Hueneme" className="hover:text-amber-300 transition-colors">Port Hueneme</Link>
           </div>
         </div>
 

@@ -1,26 +1,43 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { 
-  Crop, 
+  X, 
   RotateCw, 
   RotateCcw, 
-  Check, 
-  X, 
+  Crop, 
   Maximize2, 
+  Check, 
+  RefreshCw, 
   Image as ImageIcon,
-  RefreshCw,
   Move,
   Minimize2,
   CheckCircle2,
-  Sparkles
+  Sparkles,
+  Upload,
+  FolderOpen,
+  AlertTriangle
 } from 'lucide-react';
 
 const ASPECT_PRESETS = [
-  { id: 'original', label: 'Full Image (No Crop)', description: 'Keep 100% original dimensions without cutting edges' },
+  { id: 'original', label: 'Full Image (No Crop)', description: 'Keep 100% original dimensions without cutting edges or leaving blank spaces' },
   { id: 'free', label: 'Free Crop (Custom)', description: 'Drag corners and edges freely to any custom rectangle' },
-  { id: '16:9', label: '16:9 Widescreen', ratio: 16 / 9, description: 'Standard banner & widescreen hero ratio' },
-  { id: '4:3', label: '4:3 Standard', ratio: 4 / 3, description: 'Classic photo ratio' },
-  { id: '1:1', label: '1:1 Square', ratio: 1, description: 'Best for badges, logos, and avatars' },
-  { id: 'contain', label: 'Fit Whole (Padded)', description: 'Center whole graphic on a clean tinted background' }
+  { id: '16:10', label: '16:10 Community Card', ratio: 16 / 10, description: 'Standard community circle & card ratio (fills frame)' },
+  { id: '16:9', label: '16:9 Widescreen', ratio: 16 / 9, description: 'Standard banner & widescreen hero ratio (fills frame)' },
+  { id: '4:3', label: '4:3 Standard', ratio: 4 / 3, description: 'Classic photo ratio (fills frame)' },
+  { id: '1:1', label: '1:1 Square', ratio: 1, description: 'Best for badges, logos, and avatars (fills frame)' },
+  { id: 'contain', label: 'Fit Whole (Padded)', description: 'Center whole graphic on a soft ambient background' }
+];
+
+const DCVC_LIBRARY_PHOTOS = [
+  { id: 'crc', name: 'Community Resource Center', path: '/images/crc-building.jpg', category: 'Facilities' },
+  { id: 'umbrella', name: 'Rainbow Umbrella Youth', path: '/images/youth-umbrella.jpg', category: 'Programs' },
+  { id: 'shines', name: 'Diversity SHINES Clinical Room', path: '/images/shines-screening.jpg', category: 'Healthcare' },
+  { id: 'community', name: 'Community Gathering & Center', path: '/images/community-gathering.jpg', category: 'Community' },
+  { id: 'volunteers', name: 'DCVC Volunteer Outreach Team', path: '/images/volunteers.jpg', category: 'Volunteers' },
+  { id: 'prom', name: 'Pride Prom Celebration', path: '/images/pride-prom.jpeg', category: 'Events' },
+  { id: 'unicorns', name: 'Little Unicorns Family Circle', path: '/images/little-unicorns.png', category: 'Programs' },
+  { id: 'coast', name: 'Ventura Coastal Promenade', path: '/images/ventura-coast.jpg', category: 'Ventura' },
+  { id: 'hero', name: 'Hero Community Banner', path: '/images/hero-community.jpg', category: 'Community' },
+  { id: 'botanical', name: 'Botanical Wellness & Healing', path: '/images/botanical-flyer.jpg', category: 'Wellness' }
 ];
 
 function dataUrlToBlob(dataUrl) {
@@ -39,12 +56,128 @@ function dataUrlToBlob(dataUrl) {
   }
 }
 
+// Convert URL to Data URL to prevent canvas tainting (CORS) when cropping existing images.
+// Returns an object detailing whether the resulting image can be safely manipulated on a canvas.
+async function ensureDataUrl(source) {
+  if (!source || typeof source !== 'string') {
+    return { dataUrl: source, isCorsSafe: false, error: 'INVALID_SOURCE' };
+  }
+  if (source.startsWith('data:image/')) {
+    return { dataUrl: source, isCorsSafe: true, error: null };
+  }
+
+  // 1. Try direct fetch with cors
+  try {
+    const res = await fetch(source, { mode: 'cors' });
+    if (res.ok) {
+      const blob = await res.blob();
+      const dataUrl = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(blob);
+      });
+      if (dataUrl) {
+        return { dataUrl, isCorsSafe: true, error: null };
+      }
+    }
+  } catch {
+    // continue to Image element fallback
+  }
+
+  // 2. Try Image element with crossOrigin anonymous and verify canvas exportability
+  try {
+    const result = await new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        try {
+          const c = document.createElement('canvas');
+          c.width = img.naturalWidth || 800;
+          c.height = img.naturalHeight || 600;
+          const ctx = c.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          const exported = c.toDataURL('image/jpeg', 0.92);
+          resolve({ dataUrl: exported, isCorsSafe: true, error: null });
+        } catch {
+          // Canvas export failed due to tainted canvas (CORS restricted)
+          resolve({ dataUrl: null, isCorsSafe: false, error: 'CORS_RESTRICTED' });
+        }
+      };
+      img.onerror = () => {
+        resolve({ dataUrl: null, isCorsSafe: false, error: 'CORS_RESTRICTED' });
+      };
+      img.src = source;
+    });
+    return result;
+  } catch {
+    return { dataUrl: null, isCorsSafe: false, error: 'CORS_RESTRICTED' };
+  }
+}
+
 export default function ImageCropperModal({ 
   imageSrc, 
+  imageSource,
+  src,
   initialAspect = 'original',
   onApply, 
   onCancel 
 }) {
+  const initialImg = imageSrc || imageSource || src;
+  const normalizedInitial = typeof initialImg === 'string' ? initialImg : (initialImg?.url || initialImg?.src || null);
+  const [currentSource, setCurrentSource] = useState(normalizedInitial);
+  const [showLibraryModal, setShowLibraryModal] = useState(false);
+  const [showUrlModal, setShowUrlModal] = useState(false);
+  const [customUrlInput, setCustomUrlInput] = useState('');
+  const [loadError, setLoadError] = useState(false);
+  const [corsWarning, setCorsWarning] = useState(null);
+  const modalFileInputRef = useRef(null);
+
+  // Auto-convert image sources to safe local Data URLs to eliminate CORS export issues
+  useEffect(() => {
+    let isCancelled = false;
+    const raw = imageSrc || imageSource || src;
+    if (!raw) {
+      setCurrentSource(null);
+      setLoadError(false);
+      setCorsWarning(null);
+      return;
+    }
+    const targetSource = typeof raw === 'string' ? raw : (raw?.url || raw?.src || null);
+    if (!targetSource) {
+      setCurrentSource(null);
+      setLoadError(false);
+      setCorsWarning(null);
+      return;
+    }
+    setLoadError(false);
+    setCorsWarning(null);
+
+    if (typeof targetSource === 'string' && targetSource.startsWith('data:image/')) {
+      setCurrentSource(targetSource);
+      return;
+    }
+
+    // Set immediate preview so image is visible without delay
+    setCurrentSource(targetSource);
+
+    ensureDataUrl(targetSource).then((res) => {
+      if (isCancelled) return;
+      if (res && res.isCorsSafe && res.dataUrl) {
+        setCurrentSource(res.dataUrl);
+        setCorsWarning(null);
+      } else if (res && !res.isCorsSafe) {
+        setCorsWarning('This remote image is hosted on an external server that does not permit client-side canvas manipulation (CORS). Upload a local file to crop or keep original uncropped.');
+      }
+    }).catch(() => {
+      if (!isCancelled) {
+        setCorsWarning('Unable to verify image CORS headers for canvas editing.');
+      }
+    });
+
+    return () => { isCancelled = true; };
+  }, [imageSrc, imageSource, src]);
+
   const [selectedPreset, setSelectedPreset] = useState(initialAspect);
   const [rotation, setRotation] = useState(0); // 0, 90, 180, 270
   const [bgColor, setBgColor] = useState('#FFFFFF');
@@ -61,11 +194,30 @@ export default function ImageCropperModal({
   const imageRef = useRef(null);
   const containerRef = useRef(null);
 
+  const handleModalFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCurrentSource(reader.result);
+      setRotation(0);
+    };
+    reader.readAsDataURL(file);
+    if (modalFileInputRef.current) modalFileInputRef.current.value = '';
+  };
+
+  const handleSelectLibraryPhoto = async (photoPath) => {
+    setShowLibraryModal(false);
+    const dataUrl = await ensureDataUrl(photoPath);
+    setCurrentSource(dataUrl);
+    setRotation(0);
+  };
+
   // Load natural image dimensions
   useEffect(() => {
-    if (!imageSrc) return;
+    if (!currentSource) return;
     const img = new Image();
-    if (typeof imageSrc === 'string' && (imageSrc.startsWith('http://') || imageSrc.startsWith('https://')) && typeof window !== 'undefined' && !imageSrc.startsWith(window.location.origin)) {
+    if (typeof currentSource === 'string' && (currentSource.startsWith('http://') || currentSource.startsWith('https://')) && typeof window !== 'undefined' && !currentSource.startsWith(window.location.origin)) {
       img.crossOrigin = 'anonymous';
     }
     img.onload = () => {
@@ -76,11 +228,11 @@ export default function ImageCropperModal({
     img.onerror = () => {
       if (img.crossOrigin) {
         img.crossOrigin = null;
-        img.src = imageSrc;
+        img.src = currentSource;
       }
     };
-    img.src = imageSrc;
-  }, [imageSrc]);
+    img.src = currentSource;
+  }, [currentSource]);
 
   // Set initial crop based on preset
   const applyPreset = useCallback((presetId) => {
@@ -93,7 +245,7 @@ export default function ImageCropperModal({
     }
 
     if (presetId === 'free') {
-      // If currently 100%, inset slightly to give user visible handles to grab immediately
+      // Inset slightly to give user visible handles to grab immediately
       setCrop(prev => {
         if (prev.width === 1 && prev.height === 1) {
           return { x: 0.05, y: 0.05, width: 0.9, height: 0.9 };
@@ -206,12 +358,9 @@ export default function ImageCropperModal({
     // If locked to a ratio preset (not 'free' and not 'original')
     const preset = ASPECT_PRESETS.find(p => p.id === selectedPreset);
     if (preset && preset.ratio && imageMeta.naturalRatio) {
-      // Locked aspect ratio: targetRatio = (cropPixelW / cropPixelH)
-      // cropPixelW = newW * naturalWidth, cropPixelH = newH * naturalHeight
       const targetRatio = preset.ratio;
       const naturalRatio = imageMeta.naturalRatio;
       
-      // Compute required height given width
       const constrainedH = (newW * naturalRatio) / targetRatio;
       if (newY + constrainedH <= 1) {
         newH = constrainedH;
@@ -224,8 +373,8 @@ export default function ImageCropperModal({
     setCrop({
       x: Math.max(0, Math.min(1 - minSize, newX)),
       y: Math.max(0, Math.min(1 - minSize, newY)),
-      width: Math.max(minSize, Math.min(1 - newX, newW)),
-      height: Math.max(minSize, Math.min(1 - newY, newH))
+      width: Math.min(1 - Math.max(0, newX), Math.max(minSize, newW)),
+      height: Math.min(1 - Math.max(0, newY), Math.max(minSize, newH))
     });
   }, [activeDrag, selectedPreset, imageMeta]);
 
@@ -237,31 +386,36 @@ export default function ImageCropperModal({
     if (activeDrag) {
       window.addEventListener('mousemove', handlePointerMove);
       window.addEventListener('mouseup', handlePointerUp);
-      window.addEventListener('touchmove', handlePointerMove);
+      window.addEventListener('touchmove', handlePointerMove, { passive: false });
       window.addEventListener('touchend', handlePointerUp);
-      return () => {
-        window.removeEventListener('mousemove', handlePointerMove);
-        window.removeEventListener('mouseup', handlePointerUp);
-        window.removeEventListener('touchmove', handlePointerMove);
-        window.removeEventListener('touchend', handlePointerUp);
-      };
     }
+    return () => {
+      window.removeEventListener('mousemove', handlePointerMove);
+      window.removeEventListener('mouseup', handlePointerUp);
+      window.removeEventListener('touchmove', handlePointerMove);
+      window.removeEventListener('touchend', handlePointerUp);
+    };
   }, [activeDrag, handlePointerMove, handlePointerUp]);
 
   // Reset to 100% full original image
   const handleResetToFull = () => {
     setSelectedPreset('original');
-    setRotation(0);
     setCrop({ x: 0, y: 0, width: 1, height: 1 });
+    setRotation(0);
   };
 
   // Perform Crop & Render on Canvas
   const handleApplyCrop = async () => {
+    if (!currentSource) {
+      alert('Please choose or upload an image to crop.');
+      return;
+    }
+
     setIsProcessing(true);
 
     try {
       const img = new Image();
-      if (typeof imageSrc === 'string' && (imageSrc.startsWith('http://') || imageSrc.startsWith('https://')) && typeof window !== 'undefined' && !imageSrc.startsWith(window.location.origin)) {
+      if (typeof currentSource === 'string' && (currentSource.startsWith('http://') || currentSource.startsWith('https://')) && typeof window !== 'undefined' && !currentSource.startsWith(window.location.origin)) {
         img.crossOrigin = 'anonymous';
       }
 
@@ -272,12 +426,12 @@ export default function ImageCropperModal({
             img.crossOrigin = null;
             img.onload = resolve;
             img.onerror = () => reject(new Error('Failed to load image for cropping.'));
-            img.src = imageSrc;
+            img.src = currentSource;
           } else {
             reject(new Error('Failed to load image for cropping.'));
           }
         };
-        img.src = imageSrc;
+        img.src = currentSource;
       });
 
       const natW = img.naturalWidth || 800;
@@ -304,16 +458,21 @@ export default function ImageCropperModal({
         canvas.height = outH;
         ctx.drawImage(img, 0, 0, outW, outH);
       } 
-      // 2. CONTAIN PADDED MODE
+      // 2. CONTAIN PADDED MODE (With Ambient Soft Reflection - Zero White Blank Space)
       else if (selectedPreset === 'contain') {
         const outW = 1200;
-        const outH = 675; // 16:9 padded canvas
+        const outH = 675; // 16:9 banner canvas
         canvas.width = outW;
         canvas.height = outH;
-        ctx.fillStyle = bgColor;
-        ctx.fillRect(0, 0, outW, outH);
 
-        const pad = 30;
+        // Draw soft ambient backdrop of image itself so NO white void is created
+        ctx.save();
+        ctx.drawImage(img, 0, 0, outW, outH);
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.45)';
+        ctx.fillRect(0, 0, outW, outH);
+        ctx.restore();
+
+        const pad = 20;
         const availW = outW - pad * 2;
         const availH = outH - pad * 2;
         const imgRatio = natW / natH;
@@ -380,53 +539,70 @@ export default function ImageCropperModal({
           }
         }
 
-        const croppedFile = finalBlob 
-          ? new File([finalBlob], `image-${Date.now()}.jpg`, { type: 'image/jpeg' })
-          : null;
-        const localPreviewUrl = finalBlob ? URL.createObjectURL(finalBlob) : (dataUrlFallback || imageSrc);
+        const filename = `framed-photo-${Date.now().toString(36)}.jpg`;
+        const file = finalBlob ? new File([finalBlob], filename, { type: 'image/jpeg' }) : null;
+        let previewUrl = '';
+        try {
+          if (finalBlob) {
+            previewUrl = URL.createObjectURL(finalBlob);
+          } else if (dataUrlFallback) {
+            previewUrl = dataUrlFallback;
+          } else {
+            previewUrl = currentSource;
+          }
+        } catch {
+          previewUrl = currentSource;
+        }
 
-        onApply(croppedFile || dataUrlFallback || imageSrc, localPreviewUrl);
         setIsProcessing(false);
+        if (onApply) onApply(file, previewUrl);
       };
 
       try {
         canvas.toBlob((blob) => {
           finalizeOutput(blob);
-        }, 'image/jpeg', 0.88);
-      } catch {
-        finalizeOutput(null);
+        }, 'image/jpeg', 0.90);
+      } catch (blobErr) {
+        console.warn('[ImageCropper] toBlob notice, trying dataUrl:', blobErr);
+        try {
+          const fallbackData = canvas.toDataURL('image/jpeg', 0.90);
+          finalizeOutput(dataUrlToBlob(fallbackData));
+        } catch {
+          setIsProcessing(false);
+          alert('Cannot crop this image: This remote image is CORS-restricted by its host. Please upload a local image file directly to crop it.');
+          return;
+        }
       }
 
     } catch (err) {
-      alert('Error processing image crop: ' + err.message);
+      console.error('[ImageCropper] Error applying crop:', err);
       setIsProcessing(false);
+      alert('Unable to process crop: ' + err.message + '\n\nPlease upload the image file directly from your computer.');
     }
   };
 
-  // Compute live pixel dimensions of the crop for admin visibility
-  const liveCropPixelW = Math.round(crop.width * (imageMeta.width || 1));
-  const liveCropPixelH = Math.round(crop.height * (imageMeta.height || 1));
+  // Live pixel coordinates of the crop selection
+  const liveCropPixelW = Math.round((crop.width || 1) * (imageMeta.width || 800));
+  const liveCropPixelH = Math.round((crop.height || 1) * (imageMeta.height || 600));
 
   return (
-    <div 
-      className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[99999] flex items-center justify-center p-3 sm:p-4 select-none overflow-y-auto"
-    >
-      <div className="bg-white rounded-3xl max-w-4xl w-full shadow-2xl border border-purple-200 overflow-hidden flex flex-col max-h-[94vh] animate-in zoom-in-95 duration-150 font-sans">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
+      <div className="bg-white rounded-3xl shadow-2xl border border-purple-200/80 w-full max-w-4xl overflow-hidden flex flex-col max-h-[92vh]">
         
         {/* Header */}
-        <div className="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-[#5A1E65] text-white flex items-center justify-center shadow-xs">
-              <Crop className="w-4 h-4" />
+        <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between bg-gradient-to-r from-purple-50 via-white to-amber-50/50">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-[#5A1E65] text-white flex items-center justify-center shadow-md">
+              <Crop className="w-5 h-5 text-amber-300" />
             </div>
             <div>
-              <h3 className="font-display font-black text-slate-950 text-sm sm:text-base tracking-tight flex items-center gap-2">
-                <span>Image Cropping & Framing Studio</span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-[#5A1E65]">
+              <div className="flex items-center gap-2">
+                <span className="font-display font-black text-slate-900 text-base sm:text-lg">Image Cropping & Framing Studio</span>
+                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
                   Free Crop Enabled
                 </span>
-              </h3>
-              <p className="text-[11px] text-slate-500 font-medium">
+              </div>
+              <p className="text-xs text-slate-500">
                 Drag corners or sides to crop freely · Preserves 100% full image unless explicitly cropped
               </p>
             </div>
@@ -435,7 +611,7 @@ export default function ImageCropperModal({
           <button
             type="button"
             onClick={onCancel}
-            className="p-1.5 rounded-full hover:bg-slate-200 text-slate-400 hover:text-slate-700 transition-colors"
+            className="p-1.5 rounded-full hover:bg-slate-200 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -469,30 +645,95 @@ export default function ImageCropperModal({
             })}
           </div>
 
-          <button
-            type="button"
-            onClick={handleResetToFull}
-            className="text-[11px] font-bold text-slate-600 hover:text-[#5A1E65] flex items-center gap-1 py-1 px-2.5 rounded-lg hover:bg-purple-100/60 transition-colors cursor-pointer"
-          >
-            <RefreshCw className="w-3 h-3" />
-            <span>Reset to Full Image</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => modalFileInputRef.current?.click()}
+              className="text-[11px] font-bold text-purple-700 hover:text-purple-900 bg-white border border-purple-200 py-1 px-2.5 rounded-lg hover:bg-purple-50 transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs"
+              title="Upload from computer"
+            >
+              <Upload className="w-3 h-3 text-purple-700" />
+              <span>{currentSource ? 'Change Image' : 'Upload Image'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowLibraryModal(true)}
+              className="text-[11px] font-bold text-purple-700 hover:text-purple-900 bg-white border border-purple-200 py-1 px-2.5 rounded-lg hover:bg-purple-50 transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs"
+              title="Choose from official DCVC photo library"
+            >
+              <FolderOpen className="w-3 h-3 text-amber-600" />
+              <span>Photo Library</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleResetToFull}
+              className="text-[11px] font-bold text-slate-600 hover:text-[#5A1E65] flex items-center gap-1 py-1 px-2.5 rounded-lg hover:bg-purple-100/60 transition-colors cursor-pointer"
+            >
+              <RefreshCw className="w-3 h-3" />
+              <span>Reset to Full Image</span>
+            </button>
+          </div>
         </div>
 
         {/* Viewport Area */}
         <div 
           ref={containerRef}
+          onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+          onDrop={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const file = e.dataTransfer?.files?.[0];
+            if (file && file.type.startsWith('image/')) {
+              const reader = new FileReader();
+              reader.onload = () => {
+                setCurrentSource(reader.result);
+                setRotation(0);
+                setCorsWarning(null);
+                setLoadError(false);
+              };
+              reader.readAsDataURL(file);
+            }
+          }}
           className="p-4 sm:p-6 bg-slate-950/95 flex-grow flex items-center justify-center overflow-hidden relative min-h-[360px] max-h-[55vh]"
         >
-          {imageSrc ? (
+          {/* CORS Warning Banner if remote image origin forbids canvas extraction */}
+          {corsWarning && (
+            <div className="absolute top-3 left-3 right-3 z-30 p-2.5 rounded-xl bg-amber-950/90 text-amber-200 border border-amber-500/50 text-xs flex items-center justify-between gap-2 backdrop-blur-md shadow-lg animate-fadeIn">
+              <div className="flex items-center gap-2 min-w-0">
+                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                <span className="truncate">{corsWarning}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => modalFileInputRef.current?.click()}
+                className="px-2.5 py-1 rounded-lg bg-amber-400 text-slate-950 font-bold text-[11px] shrink-0 hover:bg-amber-300 cursor-pointer"
+              >
+                Upload Local File
+              </button>
+            </div>
+          )}
+          <input
+            ref={modalFileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleModalFileSelect}
+            className="hidden"
+          />
+
+          {currentSource && !loadError ? (
             <div className="relative inline-block max-w-full max-h-full select-none">
               
               {/* Underlying Image */}
               <img
                 ref={imageRef}
-                src={imageSrc}
+                src={currentSource}
                 alt="Crop Target"
                 draggable={false}
+                onError={() => {
+                  setLoadError(true);
+                }}
                 className="max-h-[50vh] max-w-[85vw] sm:max-w-[700px] object-contain rounded-lg block pointer-events-none select-none"
                 style={{
                   transform: `rotate(${rotation}deg)`,
@@ -524,8 +765,8 @@ export default function ImageCropperModal({
                     <div className="border-r border-b border-white/40" />
                     <div className="border-r border-b border-white/40" />
                     <div className="border-b border-white/40" />
-                    <div className="border-r border-white/40" />
-                    <div className="border-r border-white/40" />
+                    <div className="border-r border-b border-white/40" />
+                    <div className="border-r border-b border-white/40" />
                     <div />
                   </div>
 
@@ -594,6 +835,7 @@ export default function ImageCropperModal({
                       />
                     </>
                   )}
+
                 </div>
               )}
 
@@ -601,14 +843,42 @@ export default function ImageCropperModal({
               {selectedPreset === 'contain' && (
                 <div className="absolute inset-0 border-2 border-emerald-400 rounded-lg pointer-events-none flex items-center justify-center bg-black/30">
                   <span className="bg-emerald-950/90 text-emerald-200 border border-emerald-400/40 text-xs font-bold px-3 py-1.5 rounded-xl shadow-lg">
-                    ✓ Full Image Preserved · Centered on {bgColor} canvas with zero cut-off
+                    ✓ Full Image Preserved · Soft Ambient Edge Fill (Zero Blank Cut-Off)
                   </span>
                 </div>
               )}
 
             </div>
           ) : (
-            <div className="text-white text-xs">No image to display</div>
+            <div className="flex flex-col items-center justify-center p-8 text-center space-y-4 max-w-md animate-fadeIn">
+              <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center text-purple-300 border border-white/20 shadow-lg">
+                <ImageIcon className="w-8 h-8 text-purple-300" />
+              </div>
+              <div className="space-y-1">
+                <span className="text-white text-base block font-bold">No image to display</span>
+                <p className="text-slate-300 text-xs leading-relaxed">
+                  Upload an image from your computer, choose from the DCVC Photo Library, or pick a default photo.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => modalFileInputRef.current?.click()}
+                  className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#5A1E65] to-purple-700 hover:from-purple-800 hover:to-indigo-700 text-white font-bold text-xs shadow-lg transition-all cursor-pointer flex items-center gap-2 hover:scale-105"
+                >
+                  <Upload className="w-4 h-4 text-amber-300" />
+                  <span>Upload from Computer</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowLibraryModal(true)}
+                  className="px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 border border-white/30 text-white font-bold text-xs shadow-lg transition-all cursor-pointer flex items-center gap-2 hover:scale-105"
+                >
+                  <FolderOpen className="w-4 h-4 text-amber-300" />
+                  <span>Choose from Library</span>
+                </button>
+              </div>
+            </div>
           )}
         </div>
 
@@ -637,30 +907,6 @@ export default function ImageCropperModal({
                 <span>+90°</span>
               </button>
             </div>
-
-            {/* Tint Chooser for Contain Mode */}
-            {selectedPreset === 'contain' && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-700">Canvas Fill Tint:</span>
-                {[
-                  { name: 'White', color: '#FFFFFF' },
-                  { name: 'Soft Gray', color: '#F8FAFC' },
-                  { name: 'Lavender', color: '#FAF5FF' },
-                  { name: 'Dark Slate', color: '#0F172A' }
-                ].map((bg) => (
-                  <button
-                    key={bg.color}
-                    type="button"
-                    title={bg.name}
-                    onClick={() => setBgColor(bg.color)}
-                    className={`w-6 h-6 rounded-md border-2 transition-transform cursor-pointer ${
-                      bgColor === bg.color ? 'border-[#5A1E65] scale-110 shadow-xs' : 'border-slate-300'
-                    }`}
-                    style={{ backgroundColor: bg.color }}
-                  />
-                ))}
-              </div>
-            )}
 
             {/* Live Dimension & Mode Indicator */}
             <div className="text-[11px] font-bold text-slate-600 bg-slate-100 px-3 py-1 rounded-full border border-slate-200 ml-auto flex items-center gap-1.5">
@@ -695,14 +941,20 @@ export default function ImageCropperModal({
               <button
                 type="button"
                 onClick={handleApplyCrop}
-                disabled={isProcessing}
-                className="btn-primary py-2.5 px-6 rounded-xl text-xs font-bold shadow-md hover:shadow-lg flex items-center gap-1.5 cursor-pointer"
+                disabled={isProcessing || !currentSource || loadError}
+                className={`py-2.5 px-6 rounded-xl text-xs font-bold shadow-md hover:shadow-lg flex items-center gap-1.5 ${
+                  !currentSource || loadError
+                    ? 'bg-slate-200 text-slate-500 cursor-not-allowed shadow-none'
+                    : 'btn-primary cursor-pointer'
+                }`}
               >
                 {isProcessing ? (
                   <>
                     <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     <span>Processing Image...</span>
                   </>
+                ) : !currentSource || loadError ? (
+                  <span>Choose or Upload Image First</span>
                 ) : (
                   <>
                     <Check className="w-4 h-4 text-white" />
@@ -716,6 +968,64 @@ export default function ImageCropperModal({
           </div>
 
         </div>
+
+        {/* DCVC Photo Library Picker Modal Overlay */}
+        {showLibraryModal && (
+          <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
+            <div className="bg-white rounded-3xl shadow-2xl border border-purple-200 w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh]">
+              <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-purple-50">
+                <div className="flex items-center gap-2">
+                  <FolderOpen className="w-4 h-4 text-[#5A1E65]" />
+                  <span className="font-display font-black text-slate-900 text-sm">DCVC Authentic Photography Library</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowLibraryModal(false)}
+                  className="p-1 rounded-full hover:bg-slate-200 text-slate-400 hover:text-slate-700 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="p-4 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {DCVC_LIBRARY_PHOTOS.map((photo) => (
+                  <button
+                    key={photo.id}
+                    type="button"
+                    onClick={() => handleSelectLibraryPhoto(photo.path)}
+                    className="group flex flex-col rounded-2xl overflow-hidden border-2 border-slate-200 hover:border-[#5A1E65] transition-all text-left bg-slate-50 cursor-pointer hover:shadow-md"
+                  >
+                    <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-900">
+                      <img
+                        src={photo.path}
+                        alt={photo.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <span className="absolute bottom-1 right-1 text-[9px] font-bold px-1.5 py-0.5 rounded bg-black/70 text-white">
+                        {photo.category}
+                      </span>
+                    </div>
+                    <div className="p-2">
+                      <span className="text-[11px] font-bold text-slate-800 line-clamp-1 group-hover:text-[#5A1E65]">
+                        {photo.name}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              <div className="p-3 border-t border-slate-100 bg-slate-50 flex items-center justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowLibraryModal(false)}
+                  className="px-4 py-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>

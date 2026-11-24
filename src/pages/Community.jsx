@@ -25,7 +25,6 @@ import {
 import { useLiveCommunityGroups } from '../hooks/useCmsLive';
 import { getCommunityGroupData } from '../data/communityData';
 import { submitInquiry } from '../services/api';
-import { getCommunityCardTheme, subscribeToCardThemes } from '../services/cardThemeStore.js';
 import CardSpotlight from '../components/CardSpotlight';
 import MobileCarousel from '../components/MobileCarousel';
 import { useScrollLock } from '../utils/scrollLock';
@@ -33,19 +32,12 @@ import { useScrollLock } from '../utils/scrollLock';
 export default function Community() {
   const communityGroups = useLiveCommunityGroups();
   const [selectedFilter, setSelectedFilter] = useState('All');
-  const [, setCardThemeVersion] = useState(0);
-
-  useEffect(() => {
-    return subscribeToCardThemes(() => {
-      setCardThemeVersion((v) => v + 1);
-    });
-  }, []);
   
   // Modals state
   const [activeGroupModal, setActiveGroupModal] = useState(null);
   const [modalActiveTab, setModalActiveTab] = useState('details'); // 'details' | 'announcements' | 'blog'
   const [activeJoinModal, setActiveJoinModal] = useState(null);
-  const [joinForm, setJoinForm] = useState({ name: '', email: '', pronouns: '', notes: '' });
+  const [joinForm, setJoinForm] = useState({ name: '', preferredName: '', email: '', pronouns: '', notes: '', emailConsent: false });
   const [joinSubmitted, setJoinSubmitted] = useState(false);
 
   // Propose a Group Modal state
@@ -80,27 +72,55 @@ export default function Community() {
 
   // Open Details Modal
   const handleOpenDetails = (group, defaultTab = 'details') => {
-    const enriched = getCommunityGroupData(group.name) || group;
+    const seed = getCommunityGroupData(group.name) || {};
+    const rawGuidelines = group.guidelines || seed.guidelines || [];
+    const formattedGuidelines = Array.isArray(rawGuidelines) 
+      ? rawGuidelines 
+      : (typeof rawGuidelines === 'string' && rawGuidelines.trim() ? rawGuidelines.split('\n').map(s => s.trim()).filter(Boolean) : []);
+
+    const enriched = {
+      ...seed,
+      ...group,
+      overview: group.overview || seed.overview || group.description,
+      facilitator: group.facilitator || seed.facilitator || 'DCVC Staff & Mentors',
+      guidelines: formattedGuidelines,
+      announcements: Array.isArray(group.announcements) && group.announcements.length > 0
+        ? group.announcements.filter(a => a.published !== false && a.active !== false)
+        : (seed.announcements || []),
+      blogPosts: Array.isArray(group.stories || group.blogPosts) && (group.stories || group.blogPosts).length > 0
+        ? (group.stories || group.blogPosts).filter(s => s.published !== false && s.active !== false)
+        : (seed.blogPosts || [])
+    };
     setActiveGroupModal(enriched);
     setModalActiveTab(defaultTab);
   };
 
   // Open Join Modal
   const handleOpenJoin = (group) => {
-    const enriched = getCommunityGroupData(group.name) || group;
+    const seed = getCommunityGroupData(group.name) || {};
+    const enriched = { ...seed, ...group };
     setActiveJoinModal(enriched);
     setJoinSubmitted(false);
-    setJoinForm({ name: '', email: '', pronouns: '', notes: '' });
+    setJoinForm({ name: '', preferredName: '', email: '', pronouns: '', notes: '', emailConsent: false });
   };
 
   // Handle Join Submit (Emails facilitator + confirmation to member)
   const handleJoinSubmit = async (e) => {
     e.preventDefault();
+    const groupSlug = activeJoinModal?.slug || (activeJoinModal?.name || 'general').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     try {
       const existing = JSON.parse(localStorage.getItem('dcvc_community_joins') || '[]');
       existing.push({
+        id: `join-${Date.now()}`,
+        groupSlug,
         groupName: activeJoinModal?.name,
-        ...joinForm,
+        name: joinForm.name,
+        preferredName: joinForm.preferredName || joinForm.name,
+        email: joinForm.email,
+        pronouns: joinForm.pronouns,
+        accessibilityNotes: joinForm.notes,
+        emailConsent: Boolean(joinForm.emailConsent),
+        status: 'submitted',
         submittedAt: new Date().toISOString()
       });
       localStorage.setItem('dcvc_community_joins', JSON.stringify(existing));
@@ -110,10 +130,17 @@ export default function Community() {
 
     await submitInquiry({
       type: 'community_join',
+      groupSlug,
+      groupName: activeJoinModal?.name,
       name: joinForm.name,
+      preferredName: joinForm.preferredName,
       email: joinForm.email,
+      pronouns: joinForm.pronouns,
+      accessibilityNotes: joinForm.notes,
+      emailConsent: Boolean(joinForm.emailConsent),
+      email_updates_consent: Boolean(joinForm.emailConsent),
       subject: `Join Circle: ${activeJoinModal?.name || 'DCVC Community Circle'}`,
-      message: `Circle: ${activeJoinModal?.name}\nPronouns: ${joinForm.pronouns || 'Not provided'}\nAccommodations / Notes: ${joinForm.notes || 'None'}`
+      message: `Circle: ${activeJoinModal?.name}\nPreferred Name: ${joinForm.preferredName || joinForm.name}\nPronouns: ${joinForm.pronouns || 'Not provided'}\nAccommodations / Notes: ${joinForm.notes || 'None'}\nEmail Updates Consent: ${joinForm.emailConsent ? 'Yes (Opt-in confirmed)' : 'No'}`
     });
     setJoinSubmitted(true);
   };
@@ -192,209 +219,150 @@ export default function Community() {
             const enriched = getCommunityGroupData(group.name);
             const annCount = enriched?.announcements?.length || 0;
             const blogCount = enriched?.blogPosts?.length || 0;
-            const theme = getCommunityCardTheme(group.category, group);
-            const softGradientBg = `linear-gradient(145deg, ${theme.gradientFrom || '#FAF5FF'} 0%, ${theme.gradientVia || theme.gradientFrom || '#FAF5FF'} 50%, ${theme.gradientTo || '#FFFFFF'} 100%)`;
+            const groupImg = group.image || (Array.isArray(group.images) && group.images[0]) || '/images/community-gathering.jpg';
 
             return (
-              <CardSpotlight
-                key={group.name}
-                className="rounded-3xl relative overflow-hidden transition-all duration-300 flex flex-col h-full w-full min-h-[660px] border-2"
-                style={{
-                  background: softGradientBg,
-                  borderColor: theme.borderColor || `${theme.accentColor || '#5A1E65'}40`,
-                  boxShadow: `0 10px 30px -10px ${theme.glowColor || 'rgba(0,0,0,0.06)'}, 0 2px 6px rgba(0,0,0,0.03)`
-                }}
-                tilt={true}
-                maxTilt={2}
-                glare={false}
+              <div
+                key={group.id || group.slug || group.name}
+                className="bg-white rounded-3xl border border-slate-200/90 hover:border-purple-300 shadow-xs hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 flex flex-col h-full w-full overflow-hidden group"
               >
-                {/* Top decorative category accent line */}
-                <div
-                  className="h-[3px] w-full shrink-0"
-                  style={{
-                    background: `linear-gradient(90deg, transparent 0%, ${theme.accentColor || '#5A1E65'} 50%, transparent 100%)`
-                  }}
-                />
+                {/* Featured Picture with edge-to-edge 16:10 aspect ratio */}
+                <div className="relative w-full aspect-[16/10] overflow-hidden bg-slate-900 shrink-0">
+                  <img
+                    src={groupImg}
+                    alt={group.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    onError={(e) => {
+                      e.currentTarget.src = '/images/community-gathering.jpg';
+                    }}
+                  />
+                  {/* Subtle gradient vignette for badge legibility */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-slate-950/30 pointer-events-none" />
 
-                <div className="p-6 sm:p-7 flex flex-col flex-1 gap-5">
-                  {/* Top Header Badges */}
-                  <div className="flex items-center justify-between gap-2 shrink-0">
-                    <span
-                      className="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-2xs"
-                      style={{
-                        backgroundColor: theme.badgeBg || '#F3E8FF',
-                        color: theme.badgeColor || theme.accentColor || '#5A1E65',
-                        border: `1.5px solid ${theme.borderColor || theme.accentColor || '#DDD6FE'}`
-                      }}
-                    >
-                      <Sparkles className="w-3 h-3" />
+                  {/* Badges on Picture */}
+                  <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2 z-10">
+                    <span className="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-[#5A1E65]/90 backdrop-blur-md text-white shadow-sm flex items-center gap-1.5 border border-white/20">
+                      <Sparkles className="w-3 h-3 text-amber-300" />
                       <span>{group.category}</span>
                     </span>
-                    <span
-                      className="text-xs font-bold px-3 py-0.5 rounded-full"
-                      style={{
-                        backgroundColor: `${theme.accentColor || '#5A1E65'}12`,
-                        color: theme.accentColor || '#5A1E65'
-                      }}
-                    >
-                      {group.ages}
-                    </span>
+                    {group.ages && (
+                      <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-white shadow-sm border border-white/10">
+                        {group.ages}
+                      </span>
+                    )}
                   </div>
+                </div>
 
-                  {/* Title with uniform reserved height */}
-                  <div className="min-h-[4.25rem] sm:min-h-[4.75rem] flex flex-col justify-center shrink-0">
-                    <span
-                      className="text-[11px] font-black uppercase tracking-wider block mb-1"
-                      style={{ color: theme.accentColor || '#5A1E65' }}
-                    >
-                      AFFIRMING PEER GATHERING
+                {/* Content Body */}
+                <div className="p-6 sm:p-7 flex flex-col flex-1 gap-4">
+                  {/* Title & Tagline */}
+                  <div>
+                    <span className="text-[11px] font-black uppercase tracking-wider block mb-1 text-[#5A1E65]">
+                      AFFIRMING COMMUNITY CIRCLE
                     </span>
-                    <h2 className="font-display text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-snug line-clamp-2">
+                    <h2 className="font-display text-2xl sm:text-3xl font-black text-slate-900 group-hover:text-[#5A1E65] transition-colors tracking-tight leading-tight line-clamp-2">
                       {group.name}
                     </h2>
                   </div>
 
-                  {/* Frosted Glass Description Container with uniform height */}
-                  <div
-                    className="rounded-2xl p-4 sm:p-5 bg-white/90 border shadow-xs space-y-2 min-h-[6.5rem] sm:min-h-[7rem] flex flex-col justify-center shrink-0"
-                    style={{ borderColor: `${theme.borderColor || '#E2E8F0'}` }}
-                  >
-                    <div
-                      className="text-xs sm:text-sm font-bold flex items-center gap-1.5 shrink-0"
-                      style={{ color: theme.accentColor || '#5A1E65' }}
-                    >
-                      <Heart className="w-3.5 h-3.5 fill-current" />
-                      <span>Safe, Affirming &amp; Facilitated Community Space</span>
-                    </div>
-                    <p className="text-sm sm:text-base text-slate-800 font-serif italic leading-relaxed line-clamp-3">
-                      &ldquo;{group.description}&rdquo;
-                    </p>
-                  </div>
+                  {/* Description */}
+                  <p className="text-sm sm:text-base text-slate-600 leading-relaxed line-clamp-3">
+                    {group.description}
+                  </p>
 
-                  {/* Meeting Schedule & Location Pill Container with uniform height */}
-                  <div
-                    className="p-4 bg-white/95 rounded-2xl border space-y-2 text-xs sm:text-sm shadow-xs min-h-[5.5rem] sm:min-h-[6rem] flex flex-col justify-center shrink-0"
-                    style={{ borderColor: `${theme.borderColor || '#E2E8F0'}` }}
-                  >
+                  {/* Schedule & Location Box */}
+                  <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-100/90 space-y-2 text-xs sm:text-sm shadow-2xs">
                     <div className="flex items-center gap-2.5">
-                      <Clock className="w-4 h-4 shrink-0" style={{ color: theme.accentColor || '#5A1E65' }} />
+                      <Clock className="w-4 h-4 text-[#5A1E65] shrink-0" />
                       <span className="font-bold text-slate-900">Meets:</span>
-                      <span className="text-slate-800 font-semibold">{group.frequency}</span>
+                      <span className="text-slate-700 font-medium">{group.frequency}</span>
                     </div>
                     <div className="flex items-center gap-2.5">
-                      <MapPin className="w-4 h-4 shrink-0" style={{ color: theme.accentColor || '#5A1E65' }} />
+                      <MapPin className="w-4 h-4 text-[#5A1E65] shrink-0" />
                       <span className="font-bold text-slate-900">Location:</span>
-                      <span className="text-slate-800 font-semibold">{group.location}</span>
+                      <span className="text-slate-700 font-medium">{group.location}</span>
                     </div>
                   </div>
 
-                  {/* Feature Checklist Bullets with uniform height */}
-                  <div className="space-y-2 text-xs sm:text-sm text-slate-800 font-semibold min-h-[3.75rem] flex flex-col justify-center shrink-0">
-                    <div className="flex items-center gap-2">
-                      <Check className="w-4 h-4 shrink-0" style={{ color: theme.accentColor || '#5A1E65' }} />
-                      <span>Zero cost, drop-in attendance unconditionally affirmed</span>
+                  {/* Sub-page quick indicators (Announcements & Blog Stories) */}
+                  {(annCount > 0 || blogCount > 0) && (
+                    <div className="flex flex-wrap items-center gap-2 text-xs font-bold pt-1">
+                      {annCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenDetails(group, 'announcements')}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-[#5A1E65] border border-purple-200 shadow-2xs transition-colors cursor-pointer"
+                        >
+                          <Bell className="w-3.5 h-3.5" />
+                          <span>{annCount} Active {annCount === 1 ? 'Announcement' : 'Announcements'}</span>
+                        </button>
+                      )}
+                      {blogCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenDetails(group, 'blog')}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs transition-colors cursor-pointer"
+                        >
+                          <BookOpen className="w-3.5 h-3.5 text-[#5A1E65]" />
+                          <span>{blogCount} {blogCount === 1 ? 'Story' : 'Stories'} &amp; Blog</span>
+                        </button>
+                      )}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="w-4 h-4 shrink-0" style={{ color: theme.accentColor || '#5A1E65' }} />
-                      <span>Trauma-informed peer space guided by trained facilitators</span>
-                    </div>
-                  </div>
-
-                  {/* Sub-page quick indicators with guaranteed slot height */}
-                  <div className="min-h-[2.5rem] flex items-center shrink-0">
-                    {(annCount > 0 || blogCount > 0) ? (
-                      <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
-                        {annCount > 0 && (
-                          <button
-                            type="button"
-                            onClick={() => handleOpenDetails(group, 'announcements')}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border shadow-2xs transition-colors cursor-pointer"
-                            style={{
-                              borderColor: theme.borderColor || '#E2E8F0',
-                              color: theme.accentColor || '#5A1E65'
-                            }}
-                          >
-                            <Bell className="w-3.5 h-3.5" />
-                            <span>{annCount} Active {annCount === 1 ? 'Announcement' : 'Announcements'}</span>
-                          </button>
-                        )}
-                        {blogCount > 0 && (
-                          <button
-                            type="button"
-                            onClick={() => handleOpenDetails(group, 'blog')}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border shadow-2xs transition-colors cursor-pointer"
-                            style={{
-                              borderColor: theme.borderColor || '#E2E8F0',
-                              color: theme.accentColor || '#5A1E65'
-                            }}
-                          >
-                            <BookOpen className="w-3.5 h-3.5" />
-                            <span>{blogCount} {blogCount === 1 ? 'Story' : 'Stories'} &amp; Blog</span>
-                          </button>
-                        )}
-                      </div>
-                    ) : (
-                      <div
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/80 border shadow-2xs text-xs font-semibold"
-                        style={{
-                          borderColor: theme.borderColor || '#E2E8F0',
-                          color: theme.accentColor || '#5A1E65'
-                        }}
-                      >
-                        <Sparkles className="w-3.5 h-3.5" />
-                        <span>Affirming Community Circle</span>
-                      </div>
-                    )}
-                  </div>
+                  )}
 
                   {/* Primary Action Buttons pinned to bottom with mt-auto */}
-                  <div
-                    className="pt-5 mt-auto border-t flex flex-wrap items-center justify-between gap-3 relative z-20 min-h-[4rem] shrink-0"
-                    style={{ borderColor: `${theme.borderColor || '#E2E8F0'}` }}
-                  >
+                  <div className="pt-4 mt-auto border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
                     <div className="flex flex-wrap items-center gap-2.5">
                       <button
                         type="button"
                         onClick={() => handleOpenDetails(group, 'details')}
-                        className="py-2.5 px-4 text-xs sm:text-sm font-bold inline-flex items-center gap-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-800 border-2 shadow-xs transition-all cursor-pointer"
-                        style={{ borderColor: theme.accentColor || '#5A1E65' }}
+                        className="py-2.5 px-4 text-xs sm:text-sm font-bold inline-flex items-center gap-1.5 rounded-xl bg-white hover:bg-purple-50 text-slate-800 hover:text-[#5A1E65] border border-slate-200 hover:border-purple-200 shadow-2xs transition-colors cursor-pointer"
                       >
-                        <Info className="w-3.5 h-3.5" style={{ color: theme.accentColor || '#5A1E65' }} />
+                        <Info className="w-3.5 h-3.5 text-[#5A1E65]" />
                         <span>Explore Details</span>
                       </button>
 
                       <button
                         type="button"
                         onClick={() => handleOpenJoin(group)}
-                        className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-xs sm:text-sm shadow-md hover:shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
-                        style={{
-                          backgroundColor: theme.btnBg || theme.accentColor || '#5A1E65',
-                          color: '#FFFFFF'
-                        }}
+                        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-[#5A1E65] hover:bg-[#43144A] text-white shadow-xs hover:shadow-md transition-all active:scale-[0.98] cursor-pointer"
                       >
                         <Users className="w-4 h-4 text-white" />
                         <span className="font-bold text-white text-xs sm:text-sm tracking-wide">Join Circle Online</span>
                       </button>
                     </div>
 
-                    <a
-                      href={`mailto:${group.contact}?subject=Inquiry%20Regarding%20${encodeURIComponent(group.name)}`}
-                      className="py-2.5 px-3.5 rounded-xl bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs sm:text-sm border-2 shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                      style={{ borderColor: theme.accentColor || '#5A1E65' }}
-                      title="Direct contact with facilitators"
-                    >
-                      <Mail className="w-3.5 h-3.5" style={{ color: theme.accentColor || '#5A1E65' }} />
-                      <span className="hidden sm:inline">Facilitator</span>
-                    </a>
+                    <div className="flex items-center gap-2">
+                      {group.externalLink && (
+                        <a
+                          href={group.externalLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="py-2.5 px-3 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs border border-slate-200 shadow-2xs transition-colors inline-flex items-center gap-1 cursor-pointer"
+                          title="Visit external group page"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5 text-[#5A1E65]" />
+                          <span className="hidden sm:inline">Info</span>
+                        </a>
+                      )}
+                      <a
+                        href={`mailto:${group.contact || 'info@diversitycollective.org'}?subject=Inquiry%20Regarding%20${encodeURIComponent(group.name)}`}
+                        className="py-2.5 px-3.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs border border-slate-200 shadow-2xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                        title="Direct contact with facilitators"
+                      >
+                        <Mail className="w-3.5 h-3.5 text-[#5A1E65]" />
+                        <span className="hidden sm:inline">Contact</span>
+                      </a>
+                    </div>
                   </div>
 
                   {/* Community footnote */}
-                  <div className="text-center text-xs text-slate-600 font-medium flex items-center justify-center gap-1.5 pt-1 shrink-0">
-                    <Lock className="w-3 h-3 text-slate-500" />
-                    <span>Affirming LGBTQ+ Community Circle • Drop-in Welcomed</span>
+                  <div className="text-center text-xs text-slate-500 font-medium flex items-center justify-center gap-1.5 pt-1">
+                    <Lock className="w-3 h-3 text-slate-400" />
+                    <span>Free, Affirming LGBTQ+ Community Circle • Drop-in Welcomed</span>
                   </div>
                 </div>
-              </CardSpotlight>
+              </div>
             );
           })}
         </MobileCarousel>
@@ -562,20 +530,31 @@ export default function Community() {
               {modalActiveTab === 'announcements' && (
                 <div className="space-y-4">
                   {activeGroupModal.announcements && activeGroupModal.announcements.length > 0 ? (
-                    activeGroupModal.announcements.map((ann) => (
-                      <div key={ann.id} className="p-5 bg-amber-50/60 rounded-2xl border border-amber-200 space-y-1.5">
-                        <div className="flex items-center justify-between text-[11px] text-amber-800 font-bold">
-                          <span>📢 Community Update</span>
-                          <span>{ann.date}</span>
+                    [...activeGroupModal.announcements]
+                      .sort((a, b) => (b.isPinned || b.pinned ? 1 : 0) - (a.isPinned || a.pinned ? 1 : 0))
+                      .map((ann) => (
+                        <div 
+                          key={ann.id} 
+                          className={`p-5 rounded-2xl border space-y-2 ${
+                            ann.isPinned || ann.pinned 
+                              ? 'bg-purple-50/70 border-purple-200 shadow-2xs' 
+                              : 'bg-amber-50/60 border-amber-200'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between text-[11px] font-bold">
+                            <span className={ann.isPinned || ann.pinned ? 'text-purple-800 flex items-center gap-1' : 'text-amber-800'}>
+                              {ann.isPinned || ann.pinned ? '📌 Pinned Update' : '📢 Community Update'}
+                            </span>
+                            <span className="text-slate-500">{ann.date || ''}</span>
+                          </div>
+                          <h4 className="font-display font-black text-slate-950 text-sm">
+                            {ann.title}
+                          </h4>
+                          <p className="text-xs text-slate-700 leading-relaxed font-medium whitespace-pre-line">
+                            {ann.content}
+                          </p>
                         </div>
-                        <h4 className="font-display font-black text-slate-950 text-sm">
-                          {ann.title}
-                        </h4>
-                        <p className="text-xs text-slate-700 leading-relaxed font-medium">
-                          {ann.content}
-                        </p>
-                      </div>
-                    ))
+                      ))
                   ) : (
                     <div className="text-center py-10 text-slate-400 text-xs">
                       No active announcements posted at this time. Check back soon!
@@ -590,17 +569,38 @@ export default function Community() {
                   {activeGroupModal.blogPosts && activeGroupModal.blogPosts.length > 0 ? (
                     activeGroupModal.blogPosts.map((post) => (
                       <article key={post.id} className="p-5 bg-white rounded-2xl border border-slate-200 shadow-2xs space-y-3">
+                        {(post.coverImage || post.image) && (
+                          <div className="w-full h-44 rounded-xl overflow-hidden mb-3 bg-slate-100">
+                            <img 
+                              src={post.coverImage || post.image} 
+                              alt={post.title} 
+                              className="w-full h-full object-cover"
+                              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                            />
+                          </div>
+                        )}
                         <div className="flex items-center justify-between text-[11px] text-purple-700 font-bold">
-                          <span>By {post.author}</span>
-                          <span>{post.date} · {post.readTime}</span>
+                          <span>By {post.author || 'DCVC Community'}</span>
+                          <span>{post.date || ''} {post.readTime ? `· ${post.readTime}` : ''}</span>
                         </div>
                         <h4 className="font-display font-black text-slate-950 text-base">
                           {post.title}
                         </h4>
-                        <div 
-                          className="prose prose-sm text-xs text-slate-700 leading-relaxed font-medium space-y-2"
-                          dangerouslySetInnerHTML={{ __html: post.content }}
-                        />
+                        {post.excerpt && (
+                          <p className="text-xs font-semibold text-purple-900/80 italic">
+                            {post.excerpt}
+                          </p>
+                        )}
+                        {post.content?.includes('<') ? (
+                          <div 
+                            className="prose prose-sm text-xs text-slate-700 leading-relaxed font-medium space-y-2"
+                            dangerouslySetInnerHTML={{ __html: post.content }}
+                          />
+                        ) : (
+                          <p className="text-xs text-slate-700 leading-relaxed font-medium whitespace-pre-line">
+                            {post.content}
+                          </p>
+                        )}
                       </article>
                     ))
                   ) : (
@@ -692,16 +692,28 @@ export default function Community() {
                   <p><strong>Location:</strong> {activeJoinModal.location}</p>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Your Full Name or Chosen Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={joinForm.name}
-                    onChange={(e) => setJoinForm({ ...joinForm, name: e.target.value })}
-                    placeholder="e.g. Jordan River"
-                    className="w-full px-3 py-2 text-xs border rounded-xl focus:ring-2 focus:ring-purple-400 outline-none"
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Your Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={joinForm.name}
+                      onChange={(e) => setJoinForm({ ...joinForm, name: e.target.value })}
+                      placeholder="e.g. Jordan River"
+                      className="w-full px-3 py-2 text-xs border rounded-xl focus:ring-2 focus:ring-purple-400 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Preferred / Chosen Name (Optional)</label>
+                    <input
+                      type="text"
+                      value={joinForm.preferredName}
+                      onChange={(e) => setJoinForm({ ...joinForm, preferredName: e.target.value })}
+                      placeholder="e.g. Jo"
+                      className="w-full px-3 py-2 text-xs border rounded-xl focus:ring-2 focus:ring-purple-400 outline-none"
+                    />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -737,6 +749,20 @@ export default function Community() {
                     placeholder="Any accessibility requirements or questions you have before coming?"
                     className="w-full px-3 py-2 text-xs border rounded-xl focus:ring-2 focus:ring-purple-400 outline-none"
                   />
+                </div>
+
+                <div className="flex items-start gap-2.5 pt-1">
+                  <input
+                    type="checkbox"
+                    id="email-updates-consent"
+                    name="email_updates_consent"
+                    checked={Boolean(joinForm.emailConsent)}
+                    onChange={(e) => setJoinForm({ ...joinForm, emailConsent: e.target.checked })}
+                    className="mt-0.5 h-4 w-4 rounded border-slate-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
+                  />
+                  <label htmlFor="email-updates-consent" className="text-xs text-slate-600 leading-tight cursor-pointer select-none">
+                    I would like to receive email updates and announcements for this community circle. (Optional)
+                  </label>
                 </div>
 
                 <div className="pt-2 flex items-center justify-end gap-2">

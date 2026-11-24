@@ -6,7 +6,15 @@ import { useEffect } from 'react';
 export function usePageMeta({ title, description, canonicalPath, ogImage }) {
   useEffect(() => {
     const baseTitle = 'Diversity Collective Ventura County';
-    const fullTitle = title ? `${title} | ${baseTitle}` : `${baseTitle} | You Are Welcome Here`;
+    let cleanTitle = (title || '').trim();
+    if (cleanTitle.toLowerCase().endsWith(`| ${baseTitle.toLowerCase()}`)) {
+      cleanTitle = cleanTitle.slice(0, -(`| ${baseTitle}`.length)).trim();
+    } else if (cleanTitle.toLowerCase().endsWith(baseTitle.toLowerCase())) {
+      cleanTitle = cleanTitle.slice(0, -baseTitle.length).replace(/\|\s*$/, '').trim();
+    }
+    const fullTitle = cleanTitle
+      ? `${cleanTitle} | ${baseTitle}`
+      : `${baseTitle} | You Are Welcome Here`;
     const defaultDesc = 'Diversity Collective Ventura County is a 501(c)(3) nonprofit providing advocacy, visibility, safety, and wellness for the LGBTQ+ community throughout Ventura County.';
     const metaDesc = description || defaultDesc;
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://diversitycollective.org';

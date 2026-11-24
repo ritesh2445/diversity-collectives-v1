@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import {
   getAllCardThemes,
+  saveAllCardThemes,
   updateCategoryTheme,
   resetCardThemes,
   subscribeToCardThemes,
@@ -30,7 +31,7 @@ import CardSpotlight from '../../components/CardSpotlight.jsx';
 
 export default function CardGradientStudio() {
   const [themes, setThemes] = useState(getAllCardThemes());
-  const [activeTab, setActiveTab] = useState('resources'); // 'resources' | 'community'
+  const activeTab = 'resources';
   const [selectedCategory, setSelectedCategory] = useState('');
   const [saveSuccess, setSaveSuccess] = useState(false);
 
@@ -42,9 +43,7 @@ export default function CardGradientStudio() {
   }, []);
 
   const resourceCategories = Object.keys(themes.resources);
-  const communityCategories = Object.keys(themes.community);
-
-  const currentCategories = activeTab === 'resources' ? resourceCategories : communityCategories;
+  const currentCategories = resourceCategories;
 
   // Set default selected category if none or not in current tab
   useEffect(() => {
@@ -80,6 +79,7 @@ export default function CardGradientStudio() {
   };
 
   const handleSave = () => {
+    saveAllCardThemes(themes, { broadcast: true, publish: true });
     setSaveSuccess(true);
     setTimeout(() => setSaveSuccess(false), 3000);
   };
@@ -109,10 +109,10 @@ export default function CardGradientStudio() {
             <span className="text-xs text-purple-200">0ms Real-Time Sync</span>
           </div>
           <h2 className="font-display text-2xl sm:text-3xl font-black text-white">
-            Resource & Community Card Styling
+            Resource Directory Card Styling
           </h2>
           <p className="text-xs sm:text-sm text-purple-200/90 max-w-2xl leading-relaxed">
-            Customize the calm soft gradients, accents, borders, and buttons for every Resource and Community category. Changes reflect immediately on public cards.
+            Customize the calm soft gradients, accents, borders, and buttons for every Resource Directory category. Changes reflect immediately on public resource cards.
           </p>
         </div>
 
@@ -139,43 +139,22 @@ export default function CardGradientStudio() {
       {saveSuccess && (
         <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold flex items-center gap-2 animate-fadeIn">
           <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-          <span>Card category gradients successfully saved and synced live!</span>
+          <span>Resource card category gradients successfully saved and synced live!</span>
         </div>
       )}
 
-      {/* Section Switcher Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
-        <button
-          type="button"
-          onClick={() => setActiveTab('resources')}
-          className={`px-5 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 border ${
-            activeTab === 'resources'
-              ? 'bg-[#5A1E65] text-white border-purple-800 shadow-md ring-2 ring-purple-300/40'
-              : 'bg-white text-slate-700 hover:text-slate-950 border-slate-200'
-          }`}
-        >
+      {/* Directory Category Header */}
+      <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+        <div className="px-5 py-2.5 rounded-2xl text-xs font-black bg-[#5A1E65] text-white border border-purple-800 shadow-md ring-2 ring-purple-300/40 flex items-center gap-2">
           <Layers className="w-4 h-4" />
           <span>Resource Directory Cards</span>
           <span className="px-2 py-0.5 rounded-full text-[10px] bg-purple-900 text-purple-100">
             {resourceCategories.length}
           </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('community')}
-          className={`px-5 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 border ${
-            activeTab === 'community'
-              ? 'bg-[#5A1E65] text-white border-purple-800 shadow-md ring-2 ring-purple-300/40'
-              : 'bg-white text-slate-700 hover:text-slate-950 border-slate-200'
-          }`}
-        >
-          <Users className="w-4 h-4" />
-          <span>Community Circle Cards</span>
-          <span className="px-2 py-0.5 rounded-full text-[10px] bg-purple-900 text-purple-100">
-            {communityCategories.length}
-          </span>
-        </button>
+        </div>
+        <span className="text-xs text-slate-500 font-medium hidden sm:inline">
+          Community Groups have their own dedicated image, announcement, and reflection cards in Website Content (CMS).
+        </span>
       </div>
 
       {/* Category Pills Selector */}
@@ -416,7 +395,7 @@ export default function CardGradientStudio() {
                     color: currentTheme.accentColor || '#5A1E65'
                   }}
                 >
-                  {activeTab === 'resources' ? 'Verified Lifeline' : 'Affirming Circle'}
+                  Verified Lifeline
                 </span>
               </div>
 
@@ -426,12 +405,10 @@ export default function CardGradientStudio() {
                   className="text-[11px] font-black uppercase tracking-wider block mb-1"
                   style={{ color: currentTheme.accentColor || '#5A1E65' }}
                 >
-                  {activeTab === 'resources' ? 'COMMUNITY LIFELINE PROVIDER' : 'COMMUNITY GATHERING'}
+                  COMMUNITY LIFELINE PROVIDER
                 </span>
                 <h3 className="font-display text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-snug">
-                  {activeTab === 'resources'
-                    ? '988 Suicide & Crisis Lifeline'
-                    : 'Rainbow Umbrella Youth Circle'}
+                  988 Suicide &amp; Crisis Lifeline
                 </h3>
               </div>
 
@@ -445,16 +422,10 @@ export default function CardGradientStudio() {
                   style={{ color: currentTheme.accentColor || '#5A1E65' }}
                 >
                   <Star className="w-3.5 h-3.5 fill-current" />
-                  <span>
-                    {activeTab === 'resources'
-                      ? 'Confidential 24/7 Crisis Support'
-                      : 'Weekly Peer Circle for Youth'}
-                  </span>
+                  <span>Confidential 24/7 Crisis Support</span>
                 </div>
                 <p className="text-sm text-slate-800 italic font-serif leading-relaxed line-clamp-3">
-                  {activeTab === 'resources'
-                    ? '"Free, confidential 24/7 support across the US for distress or mental health crisis. Call or text 988."'
-                    : '"Weekly youth peer group providing check-ins, discussions, and creative workshops supporting authentic self-expression."'}
+                  "Free, confidential 24/7 support across the US for distress or mental health crisis. Call or text 988."
                 </p>
               </div>
 
@@ -486,7 +457,7 @@ export default function CardGradientStudio() {
                 >
                   <Heart className="w-4 h-4 fill-white text-white" />
                   <span className="font-bold text-white">
-                    {activeTab === 'resources' ? 'Access Service Online ↗' : 'Join Community Circle ↗'}
+                    Access Service Online ↗
                   </span>
                 </button>
 

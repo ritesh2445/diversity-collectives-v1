@@ -29,42 +29,110 @@ const DCVC_WEBSITE = 'https://diversitycollective.org';
 function baseEmailWrapper({ title, headerSubtitle = '', contentHtml, actionButton = null }) {
   return `
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <title>${title}</title>
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
+  <style type="text/css">
+    :root {
+      color-scheme: light;
+      supported-color-schemes: light;
+    }
+    /* Prevent iOS Mail from automatically converting addresses and numbers into un-styled links */
+    a[x-apple-data-detectors] {
+      color: inherit !important;
+      text-decoration: none !important;
+      font-size: inherit !important;
+      font-family: inherit !important;
+      font-weight: inherit !important;
+      line-height: inherit !important;
+    }
+    #MessageViewBody a, u + #body a {
+      color: inherit;
+      text-decoration: none;
+      font-size: inherit;
+      font-family: inherit;
+      font-weight: inherit;
+      line-height: inherit;
+    }
+    /* Bulletproof text and graphics contrast locks for iOS Mail, WebKit, and Android */
+    .email-header {
+      background-color: ${DCVC_PURPLE} !important;
+      background-image: linear-gradient(0deg, ${DCVC_PURPLE}, ${DCVC_PURPLE}) !important;
+    }
+    .email-header h1, .email-header h1 span {
+      color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff !important;
+    }
+    .email-header p, .email-header p span {
+      color: #e9d5ff !important;
+      -webkit-text-fill-color: #e9d5ff !important;
+    }
+    .btn-primary, .btn-primary span {
+      color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff !important;
+    }
+    .card-headline {
+      color: #1e1b4b !important;
+      -webkit-text-fill-color: #1e1b4b !important;
+    }
+    .card-donor-name {
+      color: #581c87 !important;
+      -webkit-text-fill-color: #581c87 !important;
+    }
+    .card-tagline {
+      color: #334155 !important;
+      -webkit-text-fill-color: #334155 !important;
+    }
+  </style>
 </head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: ${DCVC_BG}; margin: 0; padding: 24px; color: #1e293b;">
-  <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 8px 25px rgba(90, 30, 101, 0.08); border: 1px solid #e2e8f0;">
+<body class="email-body" bgcolor="${DCVC_BG}" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: ${DCVC_BG}; background-image: linear-gradient(0deg, ${DCVC_BG}, ${DCVC_BG}); margin: 0; padding: 24px; color: #1e293b;">
+  <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff" class="email-container" style="max-width: 600px; background-color: #ffffff; background-image: linear-gradient(0deg, #ffffff, #ffffff); border-radius: 20px; overflow: hidden; box-shadow: 0 8px 25px rgba(90, 30, 101, 0.08); border: 1px solid #e2e8f0;">
     <!-- Header Banner -->
     <tr>
-      <td style="padding: 36px 32px; background: linear-gradient(135deg, ${DCVC_PURPLE} 0%, ${DCVC_PURPLE_DARK} 100%); text-align: center;">
-        <span style="display: inline-block; padding: 4px 12px; background-color: rgba(255,255,255,0.15); border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: 1px; color: #fef08a; text-transform: uppercase;">
+      <td class="email-header" bgcolor="${DCVC_PURPLE}" style="padding: 36px 32px; background-color: ${DCVC_PURPLE}; background-image: linear-gradient(0deg, ${DCVC_PURPLE}, ${DCVC_PURPLE}); text-align: center;">
+        <span class="pill-badge" style="display: inline-block; padding: 5px 14px; background-color: rgba(255,255,255,0.22); border-radius: 999px; font-size: 11px; font-weight: 800; letter-spacing: 1px; color: #fef08a !important; -webkit-text-fill-color: #fef08a !important; text-transform: uppercase;">
           Diversity Collective Ventura County
         </span>
-        <h1 style="color: #ffffff; font-size: 24px; margin: 14px 0 6px 0; font-weight: 800; letter-spacing: -0.5px;">
-          ${title}
+        <h1 style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; font-size: 24px; margin: 14px 0 6px 0; font-weight: 800; letter-spacing: -0.5px;">
+          <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;">${title}</span>
         </h1>
-        ${headerSubtitle ? `<p style="color: #e9d5ff; font-size: 14px; margin: 0;">${headerSubtitle}</p>` : ''}
+        ${headerSubtitle ? `<p style="color: #e9d5ff !important; -webkit-text-fill-color: #e9d5ff !important; font-size: 14px; margin: 0;"><span style="color: #e9d5ff !important; -webkit-text-fill-color: #e9d5ff !important;">${headerSubtitle}</span></p>` : ''}
       </td>
     </tr>
 
     <!-- Body Content -->
     <tr>
-      <td style="padding: 32px 32px;">
+      <td class="email-body-content" style="padding: 32px 32px; background-color: #ffffff; background-image: linear-gradient(0deg, #ffffff, #ffffff);">
         ${contentHtml}
 
         ${actionButton ? `
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="${actionButton.url}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #e11d48 0%, ${DCVC_PURPLE} 50%, #6b21a8 100%); color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 700; padding: 14px 32px; border-radius: 12px; box-shadow: 0 4px 12px rgba(90, 30, 101, 0.25);">
-            ${actionButton.text}
-          </a>
-        </div>
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" style="margin: 30px auto;">
+          <tr>
+            <td align="center" bgcolor="${DCVC_PURPLE}" style="border-radius: 12px; background-color: ${DCVC_PURPLE}; background-image: linear-gradient(135deg, #e11d48 0%, ${DCVC_PURPLE} 50%, #6b21a8 100%); box-shadow: 0 4px 12px rgba(90, 30, 101, 0.25);">
+              <a href="${actionButton.url}" target="_blank" class="btn-primary" style="display: inline-block; color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; text-decoration: none; font-size: 15px; font-weight: 700; padding: 14px 32px; border-radius: 12px;">
+                <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; font-weight: 700;">${actionButton.text}</span>
+              </a>
+            </td>
+          </tr>
+        </table>
         ` : ''}
 
         <hr style="border: none; border-top: 1px solid #f1f5f9; margin: 28px 0 20px 0;">
-        <p style="font-size: 12px; line-height: 1.5; color: #64748b; margin: 0;">
+        <p class="text-muted" style="font-size: 12px; line-height: 1.5; color: #64748b; margin: 0;">
           This message was sent by Diversity Collective Ventura County. Need immediate assistance? Call us at <strong>${DCVC_PHONE}</strong> or visit our <a href="${DCVC_WEBSITE}/contact" style="color: ${DCVC_PURPLE};">Contact Page</a>.
         </p>
       </td>
@@ -72,7 +140,7 @@ function baseEmailWrapper({ title, headerSubtitle = '', contentHtml, actionButto
 
     <!-- Footer -->
     <tr>
-      <td style="padding: 20px 32px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; text-align: center; font-size: 11px; color: #94a3b8;">
+      <td class="footer-box" bgcolor="#f8fafc" style="padding: 20px 32px; background-color: #f8fafc; background-image: linear-gradient(0deg, #f8fafc, #f8fafc); border-top: 1px solid #e2e8f0; text-align: center; font-size: 11px; color: #94a3b8;">
         <p style="margin: 0 0 4px 0; font-weight: 700; color: #475569;">Diversity Collective Ventura County, Inc. (501(c)(3) Nonprofit)</p>
         <p style="margin: 0 0 6px 0;">${DCVC_ADDRESS} · ${DCVC_PHONE}</p>
         <p style="margin: 0;"><a href="${DCVC_WEBSITE}" style="color: #6b21a8; text-decoration: underline;">diversitycollective.org</a></p>
@@ -143,11 +211,12 @@ export function templateContactStaffNotification({ name, email, phone, subject, 
 /**
  * 3. Volunteer Application Acknowledgment (to Applicant)
  */
-export function templateVolunteerAcknowledgment({ fullName }) {
+export function templateVolunteerAcknowledgment({ preferredName, fullName }) {
+  const greetingName = preferredName || fullName || 'Friend';
   const title = "Volunteer Application Received";
   const contentHtml = `
     <p style="font-size: 15px; line-height: 1.6; color: #334155; margin-top: 0;">
-      Dear ${fullName || 'Friend'},
+      Dear ${greetingName},
     </p>
     <p style="font-size: 15px; line-height: 1.6; color: #334155;">
       Thank you for applying to volunteer with Diversity Collective Ventura County! Volunteers are the vital heartbeat of our safe harbor, youth programs, and annual Pride festival.
@@ -166,18 +235,20 @@ export function templateVolunteerAcknowledgment({ fullName }) {
   return {
     subject: `Thank you for volunteering with DCVC! 🌟`,
     html: baseEmailWrapper({ title, headerSubtitle: 'Building community together', contentHtml }),
-    text: `Dear ${fullName},\n\nThank you for applying to volunteer with Diversity Collective! Our volunteer coordinator will reach out to schedule an orientation.\n\nDiversity Collective Team`
+    text: `Dear ${greetingName},\n\nThank you for applying to volunteer with Diversity Collective! Our volunteer coordinator will reach out to schedule an orientation.\n\nDiversity Collective Team`
   };
 }
 
 /**
  * 4. Volunteer Application Notification (to Staff)
  */
-export function templateVolunteerStaffNotification({ fullName, email, phone, city, roles, availability, reference }) {
+export function templateVolunteerStaffNotification({ preferredName, pronouns, legalName, fullName, email, phone, city, roles, availability, reference }) {
   const rolesList = Array.isArray(roles) ? roles.join(', ') : roles;
+  const applicantName = preferredName || fullName || 'Applicant';
+  const applicantDisplay = `${applicantName}${pronouns ? ` (${pronouns})` : ''}${legalName && legalName !== applicantName ? ` [Legal Name: ${legalName}]` : ''}`;
   const contentHtml = `
     <div style="background-color: #f1f5f9; border-radius: 12px; padding: 18px; margin-bottom: 20px;">
-      <p style="margin: 0 0 8px 0; font-size: 14px;"><strong>Applicant:</strong> ${fullName}</p>
+      <p style="margin: 0 0 8px 0; font-size: 14px;"><strong>Applicant:</strong> ${applicantDisplay}</p>
       <p style="margin: 0 0 8px 0; font-size: 14px;"><strong>Email:</strong> ${email}</p>
       <p style="margin: 0 0 8px 0; font-size: 14px;"><strong>Phone:</strong> ${phone}</p>
       <p style="margin: 0 0 8px 0; font-size: 14px;"><strong>City:</strong> ${city}</p>
@@ -188,9 +259,9 @@ export function templateVolunteerStaffNotification({ fullName, email, phone, cit
   `;
 
   return {
-    subject: `[New Volunteer Application] ${fullName} (${city})`,
-    html: baseEmailWrapper({ title: 'New Volunteer Application', headerSubtitle: `${fullName} • ${city}`, contentHtml }),
-    text: `New volunteer application from ${fullName} (${email}, ${phone}, ${city}). Areas: ${rolesList}`
+    subject: `[New Volunteer Application] ${applicantName} (${city})`,
+    html: baseEmailWrapper({ title: 'New Volunteer Application', headerSubtitle: `${applicantName} • ${city}`, contentHtml }),
+    text: `New volunteer application from ${applicantDisplay} (${email}, ${phone}, ${city}). Areas: ${rolesList}`
   };
 }
 
@@ -434,11 +505,11 @@ export function templateDonorAppreciationEmail({
 
   const recurringHeartfeltBlock = isRecurring
     ? `
-    <div style="background: linear-gradient(135deg, #fff1f2 0%, #fdf4ff 100%); border: 1px solid #fbcfe8; border-radius: 18px; padding: 18px 20px; margin: 18px 0;">
-      <p style="margin: 0 0 6px 0; font-size: 13px; font-weight: 800; color: #9d174d; text-transform: uppercase; letter-spacing: 0.4px;">
+    <div class="email-content-box" bgcolor="#fdf4ff" style="background-color: #fdf4ff; background-image: linear-gradient(0deg, #fdf4ff, #fdf4ff); border: 1px solid #fbcfe8; border-radius: 18px; padding: 18px 20px; margin: 18px 0;">
+      <p style="margin: 0 0 6px 0; font-size: 13px; font-weight: 800; color: #9d174d !important; -webkit-text-fill-color: #9d174d !important; text-transform: uppercase; letter-spacing: 0.4px;">
         🌸 A Cute Heartfelt Note for Our Recurring Sustainer Family 💜
       </p>
-      <p style="margin: 0; font-size: 14px; line-height: 1.65; color: #4c1d95;">
+      <p style="margin: 0; font-size: 14px; line-height: 1.65; color: #4c1d95 !important; -webkit-text-fill-color: #4c1d95 !important;">
         ${recurringNoteContent}
       </p>
     </div>`
@@ -448,7 +519,7 @@ export function templateDonorAppreciationEmail({
   let mainBodyHtml = '';
   if (customTemplate?.bodyText) {
     mainBodyHtml = compileDonationTokens(customTemplate.bodyText, tokenData)
-      .replace(/\n\n/g, '</p><p style="font-size: 15px; line-height: 1.6; color: #334155; margin-top: 12px;">')
+      .replace(/\n\n/g, '</p><p class="text-dark" style="font-size: 15px; line-height: 1.6; color: #1e293b !important; -webkit-text-fill-color: #1e293b !important; margin-top: 12px;">')
       .replace(/\n/g, '<br />');
   } else {
     mainBodyHtml = `We are deeply moved by your generous gift of <strong>${formattedAmount}</strong> ${frequencyLabel ? `(${frequencyLabel})` : ''}. Your kindness powers our safe harbor for LGBTQ+ individuals and families across Ventura County.`;
@@ -460,51 +531,76 @@ export function templateDonorAppreciationEmail({
 
   const contentHtml = `
     <div style="text-align: center; margin-bottom: 20px;">
-      <span style="display: inline-block; padding: 4px 14px; background-color: #faf5ff; border: 1px solid #d8b4fe; border-radius: 999px; font-size: 11px; font-weight: 800; color: #581c87; text-transform: uppercase; letter-spacing: 0.5px;">
+      <span class="pill-badge" style="display: inline-block; padding: 6px 16px; background-color: #faf5ff; background-image: linear-gradient(0deg, #faf5ff, #faf5ff); border: 1.5px solid #d8b4fe; border-radius: 999px; font-size: 11px; font-weight: 800; color: #581c87 !important; -webkit-text-fill-color: #581c87 !important; text-transform: uppercase; letter-spacing: 0.5px;">
         ${badge || tierName} • ${tierName}${isRecurring ? ' • 💜 Recurring Sustainer' : ''}
       </span>
     </div>
 
-    <p style="font-size: 15px; line-height: 1.6; color: #334155; margin-top: 0;">
+    <p class="text-dark" style="font-size: 15px; line-height: 1.6; color: #1e293b !important; -webkit-text-fill-color: #1e293b !important; margin-top: 0;">
       ${mainBodyHtml}
     </p>
     ${recurringHeartfeltBlock}
 
-    <!-- Static Keepsake Card Preview Block -->
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 24px 0; border: 2px solid #e9d5ff; border-radius: 20px; overflow: hidden; background: linear-gradient(135deg, #fdf4ff 0%, #faf5ff 50%, #f5f3ff 100%);">
+    <!-- Static Keepsake Card Preview Block with iOS / Dark Mode Protection -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#ffffff" class="email-card-preview" style="margin: 24px 0; border: 2px solid #cbd5e1; border-radius: 20px; overflow: hidden; background-color: #ffffff; background-image: linear-gradient(0deg, #ffffff, #ffffff); box-shadow: 0 4px 18px rgba(90, 30, 101, 0.08);">
       <tr>
-        <td style="padding: 24px; text-align: center;">
+        <td style="padding: 28px 20px; text-align: center; background-color: #ffffff; background-image: linear-gradient(0deg, #ffffff, #ffffff);">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
             <tr>
               <td align="center">
-                <div style="display: inline-block; padding: 6px 14px; background-color: #ffffff; border-radius: 999px; border: 1px solid #cbd5e1; font-size: 10px; font-weight: 800; letter-spacing: 1px; color: #581c87; text-transform: uppercase; margin-bottom: 12px;">
-                  Official 501(c)(3) Keepsake Card
-                </div>
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" style="margin: 0 auto 12px auto;">
+                  <tr>
+                    <td align="center">
+                      <div class="pill-badge" style="display: inline-block; padding: 6px 16px; background-color: #f1f5f9; background-image: linear-gradient(0deg, #f1f5f9, #f1f5f9); border-radius: 999px; border: 1.5px solid #cbd5e1; font-size: 10px; font-weight: 800; letter-spacing: 1px; color: #581c87 !important; -webkit-text-fill-color: #581c87 !important; text-transform: uppercase;">
+                        Official 501(c)(3) Keepsake Card
+                      </div>
+                    </td>
+                  </tr>
+                </table>
               </td>
             </tr>
             <tr>
               <td align="center">
-                <h3 style="margin: 4px 0 8px 0; font-family: Georgia, serif; font-size: 20px; font-weight: 700; color: #1e1b4b;">
+                <!-- Visual Heart Medallion Graphics with Solid Contrast -->
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" style="margin: 0 auto 12px auto;">
+                  <tr>
+                    <td align="center" width="52" height="52" bgcolor="${DCVC_PURPLE}" style="width: 52px; height: 52px; min-width: 52px; max-width: 52px; border-radius: 26px; background-color: ${DCVC_PURPLE}; background-image: linear-gradient(0deg, ${DCVC_PURPLE}, ${DCVC_PURPLE}); text-align: center; vertical-align: middle; box-shadow: 0 4px 10px rgba(90, 30, 101, 0.25);">
+                      <span style="font-size: 24px; line-height: 52px; display: inline-block; color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;">💜</span>
+                    </td>
+                  </tr>
+                </table>
+
+                <h3 class="card-headline" style="margin: 4px 0 8px 0; font-family: Georgia, 'Times New Roman', serif; font-size: 20px; font-weight: 700; color: #1e1b4b !important; -webkit-text-fill-color: #1e1b4b !important;">
                   ${customTemplate?.headline ? compileDonationTokens(customTemplate.headline, tokenData) : 'With Heartfelt Thanks To'}
                 </h3>
-                <p style="margin: 0 0 16px 0; font-family: Georgia, serif; font-size: 24px; font-weight: 800; color: #581c87;">
+                <p class="card-donor-name" style="margin: 0 0 16px 0; font-family: Georgia, 'Times New Roman', serif; font-size: 26px; font-weight: 800; color: #581c87 !important; -webkit-text-fill-color: #581c87 !important;">
                   ${donorDisplayName}
                 </p>
-                <div style="width: 60px; height: 3px; background: linear-gradient(90deg, #f59e0b, #ec4899); margin: 0 auto 16px auto; border-radius: 2px;"></div>
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" style="margin: 0 auto 16px auto;">
+                  <tr>
+                    <td width="70" height="4" bgcolor="#f59e0b" style="width: 70px; height: 4px; background-color: #f59e0b; background-image: linear-gradient(90deg, #f59e0b 0%, #ec4899 100%); font-size: 0px; line-height: 0px; border-radius: 2px;">&nbsp;</td>
+                  </tr>
+                </table>
               </td>
             </tr>
             <tr>
               <td align="center">
-                <p style="margin: 0 0 20px 0; font-size: 13px; font-style: italic; color: #475569; max-width: 440px; line-height: 1.5;">
+                <p class="card-tagline" style="margin: 0 0 20px 0; font-size: 14px; font-style: italic; color: #334155 !important; -webkit-text-fill-color: #334155 !important; max-width: 440px; line-height: 1.5; margin-left: auto; margin-right: auto;">
                   "${tagline}"
                 </p>
               </td>
             </tr>
             <tr>
               <td align="center">
-                <a href="${cardUrl}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #e11d48 0%, ${DCVC_PURPLE} 50%, #6b21a8 100%); color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 800; padding: 14px 32px; border-radius: 14px; box-shadow: 0 6px 16px rgba(90, 30, 101, 0.25);">
-                  Open & Unwrap Your Interactive Card ✨
-                </a>
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" style="margin: 0 auto;">
+                  <tr>
+                    <td align="center" bgcolor="${DCVC_PURPLE}" style="border-radius: 14px; background-color: ${DCVC_PURPLE}; background-image: linear-gradient(135deg, #e11d48 0%, ${DCVC_PURPLE} 50%, #6b21a8 100%); box-shadow: 0 6px 16px rgba(90, 30, 101, 0.25);">
+                      <a href="${cardUrl}" target="_blank" class="btn-primary" style="display: inline-block; padding: 15px 32px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 15px; font-weight: 800; color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; text-decoration: none; border-radius: 14px;">
+                        <span style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; font-weight: 800;">Open &amp; Unwrap Your Interactive Card ✨</span>
+                      </a>
+                    </td>
+                  </tr>
+                </table>
               </td>
             </tr>
           </table>
@@ -512,14 +608,14 @@ export function templateDonorAppreciationEmail({
       </tr>
     </table>
 
-    <div style="background-color: #faf5ff; border: 1px solid #e9d5ff; border-radius: 16px; padding: 20px; margin: 24px 0;">
-      <h4 style="margin: 0 0 8px 0; color: #581c87; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">What Your Gift Makes Possible</h4>
-      <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #4c1d95;">
+    <div class="email-content-box" bgcolor="#f8fafc" style="background-color: #f8fafc; background-image: linear-gradient(0deg, #f8fafc, #f8fafc); border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; margin: 24px 0;">
+      <h4 style="margin: 0 0 8px 0; color: #581c87 !important; -webkit-text-fill-color: #581c87 !important; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">What Your Gift Makes Possible</h4>
+      <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #334155 !important; -webkit-text-fill-color: #334155 !important;">
         ${impact}
       </p>
     </div>
 
-    <p style="font-size: 12px; line-height: 1.5; color: #64748b; margin: 20px 0 0 0;">
+    <p class="text-muted" style="font-size: 12px; line-height: 1.5; color: #64748b !important; -webkit-text-fill-color: #64748b !important; margin: 20px 0 0 0;">
       <strong>Tax Receipt Notice:</strong> ${taxNoticeText}
     </p>
   `;

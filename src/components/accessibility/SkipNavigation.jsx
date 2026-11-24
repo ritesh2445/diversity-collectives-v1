@@ -6,7 +6,10 @@ export default function SkipNavigation() {
       <a href="#main-content" className="a11y-skip-nav">
         Skip to main content (Alt + 1)
       </a>
-      <a href="#main-navigation" className="a11y-skip-nav skip-link-nav">
+      <a href="#mobile-nav-toggle" className="a11y-skip-nav xl:hidden">
+        Skip to navigation menu
+      </a>
+      <a href="#main-navigation" className="a11y-skip-nav skip-link-nav hidden xl:inline-block">
         Skip to navigation
       </a>
       <a href="#main-footer" className="a11y-skip-nav skip-link-footer">

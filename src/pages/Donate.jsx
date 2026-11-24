@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { 
   Heart, 
   ShieldCheck, 
@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useLiveOrgInfo } from '../hooks/useCmsLive';
+import { cmsStore } from '../services/cmsStore';
 import { APPRECIATION_TIERS, TIER_CONFIGS, getTierForAmount } from '../data/appreciationTiers';
 import { usePageMeta } from '../utils/seo';
 
@@ -36,18 +37,75 @@ const DESIGNATION_OPTIONS = [
   { id: 'resource_center', title: 'Ventura Community Resource Center', desc: 'Maintains free public computers, library, support groups & community space.' }
 ];
 
+const DEFAULT_TIERS = [
+  { amount: 25, title: "Wellness & Harm Reduction", impact: "Provides 5 comprehensive safer-sex and hygiene wellness packages." },
+  { amount: 50, title: "Confidential Health Screening", impact: "Funds 2 free rapid HIV/STI screenings and status-neutral care navigation." },
+  { amount: 75, title: "Community Ally", impact: "Supports frontline customer dignity, safe space supplies, and peer check-ins." },
+  { amount: 100, title: "Youth Circle Sustainer", impact: "Sponsors refreshments and art supplies for a full month of Rainbow Umbrella youth gatherings." },
+  { amount: 250, title: "Resource Center Sanctuary", impact: "Subsidizes community computer workstations, lending library, and daily drop-in hours." },
+  { amount: 500, title: "Community Champion", impact: "Sponsors attendance and travel for low-income youth at the annual Youth Pride Prom." }
+];
+
 export default function Donate() {
   const orgInfo = useLiveOrgInfo();
+  const [liveDonationContent, setLiveDonationContent] = useState(() => cmsStore.getSettings?.()?.donationPageContent);
+
+  useEffect(() => {
+    return cmsStore.subscribe((data) => {
+      if (data?.settings?.donationPageContent) {
+        setLiveDonationContent(data.settings.donationPageContent);
+      }
+    });
+  }, []);
+
+  const fundsList = liveDonationContent?.funds?.length > 0 ? liveDonationContent.funds : DESIGNATION_OPTIONS;
+  const tiers = liveDonationContent?.tiers?.length > 0 ? liveDonationContent.tiers : DEFAULT_TIERS;
+
   usePageMeta({
     title: 'Donate & GEM Membership | Diversity Collective Ventura County',
     description: 'Support Diversity Collective Ventura County. Tax-deductible contributions and recurring GEM Memberships fund free HIV/STI screenings, youth peer sanctuaries, and LGBTQ+ community mutual aid. Every gift unlocks a personalized Appreciation Card.',
     canonicalPath: '/donate'
   });
 
-  const [frequency, setFrequency] = useState('monthly'); // 'monthly' | 'once'
-  const [selectedTier, setSelectedTier] = useState(50);
-  const [customAmount, setCustomAmount] = useState('');
-  const [designation, setDesignation] = useState(DESIGNATION_OPTIONS[0].title);
+  const [searchParams] = useSearchParams();
+  const initialAmountParam = searchParams.get('amount');
+  const initialFreqParam = searchParams.get('frequency');
+
+  const parsedFreq = initialFreqParam === 'once' || initialFreqParam === 'one-time'
+    ? 'once'
+    : 'monthly';
+
+  const parsedAmountNum = initialAmountParam ? parseFloat(initialAmountParam) : null;
+  const isStandardTier = parsedAmountNum && [25, 50, 75, 100, 250, 500, 1000].includes(parsedAmountNum);
+
+  const [frequency, setFrequency] = useState(parsedFreq);
+  const [selectedTier, setSelectedTier] = useState(isStandardTier ? parsedAmountNum : 50);
+  const [customAmount, setCustomAmount] = useState(
+    parsedAmountNum && !isStandardTier && parsedAmountNum > 0 ? String(parsedAmountNum) : ''
+  );
+  const [designation, setDesignation] = useState(() => fundsList[0]?.title || 'Greatest Need & General Fund');
+  const effectiveAmount = customAmount ? parseFloat(customAmount) || 0 : selectedTier || 50;
+
+  // Synchronize state if URL query params change
+  useEffect(() => {
+    const amt = searchParams.get('amount');
+    const freq = searchParams.get('frequency');
+    if (freq) {
+      setFrequency(freq === 'once' || freq === 'one-time' ? 'once' : 'monthly');
+    }
+    if (amt) {
+      const num = parseFloat(amt);
+      if (!isNaN(num) && num > 0) {
+        if ([25, 50, 75, 100, 250, 500, 1000].includes(num)) {
+          setSelectedTier(num);
+          setCustomAmount('');
+        } else {
+          setCustomAmount(String(num));
+          setSelectedTier(num);
+        }
+      }
+    }
+  }, [searchParams]);
   
   // Donor details
   const [donorName, setDonorName] = useState('');
@@ -63,70 +121,42 @@ export default function Donate() {
   const [honoreeName, setHonoreeName] = useState('');
   const [dedicationNote, setDedicationNote] = useState('');
 
-  // Payment method: 'zeffy_embed' (integrated zero-fee embed) | 'card' (integrated direct card)
-  const [paymentMode, setPaymentMode] = useState('zeffy_embed');
-  const [cardNumber, setCardNumber] = useState('');
-  const [cardExpiry, setCardExpiry] = useState('');
-  const [cardCvc, setCardCvc] = useState('');
-  const [cardPostal, setCardPostal] = useState('');
-  const [cardholderName, setCardholderName] = useState('');
+  // Destination campaign URL (managed independently in Admin Donation Settings)
+  const destinationUrl = useMemo(() => {
+    let base = frequency === 'monthly'
+      ? (orgInfo?.zeffyGemUrl || 'https://www.zeffy.com/donation-form/diversity-collective-gem-membership')
+      : (orgInfo?.zeffyGeneralUrl || orgInfo?.zeffyDonationUrl || 'https://www.zeffy.com/donation-form/diversity-collective-general-fund');
 
-  // Submission & Confirmation state
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState(null);
-  const [donationResult, setDonationResult] = useState(null);
-  const [copiedRef, setCopiedRef] = useState(false);
-
-  const prefersReducedMotion = typeof window !== 'undefined' 
-    ? window.matchMedia('(prefers-reduced-motion: reduce)').matches 
-    : false;
-
-  const tiers = [
-    { amount: 25, title: "Wellness & Harm Reduction", impact: "Provides 5 comprehensive safer-sex and hygiene wellness packages." },
-    { amount: 50, title: "Confidential Health Screening", impact: "Funds 2 free rapid HIV/STI screenings and status-neutral care navigation." },
-    { amount: 100, title: "Youth Circle Sustainer", impact: "Sponsors refreshments and art supplies for a full month of Rainbow Umbrella youth gatherings." },
-    { amount: 250, title: "Resource Center Anchor", impact: "Subsidizes community computer workstations, lending library, and daily drop-in hours." },
-    { amount: 500, title: "Community Champion", impact: "Sponsors attendance and travel for low-income youth at the annual Youth Pride Prom." }
-  ];
-
-  const effectiveAmount = customAmount ? Number(customAmount) : selectedTier;
-  const currentAppreciationTier = getTierForAmount(effectiveAmount);
-
-  // Extract name parts for Zeffy pre-fill
-  const nameParts = donorName.trim().split(/\s+/);
-  const firstName = nameParts[0] || '';
-  const lastName = nameParts.slice(1).join(' ') || '';
-
-  // Generate dynamic Zeffy form URL with pre-filled donor parameters
-  const { zeffyEmbedUrl, zeffyDirectUrl } = useMemo(() => {
-    const rawUrl = (orgInfo?.zeffyDonationUrl || orgInfo?.zeffyUrl || '').trim();
-    let base = rawUrl;
+    base = (base || '').trim();
     if (!base) {
-      base = 'https://www.zeffy.com/donation-form/diversity-collective-general-fund';
+      base = frequency === 'monthly'
+        ? 'https://www.zeffy.com/donation-form/diversity-collective-gem-membership'
+        : 'https://www.zeffy.com/donation-form/diversity-collective-general-fund';
     } else if (!base.startsWith('http://') && !base.startsWith('https://')) {
       base = `https://www.zeffy.com/donation-form/${base}`;
     }
+    // Clean regular Zeffy campaign redirect (zero iframe / embed)
+    base = base.replace('/embed/donation-form/', '/donation-form/');
 
-    const direct = base.replace('/embed/donation-form/', '/donation-form/');
-    const embed = direct.replace('/donation-form/', '/embed/donation-form/');
-
-    const queryChar = embed.includes('?') ? '&' : '?';
-    let params = `frequency=${frequency}&amount=${effectiveAmount}`;
-    if (donorEmail && donorEmail.includes('@')) {
-      params += `&email=${encodeURIComponent(donorEmail.trim())}`;
+    const queryChar = base.includes('?') ? '&' : '?';
+    const params = [];
+    if (effectiveAmount > 0) {
+      params.push(`amount=${encodeURIComponent(effectiveAmount)}`);
     }
+    if (donorEmail && donorEmail.includes('@')) {
+      params.push(`email=${encodeURIComponent(donorEmail.trim())}`);
+    }
+    const nameParts = donorName.trim().split(/\s+/);
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
     if (firstName && !isAnonymous) {
-      params += `&firstName=${encodeURIComponent(firstName)}`;
+      params.push(`firstName=${encodeURIComponent(firstName)}`);
       if (lastName) {
-        params += `&lastName=${encodeURIComponent(lastName)}`;
+        params.push(`lastName=${encodeURIComponent(lastName)}`);
       }
     }
-
-    return {
-      zeffyEmbedUrl: `${embed}${queryChar}${params}`,
-      zeffyDirectUrl: `${direct}${queryChar}${params}`
-    };
-  }, [orgInfo, frequency, effectiveAmount, donorEmail, firstName, lastName, isAnonymous]);
+    return params.length > 0 ? `${base}${queryChar}${params.join('&')}` : base;
+  }, [orgInfo, frequency, effectiveAmount, donorEmail, donorName, isAnonymous]);
 
   // Synchronize donation intent with worker for deterministic certificate name matching
   useEffect(() => {
@@ -163,125 +193,6 @@ export default function Donate() {
     }
   };
 
-  // Format Card Number (XXXX XXXX XXXX XXXX)
-  const handleCardNumberChange = (e) => {
-    const raw = e.target.value.replace(/\D/g, '').slice(0, 16);
-    const formatted = raw.replace(/(\d{4})/g, '$1 ').trim();
-    setCardNumber(formatted);
-  };
-
-  // Format Expiry (MM/YY)
-  const handleCardExpiryChange = (e) => {
-    let raw = e.target.value.replace(/\D/g, '').slice(0, 4);
-    if (raw.length >= 3) {
-      raw = `${raw.slice(0, 2)}/${raw.slice(2)}`;
-    }
-    setCardExpiry(raw);
-  };
-
-  const handleSubmitDonation = async (e) => {
-    e.preventDefault();
-    setSubmitError(null);
-
-    if (!donorEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(donorEmail)) {
-      setSubmitError('Please enter a valid email address to receive your tax receipt and keepsake card.');
-      return;
-    }
-
-    if (!isAnonymous && !donorName.trim()) {
-      setSubmitError('Please enter your full name (or check "Keep my donation anonymous").');
-      return;
-    }
-
-    if (effectiveAmount < 1) {
-      setSubmitError('Donation amount must be at least $1.00.');
-      return;
-    }
-
-    setSubmitting(true);
-
-    const payload = {
-      donorName: isAnonymous ? 'Anonymous Supporter' : donorName.trim(),
-      donorEmail: donorEmail.trim(),
-      amount: effectiveAmount,
-      frequency: frequency === 'monthly' ? 'monthly' : 'one-time',
-      designation,
-      phone: phone.trim(),
-      address: {
-        street: streetAddress.trim(),
-        city: city.trim(),
-        state: stateCode,
-        zip: zipCode.trim()
-      },
-      isAnonymous,
-      dedication: showDedication && honoreeName.trim()
-        ? `${dedicationType === 'honor' ? 'In honor of' : 'In memory of'} ${honoreeName.trim()}${dedicationNote ? ` — "${dedicationNote.trim()}"` : ''}`
-        : '',
-      paymentMethod: paymentMode === 'card' ? 'integrated_card' : 'integrated_zeffy',
-      cardLast4: cardNumber ? cardNumber.replace(/\s/g, '').slice(-4) : '4242'
-    };
-
-    try {
-      const apiUrl = import.meta.env?.VITE_API_URL || '/api';
-      const res = await fetch(`${apiUrl}/donations/process`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setDonationResult(data);
-        handleConfetti();
-        // Save local backup for admin offline visibility
-        try {
-          const prev = JSON.parse(localStorage.getItem('dcvc_local_donations') || '[]');
-          prev.unshift({
-            id: data.cardToken,
-            donor_display_name: payload.donorName,
-            recipient_email: payload.donorEmail,
-            amount_cents: Math.round(effectiveAmount * 100),
-            frequency: payload.frequency,
-            tier_name: currentAppreciationTier.title,
-            card_token: data.cardToken,
-            payment_reference: data.reference,
-            created_at: new Date().toISOString()
-          });
-          localStorage.setItem('dcvc_local_donations', JSON.stringify(prev.slice(0, 50)));
-        } catch {}
-      } else {
-        setSubmitError(data.error || 'Unable to process donation. Please check your information and try again.');
-      }
-    } catch {
-      // Offline fallback: Synthesize successful verification so the user is never blocked
-      const simulatedToken = 'card_' + Math.random().toString(36).substring(2, 12);
-      const simulatedRef = `DCVC-DON-${Date.now().toString(36).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
-      const resultData = {
-        success: true,
-        reference: simulatedRef,
-        cardToken: simulatedToken,
-        cardUrl: `/appreciation-card/${simulatedToken}`,
-        donorDisplayName: payload.donorName,
-        amount: effectiveAmount,
-        frequency: payload.frequency,
-        designation,
-        emailSent: true,
-        message: 'Your donation has been confirmed! An automated thank-you receipt and keepsake card have been dispatched.'
-      };
-      setDonationResult(resultData);
-      handleConfetti();
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const copyReference = () => {
-    if (!donationResult?.reference) return;
-    navigator.clipboard?.writeText(donationResult.reference);
-    setCopiedRef(true);
-    setTimeout(() => setCopiedRef(false), 2500);
-  };
-
   return (
     <div className="w-full max-w-full overflow-x-clip pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
       
@@ -294,14 +205,18 @@ export default function Donate() {
 
         <div className="max-w-3xl relative z-10 flex flex-col gap-4">
           <span className="glass-pill text-xs font-bold text-rose-700 bg-rose-50 border-rose-200/90 shadow-xs">
-            TAX-DEDUCTIBLE 501(C)(3) SUPPORT
+            {liveDonationContent?.eyebrow || 'TAX-DEDUCTIBLE 501(C)(3) SUPPORT'}
           </span>
           <h1 className="font-display text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-slate-950 leading-[1.05]">
-            Powering Center &amp; <br />
-            <span className="font-serif italic font-normal text-rose-600">Lifesaving Care.</span>
+            {liveDonationContent?.title || (
+              <>
+                Powering Center &amp; <br />
+                <span className="font-serif italic font-normal text-rose-600">Lifesaving Care.</span>
+              </>
+            )}
           </h1>
           <p className="font-serif italic text-xl md:text-2xl text-slate-700 leading-relaxed pt-2">
-            Every dollar directly funds free rapid health screenings, weekly youth peer circles, harm reduction supplies, and community advocacy across Ventura County.
+            {liveDonationContent?.subtitle || 'Every dollar directly funds free rapid health screenings, weekly youth peer circles, harm reduction supplies, and community advocacy across Ventura County.'}
           </p>
         </div>
       </section>
@@ -312,107 +227,7 @@ export default function Donate() {
         {/* =================================================================== */}
         {/* STATE A: CELEBRATORY INSTANT CONFIRMATION SCREEN (NO OFFSITE LEAVE) */}
         {/* =================================================================== */}
-        {donationResult ? (
-          <div className="max-w-3xl mx-auto bg-white p-8 sm:p-14 rounded-3xl border-2 border-emerald-300 shadow-2xl space-y-8 animate-fadeIn text-center">
-            
-            <div className="w-20 h-20 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-md">
-              <CheckCircle2 className="w-10 h-10 animate-bounce" />
-            </div>
 
-            <div className="space-y-2">
-              <span className="text-xs font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-                TAX-DEDUCTIBLE CONTRIBUTION CONFIRMED
-              </span>
-              <h2 className="font-display text-3xl sm:text-4xl font-black text-slate-950">
-                Thank You, {donationResult.donorDisplayName}! 💜
-              </h2>
-              <p className="text-sm sm:text-base text-slate-600 max-w-xl mx-auto leading-relaxed">
-                Your gift of <strong>${Number(donationResult.amount).toFixed(2)}</strong> ({donationResult.frequency === 'monthly' ? 'GEM Membership (Monthly)' : 'One-Time'}) designated to <em>{donationResult.designation}</em> directly empowers LGBTQ+ health, youth sanctuary, and community safety.
-              </p>
-            </div>
-
-            {/* Receipt Reference Box */}
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 max-w-md mx-auto flex items-center justify-between text-xs font-mono text-slate-700">
-              <div className="text-left">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block font-sans">
-                  Official Receipt Reference
-                </span>
-                <span className="font-black text-slate-900">{donationResult.reference}</span>
-              </div>
-              <button
-                type="button"
-                onClick={copyReference}
-                className="py-1.5 px-3 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold transition-all flex items-center gap-1.5 cursor-pointer"
-              >
-                {copiedRef ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copiedRef ? 'Copied' : 'Copy'}</span>
-              </button>
-            </div>
-
-            {/* Automated Email Notice */}
-            <div className="p-4 rounded-2xl bg-purple-50/80 border border-purple-200 text-left flex items-start gap-3.5 max-w-xl mx-auto text-xs text-purple-950">
-              <div className="p-2 rounded-xl bg-purple-900 text-purple-200 shrink-0 mt-0.5">
-                <Mail className="w-4 h-4" />
-              </div>
-              <div className="space-y-1">
-                <span className="font-black text-purple-900 block">
-                  Automated Thank-You Receipt Dispatched
-                </span>
-                <p className="text-slate-600 leading-relaxed">
-                  We've automatically sent your official tax-deductible receipt, giving breakdown, and digital keepsake card link to <strong>{donorEmail}</strong>.
-                </p>
-              </div>
-            </div>
-
-            {/* Interactive Appreciation Card Showcase */}
-            <div className="p-6 rounded-3xl bg-gradient-to-r from-purple-900 via-[#5A1E65] to-fuchsia-900 text-white space-y-4 shadow-xl">
-              <span className="text-[10px] font-black uppercase tracking-widest text-amber-300 block">
-                {currentAppreciationTier.title} ({currentAppreciationTier.circleName})
-              </span>
-              <h3 className="font-display text-2xl font-black">
-                Your Keepsake Appreciation Card Is Ready!
-              </h3>
-              <p className="text-xs text-purple-200 max-w-md mx-auto leading-relaxed">
-                As a token of gratitude, our community has minted a personalized interactive keepsake card honoring your partnership.
-              </p>
-              <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
-                <Link
-                  to={donationResult.cardUrl}
-                  className="w-full sm:w-auto py-3.5 px-8 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-black text-xs sm:text-sm tracking-wide shadow-lg hover:shadow-xl hover:scale-102 transition-all flex items-center justify-center gap-2"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  <span>Open &amp; Unwrap Your Card ✨</span>
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => window.print()}
-                  className="w-full sm:w-auto py-3.5 px-6 rounded-xl border border-white/30 text-white hover:bg-white/10 font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
-                >
-                  <Printer className="w-4 h-4" />
-                  <span>Print Receipt</span>
-                </button>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                setDonationResult(null);
-                setCardNumber('');
-                setCardExpiry('');
-                setCardCvc('');
-              }}
-              className="text-xs font-bold text-[#5A1E65] hover:text-purple-950 underline cursor-pointer"
-            >
-              Make another donation or gift
-            </button>
-
-          </div>
-        ) : (
-          
-          /* =================================================================== */
-          /* STATE B: CUSTOM INTEGRATED DONATION FORM                           */
-          /* =================================================================== */
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
             
             {/* Left Column: Interactive Giving Builder & Integrated Form */}
@@ -522,8 +337,8 @@ export default function Donate() {
                   onChange={e => setDesignation(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl border border-slate-300 text-xs sm:text-sm font-bold text-slate-900 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none bg-white cursor-pointer"
                 >
-                  {DESIGNATION_OPTIONS.map(opt => (
-                    <option key={opt.id} value={opt.title}>
+                  {fundsList.map((opt, i) => (
+                    <option key={opt.id || i} value={opt.title}>
                       {opt.title}
                     </option>
                   ))}
@@ -598,176 +413,69 @@ export default function Donate() {
                 </div>
               </div>
 
-              {/* Official In-Page Checkout (Zeffy Zero-Fee or Direct Card) */}
+              {/* Official Zeffy Campaign Checkout Redirection */}
               <div className="space-y-4 pt-4 border-t border-slate-100">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <span className="text-xs font-black uppercase tracking-wider text-slate-700 block">
-                    05. SECURE CHECKOUT &amp; PAYMENT
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMode('zeffy_embed')}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                        paymentMode === 'zeffy_embed'
-                          ? 'bg-[#5A1E65] text-white shadow-xs'
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                      }`}
-                    >
-                      <span>⚡ Zeffy Zero-Fee</span>
-                      <span className="text-[10px] bg-emerald-400 text-slate-950 font-black px-1.5 py-0.2 rounded-md">0% Fees</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMode('card')}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                        paymentMode === 'card'
-                          ? 'bg-[#5A1E65] text-white shadow-xs'
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                      }`}
-                    >
-                      <CreditCard className="w-3.5 h-3.5" />
-                      <span>Direct Card</span>
-                    </button>
+                <div className="p-5 sm:p-7 rounded-3xl bg-gradient-to-br from-purple-50 via-white to-amber-50/30 border-2 border-purple-200 shadow-sm space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-purple-100/80 pb-3">
+                    <span className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+                      <Lock className="w-3.5 h-3.5 text-[#5A1E65]" />
+                      05. SECURE CHECKOUT VIA ZEFFY (0% PLATFORM FEES)
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-[11px] font-black text-emerald-800 bg-emerald-100/90 border border-emerald-300 px-2.5 py-0.5 rounded-full self-start sm:self-auto shadow-2xs">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      100% Tax-Deductible · 0% Fees
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    100% of your gift directly empowers Diversity Collective Ventura County. Zeffy covers all payment processing costs, ensuring every dollar funds local LGBTQ+ health, sanctuaries, and community mutual aid.
+                  </p>
+
+                  {/* Selected Contribution Summary Card */}
+                  <div className="p-3.5 rounded-2xl bg-white border border-purple-100 shadow-2xs flex flex-wrap items-center justify-between gap-2.5 text-xs">
+                    <div>
+                      <span className="text-slate-500 font-medium">Selected Gift:</span>{' '}
+                      <span className="font-black text-slate-950 text-sm sm:text-base">${effectiveAmount}</span>{' '}
+                      <span className="font-bold text-[#5A1E65] uppercase text-[11px] px-2 py-0.5 rounded-md bg-purple-50 border border-purple-200/60 ml-1">
+                        {frequency === 'monthly' ? 'Monthly GEM Sustainer' : 'One-Time Contribution'}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-slate-500 font-medium">Designation:</span>{' '}
+                      <span className="font-bold text-slate-800">{designation}</span>
+                    </div>
+                  </div>
+
+                  {/* Primary CTA Button */}
+                  <a
+                    href={destinationUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-[#5A1E65] via-purple-800 to-indigo-900 hover:from-purple-950 hover:to-indigo-950 text-white font-black text-sm sm:text-base shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2.5 cursor-pointer text-center group"
+                  >
+                    <Lock className="w-4 h-4 text-amber-300 shrink-0" />
+                    <span>
+                      {frequency === 'monthly'
+                        ? `Proceed to GEM Monthly Membership on Zeffy ($${effectiveAmount}/mo)`
+                        : `Proceed to One-Time Donation on Zeffy ($${effectiveAmount})`}
+                    </span>
+                    <ExternalLink className="w-4 h-4 text-purple-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform shrink-0" />
+                  </a>
+
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-500 pt-1">
+                    <div className="flex items-center gap-1.5 font-medium">
+                      <Lock className="w-3.5 h-3.5 text-slate-400" />
+                      <span>256-Bit SSL Encrypted • Processed on Zeffy PCI Level 1 Portal</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 font-medium text-slate-600">
+                      <CreditCard className="w-3.5 h-3.5 text-purple-700" />
+                      <span>Credit/Debit Card, Apple Pay, Google Pay &amp; ACH accepted</span>
+                    </div>
                   </div>
                 </div>
-
-                {submitError && (
-                  <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium">
-                    {submitError}
-                  </div>
-                )}
-
-                {paymentMode === 'zeffy_embed' ? (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between text-xs text-slate-600 bg-purple-50/70 p-3 rounded-xl border border-purple-200/70">
-                      <span className="font-semibold text-purple-950 flex items-center gap-1.5">
-                        <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                        100% of your gift reaches DCVC · Zeffy charges 0% fees
-                      </span>
-                      <a
-                        href={zeffyDirectUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-[#5A1E65] hover:text-purple-900 font-bold underline shrink-0 ml-2"
-                      >
-                        <span>Open in Zeffy Window</span>
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                    </div>
-
-                    {/* Embedded Zeffy Frame (Integrated In-Page, Zero Navigation Offsite) */}
-                    <div className="w-full rounded-2xl overflow-hidden border-2 border-purple-200/90 shadow-xl bg-white relative">
-                      <iframe
-                        title="Zeffy Zero-Fee 100% Tax-Deductible Donation Checkout"
-                        src={zeffyEmbedUrl}
-                        className="w-full h-[760px] sm:h-[720px] border-none"
-                        allow="payment"
-                      />
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500 pt-1 px-1">
-                      <div className="flex items-center gap-1.5 font-medium">
-                        <Lock className="w-3.5 h-3.5 text-slate-400" />
-                        <span>256-Bit SSL Encrypted • Zero off-site redirect</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <CreditCard className="w-4 h-4 text-purple-700" />
-                        <span className="font-semibold text-slate-700">Credit / Debit Card, Apple Pay &amp; Google Pay accepted</span>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  /* Direct Integrated Card Form */
-                  <form onSubmit={handleSubmitDonation} className="space-y-4 p-5 sm:p-6 rounded-2xl border-2 border-purple-200 bg-purple-50/30">
-                    <div className="space-y-3">
-                      <div>
-                        <label className="text-xs font-bold text-slate-700 block mb-1">Name on Card *</label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="e.g. Roland Catabona"
-                          value={cardholderName}
-                          onChange={(e) => setCardholderName(e.target.value)}
-                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold outline-none focus:border-[#5A1E65] bg-white"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="text-xs font-bold text-slate-700 block mb-1">Card Number *</label>
-                        <input
-                          type="text"
-                          required
-                          maxLength={19}
-                          placeholder="4242 •••• •••• 4242"
-                          value={cardNumber}
-                          onChange={handleCardNumberChange}
-                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold font-mono outline-none focus:border-[#5A1E65] bg-white"
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-3 gap-2.5">
-                        <div>
-                          <label className="text-xs font-bold text-slate-700 block mb-1">Expires *</label>
-                          <input
-                            type="text"
-                            required
-                            maxLength={5}
-                            placeholder="MM/YY"
-                            value={cardExpiry}
-                            onChange={handleCardExpiryChange}
-                            className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold text-center outline-none focus:border-[#5A1E65] bg-white"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-xs font-bold text-slate-700 block mb-1">CVC *</label>
-                          <input
-                            type="password"
-                            required
-                            maxLength={4}
-                            placeholder="CVC"
-                            value={cardCvc}
-                            onChange={(e) => setCardCvc(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                            className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold text-center outline-none focus:border-[#5A1E65] bg-white"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-xs font-bold text-slate-700 block mb-1">Postal Code *</label>
-                          <input
-                            type="text"
-                            required
-                            maxLength={10}
-                            placeholder="ZIP / Postal"
-                            value={cardPostal}
-                            onChange={(e) => setCardPostal(e.target.value)}
-                            className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold text-center outline-none focus:border-[#5A1E65] bg-white"
-                          />
-                        </div>
-                      </div>
-
-                      <button
-                        type="submit"
-                        disabled={submitting}
-                        className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-[#5A1E65] to-purple-800 hover:from-[#471850] hover:to-purple-900 text-white font-extrabold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                      >
-                        {submitting ? (
-                          <>
-                            <RefreshCw className="w-4 h-4 animate-spin" />
-                            <span>Processing Tax-Deductible Donation...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Lock className="w-4 h-4" />
-                            <span>Complete ${effectiveAmount} {frequency === 'monthly' ? 'Monthly GEM' : 'One-Time'} Donation</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </form>
-                )}
               </div>
 
-              {/* Appreciation Card Unlock Spotlight */}
+                            {/* Appreciation Card Unlock Spotlight */}
               <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-50 via-fuchsia-50/50 to-amber-50/50 border border-purple-200 flex items-start gap-3.5">
                 <div className="p-2.5 rounded-xl bg-purple-900 text-amber-300 shrink-0 mt-0.5">
                   <Sparkles className="w-5 h-5 animate-pulse" />
@@ -977,7 +685,6 @@ export default function Donate() {
             </div>
 
           </div>
-        )}
 
       </section>
 

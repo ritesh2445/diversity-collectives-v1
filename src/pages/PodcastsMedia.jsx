@@ -25,8 +25,30 @@ import { cmsStore } from '../services/cmsStore';
 import { saveMediaSuggestion } from '../admin/services/cmsClient';
 import ProfessionalMediaPlayerFrame from '../components/ProfessionalMediaPlayerFrame';
 
+function isValidEpisode(p) {
+  if (!p || !p.title) return false;
+  if (p.isDraft || p.status === 'draft') return false;
+  if (p.isDemo || p.demo) return false;
+  const link = (p.link || p.audioUrl || '').toLowerCase().trim();
+  if (link.includes('dqw4w9wgxcq')) return false;
+  if (link === 'https://open.spotify.com' || link === 'https://open.spotify.com/' || link === 'https://www.youtube.com' || link === 'https://www.youtube.com/' || link === 'https://youtube.com' || link === 'https://youtube.com/') {
+    return false;
+  }
+  return true;
+}
+
+function isValidExternalLink(url) {
+  if (!url || typeof url !== 'string') return false;
+  const lower = url.toLowerCase().trim();
+  if (lower.includes('dqw4w9wgxcq')) return false;
+  if (lower === 'https://open.spotify.com' || lower === 'https://open.spotify.com/' || lower === 'https://www.youtube.com' || lower === 'https://www.youtube.com/' || lower === 'https://youtube.com' || lower === 'https://youtube.com/') {
+    return false;
+  }
+  return lower.startsWith('http://') || lower.startsWith('https://');
+}
+
 export default function PodcastsMedia() {
-  const [podcasts, setPodcasts] = useState(() => cmsStore.getPodcasts());
+  const [podcasts, setPodcasts] = useState(() => (cmsStore.getPodcasts() || []).filter(isValidEpisode));
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeEpisode, setActiveEpisode] = useState(null);
@@ -51,7 +73,7 @@ export default function PodcastsMedia() {
   // Subscribe to live CMS updates
   useEffect(() => {
     const unsubscribe = cmsStore.subscribe((data) => {
-      setPodcasts(data.podcasts || []);
+      setPodcasts((data.podcasts || []).filter(isValidEpisode));
     });
     return () => unsubscribe();
   }, []);
@@ -415,7 +437,7 @@ export default function PodcastsMedia() {
                     )}
 
                     <div className="flex items-center gap-1.5">
-                      {podcast.link && (
+                      {isValidExternalLink(podcast.link) && (
                         <a
                           href={podcast.link}
                           target="_blank"

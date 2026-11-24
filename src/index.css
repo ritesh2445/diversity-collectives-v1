@@ -226,7 +226,7 @@ html {
   height: auto !important;
   min-height: 100%;
   width: 100%;
-  max-width: 100vw;
+  max-width: 100% !important;
   -webkit-tap-highlight-color: transparent;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -252,7 +252,7 @@ body {
   overflow-y: visible;
   min-height: 100%;
   width: 100%;
-  max-width: 100vw;
+  max-width: 100% !important;
   touch-action: manipulation;
   -webkit-text-size-adjust: 100%;
   scrollbar-width: none;
@@ -264,7 +264,32 @@ body,
 #root {
   overflow-x: hidden !important;
   width: 100% !important;
-  max-width: 100vw !important;
+  max-width: 100% !important;
+}
+
+html.modal-open,
+body.modal-open,
+html:has(.fixed.inset-0:not(.pointer-events-none):not([class*="pointer-events-none"])),
+body:has(.fixed.inset-0:not(.pointer-events-none):not([class*="pointer-events-none"])) {
+  overflow: hidden !important;
+  overflow-x: hidden !important;
+  position: relative;
+  width: 100% !important;
+  max-width: 100% !important;
+  overscroll-behavior-x: none;
+}
+
+.fixed.inset-0 {
+  overflow-x: hidden !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overscroll-behavior-x: none;
+}
+
+.admin-workspace {
+  overflow-x: clip !important;
+  max-width: 100% !important;
+  width: 100% !important;
 }
 
 #root {
@@ -279,9 +304,9 @@ html[dir="rtl"] #root,
 html.translated-rtl #root,
 html.translated-ltr #root,
 html:not([lang="en"]) #root {
-  max-width: 100vw !important;
+  max-width: 100% !important;
   width: 100% !important;
-  overflow-x: hidden !important;
+  overflow-x: clip !important;
 }
 
 /* RTL (Arabic, Persian, Hebrew) Blink Engine Scroll Width Containment */
@@ -291,8 +316,8 @@ html.translated-rtl body,
 html[dir="rtl"] body,
 html.translated-rtl #root,
 html[dir="rtl"] #root {
-  overflow-x: hidden !important;
-  max-width: 100vw !important;
+  overflow-x: clip !important;
+  max-width: 100% !important;
   width: 100% !important;
 }
 
@@ -304,7 +329,7 @@ html[dir="rtl"] header,
 html[dir="rtl"] main,
 html[dir="rtl"] footer,
 html[dir="rtl"] section {
-  max-width: 100vw !important;
+  max-width: 100% !important;
   box-sizing: border-box !important;
 }
 
@@ -324,7 +349,7 @@ html[dir="rtl"] section {
 
   html.translated-rtl .container-clean,
   html[dir="rtl"] .container-clean {
-    max-width: 100vw !important;
+    max-width: 100% !important;
     width: 100% !important;
     box-sizing: border-box !important;
     padding-left: 1rem !important;
@@ -423,7 +448,7 @@ img {
 /* Layout Containers */
 .container, .container-clean {
   width: 100%;
-  max-width: min(var(--max-width), 100vw);
+  max-width: min(var(--max-width), 100%);
   min-width: 0;
   box-sizing: border-box;
   margin-left: auto;
@@ -999,13 +1024,13 @@ a[class*="to-purple-"]:not([class*="to-purple-50"]):not([class*="to-purple-100"]
 /* Mobile Navigation Drawer - Strict Horizontal Bleed & Overscroll Lock */
 #mobile-nav-drawer {
   overflow-x: hidden !important;
-  max-width: 100vw !important;
+  max-width: 100% !important;
   overscroll-behavior: contain !important;
   touch-action: pan-y !important;
 }
 
 #mobile-nav-drawer > div {
-  max-width: 100vw !important;
+  max-width: 100% !important;
   overflow-x: hidden !important;
 }
 
@@ -2555,6 +2580,19 @@ html[data-admin-preview="true"] body::-webkit-scrollbar-thumb {
   max-height: 2.25rem !important;
   height: 2.25rem !important;
   box-sizing: border-box !important;
+}
+
+/* DC-14: Avoid Recite toolbar occluding sticky header and top banners */
+html[data-recite-toolbar-open="true"] header#main-header {
+  top: 48px !important;
+}
+
+/* DC-18: Ensure input and textarea placeholders meet WCAG 2.1 AA 4.5:1 contrast */
+input::placeholder,
+textarea::placeholder,
+select::placeholder {
+  color: #64748B !important;
+  opacity: 1 !important;
 }
 
 /* ==========================================================================

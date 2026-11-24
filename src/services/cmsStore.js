@@ -308,6 +308,62 @@ export function mergeEventsWithDefaults(savedEvents = [], defaultEvents = null, 
   return normalizeCmsEventList(result);
 }
 
+export function mergePodcastsWithDefaults(savedPodcasts = null, defaultPodcasts = null, deletedIds = []) {
+  const seed = Array.isArray(defaultPodcasts) && defaultPodcasts.length > 0 ? defaultPodcasts : (podcastsSeed || []);
+  const deletedSet = new Set(Array.isArray(deletedIds) ? deletedIds.map(d => String(d).trim().toLowerCase()) : []);
+
+  if (Array.isArray(savedPodcasts)) {
+    return savedPodcasts.filter(p => {
+      if (!p || typeof p !== 'object') return false;
+      const cleanId = p.id ? String(p.id).trim().toLowerCase() : null;
+      const cleanSlug = p.slug ? String(p.slug).trim().toLowerCase() : null;
+      return (!cleanId || !deletedSet.has(cleanId)) && (!cleanSlug || !deletedSet.has(cleanSlug));
+    });
+  }
+
+  return seed.filter(p => {
+    if (!p || typeof p !== 'object') return false;
+    const cleanId = p.id ? String(p.id).trim().toLowerCase() : null;
+    const cleanSlug = p.slug ? String(p.slug).trim().toLowerCase() : null;
+    return (!cleanId || !deletedSet.has(cleanId)) && (!cleanSlug || !deletedSet.has(cleanSlug));
+  });
+}
+
+export function mergeNewsWithDefaults(savedNews = null, defaultNews = null, deletedIds = []) {
+  const seed = Array.isArray(defaultNews) && defaultNews.length > 0 ? defaultNews : (newsArticles || []);
+  const deletedSet = new Set(Array.isArray(deletedIds) ? deletedIds.map(d => String(d).trim().toLowerCase()) : []);
+
+  if (Array.isArray(savedNews)) {
+    return savedNews
+      .filter(n => {
+        if (!n || typeof n !== 'object') return false;
+        const cleanId = n.id ? String(n.id).trim().toLowerCase() : '';
+        const cleanSlug = n.slug ? String(n.slug).trim().toLowerCase() : '';
+        return (!cleanId || !deletedSet.has(cleanId)) && (!cleanSlug || !deletedSet.has(cleanSlug));
+      })
+      .map((n, i) => ({
+        id: n.id || n.slug || `news-${i}`,
+        ...n,
+        body: n.body || n.content || '',
+        content: n.content || (Array.isArray(n.body) ? n.body.join('\n\n') : (n.body || n.excerpt || ''))
+      }));
+  }
+
+  return seed
+    .filter(n => {
+      if (!n || typeof n !== 'object') return false;
+      const cleanId = n.id ? String(n.id).trim().toLowerCase() : '';
+      const cleanSlug = n.slug ? String(n.slug).trim().toLowerCase() : '';
+      return (!cleanId || !deletedSet.has(cleanId)) && (!cleanSlug || !deletedSet.has(cleanSlug));
+    })
+    .map((n, i) => ({
+      id: n.id || n.slug || `news-${i}`,
+      ...n,
+      body: n.body || n.content || '',
+      content: n.content || (Array.isArray(n.body) ? n.body.join('\n\n') : (n.body || n.excerpt || ''))
+    }));
+}
+
 /**
  * DCVC Centralized Content Management System (CMS) Reactive Store
  * Provides complete reactive CRUD operations, local persistence, multi-tab sync,
@@ -344,7 +400,7 @@ import {
 } from '../data/siteDefaults.js';
 import { normalizeCmsEvent, normalizeCmsEventList } from '../utils/eventDates.js';
 import { DEFAULT_WEEKLY_SCHEDULE } from '../utils/recurringSchedule.js';
-import { SYNC_EVENTS, hasPublishedSiteState, broadcastPatch, fetchAndApplyLiveSiteState } from './liveSync.js';
+import { SYNC_EVENTS, hasPublishedSiteState, broadcastPatch, publishAdminSitePatch, fetchAndApplyLiveSiteState } from './liveSync.js';
 
 const CMS_STORAGE_KEY = 'dcvc_live_cms_data';
 const HERO_THEME_STORAGE_KEY = 'dcvc_active_hero_theme';
@@ -594,11 +650,14 @@ export const INITIAL_CMS_DATA = {
     bannerAlertText: "Center Open Today · Mon–Fri 1:00 PM – 5:00 PM · HIV/STI Screenings 1st Mon 3–7 PM",
     bannerAlertLink: "/events",
     donationUrl: orgInfo.donationUrl || "/donate",
-    zeffyDonationUrl: orgInfo.zeffyDonationUrl || "",
+    zeffyDonationUrl: orgInfo.zeffyDonationUrl || "https://www.zeffy.com/donation-form/diversity-collective-general-fund",
+    zeffyGeneralUrl: orgInfo.zeffyGeneralUrl || orgInfo.zeffyDonationUrl || "https://www.zeffy.com/donation-form/diversity-collective-general-fund",
+    zeffyGemUrl: orgInfo.zeffyGemUrl || "https://www.zeffy.com/donation-form/diversity-collective-gem-membership",
     volunteerUrl: orgInfo.volunteerUrl || "/volunteer",
     facebook: orgInfo.socials?.facebook || "https://www.facebook.com/diversitycollectivevc",
     instagram: orgInfo.socials?.instagram || "https://www.instagram.com/diversitycollectivevc",
-    youtube: orgInfo.socials?.youtube || "https://www.youtube.com/@diversitycollectivevc"
+    youtube: orgInfo.socials?.youtube || "https://www.youtube.com/@diversitycollectivevc",
+    showOperationalStaff: true
   },
   programs: programsList || [],
   weeklySchedule: DEFAULT_WEEKLY_SCHEDULE,
@@ -646,6 +705,7 @@ export const INITIAL_CMS_DATA = {
   gallery: galleryPhotos || [],
   memoryLane: memoryLaneMilestones || [],
   podcasts: podcastsSeed || [],
+  deletedPodcasts: [],
   trainingPageContent: DEFAULT_TRAINING_PAGE_CONTENT,
   sponsorshipDocuments: DEFAULT_SPONSORSHIP_DOCUMENTS,
   sponsorshipPageContent: DEFAULT_SPONSORSHIP_PAGE_CONTENT,
@@ -658,7 +718,7 @@ export const INITIAL_CMS_DATA = {
       name: 'Elena Torres',
       email: 'elena@venturabakery.com',
       guestRecommendation: 'Marco & Sofia (Main St. Collective)',
-      linkUrl: 'https://diversitycollectivevc.org/directory',
+      linkUrl: 'https://diversitycollective.org/directory',
       description: 'A conversation about navigating storefront challenges, local customer allyship, and how the DCVC directory boosted community foot traffic.',
       status: 'new',
       createdAt: '2026-11-18T14:30:00.000Z'
@@ -670,7 +730,7 @@ export const INITIAL_CMS_DATA = {
       name: 'Jordan Hayes',
       email: 'jordan.h@vcu.edu',
       guestRecommendation: 'Rainbow Umbrella Youth Peer Leads',
-      linkUrl: 'https://diversitycollectivevc.org/programs/rainbow-umbrella',
+      linkUrl: 'https://diversitycollective.org/programs/rainbow-umbrella',
       description: 'Discussing our latest youth center peer group findings, safe space stickers, and school counselor collaborations across Oxnard and Simi Valley.',
       status: 'reviewed',
       createdAt: '2026-11-15T10:15:00.000Z'
@@ -682,7 +742,7 @@ export const INITIAL_CMS_DATA = {
       name: 'Dr. Alicia Vance',
       email: 'avance@coastalclinic.org',
       guestRecommendation: 'Diversity SHINES Clinical Outreach Nurses',
-      linkUrl: 'https://diversitycollectivevc.org/programs/diversity-shines',
+      linkUrl: 'https://diversitycollective.org/programs/diversity-shines',
       description: 'Practical strategies for clinics and care centers to implement gender-affirming intake workflows and non-stigmatizing medical consultations.',
       status: 'in_production',
       createdAt: '2026-11-10T09:00:00.000Z'
@@ -914,24 +974,31 @@ class CmsStoreEngine {
 
       // 5. News Articles
       if (Array.isArray(sanityData.newsArticles) && sanityData.newsArticles.length > 0) {
-        nextData.news = sanityData.newsArticles.map((n) => {
-          const fb = newsFallbacks.get(n.slug) || {};
-          const img = n.mainImage
-            ? optimizeSanityImageUrl(n.mainImage, { width: 1200, quality: 85 })
-            : fb.image || fb.heroImage || '/images/community-gathering.jpg';
-          return {
-            ...fb,
-            id: n._id,
-            slug: n.slug,
-            title: n.title,
-            date: n.publishedAt ? new Date(n.publishedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : fb.date,
-            excerpt: n.excerpt || fb.excerpt || '',
-            author: n.author || fb.author || 'DCVC Communications Team',
-            readingTime: n.readingTime || fb.readingTime || '4 min read',
-            content: n.body || fb.content || '',
-            image: img
-          };
-        });
+        const deletedNewsSet = new Set((this.data?.deletedNews || []).map(d => String(d).toLowerCase().trim()));
+        nextData.news = sanityData.newsArticles
+          .filter(n => {
+            const cleanId = String(n._id || '').toLowerCase().trim();
+            const cleanSlug = String(n.slug || '').toLowerCase().trim();
+            return (!cleanId || !deletedNewsSet.has(cleanId)) && (!cleanSlug || !deletedNewsSet.has(cleanSlug));
+          })
+          .map((n) => {
+            const fb = newsFallbacks.get(n.slug) || {};
+            const img = n.mainImage
+              ? optimizeSanityImageUrl(n.mainImage, { width: 1200, quality: 85 })
+              : fb.image || fb.heroImage || '/images/community-gathering.jpg';
+            return {
+              ...fb,
+              id: n._id,
+              slug: n.slug,
+              title: n.title,
+              date: n.publishedAt ? new Date(n.publishedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : fb.date,
+              excerpt: n.excerpt || fb.excerpt || '',
+              author: n.author || fb.author || 'DCVC Communications Team',
+              readingTime: n.readingTime || fb.readingTime || '4 min read',
+              content: n.body || fb.content || '',
+              image: img
+            };
+          });
       }
 
       // 6. Gallery Items (Instant Sanity CDN!)
@@ -1256,21 +1323,22 @@ class CmsStoreEngine {
         deletedEvents: parsed.deletedEvents || [],
         sponsors: parsed.sponsors || INITIAL_CMS_DATA.sponsors,
         trainings: parsed.trainings || INITIAL_CMS_DATA.trainings,
-        communityGroups: parsed.communityGroups || INITIAL_CMS_DATA.communityGroups,
-        news: (parsed.news && Array.isArray(parsed.news) && parsed.news.length > 0)
-          ? parsed.news.map((n, i) => ({
-              id: n.id || n.slug || `news-${i}`,
-              ...n,
-              body: n.body || n.content || '',
-              content: n.content || (Array.isArray(n.body) ? n.body.join('\n\n') : (n.body || n.excerpt || ''))
-            }))
-          : INITIAL_CMS_DATA.news,
-        resources: parsed.resources || INITIAL_CMS_DATA.resources,
+        communityGroups: (Array.isArray(parsed.communityGroups)
+          ? parsed.communityGroups.filter(g => !(parsed.deletedCommunityGroups || []).includes(g?.id) && !(parsed.deletedCommunityGroups || []).includes(g?.slug))
+          : INITIAL_CMS_DATA.communityGroups),
+        deletedCommunityGroups: parsed.deletedCommunityGroups || [],
+        news: mergeNewsWithDefaults(parsed.news, INITIAL_CMS_DATA.news, parsed.deletedNews || []),
+        deletedNews: parsed.deletedNews || [],
+        resources: (Array.isArray(parsed.resources)
+          ? parsed.resources.filter(r => !(parsed.deletedResources || []).includes(r?.id))
+          : INITIAL_CMS_DATA.resources),
+        deletedResources: parsed.deletedResources || [],
         staff: mergeStaffWithDefaults(parsed.staff, INITIAL_CMS_DATA.staff, parsed.deletedStaff || []),
         deletedStaff: parsed.deletedStaff || [],
         gallery: parsed.gallery || INITIAL_CMS_DATA.gallery,
         memoryLane: parsed.memoryLane || INITIAL_CMS_DATA.memoryLane,
-        podcasts: parsed.podcasts || INITIAL_CMS_DATA.podcasts,
+        podcasts: mergePodcastsWithDefaults(parsed.podcasts, INITIAL_CMS_DATA.podcasts, parsed.deletedPodcasts || []),
+        deletedPodcasts: parsed.deletedPodcasts || [],
         trainingPageContent: {
           ...DEFAULT_TRAINING_PAGE_CONTENT,
           ...(parsed.trainingPageContent || {})
@@ -1295,6 +1363,12 @@ class CmsStoreEngine {
       events: mergeEventsWithDefaults(data.events || this.data?.events, INITIAL_CMS_DATA.events, data.deletedEvents || this.data?.deletedEvents || []),
       staff: mergeStaffWithDefaults(data.staff || this.data?.staff, INITIAL_CMS_DATA.staff, data.deletedStaff || this.data?.deletedStaff || []),
       sponsorshipDocuments: mergeSponsorshipDocumentsWithDefaults(data.sponsorshipDocuments || this.data?.sponsorshipDocuments, INITIAL_CMS_DATA.sponsorshipDocuments, data.deletedSponsorshipDocuments || this.data?.deletedSponsorshipDocuments || []),
+      podcasts: mergePodcastsWithDefaults(data.podcasts !== undefined ? data.podcasts : this.data?.podcasts, INITIAL_CMS_DATA.podcasts, data.deletedPodcasts || this.data?.deletedPodcasts || []),
+      deletedPodcasts: Array.from(new Set([...(this.data?.deletedPodcasts || []), ...(data.deletedPodcasts || [])])),
+      news: mergeNewsWithDefaults(data.news !== undefined ? data.news : this.data?.news, INITIAL_CMS_DATA.news, data.deletedNews || this.data?.deletedNews || []),
+      deletedNews: Array.from(new Set([...(this.data?.deletedNews || []), ...(data.deletedNews || [])])),
+      deletedResources: Array.from(new Set([...(this.data?.deletedResources || []), ...(data.deletedResources || [])])),
+      deletedCommunityGroups: Array.from(new Set([...(this.data?.deletedCommunityGroups || []), ...(data.deletedCommunityGroups || [])])),
       sponsorshipPageContent: {
         ...DEFAULT_SPONSORSHIP_PAGE_CONTENT,
         ...(data.sponsorshipPageContent || this.data?.sponsorshipPageContent || {})
@@ -1317,6 +1391,9 @@ class CmsStoreEngine {
     }
     if (broadcast) {
       broadcastPatch({ cmsData: this.data });
+      if (typeof window !== 'undefined') {
+        publishAdminSitePatch({ cmsData: this.data }).catch(() => {});
+      }
     }
   }
 
@@ -1594,13 +1671,38 @@ class CmsStoreEngine {
       return false;
     });
 
+    const fallbackDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    const effectiveDate = article.publishedAt || article.publishDate || article.date || (index >= 0 ? (existing[index].publishedAt || existing[index].publishDate || existing[index].date) : null) || fallbackDate;
+    const effectiveReadTime = article.readingTime || article.readTime || (index >= 0 ? (existing[index].readingTime || existing[index].readTime) : null) || '3 min read';
+    const effectiveCategory = article.category || (index >= 0 ? existing[index].category : null) || 'Community & Advocacy';
+    const effectiveImage = article.image || (Array.isArray(article.images) && article.images[0]) || (index >= 0 ? existing[index].image : null) || '/images/community-gathering.jpg';
+    const effectiveImages = Array.isArray(article.images) && article.images.length > 0 
+      ? article.images 
+      : (index >= 0 && Array.isArray(existing[index].images) && existing[index].images.length > 0)
+        ? existing[index].images
+        : [effectiveImage];
+    const effectiveBody = article.body || article.content || (index >= 0 ? (existing[index].body || existing[index].content) : '') || '';
+    const effectiveStatus = article.status || (article.isDraft ? 'draft' : 'published') || (index >= 0 ? existing[index].status : 'published');
+
     const normalizedArticle = {
+      ...(index >= 0 ? existing[index] : {}),
       ...article,
       id: article.id || (index >= 0 ? existing[index].id : null) || article.slug || `news-${Date.now()}`,
       slug: article.slug || (index >= 0 ? existing[index].slug : null) || (article.title || 'article').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
-      body: article.body || article.content || '',
-      content: article.content || article.body || '',
-      publishedAt: article.publishedAt || article.date || (index >= 0 ? existing[index].publishedAt : null) || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+      title: article.title || (index >= 0 ? existing[index].title : 'Untitled Story'),
+      category: effectiveCategory,
+      publishedAt: effectiveDate,
+      publishDate: effectiveDate,
+      date: effectiveDate,
+      readingTime: effectiveReadTime,
+      readTime: effectiveReadTime,
+      image: effectiveImage,
+      images: effectiveImages,
+      body: effectiveBody,
+      content: effectiveBody,
+      excerpt: article.excerpt || (effectiveBody ? effectiveBody.slice(0, 160) : '') || '',
+      status: effectiveStatus,
+      tags: Array.isArray(article.tags) ? article.tags : (typeof article.tags === 'string' ? article.tags.split(',').map(t => t.trim()).filter(Boolean) : (index >= 0 ? existing[index].tags : []))
     };
 
     if (index >= 0) {
@@ -1614,9 +1716,34 @@ class CmsStoreEngine {
 
   deleteNews(articleId) {
     if (!articleId) return this.data.news;
-    const existing = this.data.news.filter(n => n.id !== articleId && n.slug !== articleId);
-    this.saveData({ ...this.data, news: existing });
+    const target = String(articleId).trim().toLowerCase();
+    const item = (this.data.news || []).find(n => String(n.id || '').toLowerCase() === target || String(n.slug || '').toLowerCase() === target);
+    const toDelete = [target];
+    if (item?.id) toDelete.push(String(item.id).toLowerCase());
+    if (item?.slug) toDelete.push(String(item.slug).toLowerCase());
+    if (item?.title) toDelete.push(String(item.title).toLowerCase().trim().replace(/[^a-z0-9]+/g, '-'));
+    const deletedList = Array.from(new Set([...(this.data.deletedNews || []), ...toDelete]));
+    const existing = (this.data.news || []).filter(n => {
+      const id = String(n.id || '').toLowerCase();
+      const slug = String(n.slug || '').toLowerCase();
+      return id !== target && slug !== target && !deletedList.includes(id) && !deletedList.includes(slug);
+    });
+    this.saveData({ ...this.data, news: existing, deletedNews: deletedList });
     return existing;
+  }
+
+  deleteAllNews() {
+    const allIds = (this.data.news || []).flatMap(n => [
+      n.id ? String(n.id).toLowerCase() : null,
+      n.slug ? String(n.slug).toLowerCase() : null
+    ]).filter(Boolean);
+    const initialSeedIds = (INITIAL_CMS_DATA.news || []).flatMap(n => [
+      n.id ? String(n.id).toLowerCase() : null,
+      n.slug ? String(n.slug).toLowerCase() : null
+    ]).filter(Boolean);
+    const deletedList = Array.from(new Set([...(this.data.deletedNews || []), ...allIds, ...initialSeedIds]));
+    this.saveData({ ...this.data, news: [], deletedNews: deletedList });
+    return [];
   }
 
   // --------------------------------------------------------------------------
@@ -1649,8 +1776,11 @@ class CmsStoreEngine {
   }
 
   deleteResource(resourceId) {
-    const existing = this.data.resources.filter(r => r.id !== resourceId);
-    this.saveData({ ...this.data, resources: existing });
+    if (!resourceId) return this.data.resources;
+    const target = String(resourceId).trim().toLowerCase();
+    const deletedList = Array.from(new Set([...(this.data.deletedResources || []), target]));
+    const existing = (this.data.resources || []).filter(r => String(r.id || '').toLowerCase() !== target);
+    this.saveData({ ...this.data, resources: existing, deletedResources: deletedList });
     return existing;
   }
 
@@ -1835,19 +1965,16 @@ class CmsStoreEngine {
       extendedBio: bioParagraphs
     };
 
-    // Find existing: prioritize exact ID match (targetId / originalId) so editing one card never mutates another or creates duplicates
+    // Find existing: prioritize exact ID match (targetId / originalId) or originalName match
     const index = existing.findIndex(s => {
       if (!s) return false;
       const sNorm = String(s.name || '').trim().toLowerCase();
       const sSlug = String(s.slug || sNorm.replace(/[^a-z0-9]+/g, '-')).toLowerCase();
       const sId = String(s.id || '').trim();
 
-      if (isNameChangedAwayFromApproved && sNorm === originalNorm) {
-        return false;
-      }
-
       if (resolvedMemberId && sId === resolvedMemberId) return true;
-      if (memberOrList.originalId && !isNameChangedAwayFromApproved && sId === String(memberOrList.originalId)) return true;
+      if (memberOrList.originalId && sId === String(memberOrList.originalId)) return true;
+      if (originalNorm && sNorm === originalNorm) return true;
       if (cleanName && sNorm === normName) return true;
       if (memberSlug && sSlug === memberSlug) return true;
       return false;
@@ -1859,7 +1986,7 @@ class CmsStoreEngine {
       existing.push(normalizedMember);
     }
 
-    const deleted = (this.data.deletedStaff || []).filter(d => {
+    let deleted = (this.data.deletedStaff || []).filter(d => {
       const ld = String(d).toLowerCase();
       return ld !== normalizedMember.id.toLowerCase() &&
              ld !== normalizedMember.name.toLowerCase() &&
@@ -1868,6 +1995,18 @@ class CmsStoreEngine {
              (!memberSlug || ld !== `board-${memberSlug.toLowerCase()}`) &&
              (!memberSlug || ld !== `staff-${memberSlug.toLowerCase()}`);
     });
+
+    if (isNameChangedAwayFromApproved && originalNorm) {
+      const origSlug = originalNorm.replace(/[^a-z0-9]+/g, '-');
+      deleted = Array.from(new Set([
+        ...deleted,
+        originalNorm,
+        origSlug,
+        `board-${origSlug}`,
+        `staff-${origSlug}`
+      ]));
+    }
+
     this.saveData({ ...this.data, staff: existing, deletedStaff: deleted });
     return existing;
   }
@@ -2100,31 +2239,74 @@ class CmsStoreEngine {
   // Community Peer Groups CRUD
   // --------------------------------------------------------------------------
   getCommunityGroups() {
-    return this.data.communityGroups || communityGroups || [];
+    const list = this.data.communityGroups || communityGroups || [];
+    return list.map((g, idx) => {
+      const defaultMatch = (communityGroups || []).find(
+        (cg) => cg.name === g.name || (cg.slug && cg.slug === g.slug)
+      );
+      const name = g.name || g.title || defaultMatch?.name || `Community Circle ${idx + 1}`;
+      const slug = g.slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      const id = g.id || `cg-${slug}`;
+      const image = g.image || (Array.isArray(g.images) && g.images[0]) || defaultMatch?.image || '/images/community-gathering.jpg';
+      return {
+        ...defaultMatch,
+        ...g,
+        id,
+        slug,
+        name,
+        image,
+        images: Array.isArray(g.images) && g.images.length > 0 ? g.images : [image]
+      };
+    });
   }
 
   saveCommunityGroup(group) {
     const existing = [...this.getCommunityGroups()];
+    const name = (group.name || group.title || 'Community Circle').trim();
     const slug =
-      group.slug ||
-      (group.name || group.title || 'group').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      (group.slug || '').trim() ||
+      name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const id = group.id || `cg-${slug}`;
+    const image = group.image || (Array.isArray(group.images) && group.images[0]) || '/images/community-gathering.jpg';
+    const payload = {
+      ...group,
+      id,
+      slug,
+      name,
+      image,
+      images: Array.isArray(group.images) && group.images.length > 0 ? group.images : [image]
+    };
+
     const index = existing.findIndex(
-      (g) => (g.id && g.id === group.id) || g.slug === slug
+      (g) => (g.id && g.id === id) || (g.slug && g.slug === slug) || (g.name && g.name.toLowerCase() === name.toLowerCase())
     );
     if (index >= 0) {
-      existing[index] = { ...existing[index], ...group, slug };
+      existing[index] = { ...existing[index], ...payload };
     } else {
-      existing.unshift({ ...group, id: group.id || `grp-${Date.now()}`, slug });
+      existing.unshift(payload);
     }
     this.saveData({ ...this.data, communityGroups: existing });
     return existing;
   }
 
   deleteCommunityGroup(slugOrId) {
-    const existing = this.getCommunityGroups().filter(
-      (g) => g.slug !== slugOrId && g.id !== slugOrId
+    if (!slugOrId) return this.getCommunityGroups();
+    const target = String(slugOrId || '').toLowerCase().trim();
+    const item = this.getCommunityGroups().find(
+      (g) => String(g.slug || '').toLowerCase() === target ||
+             String(g.id || '').toLowerCase() === target ||
+             String(g.name || '').toLowerCase() === target
     );
-    this.saveData({ ...this.data, communityGroups: existing });
+    const toDelete = [target];
+    if (item?.id) toDelete.push(String(item.id).toLowerCase().trim());
+    if (item?.slug) toDelete.push(String(item.slug).toLowerCase().trim());
+    const deletedList = Array.from(new Set([...(this.data?.deletedCommunityGroups || []), ...toDelete]));
+    const existing = this.getCommunityGroups().filter(
+      (g) => String(g.slug || '').toLowerCase() !== target &&
+             String(g.id || '').toLowerCase() !== target &&
+             String(g.name || '').toLowerCase() !== target
+    );
+    this.saveData({ ...this.data, communityGroups: existing, deletedCommunityGroups: deletedList });
     return existing;
   }
 
@@ -2132,12 +2314,13 @@ class CmsStoreEngine {
   // Podcasts & Media CRUD
   // --------------------------------------------------------------------------
   getPodcasts() {
-    return this.data.podcasts || podcastsSeed || [];
+    return mergePodcastsWithDefaults(this.data.podcasts, INITIAL_CMS_DATA.podcasts, this.data.deletedPodcasts || []);
   }
 
   savePodcast(podcast) {
-    const existing = [...this.getPodcasts()];
     const slug = podcast.slug || (podcast.title || 'new-episode').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const deleted = (this.data.deletedPodcasts || []).filter(s => String(s).toLowerCase() !== String(podcast.id).toLowerCase() && String(s).toLowerCase() !== slug.toLowerCase());
+    const existing = [...this.getPodcasts()];
     const index = existing.findIndex(p => p.id === podcast.id || p.slug === slug);
     if (index >= 0) {
       existing[index] = { ...existing[index], ...podcast, slug };
@@ -2149,7 +2332,7 @@ class CmsStoreEngine {
         episodeNumber: podcast.episodeNumber || (existing.length + 1)
       });
     }
-    this.saveData({ ...this.data, podcasts: existing });
+    this.saveData({ ...this.data, podcasts: existing, deletedPodcasts: deleted });
     return existing;
   }
 
@@ -2160,9 +2343,28 @@ class CmsStoreEngine {
   }
 
   deletePodcast(slugOrId) {
-    const existing = this.getPodcasts().filter(p => p.slug !== slugOrId && p.id !== slugOrId);
-    this.saveData({ ...this.data, podcasts: existing });
+    if (!slugOrId) return this.getPodcasts();
+    const target = String(slugOrId).toLowerCase().trim();
+    const item = this.getPodcasts().find(p => String(p.id || '').toLowerCase() === target || String(p.slug || '').toLowerCase() === target);
+    const toDelete = [target];
+    if (item?.id) toDelete.push(String(item.id).toLowerCase().trim());
+    if (item?.slug) toDelete.push(String(item.slug).toLowerCase().trim());
+    const deletedList = Array.from(new Set([...(this.data.deletedPodcasts || []), ...toDelete]));
+    const existing = this.getPodcasts().filter(p => String(p.slug || '').toLowerCase() !== target && String(p.id || '').toLowerCase() !== target);
+    this.saveData({ ...this.data, podcasts: existing, deletedPodcasts: deletedList });
     return existing;
+  }
+
+  deleteAllPodcasts() {
+    const allIds = [
+      ...(this.getPodcasts() || []).map(p => p.id),
+      ...(this.getPodcasts() || []).map(p => p.slug),
+      ...(INITIAL_CMS_DATA.podcasts || []).map(p => p.id),
+      ...(INITIAL_CMS_DATA.podcasts || []).map(p => p.slug)
+    ].filter(Boolean).map(s => String(s).toLowerCase().trim());
+    const deletedList = Array.from(new Set([...(this.data.deletedPodcasts || []), ...allIds]));
+    this.saveData({ ...this.data, podcasts: [], deletedPodcasts: deletedList });
+    return [];
   }
 
   // --------------------------------------------------------------------------

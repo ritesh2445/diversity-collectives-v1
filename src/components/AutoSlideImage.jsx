@@ -153,7 +153,7 @@ export default function AutoSlideImage({
                 onError={() => handleImageError(idx)}
                 className={`w-full h-full ${
                   imageFit === 'contain'
-                    ? 'object-contain p-4 relative z-10'
+                    ? 'object-contain relative z-10'
                     : 'object-cover'
                 } ${imageClassName}`}
               />
@@ -167,7 +167,7 @@ export default function AutoSlideImage({
           onError={() => handleImageError(0)}
           className={`w-full h-full ${
             imageFit === 'contain'
-              ? 'object-contain p-4 relative z-10'
+              ? 'object-contain relative z-10'
               : 'object-cover'
           } ${imageClassName}`}
         />

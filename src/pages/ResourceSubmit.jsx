@@ -159,10 +159,11 @@ export default function ResourceSubmit() {
               {/* Organization & Category */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-2">
+                  <label htmlFor="res-org-name" className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-2">
                     Organization or Provider Name *
                   </label>
                   <input
+                    id="res-org-name"
                     type="text"
                     required
                     placeholder="e.g. Ventura Coast Wellness Center"
@@ -172,10 +173,11 @@ export default function ResourceSubmit() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-2">
+                  <label htmlFor="res-category" className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-2">
                     Primary Category *
                   </label>
                   <select
+                    id="res-category"
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                     className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-600 bg-white"
@@ -190,10 +192,11 @@ export default function ResourceSubmit() {
               {/* Contact Information */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-2">
+                  <label htmlFor="res-email" className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-2">
                     Contact Email *
                   </label>
                   <input
+                    id="res-email"
                     type="email"
                     required
                     placeholder="contact@agency.org"
@@ -203,10 +206,11 @@ export default function ResourceSubmit() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-2">
+                  <label htmlFor="res-phone" className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-2">
                     Phone Number
                   </label>
                   <input
+                    id="res-phone"
                     type="tel"
                     placeholder="(805) 555-0123"
                     value={formData.phone}
@@ -219,10 +223,11 @@ export default function ResourceSubmit() {
               {/* Website & Address */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-2">
+                  <label htmlFor="res-website" className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-2">
                     Website URL
                   </label>
                   <input
+                    id="res-website"
                     type="url"
                     placeholder="https://example.org"
                     value={formData.website}
@@ -231,10 +236,11 @@ export default function ResourceSubmit() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-2">
+                  <label htmlFor="res-city" className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-2">
                     City in Ventura County
                   </label>
                   <select
+                    id="res-city"
                     value={formData.city}
                     onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                     className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-600 bg-white"
@@ -248,10 +254,11 @@ export default function ResourceSubmit() {
 
               {/* Description */}
               <div>
-                <label className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-2">
+                <label htmlFor="res-description" className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-2">
                   Description of Services & LGBTQ+ Affirming Practices *
                 </label>
                 <textarea
+                  id="res-description"
                   rows={4}
                   required
                   placeholder="Describe services offered, intake processes, languages spoken, insurance or low-cost options, and specific LGBTQ+ competency..."
@@ -263,8 +270,9 @@ export default function ResourceSubmit() {
 
               {/* Checkboxes for Spanish and Low Cost */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                <label className="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 bg-slate-50/70 cursor-pointer select-none">
+                <label htmlFor="res-spanish" className="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 bg-slate-50/70 cursor-pointer select-none">
                   <input
+                    id="res-spanish"
                     type="checkbox"
                     checked={formData.spanishAvailable}
                     onChange={(e) => setFormData({ ...formData, spanishAvailable: e.target.checked })}
@@ -273,8 +281,9 @@ export default function ResourceSubmit() {
                   <span className="text-xs font-semibold text-slate-800">Spanish Language Services Available</span>
                 </label>
 
-                <label className="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 bg-slate-50/70 cursor-pointer select-none">
+                <label htmlFor="res-sliding-scale" className="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 bg-slate-50/70 cursor-pointer select-none">
                   <input
+                    id="res-sliding-scale"
                     type="checkbox"
                     checked={formData.freeOrSlidingScale}
                     onChange={(e) => setFormData({ ...formData, freeOrSlidingScale: e.target.checked })}
@@ -285,8 +294,9 @@ export default function ResourceSubmit() {
               </div>
 
               {/* Verification Consent */}
-              <label className="flex items-start gap-3 cursor-pointer select-none pt-2">
+              <label htmlFor="res-affirming-consent" className="flex items-start gap-3 cursor-pointer select-none pt-2">
                 <input
+                  id="res-affirming-consent"
                   type="checkbox"
                   required
                   checked={formData.affirmingVerificationConsent}

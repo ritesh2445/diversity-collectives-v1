@@ -429,25 +429,27 @@ export default function Training() {
                 </div>
 
                 {/* Footer Buttons */}
-                <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-2.5">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedCourseForModal(course)}
-                    className="btn-secondary py-2 px-3.5 text-xs font-bold bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200 cursor-pointer"
-                  >
-                    Quick Syllabus
-                  </button>
+                <div className="pt-4 mt-auto border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedCourseForModal(course)}
+                      className="btn-secondary py-2 px-3 text-xs font-bold bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200 cursor-pointer whitespace-nowrap"
+                    >
+                      Quick Overview
+                    </button>
 
-                  <Link
-                    to={`/training/${course.slug}`}
-                    className="text-xs font-bold text-purple-700 hover:text-purple-900 transition-colors px-2"
-                  >
-                    Details
-                  </Link>
+                    <Link
+                      to={`/training/${course.slug}`}
+                      className="text-xs font-bold text-purple-700 hover:text-purple-900 transition-colors px-2 py-1"
+                    >
+                      Details
+                    </Link>
+                  </div>
 
                   <Link
                     to={`/training/${course.slug}/book`}
-                    className="btn-primary py-2 px-4 text-xs font-bold inline-flex items-center gap-1 shadow-sm ml-auto"
+                    className="btn-primary py-2 px-3.5 text-xs font-bold inline-flex items-center gap-1 shadow-sm whitespace-nowrap"
                   >
                     <span>Book</span>
                     <ArrowRight className="w-3.5 h-3.5" />

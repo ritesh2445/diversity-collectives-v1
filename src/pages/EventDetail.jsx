@@ -13,7 +13,8 @@ import {
   Download,
   AlertTriangle,
   Repeat,
-  ArrowRight
+  ArrowRight,
+  Clock
 } from 'lucide-react';
 import { liveEvents, orgInfo } from '../data/dcvcData';
 import { useLiveOrgInfo } from '../hooks/useCmsLive';
@@ -25,11 +26,13 @@ import CardSpotlight from '../components/CardSpotlight';
 import AutoSlideImage from '../components/AutoSlideImage.jsx';
 import { getGoogleCalendarUrl, downloadIcsFile } from '../utils/calendar';
 import { usePageMeta } from '../utils/seo';
+import { isPastEvent } from '../utils/eventDates';
 
 export default function EventDetail() {
   const liveOrg = useLiveOrgInfo();
   const { slug } = useParams();
   const event = liveEvents.find(e => e.slug === slug) || cmsStore.getEvents().find(e => e.slug === slug || e.id === slug);
+  const isExpired = event ? isPastEvent(event) : false;
   const [copied, setCopied] = useState(false);
   const [rsvpForm, setRsvpForm] = useState({
     attendeeName: '',
@@ -45,6 +48,11 @@ export default function EventDetail() {
   const handleRsvpSubmit = async (e) => {
     e.preventDefault();
     if (!event) return;
+    if (isExpired) {
+      setRsvpStatus('error');
+      setRsvpMessage('Registration for this event occurrence has closed because this event has concluded.');
+      return;
+    }
     setRsvpStatus('loading');
     setRsvpMessage('');
 
@@ -144,7 +152,7 @@ export default function EventDetail() {
                 )}
               </div>
 
-              <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-slate-950 leading-[1.08]">
+              <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-slate-950 leading-[1.08] break-words min-w-0">
                 {event.title}
               </h1>
             </div>
@@ -209,7 +217,12 @@ export default function EventDetail() {
 
             {/* Action Bar */}
             <div className="pt-4 flex flex-wrap items-center gap-4">
-              {event.slug === 'free-hiv-sti-screening' ? (
+              {isExpired ? (
+                <div className="p-4 bg-slate-100 border-2 border-slate-300 rounded-2xl text-xs text-slate-700 font-bold flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-slate-500" />
+                  <span>Registration Closed for this Occurrence — This gathering has concluded.</span>
+                </div>
+              ) : event.slug === 'free-hiv-sti-screening' ? (
                 <Link
                   to="/appointments"
                   className="btn-primary py-3.5 px-7 text-sm font-bold inline-flex items-center gap-2 shadow-lg hover:shadow-xl"
@@ -258,7 +271,24 @@ export default function EventDetail() {
 
             {/* Direct Event RSVP & Email Confirmation Form */}
             {!event.isCancelled && (
-              event.slug === 'free-hiv-sti-screening' ? (
+              isExpired ? (
+                <div className="p-6 sm:p-8 rounded-3xl bg-slate-100/90 border-2 border-slate-300 space-y-3">
+                  <div className="flex items-center gap-2 text-slate-900 font-bold">
+                    <Clock className="w-5 h-5 text-slate-600" />
+                    <span className="font-display text-lg font-black">Registration Closed for this Occurrence</span>
+                  </div>
+                  <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
+                    This gathering has already taken place. Please check our community calendar to join upcoming circles, workshops, and celebrations.
+                  </p>
+                  <Link
+                    to="/events"
+                    className="inline-flex items-center gap-2 btn-secondary py-2.5 px-5 text-xs font-bold"
+                  >
+                    <span>View Upcoming Events</span>
+                    <ArrowRight className="w-3.5 h-3.5 text-[#5A1E65]" />
+                  </Link>
+                </div>
+              ) : event.slug === 'free-hiv-sti-screening' ? (
                 <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-purple-50 via-teal-50/40 to-white border-2 border-purple-200 shadow-lg space-y-4">
                   <span className="text-[10px] font-black uppercase tracking-widest text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full border border-emerald-300">
                     Confidential Slot Booking System
@@ -457,8 +487,8 @@ export default function EventDetail() {
               <div className="space-y-2">
                 <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider block">ORGANIZER</span>
                 <p className="font-bold text-slate-900 text-sm">Diversity Collective Ventura County</p>
-                <p className="text-xs text-slate-600 font-medium">
-                  Email: <a href={`mailto:${event.contactEmail || orgInfo.email}`} className="text-[#5A1E65] hover:underline font-bold">{event.contactEmail || orgInfo.email}</a>
+                <p className="text-xs text-slate-600 font-medium break-words">
+                  Email: <a href={`mailto:${event.contactEmail || orgInfo.email}`} className="text-[#5A1E65] hover:underline font-bold break-all">{event.contactEmail || orgInfo.email}</a>
                 </p>
                 <p className="text-xs text-slate-600 font-medium">
                   {liveOrg.voicemailOnly ? <SendVoicemailButton label="Send Voice Message" subject={`Question about ${event.title}`} compact /> : <>Phone: <a href={`tel:${liveOrg.phoneRaw || orgInfo.phoneRaw}`} className="text-[#5A1E65] hover:underline font-bold">{liveOrg.phone || orgInfo.phone}</a></>}

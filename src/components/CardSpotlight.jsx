@@ -7,11 +7,12 @@ export default function CardSpotlight({
   style: externalStyle = {},
   spotlightColor = 'rgba(147, 51, 234, 0.12)',
   tilt = true,
-  maxTilt = 7,
-  scale = 1.018,
+  maxTilt = 0.5,
+  scale = 1.004,
   glare = true
 }) {
   const divRef = useRef(null);
+  const effectiveMaxTilt = Math.min(typeof maxTilt === 'number' ? maxTilt : 0.5, 0.6);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [rotation, setRotation] = useState({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState(false);
@@ -36,11 +37,11 @@ export default function CardSpotlight({
     if (tilt) {
       const centerX = rect.width / 2;
       const centerY = rect.height / 2;
-      const rotX = ((y - centerY) / centerY) * -maxTilt;
-      const rotY = ((x - centerX) / centerX) * maxTilt;
+      const rotX = ((y - centerY) / centerY) * -effectiveMaxTilt;
+      const rotY = ((x - centerX) / centerX) * effectiveMaxTilt;
       setRotation({ x: rotX, y: rotY });
     }
-  }, [tilt, maxTilt, isTouchDevice]);
+  }, [tilt, effectiveMaxTilt, isTouchDevice]);
 
   const handleMouseEnter = () => {
     if (isTouchDevice) return;

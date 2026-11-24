@@ -22,6 +22,7 @@ export default function ImagePicker({
   label = 'Picture / Cover Image',
   aspectRatio = 'aspect-[16/9]',
   category = 'media',
+  defaultFit = 'contain',
   helpText = 'Upload a picture from your computer or choose from the DCVC Center library.'
 }) {
   const [showLibrary, setShowLibrary] = useState(false);
@@ -30,7 +31,7 @@ export default function ImagePicker({
   const [showDirectUrlInput, setShowDirectUrlInput] = useState(false);
   const [showCropper, setShowCropper] = useState(false);
   const [cropperSource, setCropperSource] = useState(null);
-  const [previewFit, setPreviewFit] = useState('contain'); // 'contain' prevents artificial clipping in admin preview
+  const [previewFit, setPreviewFit] = useState(defaultFit); // preserves uncropped 'contain' by default to avoid unintended cropping across modules
   const [uploadMode, setUploadMode] = useState('crop'); // 'crop' | 'direct'
   const fileInputRef = useRef(null);
 
@@ -114,15 +115,26 @@ export default function ImagePicker({
         
         <div className="flex items-center gap-2">
           {value && (
-            <button
-              type="button"
-              onClick={() => setPreviewFit(f => f === 'contain' ? 'cover' : 'contain')}
-              className="text-[11px] font-bold text-slate-600 hover:text-[#5A1E65] px-2 py-0.5 rounded-md border border-slate-200 bg-white shadow-2xs cursor-pointer flex items-center gap-1"
-              title="Toggle preview framing: Whole Image preserves uncropped edges; Fill Card covers frame"
-            >
-              <Eye className="w-3 h-3 text-purple-700" />
-              <span>Preview: {previewFit === 'contain' ? 'Whole Image' : 'Fill Card'}</span>
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={() => setPreviewFit(f => f === 'contain' ? 'cover' : 'contain')}
+                className="text-[11px] font-bold text-slate-600 hover:text-[#5A1E65] px-2 py-0.5 rounded-md border border-slate-200 bg-white shadow-2xs cursor-pointer flex items-center gap-1"
+                title="Toggle preview framing: Whole Image preserves uncropped edges; Fill Card covers frame"
+              >
+                <Eye className="w-3 h-3 text-purple-700" />
+                <span>Preview: {previewFit === 'contain' ? 'Whole Image' : 'Fill Card'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onChange('')}
+                className="text-[11px] font-bold text-rose-600 hover:text-rose-800 px-2 py-0.5 rounded-md border border-rose-200 bg-rose-50/50 shadow-2xs cursor-pointer flex items-center gap-1"
+                title="Remove current image"
+              >
+                <X className="w-3 h-3 text-rose-600" />
+                <span>Remove</span>
+              </button>
+            </>
           )}
 
           <button
@@ -152,11 +164,11 @@ export default function ImagePicker({
                 src={value}
                 alt="Preview"
                 className={`w-full h-full relative z-10 transition-transform duration-200 ${
-                  previewFit === 'contain' ? 'object-contain p-2' : 'object-cover'
+                  previewFit === 'contain' ? 'object-contain' : 'object-cover'
                 }`}
                 onError={(e) => {
                   e.currentTarget.onerror = null;
-                  e.currentTarget.src = '/images/community-gathering.jpg';
+                  e.currentTarget.style.display = 'none';
                 }}
               />
             </>
@@ -278,7 +290,7 @@ export default function ImagePicker({
             className="px-3 py-1.5 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-950 text-xs font-bold cursor-pointer flex items-center gap-1.5 transition-colors shadow-2xs"
           >
             <Crop className="w-3.5 h-3.5 text-amber-700" />
-            <span>Adjust & Crop</span>
+            <span>Edit & Crop Existing Image</span>
           </button>
         )}
 
@@ -386,9 +398,9 @@ export default function ImagePicker({
       )}
 
       {/* Interactive Crop & Adjustment Studio Modal */}
-      {showCropper && cropperSource && (
+      {showCropper && (
         <ImageCropperModal
-          imageSrc={cropperSource}
+          imageSrc={cropperSource || value || null}
           initialAspect="original"
           onApply={handleCropperApply}
           onCancel={() => {

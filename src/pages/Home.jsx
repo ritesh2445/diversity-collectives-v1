@@ -231,20 +231,39 @@ export default function Home() {
       const hour = ptDate.getHours();
       const isWeekday = day >= 1 && day <= 5;
       const isOpenNow = isWeekday && hour >= 13 && hour < 17;
+      const opensToday = isWeekday && hour < 13;
+
+      let headline = 'Center Open Now';
+      if (!isOpenNow) {
+        if (opensToday) {
+          headline = 'Center Opens Today 1:00 PM';
+        } else if (isWeekday) {
+          headline = `Center Closed · Opens ${day === 5 ? 'Mon' : 'Tomorrow'} 1 PM`;
+        } else {
+          headline = 'Center Closed · Opens Monday 1 PM';
+        }
+      }
+
       return {
         isOpenNow,
         isWeekday,
+        opensToday,
+        headline,
         statusText: isOpenNow 
           ? "Center Open Now · Mon–Fri 1:00 PM – 5:00 PM · HIV/STI Screenings 1st Mon 3–7 PM"
-          : isWeekday && hour < 13
+          : opensToday
           ? "Center Opens Today 1:00 PM · Mon–Fri 1:00 PM – 5:00 PM · HIV/STI Screenings 1st Mon 3–7 PM"
-          : "Center Open Today · Mon–Fri 1:00 PM – 5:00 PM · HIV/STI Screenings 1st Mon 3–7 PM"
+          : isWeekday
+          ? `Center Closed · Opens ${day === 5 ? 'Mon' : 'Tomorrow'} 1:00 PM · Mon–Fri 1:00 PM – 5:00 PM`
+          : "Center Closed Weekends · Opens Monday 1:00 PM · Mon–Fri 1:00 PM – 5:00 PM"
       };
     } catch {
       return {
-        isOpenNow: true,
-        isWeekday: true,
-        statusText: "Center Open Today · Mon–Fri 1:00 PM – 5:00 PM · HIV/STI Screenings 1st Mon 3–7 PM"
+        isOpenNow: false,
+        isWeekday: false,
+        opensToday: false,
+        headline: 'Center Hours: Mon–Fri 1–5 PM',
+        statusText: "Center Hours · Mon–Fri 1:00 PM – 5:00 PM · HIV/STI Screenings 1st Mon 3–7 PM"
       };
     }
   };
@@ -592,70 +611,13 @@ export default function Home() {
 
       {/* ====================================================================
           UPCOMING PROGRAMS & EVENTS THIS WEEK
-          Positioned directly after "Trusted community" Impact Section
+          Positioned directly between Community Impact and Core Programs
           ==================================================================== */}
       <UpcomingWeekSection
         props={upcomingWeekProps}
         style={getSectionStyle('upcoming_week', 2.5)}
         events={cmsEvents}
       />
-
-      {/* ====================================================================
-          LGBTQ+ AFFIRMING BUSINESS DIRECTORY SPOTLIGHT
-          ==================================================================== */}
-      <section data-block-id="block-directory" style={getSectionStyle('directory_cta', 6)} className="py-14 md:py-20 bg-white border-b border-slate-100 scroll-reveal">
-        <div className="container-clean">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
-            <div className="flex flex-col gap-3 max-w-2xl">
-              <span className="glass-pill text-xs font-bold text-[#5A1E65] bg-purple-50 border-purple-200">
-                {directoryProps.eyebrow || 'VENTURA COUNTY AFFIRMING NETWORK'}
-              </span>
-              <h2 className="font-display text-2xl sm:text-4xl font-extrabold text-slate-950 tracking-tight">
-                {directoryProps.headline || 'Shop, Dine & Connect Safely.'}
-              </h2>
-              <p className="text-sm sm:text-base text-slate-800 leading-relaxed font-medium">
-                {directoryProps.description || 'Discover verified LGBTQ+ owned and affirming businesses across Ventura, Oxnard, Ojai, Camarillo, and the Conejo Valley.'}
-              </p>
-            </div>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
-              <Link to="/directory" className="btn-primary py-2.5 px-5 text-xs font-bold inline-flex items-center justify-center gap-1.5 shadow-sm text-center">
-                <span>{directoryProps.ctaText || 'Browse Full Directory'}</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-              <Link to="/directory/submit" className="btn-secondary py-2.5 px-4 text-xs font-bold inline-flex items-center justify-center gap-1.5 bg-white text-center">
-                <span>{directoryProps.secondaryCtaText || 'Submit Your Business'}</span>
-              </Link>
-            </div>
-          </div>
-
-          <MobileCarousel cols={3} autoScrollMs={4500}>
-            {businessDirectorySeed.slice(0, 3).map((biz) => (
-              <div key={biz.id} className="p-6 rounded-3xl bg-slate-50 border border-slate-200/90 hover:border-purple-300 transition-all shadow-xs hover:shadow-lg flex flex-col justify-between gap-4 h-full">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-[#5A1E65] bg-purple-50 px-2.5 py-1 rounded-full border border-purple-200">
-                      {biz.category}
-                    </span>
-                    <span className="text-xs sm:text-sm font-bold text-slate-700">{biz.city}</span>
-                  </div>
-                  <h3 className="font-display text-xl font-black text-slate-950">{biz.name}</h3>
-                  <p className="text-sm text-slate-800 leading-relaxed font-medium line-clamp-3">{biz.description}</p>
-                </div>
-                <div className="pt-3 border-t border-slate-200/80 flex items-center justify-between text-xs">
-                  <span className="text-emerald-700 font-bold flex items-center gap-1">
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    <span>Affirming Vetted</span>
-                  </span>
-                  <Link to={`/directory/${biz.slug}`} className="text-[#5A1E65] font-black hover:underline inline-flex items-center gap-1">
-                    <span>View Profile</span>
-                    <ArrowRight className="w-3 h-3" />
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </MobileCarousel>
-        </div>
-      </section>
 
       {/* ====================================================================
           PROGRAMS DIRECTORY: COLLISION-PROOF EXPANDABLE CARDS
@@ -825,6 +787,63 @@ export default function Home() {
       </section>
 
       {/* ====================================================================
+          LGBTQ+ AFFIRMING BUSINESS DIRECTORY SPOTLIGHT
+          ==================================================================== */}
+      <section data-block-id="block-directory" style={getSectionStyle('directory_cta', 6)} className="py-14 md:py-20 bg-white border-b border-slate-100 scroll-reveal">
+        <div className="container-clean">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+            <div className="flex flex-col gap-3 max-w-2xl">
+              <span className="glass-pill text-xs font-bold text-[#5A1E65] bg-purple-50 border-purple-200">
+                {directoryProps.eyebrow || 'VENTURA COUNTY AFFIRMING NETWORK'}
+              </span>
+              <h2 className="font-display text-2xl sm:text-4xl font-extrabold text-slate-950 tracking-tight">
+                {directoryProps.headline || 'Shop, Dine & Connect Safely.'}
+              </h2>
+              <p className="text-sm sm:text-base text-slate-800 leading-relaxed font-medium">
+                {directoryProps.description || 'Discover verified LGBTQ+ owned and affirming businesses across Ventura, Oxnard, Ojai, Camarillo, and the Conejo Valley.'}
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+              <Link to="/directory" className="btn-primary py-2.5 px-5 text-xs font-bold inline-flex items-center justify-center gap-1.5 shadow-sm text-center">
+                <span>{directoryProps.ctaText || 'Browse Full Directory'}</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+              <Link to="/directory/submit" className="btn-secondary py-2.5 px-4 text-xs font-bold inline-flex items-center justify-center gap-1.5 bg-white text-center">
+                <span>{directoryProps.secondaryCtaText || 'Submit Your Business'}</span>
+              </Link>
+            </div>
+          </div>
+
+          <MobileCarousel cols={3} autoScrollMs={4500}>
+            {businessDirectorySeed.slice(0, 3).map((biz) => (
+              <div key={biz.id} className="p-6 rounded-3xl bg-slate-50 border border-slate-200/90 hover:border-purple-300 transition-all shadow-xs hover:shadow-lg flex flex-col justify-between gap-4 h-full">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-[#5A1E65] bg-purple-50 px-2.5 py-1 rounded-full border border-purple-200">
+                      {biz.category}
+                    </span>
+                    <span className="text-xs sm:text-sm font-bold text-slate-700">{biz.city}</span>
+                  </div>
+                  <h3 className="font-display text-xl font-black text-slate-950">{biz.name}</h3>
+                  <p className="text-sm text-slate-800 leading-relaxed font-medium line-clamp-3">{biz.description}</p>
+                </div>
+                <div className="pt-3 border-t border-slate-200/80 flex items-center justify-between text-xs">
+                  <span className="text-emerald-700 font-bold flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>Affirming Vetted</span>
+                  </span>
+                  <Link to={`/directory/${biz.slug}`} className="text-[#5A1E65] font-black hover:underline inline-flex items-center gap-1">
+                    <span>View Profile</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </MobileCarousel>
+        </div>
+      </section>
+
+      {/* ====================================================================
           11. FLEX SPACE: LIVE AVAILABILITY, TIMINGS & SLOT BOOKING SYSTEM
           ==================================================================== */}
       <FlexSpaceBookingSection
@@ -861,10 +880,10 @@ export default function Home() {
                 key={sigEvt.id || sigEvt.title}
                 className={`${['card-vibrant-rose', 'card-vibrant-purple', 'card-vibrant-amber', 'card-vibrant-teal', 'card-vibrant-indigo'][idx % 5]} overflow-hidden flex flex-col justify-between shadow-md hover:shadow-xl`}
                 contentClassName="flex flex-col justify-between h-full"
-                tilt={true}
-                maxTilt={5}
-                scale={1.015}
-                glare={true}
+                tilt={false}
+                maxTilt={0}
+                scale={1}
+                glare={false}
               >
                 <div>
                   <div className="aspect-[16/10] overflow-hidden bg-slate-100 relative">
@@ -1317,10 +1336,8 @@ export default function Home() {
 
               {/* Prominent Action Button with Confetti */}
               <div className="flex flex-col gap-2 pt-1">
-                <a
-                  href={orgInfo.donationUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <Link
+                  to={`/donate?amount=${customDonation || selectedDonationTier}&frequency=${donationFreq === 'monthly' ? 'monthly' : 'once'}`}
                   onClick={triggerMilestoneConfetti}
                   className="w-full py-3 sm:py-3.5 px-4 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-400 text-slate-950 font-black text-xs sm:text-sm tracking-wide flex items-center justify-center gap-2 shadow-[0_8px_25px_-5px_rgba(245,158,11,0.45)] hover:shadow-[0_12px_30px_-5px_rgba(245,158,11,0.6)] hover:scale-101 transition-all cursor-pointer text-center"
                 >
@@ -1328,8 +1345,8 @@ export default function Home() {
                   <span className="truncate max-w-[80%] text-center">
                     Complete ${customDonation ? customDonation : selectedDonationTier} Gift Online {donationFreq === 'monthly' ? '/ Month' : ''}
                   </span>
-                  <ArrowUpRight className="w-4 h-4 shrink-0" />
-                </a>
+                  <ArrowRight className="w-4 h-4 shrink-0" />
+                </Link>
 
                 {/* Trust and Non-profit Footnote in 1 line */}
                 <div className="flex items-center justify-center gap-2 text-[10px] sm:text-[11px] text-slate-500 flex-wrap text-center pt-1">
@@ -1362,10 +1379,10 @@ export default function Home() {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
             <div className="flex flex-col gap-3 max-w-xl">
               <span className="glass-pill">
-                {eventsProps.eyebrow || 'GATHERINGS & CALENDAR'}
+                {eventsProps.eyebrow || 'EVENTS & CALENDAR'}
               </span>
               <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900">
-                {eventsProps.headline || 'Upcoming Community Gatherings'}
+                {eventsProps.headline || 'Upcoming Community Events'}
               </h2>
             </div>
             <Link 
@@ -1394,8 +1411,8 @@ export default function Home() {
             ))}
           </div>
 
-          {/* Events List in 3D Perspective (2 balanced rows of 3 on desktop, expandable) */}
-          <MobileCarousel cols={3} autoScrollMs={5000} className="perspective-1000 items-stretch" cardClassName="h-full flex flex-col">
+          {/* Events List (2 balanced rows of 3 on desktop, swipable on mobile) */}
+          <MobileCarousel cols={3} autoScrollMs={5000} className="items-stretch" cardClassName="h-full flex flex-col">
             {displayedEvents.map((evt, idx) => {
               const dateGradients = [
                 'from-purple-800 via-[#5A1E65] to-indigo-900 text-white shadow-purple-500/25',
@@ -1418,55 +1435,71 @@ export default function Home() {
               return (
                 <CardSpotlight
                   key={evt.id}
-                  className="card-vibrant-purple p-5 sm:p-6 shadow-sm hover:shadow-xl transition-all duration-200 h-full flex flex-col justify-between"
+                  className={`${['card-vibrant-purple', 'card-vibrant-rose', 'card-vibrant-amber', 'card-vibrant-teal', 'card-vibrant-indigo'][idx % 5]} p-5 sm:p-6 shadow-sm hover:shadow-xl transition-all duration-200 h-full flex flex-col justify-between rounded-3xl border-2 border-purple-200/70 overflow-hidden group`}
                   contentClassName="flex flex-col justify-between h-full"
-                  tilt={true}
-                  maxTilt={2.2}
-                  scale={1.008}
-                  glare={true}
+                  tilt={false}
+                  maxTilt={0}
+                  scale={1}
+                  glare={false}
                 >
-                  <div className="flex flex-col justify-between h-full gap-4">
+                  <div className="flex flex-col justify-between h-full gap-3.5">
                     
-                    <div className="flex items-center justify-between gap-2">
-                      {(() => {
-                        const parsed = parseEventDate(evt);
-                        const badgeMonth = parsed
-                          ? getLocalizedMonthAbbr(parsed.monthIndex, currentLang)
-                          : (evt.month || 'EVT');
-                        const badgeDay = evt.day || parsed?.dayStr || '—';
-                        return (
-                          <div className={`flex flex-col items-center justify-center min-w-[70px] p-2.5 rounded-2xl bg-gradient-to-b ${dateGradients[idx % dateGradients.length]} shadow-md`}>
-                            <span
-                              className="text-[10px] font-black uppercase tracking-wider text-amber-200 notranslate"
-                              translate="no"
-                            >
-                              {badgeMonth}
-                            </span>
-                            <span className="font-display text-2xl font-black leading-none pt-0.5">{badgeDay}</span>
-                          </div>
-                        );
-                      })()}
+                    {/* Event Photography Header */}
+                    <div className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden bg-slate-100 shadow-xs border border-purple-200/60">
+                      <img
+                        src={evt.image || '/images/community-gathering.jpg'}
+                        alt={evt.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        onError={(e) => { e.target.src = '/images/community-gathering.jpg'; }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+                      
+                      {/* Floating Date Badge */}
+                      <div className="absolute bottom-2.5 left-2.5">
+                        {(() => {
+                          const parsed = parseEventDate(evt);
+                          const badgeMonth = parsed
+                            ? getLocalizedMonthAbbr(parsed.monthIndex, currentLang)
+                            : (evt.month || 'EVT');
+                          const badgeDay = evt.day || parsed?.dayStr || '—';
+                          return (
+                            <div className={`flex flex-col items-center justify-center min-w-[68px] sm:min-w-[74px] px-3 py-2 rounded-xl bg-gradient-to-b ${dateGradients[idx % dateGradients.length]} text-white shadow-md backdrop-blur-xs`}>
+                              <span className="text-[10px] font-black uppercase tracking-wider text-amber-200 leading-tight notranslate" translate="no">
+                                {badgeMonth}
+                              </span>
+                              <span className="font-display text-xl sm:text-2xl font-black leading-none pt-0.5">{badgeDay}</span>
+                            </div>
+                          );
+                        })()}
+                      </div>
 
-                      <div className="flex flex-col items-end gap-1">
-                        <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border ${catBadge}`}>
+                      {/* Category Chip */}
+                      <div className="absolute top-2.5 right-2.5">
+                        <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-xs backdrop-blur-md ${catBadge}`}>
                           {evt.category}
-                        </span>
-                        <span className="text-xs sm:text-sm text-slate-900 flex items-center gap-1.5 font-bold">
-                          <Clock className="w-3.5 h-3.5 text-[#5A1E65]" /> {evt.time}
                         </span>
                       </div>
                     </div>
 
+                    <div className="flex items-center justify-between gap-2 pt-0.5">
+                      <span className="text-xs text-slate-700 flex items-center gap-1.5 font-bold">
+                        <Clock className="w-3.5 h-3.5 text-[#5A1E65]" /> {evt.time}
+                      </span>
+                      <span className="text-[11px] text-slate-500 font-semibold truncate">
+                        📍 {evt.location || 'Ventura'}
+                      </span>
+                    </div>
+
                     <div className="flex flex-col gap-1.5 flex-1">
-                      <h3 className="font-display text-lg font-black text-slate-950 pt-0.5 line-clamp-2">
+                      <h3 className="font-display text-lg font-black text-slate-950 pt-0.5 line-clamp-2 group-hover:text-[#5A1E65] transition-colors">
                         {evt.title}
                       </h3>
-                      <p className="text-sm text-slate-800 font-medium leading-relaxed line-clamp-3">
+                      <p className="text-xs sm:text-sm text-slate-700 font-medium leading-relaxed line-clamp-2">
                         {evt.description}
                       </p>
                     </div>
 
-                    <div className="pt-3 border-t border-purple-100 mt-auto flex items-center justify-end relative z-20">
+                    <div className="pt-3 border-t border-purple-100/80 mt-auto flex items-center justify-end relative z-20">
                       <Link 
                         to={`/events/${evt.slug}`}
                         className="btn-secondary text-xs py-2 px-4 w-full text-center font-bold justify-center"
@@ -1500,7 +1533,7 @@ export default function Home() {
               <div className="flex items-center gap-3 flex-wrap justify-center">
                 <p className="text-xs text-slate-500 font-medium">
                   {showAllEvents
-                    ? `Showing ${displayedEvents.length} upcoming gatherings`
+                    ? `Showing ${displayedEvents.length} upcoming events`
                     : `Showing 2 rows (${displayedEvents.length} events)`}
                 </p>
                 {filteredEvents.length > 15 && showAllEvents && (
@@ -1643,82 +1676,25 @@ export default function Home() {
             </p>
           </div>
 
-          <MobileCarousel cols={3} autoScrollMs={5000} className="perspective-1000 items-stretch">
-            <CardSpotlight 
-              className="card-vibrant-purple p-6 md:p-8 h-full interactive-card-3d glow-amethyst"
-              contentClassName="flex flex-col justify-between gap-5 h-full"
-              tilt={true}
-              maxTilt={6}
-              glare={true}
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-4xl font-serif text-[#5A1E65] leading-none">“</span>
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-purple-950 bg-purple-100 px-2.5 py-0.5 rounded-full border border-purple-300">Youth Voice</span>
-              </div>
-              <p className="font-serif italic text-sm md:text-base text-slate-950 font-medium leading-relaxed">
-                "Rainbow Umbrella gave our teenager the first space where they felt completely accepted and understood. It changed our family's life."
-              </p>
-              <div className="pt-3 border-t border-purple-200/80 flex items-center gap-3 mt-auto">
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-600 to-indigo-700 text-white font-black text-xs flex items-center justify-center shadow-xs">
-                  YP
-                </div>
-                <div className="flex flex-col">
-                  <span className="font-extrabold text-xs sm:text-sm text-slate-950">Youth Program Participant</span>
-                  <span className="text-xs text-slate-800 font-semibold">Ventura, CA</span>
-                </div>
-              </div>
-            </CardSpotlight>
-
-            <CardSpotlight 
-              className="card-vibrant-amber p-6 md:p-8 h-full interactive-card-3d glow-amber"
-              contentClassName="flex flex-col justify-between gap-5 h-full"
-              tilt={true}
-              maxTilt={6}
-              glare={true}
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-4xl font-serif text-amber-700 leading-none">“</span>
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-950 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-300">Parent Voice</span>
-              </div>
-              <p className="font-serif italic text-sm md:text-base text-slate-950 font-medium leading-relaxed">
-                "Having a physical Community Resource Center right here in Portola Road gives our families a trusted place to find healthcare navigation, peer support, and affirming community."
-              </p>
-              <div className="pt-3 border-t border-amber-200/80 flex items-center gap-3 mt-auto">
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500 to-rose-600 text-white font-black text-xs flex items-center justify-center shadow-xs">
-                  PO
-                </div>
-                <div className="flex flex-col">
-                  <span className="font-extrabold text-xs sm:text-sm text-slate-950">Parent of Youth Attendee</span>
-                  <span className="text-xs text-slate-800 font-semibold">Oxnard, CA</span>
-                </div>
-              </div>
-            </CardSpotlight>
-
-            <CardSpotlight 
-              className="card-vibrant-teal p-6 md:p-8 h-full interactive-card-3d glow-teal"
-              contentClassName="flex flex-col justify-between gap-5 h-full"
-              tilt={true}
-              maxTilt={6}
-              glare={true}
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-4xl font-serif text-teal-800 leading-none">“</span>
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-teal-950 bg-teal-100 px-2.5 py-0.5 rounded-full border border-teal-300">Volunteer Voice</span>
-              </div>
-              <p className="font-serif italic text-sm md:text-base text-slate-950 font-medium leading-relaxed">
-                "Diversity Collective is the cultural backbone of LGBTQ+ Ventura County. From Pride to harm reduction, they show up for our community 365 days a year."
-              </p>
-              <div className="pt-3 border-t border-teal-200/80 flex items-center gap-3 mt-auto">
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-600 to-teal-700 text-white font-black text-xs flex items-center justify-center shadow-xs">
-                  CV
-                </div>
-                <div className="flex flex-col">
-                  <span className="font-extrabold text-xs sm:text-sm text-slate-950">Community Volunteer</span>
-                  <span className="text-xs text-slate-800 font-semibold">Camarillo, CA</span>
-                </div>
-              </div>
-            </CardSpotlight>
-          </MobileCarousel>
+          <div className="max-w-3xl mx-auto p-8 sm:p-10 rounded-3xl bg-white/90 backdrop-blur-md border-2 border-purple-200/80 shadow-md text-center space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-purple-100/80 text-[#5A1E65] flex items-center justify-center mx-auto shadow-xs">
+              <span className="text-2xl font-serif">“</span>
+            </div>
+            <h3 className="font-display text-xl sm:text-2xl font-black text-slate-950">
+              Sharing Authentic Stories Across Ventura County
+            </h3>
+            <p className="text-sm sm:text-base text-slate-700 font-medium leading-relaxed max-w-xl mx-auto">
+              We are currently gathering authentic community stories from LGBTQ+ individuals, youth, seniors, and families across Ventura County. Have an experience, reflection, or story to share?
+            </p>
+            <div className="pt-2">
+              <a
+                href="mailto:info@diversitycollective.org?subject=Community%20Story%20Submission"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#5A1E65] text-white font-bold text-xs sm:text-sm hover:bg-[#471850] shadow-md hover:shadow-lg transition-all"
+              >
+                Submit Your Story to DCVC →
+              </a>
+            </div>
+          </div>
 
         </div>
       </section>

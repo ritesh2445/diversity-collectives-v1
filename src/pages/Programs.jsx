@@ -74,7 +74,10 @@ export default function Programs() {
         return slug === 'rainbow-umbrella' || slug === 'trans-affinity' || cat.includes('youth') || cat.includes('teen') || aud.includes('13');
       }
       if (selectedAgeFilter === 'Young Adults & Adults') {
-        return slug === 'diversity-shines' || slug === 'trans-affinity' || cat.includes('adult') || aud.includes('adult');
+        if (slug === 'little-unicorns' || slug === 'rainbow-umbrella') return false;
+        const isChildOnly = (cat.includes('kid') || cat.includes('pre-teen') || aud.includes('9-13') || aud.includes('9–13')) && !aud.includes('adult') && !cat.includes('adult');
+        if (isChildOnly) return false;
+        return true;
       }
       if (selectedAgeFilter === 'All Ages Center') {
         return slug === 'community-resource-center' || cat.includes('center') || aud.includes('all ages');

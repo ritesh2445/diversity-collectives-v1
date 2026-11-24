@@ -905,7 +905,7 @@ export async function getBiDataFeeds() {
       tool: 'Power BI',
       name: 'DCVC Financial & Donor Stream',
       feedType: 'OData v4 / JSON Feed',
-      endpoint: 'https://diversitycollectivevc.org/api/admin/bi/powerbi/donations',
+      endpoint: 'https://diversitycollective.org/api/admin/bi/powerbi/donations',
       authMethod: 'Bearer Token (Read-Only)',
       tokenMasked: 'dcvc_bi_sec_••••••••••••94b2',
       updatedFrequency: 'Refreshed every 15 minutes'
@@ -914,7 +914,7 @@ export async function getBiDataFeeds() {
       tool: 'Tableau',
       name: 'Community Directory & Demographics',
       feedType: 'Web Data Connector (WDC 3.0)',
-      endpoint: 'https://diversitycollectivevc.org/api/admin/bi/tableau/directory',
+      endpoint: 'https://diversitycollective.org/api/admin/bi/tableau/directory',
       authMethod: 'API Key Header (X-DCVC-BI-KEY)',
       tokenMasked: 'dcvc_bi_sec_••••••••••••18c9',
       updatedFrequency: 'Refreshed every 1 hour'
@@ -923,7 +923,7 @@ export async function getBiDataFeeds() {
       tool: 'Looker Studio (Google)',
       name: 'Web Traffic, Inquiries & Volunteers',
       feedType: 'Direct Google Sheets / REST Connector',
-      endpoint: 'https://diversitycollectivevc.org/api/admin/bi/looker/operations',
+      endpoint: 'https://diversitycollective.org/api/admin/bi/looker/operations',
       authMethod: 'OAuth 2.0 / Service Account',
       tokenMasked: 'service-account@diversity-collective-bi.iam',
       updatedFrequency: 'Real-Time Sync'

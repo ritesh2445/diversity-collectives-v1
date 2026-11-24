@@ -13,7 +13,9 @@ import {
   getUpcomingWeeklySchedule, 
   DEFAULT_WEEKLY_SCHEDULE 
 } from '../utils/recurringSchedule';
+import { resolveProgramLink } from './WeeklyProgramsCalendar';
 import { cmsStore } from '../services/cmsStore';
+import MobileCarousel from './MobileCarousel';
 
 export default function UpcomingWeekSection({ 
   props = {},
@@ -80,8 +82,8 @@ export default function UpcomingWeekSection({
           </div>
         </div>
 
-        {/* Days Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+        {/* Days Swipable Carousel on Mobile / Grid on Desktop */}
+        <MobileCarousel cols={3} autoScrollMs={0} className="items-stretch" cardClassName="h-full flex flex-col">
           {upcomingDays.map((dayGroup) => (
             <div
               key={dayGroup.dayIso}
@@ -147,7 +149,7 @@ export default function UpcomingWeekSection({
                         </span>
 
                         <Link
-                          to={item.link}
+                          to={resolveProgramLink(item)}
                           className="font-bold text-[#5A1E65] hover:underline flex items-center gap-0.5"
                         >
                           <span>Details</span>
@@ -168,7 +170,7 @@ export default function UpcomingWeekSection({
               </div>
             </div>
           ))}
-        </div>
+        </MobileCarousel>
 
       </div>
     </section>

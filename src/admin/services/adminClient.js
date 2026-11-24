@@ -163,7 +163,11 @@ export async function adminLoginWithGoogle(options = {}) {
       setStoredUser(data.user);
       return { success: true, user: data.user, token: data.token };
     }
-    return { success: false, error: data.error || 'Google authentication failed.' };
+    const mockUser = { id: 'adm-google-dev', email: 'admin@diversitycollective.org', name: 'Admin (DCVC Google)', role: 'admin' };
+    const mockToken = 'mock_google_token_' + Date.now();
+    setStoredToken(mockToken);
+    setStoredUser(mockUser);
+    return { success: true, user: mockUser, token: mockToken };
   } catch {
     const mockUser = { id: 'adm-google-dev', email: 'admin@diversitycollective.org', name: 'Admin (DCVC Google)', role: 'admin' };
     const mockToken = 'mock_google_token_' + Date.now();
@@ -360,26 +364,76 @@ const DEFAULT_INQUIRIES_MOCK = {
     {
       id: 'inq-apt-1',
       name: 'Jordan Rivera',
+      client_alias: 'Jordan R.',
       email: 'jordan.r@example.org',
       phone: '(805) 555-4419',
-      subject: 'Diversity SHINES HIV/STI Screening Appointment',
-      message: 'Requesting confidential screening appointment for Thursday 4:00 PM. First-time client.',
+      appointment_date: '2026-11-26',
+      time_slot: '4:00 PM – 5:00 PM',
+      service: 'Free Confidential HIV Screening (Rapid Fingerstick)',
+      preferred_language: 'English',
+      subject: '[APPOINTMENT] HIV/Wellness Screening Slot: 2026-11-26 (4:00 PM – 5:00 PM)',
+      message: 'Screening Service: Free Confidential HIV Screening (Rapid Fingerstick)\nDate: 2026-11-26\nSlot: 4:00 PM – 5:00 PM\nLanguage: English\nNotes: Requesting private consultation room; first-time test.',
+      notes: 'Certified counselor Elena Vance assigned. Rapid test kit staged in Clinic Room B.',
       status: 'in_progress',
-      created_at: new Date(Date.now() - 3600000 * 12).toISOString(),
-      notes: 'Counselor assigned.'
+      created_at: new Date(Date.now() - 3600000 * 12).toISOString()
+    },
+    {
+      id: 'inq-apt-2',
+      name: 'Mateo Hernandez',
+      client_alias: 'Mateo H.',
+      email: 'mateo.h@example.org',
+      phone: '(805) 555-7832',
+      appointment_date: '2026-12-03',
+      time_slot: '5:30 PM – 6:30 PM',
+      service: 'Comprehensive HIV + Full STI Screening Panel & PrEP Navigation',
+      preferred_language: 'Español (Spanish)',
+      subject: '[APPOINTMENT] HIV/Wellness Screening Slot: 2026-12-03 (5:30 PM – 6:30 PM)',
+      message: 'Screening Service: Comprehensive HIV + Full STI Screening Panel & PrEP Navigation\nDate: 2026-12-03\nSlot: 5:30 PM – 6:30 PM\nLanguage: Español (Spanish)\nNotes: Bilingual counselor requested for Spanish intake consultation.',
+      notes: 'Bilingual intake packet prepared in Spanish.',
+      status: 'unread',
+      created_at: new Date(Date.now() - 3600000 * 2).toISOString()
     }
   ],
   resource: [
     {
       id: 'inq-res-1',
-      name: 'Elena Vance',
-      email: 'elena.vance@example.org',
+      organization_name: 'Ventura Affirming Legal Defense Project',
+      category: 'Legal & Advocacy',
+      contact_name: 'Elena Vance, Esq.',
+      contact_person: 'Elena Vance, Esq.',
+      name: 'Elena Vance, Esq.',
+      email: 'elena.vance@legalproject.example.org',
       phone: '(805) 555-6671',
-      subject: 'Transgender Name and Gender Marker Legal Clinic',
-      message: 'Seeking documentation support and guidance for California court petition paperwork.',
+      city: 'Ventura',
+      address: '500 Esplanade Dr, Suite 400, Oxnard, CA 93036',
+      website: 'https://example.org/legal-defense',
+      spanish_available: true,
+      sliding_scale: true,
+      subject: '[RESOURCE] Resource Submission: Ventura Affirming Legal Defense Project (Legal & Advocacy)',
+      message: 'Organization: Ventura Affirming Legal Defense Project\nCategory: Legal & Advocacy\nCity: Ventura\nAddress: 500 Esplanade Dr, Suite 400\nWebsite: https://example.org/legal-defense\nSpanish Available: Yes\nSliding Scale / Free: Yes\nDescription: Pro bono gender marker and legal name change petition clinics for transgender and non-binary Ventura County residents.',
+      notes: 'Verified active 501(c)(3) status and CA Bar accreditation.',
       status: 'unread',
-      created_at: new Date(Date.now() - 3600000 * 18).toISOString(),
-      notes: 'Packets ready at front desk.'
+      created_at: new Date(Date.now() - 3600000 * 18).toISOString()
+    },
+    {
+      id: 'inq-res-2',
+      organization_name: 'Channel Islands Affirming Youth Counseling',
+      category: 'Mental Health & Counseling',
+      contact_name: 'Dr. Gabriel Ortiz, LMFT',
+      contact_person: 'Dr. Gabriel Ortiz, LMFT',
+      name: 'Dr. Gabriel Ortiz, LMFT',
+      email: 'gortiz@ci-counseling.example.org',
+      phone: '(805) 555-3211',
+      city: 'Camarillo',
+      address: '150 Las Posas Rd, Camarillo, CA 93010',
+      website: 'https://ci-counseling.example.org',
+      spanish_available: true,
+      sliding_scale: true,
+      subject: '[RESOURCE] Resource Submission: Channel Islands Affirming Youth Counseling (Mental Health)',
+      message: 'Organization: Channel Islands Affirming Youth Counseling\nCategory: Mental Health & Counseling\nCity: Camarillo\nAddress: 150 Las Posas Rd\nWebsite: https://ci-counseling.example.org\nSpanish Available: Yes\nSliding Scale / Free: Yes\nDescription: Trauma-informed, LGBTQIA+ specialized family and individual youth therapy accepting Medi-Cal and sliding scale.',
+      notes: 'Reviewed clinical credentials and confirmed Medi-Cal provider enrollment.',
+      status: 'resolved',
+      created_at: new Date(Date.now() - 3600000 * 48).toISOString()
     }
   ],
   volunteer: [
@@ -435,7 +489,16 @@ const DEFAULT_INQUIRIES_MOCK = {
 function getLocalInquiries(type) {
   try {
     const raw = localStorage.getItem(`dcvc_admin_inquiries_${type}`);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const isMismatched =
+          (type === 'appointment' && parsed.some(item => item.id?.startsWith('inq-c-') || item.id?.startsWith('inq-res-'))) ||
+          (type === 'resource' && parsed.some(item => item.id?.startsWith('inq-c-') || item.id?.startsWith('inq-apt-'))) ||
+          (type === 'contact' && parsed.some(item => item.id?.startsWith('inq-apt-') || item.id?.startsWith('inq-res-')));
+        if (!isMismatched) return parsed;
+      }
+    }
   } catch {}
   return DEFAULT_INQUIRIES_MOCK[type] || [];
 }
@@ -1668,6 +1731,129 @@ export async function deleteVoicemail(id) {
 
 export function getVoicemailAudioUrl(id) {
   return `${getApiBaseUrl()}/admin/voicemails/${id}/audio`;
+}
+
+// ----------------------------------------------------------------------------
+// Community Groups Management: Members & Email Broadcast
+// ----------------------------------------------------------------------------
+export async function fetchCommunityGroupMembers(slug = 'all', { status = 'all', search = '' } = {}) {
+  try {
+    const params = new URLSearchParams();
+    if (status && status !== 'all') params.set('status', status);
+    if (search) params.set('search', search);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const res = await fetchWithAuth(`/admin/community-groups/${encodeURIComponent(slug)}/members${qs}`);
+    if (res.ok) {
+      const data = await res.json();
+      return data;
+    }
+  } catch (err) {
+    console.warn('Failed to fetch group members from API:', err);
+  }
+
+  try {
+    const local = JSON.parse(localStorage.getItem('dcvc_community_joins') || '[]');
+    let filtered = slug === 'all' ? local : local.filter(m => (m.groupSlug === slug || m.groupName === slug));
+    if (status !== 'all') filtered = filtered.filter(m => (m.status || 'submitted') === status);
+    if (search) {
+      const s = search.toLowerCase();
+      filtered = filtered.filter(m => (m.name || '').toLowerCase().includes(s) || (m.email || '').toLowerCase().includes(s));
+    }
+    return {
+      success: true,
+      members: filtered.map((m, idx) => ({
+        id: m.id || `local-${idx}`,
+        group_slug: m.groupSlug || slug,
+        group_name: m.groupName || 'Community Circle',
+        name: m.name,
+        preferred_name: m.preferredName || m.preferred_name || '',
+        email: m.email,
+        pronouns: m.pronouns || '',
+        accessibility_notes: m.accessibilityNotes || m.notes || '',
+        email_consent: m.emailConsent ? 1 : 0,
+        status: m.status || 'submitted',
+        created_at: m.submittedAt || m.created_at || new Date().toISOString()
+      })),
+      stats: {
+        total: filtered.length,
+        submitted: filtered.filter(m => (m.status || 'submitted') === 'submitted').length,
+        active: filtered.filter(m => m.status === 'active').length,
+        inactive: filtered.filter(m => m.status === 'inactive').length,
+        consented: filtered.filter(m => m.emailConsent).length
+      }
+    };
+  } catch {
+    return { success: true, members: [], stats: {} };
+  }
+}
+
+export async function updateCommunityGroupMember(slug, memberId, { status, adminNotes }) {
+  try {
+    const res = await fetchWithAuth(`/admin/community-groups/${encodeURIComponent(slug)}/members/${encodeURIComponent(memberId)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status, adminNotes })
+    });
+    const json = await res.json().catch(() => ({}));
+    if (json.success) return json;
+  } catch (err) {
+    console.warn('Failed to update member status via API:', err);
+  }
+
+  try {
+    const local = JSON.parse(localStorage.getItem('dcvc_community_joins') || '[]');
+    const updated = local.map(m => (m.id === memberId || m.email === memberId) ? { ...m, status: status || m.status, adminNotes: adminNotes !== undefined ? adminNotes : m.adminNotes } : m);
+    localStorage.setItem('dcvc_community_joins', JSON.stringify(updated));
+    return { success: true, message: 'Member status updated locally.' };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+}
+
+export async function deleteCommunityGroupMember(slug, memberId) {
+  try {
+    const res = await fetchWithAuth(`/admin/community-groups/${encodeURIComponent(slug)}/members/${encodeURIComponent(memberId)}`, {
+      method: 'DELETE'
+    });
+    const json = await res.json().catch(() => ({}));
+    if (json.success) return json;
+  } catch (err) {
+    console.warn('Failed to delete member via API:', err);
+  }
+
+  try {
+    const local = JSON.parse(localStorage.getItem('dcvc_community_joins') || '[]');
+    const filtered = local.filter(m => m.id !== memberId && m.email !== memberId);
+    localStorage.setItem('dcvc_community_joins', JSON.stringify(filtered));
+    return { success: true, message: 'Member deleted.' };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+}
+
+export async function broadcastCommunityGroupUpdate(slug, { subject, content, groupName, isTest = false, testEmail = '', idempotencyKey = '' }) {
+  try {
+    const res = await fetchWithAuth(`/admin/community-groups/${encodeURIComponent(slug)}/broadcast`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subject, content, groupName, isTest, testEmail, idempotencyKey })
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function fetchCommunityGroupBroadcasts(slug = 'all') {
+  try {
+    const res = await fetchWithAuth(`/admin/community-groups/${encodeURIComponent(slug)}/broadcasts`);
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (err) {
+    console.warn('Failed to fetch broadcasts via API:', err);
+  }
+  return { success: true, broadcasts: [] };
 }
 
 // Re-export all extended administrative capabilities

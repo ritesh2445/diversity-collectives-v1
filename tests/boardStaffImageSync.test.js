@@ -122,4 +122,42 @@ describe('Board of Directors & Staff Image Persistence and Deduplication Verific
     assert.strictEqual(staffAfterSync.length, countBefore - 1);
     assert.ok(!staffAfterSync.some(s => s.name === targetName), 'Deleted staff member must not be resurrected by sync');
   });
+
+  it('5. Replacing an approved board member (Roland to Earl) tombstones Roland and persists Earl', () => {
+    // Replace Roland Catabona with Earl
+    cmsStore.saveStaff({
+      name: 'Earl',
+      originalName: 'Roland Catabona',
+      originalId: 'board-roland-catabona',
+      role: 'Board Member',
+      category: 'board',
+      photo: '/images/volunteers.jpg'
+    });
+
+    const board = cmsStore.getBoardMembers();
+    assert.ok(!board.some(b => b.name === 'Roland Catabona'), 'Roland Catabona must be tombstoned');
+    assert.ok(board.some(b => b.name === 'Earl'), 'Earl must appear on the Board of Directors');
+
+    // Simulate server sync attempting to re-inject Roland
+    applySiteStatePayload({
+      cmsData: {
+        staff: [
+          {
+            name: 'Roland Catabona',
+            category: 'board',
+            photo: '/images/board/roland-catabona.jpg'
+          }
+        ]
+      }
+    });
+
+    const boardAfterSync = cmsStore.getBoardMembers();
+    assert.ok(!boardAfterSync.some(b => b.name === 'Roland Catabona'), 'Roland must stay tombstoned after sync');
+    assert.ok(boardAfterSync.some(b => b.name === 'Earl'), 'Earl must stay on board after sync');
+
+    // Deleting Earl also works
+    cmsStore.deleteStaff('Earl');
+    const boardAfterDelete = cmsStore.getBoardMembers();
+    assert.ok(!boardAfterDelete.some(b => b.name === 'Earl'), 'Earl should be removed after deletion');
+  });
 });

@@ -4,6 +4,7 @@
  */
 
 import { getGitHubStorageConfig } from './imageService.js';
+import { getApiBase, getFallbackApiBase } from '../../services/liveSync.js';
 
 export const MAX_PDF_SIZE_BYTES = 15 * 1024 * 1024; // 15 Megabytes
 
@@ -122,9 +123,70 @@ export async function uploadAndStorePdf(file, options = {}) {
   }
 
   const dataUrl = await readPdfAsDataUrl(file);
+
+  // 1. Try server-side upload via Cloudflare Worker backend
+  try {
+    const token = typeof sessionStorage !== 'undefined'
+      ? (sessionStorage.getItem('dcvc_admin_token') || localStorage.getItem('dcvc_admin_token'))
+      : (typeof localStorage !== 'undefined' ? localStorage.getItem('dcvc_admin_token') : null);
+
+    const uploadPayload = {
+      title: validation.fileName,
+      fileName: validation.fileName,
+      fileData: dataUrl
+    };
+
+    let res = null;
+    try {
+      res = await fetch(`${getApiBase()}/admin/documents/upload`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        credentials: 'include',
+        body: JSON.stringify(uploadPayload)
+      });
+    } catch (netErr) {
+      // Try fallback worker URL
+    }
+
+    if (!res || !res.ok) {
+      const fallbackUrl = getFallbackApiBase();
+      if (getApiBase() !== fallbackUrl) {
+        try {
+          res = await fetch(`${fallbackUrl}/admin/documents/upload`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {})
+            },
+            credentials: 'include',
+            body: JSON.stringify(uploadPayload)
+          });
+        } catch (e) {}
+      }
+    }
+
+    if (res && res.ok) {
+      const data = await res.json().catch(() => ({}));
+      if (data && data.url) {
+        return {
+          url: data.url,
+          fileName: data.fileName || validation.fileName,
+          fileSize: validation.sizeFormatted,
+          sizeBytes: validation.sizeBytes,
+          provider: 'server_cdn'
+        };
+      }
+    }
+  } catch (srvErr) {
+    console.warn('[PdfService] Backend upload notice:', srvErr.message);
+  }
+
   const config = getGitHubStorageConfig();
 
-  // If a GitHub token is configured, commit file directly to GitHub repo
+  // 2. If a GitHub token is configured in browser, commit file directly to GitHub repo
   if (config.token && config.owner && config.repo) {
     try {
       const base64Content = dataUrl.split(',')[1];
@@ -165,13 +227,24 @@ export async function uploadAndStorePdf(file, options = {}) {
     }
   }
 
-  // Local / Client Persistent Fallback:
+  // 3. Safe Local / Object URL Fallback (Never stores multi-MB base64 in localStorage to avoid QuotaExceededError)
+  let safeFallbackUrl = `/documents/sponsorships/${validation.fileName}`;
+  const actualFile = (file && typeof file === 'object' && !file.type && (file.file || file.blob))
+    ? (file.file || file.blob)
+    : file;
+  if (typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function' && actualFile instanceof Blob) {
+    try {
+      safeFallbackUrl = URL.createObjectURL(actualFile);
+    } catch (_) {}
+  } else if (dataUrl.length < 150000) {
+    safeFallbackUrl = dataUrl;
+  }
+
   return {
-    url: dataUrl,
+    url: safeFallbackUrl,
     fileName: validation.fileName,
     fileSize: validation.sizeFormatted,
     sizeBytes: validation.sizeBytes,
-    provider: 'local_data_url',
-    note: 'Stored locally. Configure GitHub integration in Settings for direct repo commits.'
+    provider: 'local_document'
   };
 }

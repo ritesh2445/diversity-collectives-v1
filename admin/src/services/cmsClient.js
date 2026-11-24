@@ -1,4 +1,6 @@
 
+import { communityGroups } from '../data/dcvcData.js';
+
 export function mergeProgramsWithDefaults(savedPrograms = [], defaultPrograms = programsList, deletedSlugs = []) {
   const seed = Array.isArray(defaultPrograms) && defaultPrograms.length > 0 ? defaultPrograms : programsList;
   const deletedSet = new Set(Array.isArray(deletedSlugs) ? deletedSlugs : []);
@@ -161,11 +163,12 @@ export const DEFAULT_CMS_SEED = {
     emergencyCrisisNotice: "24/7 Crisis Support: Dial 988 (Lifeline) or text 'START' to 678-678 (Trevor Project).",
     bannerAlertActive: true,
     bannerAlertText: "Center Open Today · Mon–Fri 1:00 PM – 5:00 PM · Free HIV/STI Screenings",
-    donationUrl: "https://www.diversitycollectivevc.org/get-involved/#donate",
-    volunteerUrl: "https://www.diversitycollectivevc.org/volunteer/",
+    donationUrl: "https://diversitycollective.org/donate",
+    volunteerUrl: "https://diversitycollective.org/volunteer",
     facebook: "https://www.facebook.com/diversitycollectivevc",
     instagram: "https://www.instagram.com/diversitycollectivevc",
-    youtube: "https://www.youtube.com/@diversitycollectivevc"
+    youtube: "https://www.youtube.com/@diversitycollectivevc",
+    showOperationalStaff: true
   },
   programs: [
     {
@@ -353,7 +356,7 @@ export const DEFAULT_CMS_SEED = {
       description: "Free, confidential rapid HIV and Hepatitis C testing with immediate 15-minute results. Walk-in or appointment. Free barrier protection and PrEP navigation.",
       phone: "(805) 644-5428",
       address: "2471 Portola Road, Suite 100, Ventura, CA",
-      website: "https://www.diversitycollectivevc.org/programs/diversity-shines",
+      website: "https://diversitycollective.org/programs/diversity-shines",
       verified: true,
       urgent: false
     },
@@ -530,6 +533,7 @@ export const DEFAULT_CMS_SEED = {
       featured: true
     }
   ],
+  communityGroups: communityGroups || [],
   mediaSuggestions: []
 };
 
@@ -538,7 +542,6 @@ export function getLiveCmsData() {
   try {
     const raw = localStorage.getItem(CMS_STORAGE_KEY);
     if (!raw) {
-      saveLiveCmsData(DEFAULT_CMS_SEED);
       return DEFAULT_CMS_SEED;
     }
     const parsed = JSON.parse(raw);
@@ -550,13 +553,20 @@ export function getLiveCmsData() {
       deletedPrograms: parsed.deletedPrograms || [],
       events: mergeEventsWithDefaults(parsed.events, DEFAULT_CMS_SEED.events, parsed.deletedEvents || []),
       deletedEvents: parsed.deletedEvents || [],
-      news: parsed.news || DEFAULT_CMS_SEED.news,
+      news: Array.isArray(parsed.news)
+        ? parsed.news.filter(a => !(parsed.deletedNews || []).includes(a?.id) && !(parsed.deletedNews || []).includes(a?.slug))
+        : (DEFAULT_CMS_SEED.news || []).filter(a => !(parsed.deletedNews || []).includes(a?.id) && !(parsed.deletedNews || []).includes(a?.slug)),
+      deletedNews: parsed.deletedNews || [],
       resources: parsed.resources || DEFAULT_CMS_SEED.resources,
       staff: mergeStaffWithDefaults(parsed.staff, DEFAULT_CMS_SEED.staff, parsed.deletedStaff || []),
       deletedStaff: parsed.deletedStaff || [],
       gallery: parsed.gallery || DEFAULT_CMS_SEED.gallery,
       memoryLane: parsed.memoryLane || DEFAULT_CMS_SEED.memoryLane,
-      podcasts: parsed.podcasts || DEFAULT_CMS_SEED.podcasts || [],
+      podcasts: Array.isArray(parsed.podcasts)
+        ? parsed.podcasts.filter(p => !(parsed.deletedPodcasts || []).includes(p?.id) && !(parsed.deletedPodcasts || []).includes(p?.slug))
+        : (DEFAULT_CMS_SEED.podcasts || []).filter(p => !(parsed.deletedPodcasts || []).includes(p?.id) && !(parsed.deletedPodcasts || []).includes(p?.slug)),
+      deletedPodcasts: parsed.deletedPodcasts || [],
+      communityGroups: parsed.communityGroups || DEFAULT_CMS_SEED.communityGroups || [],
       mediaSuggestions: parsed.mediaSuggestions || []
     };
   } catch {
@@ -719,7 +729,7 @@ export function toggleCmsEventCancel(id, notice = '') {
   return list;
 }
 
-export function saveCmsArticle(article) {
+export async function saveCmsArticle(article) {
   const data = getLiveCmsData();
   const list = [...data.news];
   const idx = list.findIndex(a => a.id === article.id || a.slug === article.slug);
@@ -728,15 +738,40 @@ export function saveCmsArticle(article) {
   } else {
     list.unshift({ ...article, id: article.id || `art-${Date.now()}` });
   }
-  saveLiveCmsData({ ...data, news: list });
-  return list;
+  const payload = saveLiveCmsData({ ...data, news: list });
+  return { success: true, list, payload };
 }
 
-export function deleteCmsArticle(id) {
+export async function deleteCmsArticle(id) {
   const data = getLiveCmsData();
-  const list = data.news.filter(a => a.id !== id && a.slug !== id);
-  saveLiveCmsData({ ...data, news: list });
-  return list;
+  const target = String(id || '').trim().toLowerCase();
+  const item = (data.news || []).find(a => String(a.id || '').toLowerCase() === target || String(a.slug || '').toLowerCase() === target);
+  const toDelete = [target];
+  if (item?.id) toDelete.push(String(item.id).toLowerCase());
+  if (item?.slug) toDelete.push(String(item.slug).toLowerCase());
+  const deletedNews = Array.from(new Set([...(data.deletedNews || []), ...toDelete]));
+  const list = (data.news || []).filter(a => {
+    const aid = String(a.id || '').toLowerCase();
+    const aslug = String(a.slug || '').toLowerCase();
+    return aid !== target && aslug !== target && !deletedNews.includes(aid) && !deletedNews.includes(aslug);
+  });
+  const payload = saveLiveCmsData({ ...data, news: list, deletedNews });
+  return { success: true, list, payload };
+}
+
+export async function deleteAllCmsArticles() {
+  const data = getLiveCmsData();
+  const allIds = (data.news || []).flatMap(n => [
+    n.id ? String(n.id).toLowerCase() : null,
+    n.slug ? String(n.slug).toLowerCase() : null
+  ]).filter(Boolean);
+  const seedIds = (DEFAULT_CMS_SEED.news || []).flatMap(n => [
+    n.id ? String(n.id).toLowerCase() : null,
+    n.slug ? String(n.slug).toLowerCase() : null
+  ]).filter(Boolean);
+  const deletedNews = Array.from(new Set([...(data.deletedNews || []), ...allIds, ...seedIds]));
+  const payload = saveLiveCmsData({ ...data, news: [], deletedNews });
+  return { success: true, list: [], payload };
 }
 
 export function saveCmsResource(resource) {
@@ -880,8 +915,60 @@ export function saveCmsPodcast(podcast) {
 
 export function deleteCmsPodcast(id) {
   const data = getLiveCmsData();
+  const deletedPodcasts = Array.from(new Set([...(data.deletedPodcasts || []), id]));
   const list = (data.podcasts || []).filter(p => p.id !== id && p.slug !== id);
-  saveLiveCmsData({ ...data, podcasts: list });
+  saveLiveCmsData({ ...data, podcasts: list, deletedPodcasts });
+  return list;
+}
+
+export function deleteAllCmsPodcasts() {
+  const data = getLiveCmsData();
+  const allIds = [
+    ...(data.podcasts || []).map(p => p.id),
+    ...(data.podcasts || []).map(p => p.slug),
+    ...(DEFAULT_CMS_SEED.podcasts || []).map(p => p.id),
+    ...(DEFAULT_CMS_SEED.podcasts || []).map(p => p.slug)
+  ].filter(Boolean);
+  const deletedPodcasts = Array.from(new Set([...(data.deletedPodcasts || []), ...allIds]));
+  saveLiveCmsData({ ...data, podcasts: [], deletedPodcasts });
+  return [];
+}
+
+export function saveCmsCommunityGroup(group) {
+  const data = getLiveCmsData();
+  const list = [...(data.communityGroups || DEFAULT_CMS_SEED.communityGroups || [])];
+  const cleanName = (group.name || group.title || 'Community Circle').trim();
+  const slug = (group.slug || '').trim() || cleanName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const id = group.id || `cg-${slug}`;
+  const image = group.image || (Array.isArray(group.images) && group.images[0]) || '/images/community-gathering.jpg';
+  const payload = {
+    ...group,
+    id,
+    slug,
+    name: cleanName,
+    title: cleanName,
+    image,
+    images: Array.isArray(group.images) && group.images.length > 0 ? group.images : [image]
+  };
+  const idx = list.findIndex(g => g.id === id || g.slug === slug || (g.name && g.name.toLowerCase() === cleanName.toLowerCase()));
+  if (idx >= 0) {
+    list[idx] = { ...list[idx], ...payload };
+  } else {
+    list.unshift(payload);
+  }
+  saveLiveCmsData({ ...data, communityGroups: list });
+  return list;
+}
+
+export function deleteCmsCommunityGroup(idOrSlug) {
+  const data = getLiveCmsData();
+  const target = String(idOrSlug || '').toLowerCase().trim();
+  const list = (data.communityGroups || []).filter(
+    g => String(g.id || '').toLowerCase() !== target &&
+         String(g.slug || '').toLowerCase() !== target &&
+         String(g.name || '').toLowerCase() !== target
+  );
+  saveLiveCmsData({ ...data, communityGroups: list });
   return list;
 }
 

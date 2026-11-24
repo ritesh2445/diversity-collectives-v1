@@ -19,7 +19,8 @@ import {
   ChevronDown,
   Search,
   Mic,
-  PhoneCall
+  PhoneCall,
+  HandHeart
 } from 'lucide-react';
 import TraditionalAccessibilityIcon from './icons/TraditionalAccessibilityIcon';
 import LanguageSelector from './LanguageSelector';
@@ -44,6 +45,7 @@ export default function Header() {
   const [currentLang, setCurrentLang] = useState(() => translationService.getLanguage());
   const location = useLocation();
   const moreDropdownRef = useRef(null);
+  const mobileMenuTriggerRef = useRef(null);
 
   useEffect(() => {
     const unsub = translationService.subscribe((lang) => {
@@ -87,6 +89,22 @@ export default function Header() {
     };
   }, [moreOpen]);
 
+  // Close mobile drawer on Escape and return focus to toggle button (WCAG 2.1)
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setMobileMenuOpen(false);
+        mobileMenuTriggerRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [mobileMenuOpen]);
+
   // Bulletproof background scroll lock when mobile drawer is open
   useScrollLock(mobileMenuOpen);
 
@@ -122,13 +140,14 @@ export default function Header() {
     { label: translationService.t('nav_about', 'About'), to: "/about", icon: Info, desc: translationService.t('nav_desc_about', "Mission, history & 10-year leadership") },
     { label: translationService.t('nav_programs', 'Programs'), to: "/programs", icon: Sparkles, desc: translationService.t('nav_desc_programs', "Free HIV/STI testing & youth groups") },
     { label: translationService.t('nav_community', 'Community'), to: "/community", icon: Users, desc: translationService.t('nav_desc_community', "Affirming peer circles & gatherings") },
+    { label: translationService.t('nav_training', 'Trainings'), to: "/training", icon: Sparkles, desc: translationService.t('nav_desc_training', "P.R.I.D.E. cultural competency & workshops") },
     { label: translationService.t('nav_events', 'Events'), to: "/events", icon: Calendar, desc: translationService.t('nav_desc_events', "Pride prom, galas & workshops") },
     { label: translationService.t('nav_resources', 'Resources'), to: "/resources", icon: Compass, desc: translationService.t('nav_desc_resources', "Crisis lines & regional mutual aid") }
   ];
 
   const secondaryNavItems = [
     { label: translationService.t('nav_directory', 'Directory'), to: "/directory", icon: Compass, desc: translationService.t('nav_desc_directory', "LGBTQ+ affirming business network") },
-    { label: translationService.t('nav_training', 'Training'), to: "/training", icon: Sparkles, desc: translationService.t('nav_desc_training', "P.R.I.D.E. cultural competency") },
+    { label: translationService.t('nav_volunteer', 'Volunteer'), to: "/volunteer", icon: HandHeart, desc: translationService.t('nav_desc_volunteer', "Get involved, support events & community care") },
     { label: translationService.t('nav_sponsorships', 'Sponsorships'), to: "/sponsorships", icon: HeartHandshake, desc: translationService.t('nav_desc_sponsorships', "Corporate partnerships & packets") },
     { label: translationService.t('nav_news', 'News'), to: "/news", icon: Info, desc: translationService.t('nav_desc_news', "Stories, updates & advocacy") },
     { label: translationService.t('nav_gallery', 'Gallery'), to: "/gallery", icon: Sparkles, desc: translationService.t('nav_desc_gallery', "Celebration & memories") },
@@ -343,6 +362,8 @@ export default function Header() {
 
               {/* Mobile & Tablet Menu Toggle Button */}
               <button
+                ref={mobileMenuTriggerRef}
+                id="mobile-nav-toggle"
                 type="button"
                 onClick={() => setMobileMenuOpen(true)}
                 aria-expanded={mobileMenuOpen}
@@ -379,7 +400,7 @@ export default function Header() {
                     Diversity Collective
                   </span>
                   <span className="text-[10px] font-bold text-[#5A1E65] uppercase tracking-wider block truncate">
-                    Ventura County Sanctuary
+                    Ventura County Community Center
                   </span>
                 </div>
               </div>
@@ -393,7 +414,10 @@ export default function Header() {
                   <span>Exit</span>
                 </button>
                 <button
-                  onClick={() => setMobileMenuOpen(false)}
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    mobileMenuTriggerRef.current?.focus();
+                  }}
                   className="w-9 h-9 rounded-xl bg-slate-200/80 hover:bg-slate-300 text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
                   aria-label="Close Navigation Menu"
                 >

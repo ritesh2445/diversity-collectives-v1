@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { 
   ArrowLeft, 
   Send, 
@@ -24,6 +24,7 @@ import { usePageMeta } from '../utils/seo';
 
 export default function TrainingBooking() {
   const { slug } = useParams();
+  const [searchParams] = useSearchParams();
   const trainingCourses = useLiveTrainings();
   const selectedCourse = slug ? trainingCourses.find(c => c.slug === slug) : null;
 
@@ -35,17 +36,48 @@ export default function TrainingBooking() {
 
   const [status, setStatus] = useState('idle'); // 'idle' | 'loading' | 'success' | 'error'
   const [statusMsg, setStatusMsg] = useState('');
+
+  const paramSector = searchParams.get('sector');
+  const paramAccreditation = searchParams.get('accreditation');
+  const paramSize = searchParams.get('size');
+
+  const mappedCategory = (() => {
+    if (!paramSector) return 'Retail & Dining';
+    const s = paramSector.toLowerCase();
+    if (s.includes('retail') || s.includes('din')) return 'Retail & Dining';
+    if (s.includes('health') || s.includes('dent') || s.includes('med')) return 'Healthcare & Medical';
+    if (s.includes('corp') || s.includes('prof') || s.includes('tech')) return 'Corporate & Professional';
+    if (s.includes('well') || s.includes('fit') || s.includes('salon')) return 'Wellness & Fitness';
+    if (s.includes('edu') || s.includes('school')) return 'Education & Schools';
+    if (s.includes('hosp') || s.includes('tour')) return 'Hospitality & Tourism';
+    if (s.includes('nonprofit') || s.includes('civic')) return 'Nonprofit & Community';
+    return 'Retail & Dining';
+  })();
+
+  const mappedAttendeeRange = (() => {
+    if (!paramSize) return '';
+    if (paramSize === '1-15') return 'Under 15';
+    if (paramSize === '16-50') return '15-30';
+    if (paramSize === '51-200') return '30-60';
+    if (paramSize === '201+') return '100+';
+    return '';
+  })();
+
+  const initialAccreditation = paramAccreditation === 'true' || 
+    slug === 'dcvc-affirming-business' || 
+    Boolean(selectedCourse?.isBusinessAccreditation);
+
   const [formData, setFormData] = useState({
     organizationName: '',
     contactName: '',
     email: '',
     phone: '',
     courseSlug: selectedCourse ? selectedCourse.slug : (trainingCourses[0]?.slug || ''),
-    isSeekingDcvcApprovedStatus: selectedCourse?.isBusinessAccreditation || false,
+    isSeekingDcvcApprovedStatus: initialAccreditation,
     storefrontAddress: '',
     storefrontCity: 'Ventura',
-    businessCategory: 'Retail & Dining',
-    estimatedAttendees: '25-50',
+    businessCategory: mappedCategory,
+    estimatedAttendees: mappedAttendeeRange,
     preferredFormat: 'In-Person at Our Facility',
     requestedDate: '',
     notes: '',
@@ -53,8 +85,24 @@ export default function TrainingBooking() {
     turnstileToken: ''
   });
 
+  useEffect(() => {
+    if (selectedCourse?.slug) {
+      setFormData(prev => ({
+        ...prev,
+        courseSlug: selectedCourse.slug,
+        isSeekingDcvcApprovedStatus: prev.isSeekingDcvcApprovedStatus || Boolean(selectedCourse.isBusinessAccreditation)
+      }));
+    }
+  }, [selectedCourse]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!formData.estimatedAttendees) {
+      setStatus('error');
+      setStatusMsg('Please select your estimated attendee count.');
+      return;
+    }
 
     if (!formData.termsConsent) {
       setStatus('error');
@@ -238,9 +286,30 @@ export default function TrainingBooking() {
 
                 {formData.isSeekingDcvcApprovedStatus && (
                   <div className="pt-4 border-t border-purple-100 grid grid-cols-1 sm:grid-cols-3 gap-4 animate-fadeIn">
-                    <div className="sm:col-span-2 space-y-1">
+                    <div className="sm:col-span-1 space-y-1">
+                      <label htmlFor="businessCategory" className="text-[11px] font-black uppercase tracking-wider text-slate-700 block">
+                        Business Category
+                      </label>
+                      <select
+                        id="businessCategory"
+                        value={formData.businessCategory}
+                        onChange={(e) => setFormData({ ...formData, businessCategory: e.target.value })}
+                        className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:border-[#5A1E65] outline-none bg-white font-medium"
+                      >
+                        <option value="Retail & Dining">Retail & Dining</option>
+                        <option value="Healthcare & Medical">Healthcare & Medical</option>
+                        <option value="Corporate & Professional">Corporate & Professional</option>
+                        <option value="Wellness & Fitness">Wellness & Fitness</option>
+                        <option value="Education & Schools">Education & Schools</option>
+                        <option value="Hospitality & Tourism">Hospitality & Tourism</option>
+                        <option value="Nonprofit & Community">Nonprofit & Community</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+
+                    <div className="sm:col-span-1 space-y-1">
                       <label htmlFor="storefrontAddress" className="text-[11px] font-black uppercase tracking-wider text-slate-700 block">
-                        Storefront / Office Street Address (For Decal Delivery)
+                        Storefront / Office Address
                       </label>
                       <input
                         id="storefrontAddress"
@@ -252,7 +321,7 @@ export default function TrainingBooking() {
                       />
                     </div>
 
-                    <div className="space-y-1">
+                    <div className="sm:col-span-1 space-y-1">
                       <label htmlFor="storefrontCity" className="text-[11px] font-black uppercase tracking-wider text-slate-700 block">
                         Ventura County City
                       </label>
@@ -303,10 +372,12 @@ export default function TrainingBooking() {
                   </label>
                   <select
                     id="attendees"
+                    required
                     value={formData.estimatedAttendees}
                     onChange={(e) => setFormData({ ...formData, estimatedAttendees: e.target.value })}
                     className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none bg-white font-medium"
                   >
+                    <option value="">Select participant count...</option>
                     <option value="Under 15">Under 15 Participants</option>
                     <option value="15-30">15 – 30 Participants</option>
                     <option value="30-60">30 – 60 Participants</option>

@@ -82,20 +82,20 @@ const DEFAULT_AMENITIES_BY_CAT = {
   ]
 };
 
-// Seed baseline metrics for realistic Yelp presentation
+// Baseline metrics: start at 0 until genuine community interaction occurs
 const SEED_METRICS = {
-  'biz-1': { rating: 4.9, ratingCount: 46, hypes: 184, price: '$$', cat: 'dining' },
-  'biz-2': { rating: 5.0, ratingCount: 32, hypes: 142, price: '$$$', cat: 'health' },
-  'biz-3': { rating: 4.8, ratingCount: 29, hypes: 98, price: '$$$', cat: 'services' },
-  'biz-4': { rating: 4.9, ratingCount: 54, hypes: 212, price: '$$', cat: 'retail' },
-  'biz-5': { rating: 4.8, ratingCount: 37, hypes: 119, price: '$$', cat: 'services' },
-  'biz-6': { rating: 4.9, ratingCount: 23, hypes: 87, price: '$$$', cat: 'services' },
-  'biz-7': { rating: 4.9, ratingCount: 68, hypes: 245, price: '$', cat: 'retail' },
-  'biz-8': { rating: 4.9, ratingCount: 74, hypes: 260, price: '$$', cat: 'health' },
-  'biz-9': { rating: 4.8, ratingCount: 18, hypes: 76, price: '$$', cat: 'services' },
-  'biz-10': { rating: 5.0, ratingCount: 51, hypes: 230, price: '$', cat: 'dining' },
-  'biz-11': { rating: 4.7, ratingCount: 42, hypes: 154, price: '$$$', cat: 'services' },
-  'biz-12': { rating: 4.9, ratingCount: 62, hypes: 218, price: '$$', cat: 'retail' }
+  'biz-1': { rating: 0, ratingCount: 0, hypes: 0, price: '$$', cat: 'dining' },
+  'biz-2': { rating: 0, ratingCount: 0, hypes: 0, price: '$$$', cat: 'health' },
+  'biz-3': { rating: 0, ratingCount: 0, hypes: 0, price: '$$$', cat: 'services' },
+  'biz-4': { rating: 0, ratingCount: 0, hypes: 0, price: '$$', cat: 'retail' },
+  'biz-5': { rating: 0, ratingCount: 0, hypes: 0, price: '$$', cat: 'services' },
+  'biz-6': { rating: 0, ratingCount: 0, hypes: 0, price: '$$$', cat: 'services' },
+  'biz-7': { rating: 0, ratingCount: 0, hypes: 0, price: '$', cat: 'retail' },
+  'biz-8': { rating: 0, ratingCount: 0, hypes: 0, price: '$$', cat: 'health' },
+  'biz-9': { rating: 0, ratingCount: 0, hypes: 0, price: '$$', cat: 'services' },
+  'biz-10': { rating: 0, ratingCount: 0, hypes: 0, price: '$', cat: 'dining' },
+  'biz-11': { rating: 0, ratingCount: 0, hypes: 0, price: '$$$', cat: 'services' },
+  'biz-12': { rating: 0, ratingCount: 0, hypes: 0, price: '$$', cat: 'retail' }
 };
 
 function getApiBase() {
@@ -143,13 +143,13 @@ export const directoryService = {
    * Returns live ratings, review count, hype count, and user interaction states
    */
   getBusinessStats(biz) {
-    if (!biz) return { rating: 4.9, ratingCount: 35, hypes: 120, price: '$$', isHyped: false, isSaved: false };
+    if (!biz) return { rating: 0, ratingCount: 0, hypes: 0, price: '$$', isHyped: false, isSaved: false };
 
     const id = biz.id || biz.slug;
     const seed = SEED_METRICS[biz.id] || SEED_METRICS[biz.slug] || {
-      rating: 4.8,
-      ratingCount: 28,
-      hypes: 95,
+      rating: 0,
+      ratingCount: 0,
+      hypes: 0,
       price: '$$',
       cat: 'dining'
     };
@@ -187,7 +187,9 @@ export const directoryService = {
     const current = this.getBusinessStats({ id: bizId });
 
     const newCount = current.ratingCount + 1;
-    const newRating = Number((((current.rating * current.ratingCount) + star) / newCount).toFixed(1));
+    const newRating = current.ratingCount === 0
+      ? Number(star.toFixed(1))
+      : Number((((current.rating * current.ratingCount) + star) / newCount).toFixed(1));
 
     const storedRatings = getStoredJson(RATINGS_KEY, {});
     storedRatings[bizId] = {

@@ -13,6 +13,7 @@ import {
   Heart
 } from 'lucide-react';
 import { programsList, orgInfo } from '../data/dcvcData';
+import { getCommunityGroupData } from '../data/communityData';
 import { cmsStore } from '../services/cmsStore';
 import { useLiveOrgInfo } from '../hooks/useCmsLive';
 import SendVoicemailButton from '../components/SendVoicemailButton';
@@ -32,7 +33,35 @@ export default function ProgramDetail() {
   }, []);
 
   const allPrograms = programs.length > 0 ? programs : programsList;
-  const program = allPrograms.find(p => p.slug === slug || p.id === slug) || programsList.find(p => p.slug === slug || p.id === slug);
+  let program = allPrograms.find(p => p.slug === slug || p.id === slug) || programsList.find(p => p.slug === slug || p.id === slug);
+
+  if (!program) {
+    const comm = getCommunityGroupData(slug);
+    if (comm) {
+      program = {
+        slug: comm.slug,
+        title: comm.name,
+        tagline: comm.category || "Weekly Peer Support & Community Connection",
+        chapter: "Community",
+        heroImage: comm.image || "/images/community-gathering.jpg",
+        accent: "#5A1E65",
+        audience: comm.ages || "All Community Members",
+        schedule: comm.frequency,
+        location: comm.location,
+        summary: comm.overview,
+        description: comm.overview,
+        amenities: comm.guidelines || [
+          "Confidential, safe, and affirming peer support space",
+          "Open to all community members and allies",
+          "Free drop-in participation hosted at the DCVC Community Resource Center"
+        ],
+        contactEmail: comm.contact || "info@diversitycollective.org",
+        contactPhone: "(805) 644-5428",
+        ctaText: "Learn More",
+        ctaLink: `/programs/${comm.slug}`
+      };
+    }
+  }
 
   if (!program) {
     return <Navigate to="/programs" replace />;
@@ -159,26 +188,22 @@ export default function ProgramDetail() {
 
           <div className="lg:col-span-5 perspective-1000">
             {(() => {
-              const isContain = program.imageFit === 'contain' || 
-                program.heroImage?.includes('crc-building') || 
+              const isLogoOrBadge = program.imageFit === 'contain' || 
                 program.heroImage?.includes('unicorns') || 
                 program.heroImage?.includes('logo');
               return (
                 <CardSpotlight
-                  className={`rounded-3xl shadow-2xl overflow-hidden border-2 border-slate-200 group interactive-card-3d relative ${
-                    isContain 
-                      ? 'aspect-square max-w-[420px] mx-auto bg-white flex items-center justify-center' 
-                      : 'aspect-[4/5] bg-slate-900'
-                  }`}
+                  className="rounded-3xl shadow-2xl overflow-hidden border-2 border-slate-200 group interactive-card-3d relative aspect-[4/3] sm:aspect-[16/10] bg-slate-900 w-full"
                   tilt={true}
-                  maxTilt={6}
+                  maxTilt={3}
                   glare={true}
                 >
                   <AutoSlideImage
                     images={Array.isArray(program.images) && program.images.length > 0 ? program.images : [program.heroImage || '/images/crc-building.jpg']}
                     alt={program.title}
                     className="w-full h-full"
-                    imageFit={program.imageFit || (isContain ? 'contain' : 'cover')}
+                    imageFit={program.imageFit || (isLogoOrBadge ? 'contain' : 'cover')}
+                    blurBackdrop={true}
                     fallbackSrc="/images/crc-building.jpg"
                     showDots={true}
                     showArrows={true}

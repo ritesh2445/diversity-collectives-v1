@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { 
   Search, 
   MapPin, 
@@ -93,25 +93,50 @@ function getDirectoryCardGradient(category) {
   };
 }
 
+export function isValidBusinessWebsite(url) {
+  if (!url || typeof url !== 'string') return false;
+  const lower = url.toLowerCase().trim();
+  if (lower === '' || lower.includes('example.com') || lower.includes('example.org') || lower.includes('.example') || lower === '#' || lower === 'http://' || lower === 'https://') {
+    return false;
+  }
+  return lower.startsWith('http://') || lower.startsWith('https://');
+}
+
+export function isRealApprovedBusiness(biz) {
+  if (!biz || !biz.name) return false;
+  // Exclude demo placeholders biz-2 through biz-6 with example.com
+  if (['biz-2', 'biz-3', 'biz-4', 'biz-5', 'biz-6'].includes(biz.id)) return false;
+  const website = String(biz.website || '').toLowerCase();
+  if (website.includes('example.com') || website.includes('.example')) return false;
+  const phone = String(biz.phone || '');
+  if (phone.includes('555-01')) return false;
+  return true;
+}
+
 const LOCAL_STORAGE_KEY = 'dcvc_live_directory_businesses';
 
 function getLiveBusinesses() {
-  if (typeof window === 'undefined') return businessDirectorySeed;
+  if (typeof window === 'undefined') return businessDirectorySeed.filter(isRealApprovedBusiness);
   try {
     const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (!stored) {
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(businessDirectorySeed));
-      return businessDirectorySeed;
+      const cleanList = businessDirectorySeed.filter(isRealApprovedBusiness);
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(cleanList));
+      return cleanList;
     }
     const parsed = JSON.parse(stored);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : businessDirectorySeed;
+    const valid = Array.isArray(parsed) && parsed.length > 0 ? parsed.filter(isRealApprovedBusiness) : businessDirectorySeed.filter(isRealApprovedBusiness);
+    return valid;
   } catch (err) {
     console.warn('[Directory] Failed to read live businesses from localStorage:', err);
-    return businessDirectorySeed;
+    return businessDirectorySeed.filter(isRealApprovedBusiness);
   }
 }
 
 export default function Directory() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlCity = searchParams.get('city');
+
   usePageMeta({
     title: 'LGBTQ+ Affirming Business Directory',
     description: 'Explore verified LGBTQ+ owned and affirming businesses across Ventura County. Find welcoming dining, healthcare, legal services, retail, and more.',
@@ -122,10 +147,18 @@ export default function Directory() {
   const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [selectedCity, setSelectedCity] = useState('All');
+  const [selectedCity, setSelectedCity] = useState(urlCity || 'All');
   const [selectedDateFilter, setSelectedDateFilter] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 6;
+
+  // Keep selectedCity in sync if query param changes
+  useEffect(() => {
+    if (urlCity) {
+      setSelectedCity(urlCity);
+      setCurrentPage(1);
+    }
+  }, [urlCity]);
 
   // Yelp-Style View Modes & Filters
   const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'map'
@@ -225,6 +258,13 @@ export default function Directory() {
     const savedIds = new Set(directoryService.getSavedBusinesses());
 
     const result = businessesList.filter((biz) => {
+      // Prune dummy/example placeholder businesses
+      const site = String(biz.website || '').toLowerCase();
+      const id = String(biz.id || '').toLowerCase();
+      if (site.includes('example.com') || site.includes('.example') || id === 'biz-3' || id === 'biz-4' || id === 'biz-5' || id === 'biz-6') {
+        return false;
+      }
+
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch = !q ||
         (biz.name && biz.name.toLowerCase().includes(q)) ||
@@ -262,9 +302,9 @@ export default function Directory() {
       } else if (quickFilter === 'lgbtq_owned') {
         matchesQuick = Boolean(biz.isLGBTQOwned);
       } else if (quickFilter === 'top_rated') {
-        matchesQuick = stats.rating >= 4.8;
+        matchesQuick = stats.ratingCount > 0 && stats.rating >= 4.0;
       } else if (quickFilter === 'most_hyped') {
-        matchesQuick = stats.hypes >= 100;
+        matchesQuick = stats.hypes > 0;
       } else if (quickFilter === 'saved') {
         matchesQuick = savedIds.has(biz.id || biz.slug);
       }
@@ -410,7 +450,7 @@ export default function Directory() {
                 { id: 'open_now', label: '🟢 Open Now' },
                 { id: 'approved', label: '✨ DCVC Approved' },
                 { id: 'lgbtq_owned', label: '🌈 LGBTQ+ Owned' },
-                { id: 'top_rated', label: '★ Top Rated (4.8+)' },
+                { id: 'top_rated', label: '★ Highest Rated' },
                 { id: 'most_hyped', label: '🔥 Most Hyped' },
                 { id: 'saved', label: `❤️ Saved (${savedCount})` }
               ].map(pill => (
@@ -783,7 +823,7 @@ export default function Directory() {
                         )
                       )}
 
-                      {biz.website && (
+                      {isValidBusinessWebsite(biz.website) && (
                         <a
                           href={biz.website}
                           target="_blank"

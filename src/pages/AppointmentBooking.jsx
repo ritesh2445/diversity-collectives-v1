@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -113,6 +113,8 @@ export default function AppointmentBooking() {
       name: fieldValues.name || 'Confidential Client',
       email: isEmail ? contactVal : 'confidential-phone@diversitycollective.org',
       phone: isEmail ? '' : contactVal,
+      date: selectedDate,
+      slot: selectedSlot,
       subject: `HIV/Wellness Screening Slot: ${selectedDate} (${selectedSlot})`,
       message: Object.entries(fieldValues)
         .map(([k, v]) => `${k}: ${v}`)
@@ -128,8 +130,8 @@ export default function AppointmentBooking() {
       setFieldValues({});
       confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
     } else {
-      setStatus('success');
-      setStatusMsg(`Your slot for ${selectedDate} (${selectedSlot}) has been reserved locally. If you need immediate confirmation, please call (805) 644-5428.`);
+      setStatus('error');
+      setStatusMsg(res.error || `Unable to reserve this slot online. If you need immediate assistance, please call (805) 644-5428.`);
     }
   };
 
@@ -270,9 +272,19 @@ export default function AppointmentBooking() {
                     {field.type === 'select' ? (
                       (() => {
                         const fallbackField = DEFAULT_FORM_SCHEMAS.hiv_screening?.fields?.find((f) => f.id === field.id);
-                        const effectiveOptions = Array.isArray(field.options) && field.options.length > 0
+                        const rawOptions = (Array.isArray(field.options) && field.options.length > 0)
                           ? field.options
                           : (fallbackField?.options || []);
+                        const effectiveOptions = rawOptions
+                          .map((opt) => {
+                            if (typeof opt === 'object' && opt !== null) {
+                              const val = opt.value ?? opt.label ?? '';
+                              const lbl = opt.label ?? opt.value ?? '';
+                              return { value: String(val), label: String(lbl) };
+                            }
+                            return { value: String(opt || ''), label: String(opt || '') };
+                          })
+                          .filter((o) => o.value.trim().length > 0);
                         return (
                           <select
                             required={field.required}
@@ -282,7 +294,7 @@ export default function AppointmentBooking() {
                           >
                             <option value="">Select an option...</option>
                             {effectiveOptions.map((opt) => (
-                              <option key={opt} value={opt}>{opt}</option>
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
                             ))}
                           </select>
                         );

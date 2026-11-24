@@ -17,7 +17,7 @@ export const DEFAULT_WEEKLY_SCHEDULE = [
     address: '2471 Portola Road, Suite 100, Ventura, CA 93003',
     category: 'Recovery & Peer Support',
     description: 'LGBTQ+ welcoming recovery meeting providing fellowship, mutual support, and hope for individuals on the journey of recovery.',
-    link: '/community'
+    link: '/programs/narcotics-anonymous'
   },
   {
     id: 'prog-toastmasters-tuesday',
@@ -31,7 +31,7 @@ export const DEFAULT_WEEKLY_SCHEDULE = [
     address: '2471 Portola Road, Suite 100, Ventura, CA 93003',
     category: 'Professional & Personal Growth',
     description: 'LGBTQ+ friendly club to practice public speaking, presentation skills, and leadership development in a safe, affirming environment.',
-    link: '/community'
+    link: '/programs/diversity-toastmasters'
   },
   {
     id: 'prog-pflag-tuesday',
@@ -45,7 +45,7 @@ export const DEFAULT_WEEKLY_SCHEDULE = [
     address: '2471 Portola Road, Suite 100, Ventura, CA 93003',
     category: 'Family & Ally Support',
     description: 'The nation\'s largest organization dedicated to supporting, educating, and advocating for LGBTQ+ people and their families.',
-    link: '/community'
+    link: '/programs/pflag-ventura'
   },
   {
     id: 'prog-queer-adulting-wednesday',
@@ -59,7 +59,7 @@ export const DEFAULT_WEEKLY_SCHEDULE = [
     address: '2471 Portola Road, Suite 100, Ventura, CA 93003',
     category: 'Adult Peer Support',
     description: 'An all-inclusive LGBTQAI+ meeting for adults 18+ to socialize, discuss career, relationships, identity, and life milestones.',
-    link: '/community'
+    link: '/programs/queer-adulting'
   },
   {
     id: 'prog-silver-collective-thursday',
@@ -73,7 +73,7 @@ export const DEFAULT_WEEKLY_SCHEDULE = [
     address: '2471 Portola Road, Suite 100, Ventura, CA 93003',
     category: 'Seniors / 55+',
     description: 'Creating welcoming spaces for LGBTQ+ adults 55+ to connect, reminisce, learn, and feel celebrated across Ventura County.',
-    link: '/community'
+    link: '/programs/silver-collective'
   },
   {
     id: 'prog-rainbow-umbrella-friday',
@@ -115,7 +115,7 @@ export const DEFAULT_WEEKLY_SCHEDULE = [
     address: '2471 Portola Road, Suite 100, Ventura, CA 93003',
     category: 'Trans & Non-Binary Support',
     description: 'Trans peer support group for transgender and gender-expansive individuals.',
-    link: '/community'
+    link: '/programs/transverse'
   }
 ];
 

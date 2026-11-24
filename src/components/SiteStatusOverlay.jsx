@@ -5,7 +5,7 @@ const DCVC_SOCIALS = [
   { label: 'Facebook', href: 'https://facebook.com/diversitycollectivevc', icon: 'fb' },
   { label: 'Instagram', href: 'https://instagram.com/diversitycollectivevc', icon: 'ig' },
   { label: 'Twitter / X', href: 'https://twitter.com/diversityvc', icon: 'tw' },
-  { label: 'Website', href: 'https://diversitycollectivevc.org', icon: 'web' },
+  { label: 'Website', href: 'https://diversitycollective.org', icon: 'web' },
 ];
 
 function SocialIcon({ icon, label, href }) {

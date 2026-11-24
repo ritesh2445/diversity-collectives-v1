@@ -5,7 +5,7 @@
  */
 
 const SAFE_URL_PROTOCOLS = new Set(['http:', 'https:', 'mailto:', 'tel:']);
-const SAFE_DATA_IMAGE_RE = /^data:image\/(?:png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]+$/i;
+const SAFE_DATA_IMAGE_RE = /^data:image\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=\s_-]+$/i;
 const SAFE_HERO_ID_RE = /^[a-z0-9-]{1,64}$/i;
 const SAFE_BLOCK_TYPE_RE = /^[a-z0-9_]{1,64}$/i;
 const SAFE_FONT_NAME_RE = /^[A-Za-z0-9 _-]{1,64}$/;
@@ -103,6 +103,32 @@ export function sanitizeSiteTheme(rawTheme) {
   return Object.keys(clean).length > 0 ? clean : null;
 }
 
+export function sanitizeCardThemes(rawThemes) {
+  if (!rawThemes || typeof rawThemes !== 'object' || Array.isArray(rawThemes)) {
+    return null;
+  }
+  const clean = { resources: {}, community: {} };
+  const processGroup = (groupObj, target) => {
+    if (!groupObj || typeof groupObj !== 'object') return;
+    for (const [catName, themeObj] of Object.entries(groupObj)) {
+      if (catName === '__proto__' || catName === 'constructor' || catName === 'prototype') continue;
+      if (!themeObj || typeof themeObj !== 'object') continue;
+      const cleanTheme = {};
+      for (const [prop, val] of Object.entries(themeObj)) {
+        if (typeof val === 'string') {
+          cleanTheme[prop] = val.trim().slice(0, 120);
+        }
+      }
+      if (Object.keys(cleanTheme).length > 0) {
+        target[catName.slice(0, 100)] = cleanTheme;
+      }
+    }
+  };
+  processGroup(rawThemes.resources, clean.resources);
+  processGroup(rawThemes.community, clean.community);
+  return (Object.keys(clean.resources).length > 0 || Object.keys(clean.community).length > 0) ? clean : null;
+}
+
 export function sanitizeLayoutBlocks(rawBlocks) {
   if (!Array.isArray(rawBlocks)) return null;
   const blocks = [];
@@ -138,7 +164,23 @@ const CMS_ALLOWED_KEYS = new Set([
   'deletedEvents',
   'deletedStaff',
   'staffImageOverrides',
-  'imageOverrides'
+  'imageOverrides',
+  'communityGroups',
+  'podcasts',
+  'businesses',
+  'sponsors',
+  'sponsorshipDocuments',
+  'sponsorshipPageContent',
+  'trainingPageContent',
+  'weeklySchedule',
+  'customKnowledge',
+  'mediaSuggestions',
+  'deletedBusinesses',
+  'deletedResources',
+  'deletedNews',
+  'deletedSponsorshipDocuments',
+  'deletedPodcasts',
+  'deletedCommunityGroups'
 ]);
 
 const SAFE_STATUS_TYPE_RE = /^(live|launch_timer|maintenance|custom)$/i;
@@ -248,6 +290,17 @@ export function sanitizeSiteStatePatch(patch, existingState = {}) {
     const cleanFeatures = sanitizeGenericValue(patch.siteFeatures, '', 1);
     if (cleanFeatures && typeof cleanFeatures === 'object') {
       next.siteFeatures = cleanFeatures;
+    }
+  }
+
+  if (Object.prototype.hasOwnProperty.call(patch, 'cardThemes')) {
+    if (patch.cardThemes === null) {
+      delete next.cardThemes;
+    } else {
+      const cleanThemes = sanitizeCardThemes(patch.cardThemes);
+      if (cleanThemes) {
+        next.cardThemes = cleanThemes;
+      }
     }
   }
 

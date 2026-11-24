@@ -220,11 +220,12 @@ export default function FlexSpaceBookingSection({ props = {}, style = {} }) {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 {(schema?.fields || []).map((field) => (
                   <div key={field.id} className={field.type === 'textarea' ? 'sm:col-span-2' : ''}>
-                    <label className="block text-xs font-bold text-slate-800 mb-1">
+                    <label htmlFor={`flex-field-${field.id}`} className="block text-xs font-bold text-slate-800 mb-1">
                       {field.label} {field.required ? '*' : ''}
                     </label>
                     {field.type === 'select' ? (
                       <select
+                        id={`flex-field-${field.id}`}
                         required={field.required}
                         value={formValues[field.id] || ''}
                         onChange={(e) => handleFieldChange(field.id, e.target.value)}
@@ -237,6 +238,7 @@ export default function FlexSpaceBookingSection({ props = {}, style = {} }) {
                       </select>
                     ) : field.type === 'textarea' ? (
                       <textarea
+                        id={`flex-field-${field.id}`}
                         rows={2}
                         required={field.required}
                         placeholder={field.placeholder || ''}
@@ -246,6 +248,7 @@ export default function FlexSpaceBookingSection({ props = {}, style = {} }) {
                       />
                     ) : (
                       <input
+                        id={`flex-field-${field.id}`}
                         type={field.type || 'text'}
                         required={field.required}
                         placeholder={field.placeholder || ''}

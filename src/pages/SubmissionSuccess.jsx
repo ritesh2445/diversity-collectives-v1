@@ -69,7 +69,7 @@ export default function SubmissionSuccess() {
     newsletter: {
       title: 'Subscribed to DCVC Updates',
       subtitle: 'You are now on our community dispatch list!',
-      description: 'You will receive our monthly newsletter featuring local LGBTQ+ news, wellness resources, Pride updates, and upcoming gatherings. You may unsubscribe at any time.',
+      description: 'You will receive our monthly newsletter featuring local LGBTQ+ news, wellness resources, Pride updates, and upcoming events. You may unsubscribe at any time.',
       nextStep: 'Read recent stories and dispatches on our news feed.',
       ctaText: 'Read News',
       ctaLink: '/news',

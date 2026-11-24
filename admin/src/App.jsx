@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Building2, 
   Users, 
@@ -17,6 +17,7 @@ import {
   History,
   Lock,
   Eye,
+  EyeOff,
   Edit,
   Trash2,
   Palette,
@@ -44,23 +45,14 @@ import {
   Copy,
   ChevronRight,
   Flame,
-  Star,
-  Command,
-  Image as ImageIcon,
-  Zap,
-  CheckSquare,
-  ShieldCheck,
-  Laptop,
-  Key,
-  Bell,
-  Server,
-  Database
+  Star
 } from 'lucide-react';
 import { 
   getStoredUser, 
   setStoredToken, 
   setStoredUser, 
   adminLogin,
+  adminLoginWithGoogle,
   getDirectorySubmissions,
   moderateBusinessListing,
   editBusinessListing,
@@ -69,12 +61,6 @@ import {
   resolveBusinessCorrection,
   getInquiries,
   updateInquiryStatus,
-  updateInquiry,
-  deleteInquiry,
-  getVoicemails,
-  updateVoicemailStatus,
-  deleteVoicemail,
-  getVoicemailAudioUrl,
   getStaffUsers,
   createStaffUser,
   updateStaffRole,
@@ -92,36 +78,12 @@ import {
   getAdminCustomCards,
   saveAdminCustomCard,
   deleteAdminCustomCard,
-  issueCustomDonorCard,
-  getSiteStatuses,
-  saveSiteStatuses,
-  setActiveSiteStatus,
-  deleteSiteStatus,
-  createSiteStatus,
-  updateSiteStatus,
-  getActiveSiteStatus,
-  getDashboardLayout,
-  getAdminThemePreferences,
-  getAiAnomalies,
-  createDatabaseSnapshot,
-  purgeCdnCache,
-  adminLoginWithOtpSend,
-  adminLoginWithOtpVerify,
-  adminLoginWithGoogle
+  issueCustomDonorCard
 } from './services/adminClient.js';
 import { getGitHubStorageConfig, saveGitHubStorageConfig } from './services/imageService.js';
 import DesignEditor from './components/DesignEditor.jsx';
 import CmsStudio from './components/CmsStudio.jsx';
-import SiteStatusManager from './components/SiteStatusManager.jsx';
-import CommandPaletteModal from './components/CommandPaletteModal.jsx';
-import IamSecurityCenter from './components/IamSecurityCenter.jsx';
-import MediaLibraryManager from './components/MediaLibraryManager.jsx';
-import OperationsCenter from './components/OperationsCenter.jsx';
-import AnalyticsReportingCenter from './components/AnalyticsReportingCenter.jsx';
-import SmartAutomationCenter from './components/SmartAutomationCenter.jsx';
-import CollaborationCenter from './components/CollaborationCenter.jsx';
-import DashboardCustomizerModal from './components/DashboardCustomizerModal.jsx';
-import UnifiedCrudModal from './components/UnifiedCrudModal.jsx';
+import SiteFeaturesStudio from './components/SiteFeaturesStudio.jsx';
 
 export default function AdminApp() {
   const [currentUser, setCurrentUser] = useState(getStoredUser());
@@ -131,8 +93,8 @@ export default function AdminApp() {
 
   // GitHub storage & CDN state
   const [ghConfig, setGhConfig] = useState(getGitHubStorageConfig);
-  const [ghOwner, setGhOwner] = useState(getGitHubStorageConfig().owner || 'diversity-collective');
-  const [ghRepo, setGhRepo] = useState(getGitHubStorageConfig().repo || 'diversity-collectives-v1');
+  const [ghOwner, setGhOwner] = useState(getGitHubStorageConfig().owner || '');
+  const [ghRepo, setGhRepo] = useState(getGitHubStorageConfig().repo || '');
   const [ghBranch, setGhBranch] = useState(getGitHubStorageConfig().branch || 'main');
   const [ghToken, setGhToken] = useState(getGitHubStorageConfig().token || '');
   const [ghCdn, setGhCdn] = useState(getGitHubStorageConfig().cdnProvider || 'jsdelivr');
@@ -142,6 +104,7 @@ export default function AdminApp() {
   // Login form state
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [loginMfa, setLoginMfa] = useState('');
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -156,13 +119,6 @@ export default function AdminApp() {
   // Inquiries state
   const [inquiryType, setInquiryType] = useState('contact');
   const [inquiries, setInquiries] = useState([]);
-  const [selectedInquiryView, setSelectedInquiryView] = useState(null);
-  const [editingInquiry, setEditingInquiry] = useState(null);
-
-  // Voicemail Inbox state
-  const [voicemails, setVoicemails] = useState([]);
-  const [voicemailStatusFilter, setVoicemailStatusFilter] = useState('all');
-  const [voicemailSearch, setVoicemailSearch] = useState('');
 
   // Staff & RBAC state
   const [staffUsers, setStaffUsers] = useState([]);
@@ -235,32 +191,6 @@ export default function AdminApp() {
   const [auditLogs, setAuditLogs] = useState([]);
   const [feedbackMsg, setFeedbackMsg] = useState('');
 
-  // 7-Pillar Framework Extended State
-  const [showCommandPalette, setShowCommandPalette] = useState(false);
-  const [showDashboardCustomizer, setShowDashboardCustomizer] = useState(false);
-  const [dashboardLayout, setDashboardLayout] = useState(getDashboardLayout);
-  const [themePrefs, setThemePrefs] = useState(getAdminThemePreferences);
-  const [showUnifiedCrud, setShowUnifiedCrud] = useState(false);
-  const [crudTargetBiz, setCrudTargetBiz] = useState(null);
-  const [selectedDirectoryIds, setSelectedDirectoryIds] = useState([]);
-  const [liveAnomalies, setLiveAnomalies] = useState([]);
-
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        setShowCommandPalette(prev => !prev);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  useEffect(() => {
-    getAiAnomalies().then(setLiveAnomalies).catch(() => {});
-  }, []);
-
-
   const loadData = async () => {
     if (!currentUser) return;
     try {
@@ -327,60 +257,16 @@ export default function AdminApp() {
     }
   };
 
-  const handleSendOtp = async (e) => {
-    e?.preventDefault?.();
-    setOtpLoading(true);
-    setLoginError('');
-    try {
-      const res = await adminLoginWithOtpSend(otpEmail);
-      if (res.tempToken) {
-        setOtpTempToken(res.tempToken);
-        setOtpSent(true);
-        if (res.devCode) setOtpDevCode(res.devCode);
-        setOtpCooldown(60);
-        const interval = setInterval(() => {
-          setOtpCooldown(prev => { if (prev <= 1) { clearInterval(interval); return 0; } return prev - 1; });
-        }, 1000);
-      } else {
-        setLoginError(res.error || 'Failed to send OTP. Please try again.');
-      }
-    } catch (err) {
-      setLoginError('Network error sending OTP.');
-    }
-    setOtpLoading(false);
-  };
-
-  const handleVerifyOtp = async (e) => {
-    e?.preventDefault?.();
-    setOtpLoading(true);
-    setLoginError('');
-    try {
-      const res = await adminLoginWithOtpVerify(otpTempToken, otpCode, otpEmail);
-      if (res.success) {
-        setCurrentUser(res.user);
-      } else {
-        setLoginError(res.error || 'Invalid or expired code.');
-      }
-    } catch (err) {
-      setLoginError('Network error verifying OTP.');
-    }
-    setOtpLoading(false);
-  };
-
   const handleGoogleLogin = async () => {
-    setGoogleLoading(true);
     setLoginError('');
-    try {
-      const res = await adminLoginWithGoogle({ isDevDemo: true });
-      if (res.success) {
-        setCurrentUser(res.user);
-      } else {
-        setLoginError(res.error || 'Google sign-in failed.');
-      }
-    } catch (err) {
-      setLoginError('Google sign-in error. Please try again.');
+    setIsLoggingIn(true);
+    const res = await adminLoginWithGoogle({ email: 'admin@diversitycollective.org' });
+    setIsLoggingIn(false);
+    if (res.success) {
+      setCurrentUser(res.user);
+    } else {
+      setLoginError(res.error || 'Google login failed');
     }
-    setGoogleLoading(false);
   };
 
   const handleLogout = () => {
@@ -410,194 +296,9 @@ export default function AdminApp() {
     }
   };
 
-  // Directory multi-select & bulk actions
-  const handleToggleDirectorySelection = (bizId) => {
-    setSelectedDirectoryIds(prev =>
-      prev.includes(bizId) ? prev.filter(id => id !== bizId) : [...prev, bizId]
-    );
-  };
-
-  const handleSelectAllDirectory = () => {
-    const allIds = businesses.map(b => b.id);
-    if (selectedDirectoryIds.length === allIds.length) {
-      setSelectedDirectoryIds([]);
-    } else {
-      setSelectedDirectoryIds(allIds);
-    }
-  };
-
-  const handleBulkAction = async (status) => {
-    if (selectedDirectoryIds.length === 0) return;
-    let successCount = 0;
-    for (const bizId of selectedDirectoryIds) {
-      const res = await moderateBusinessListing(bizId, status, modNotes);
-      if (res.success) successCount++;
-    }
-    setFeedbackMsg(`Bulk ${status}: ${successCount} listing(s) updated.`);
-    setSelectedDirectoryIds([]);
-    setModNotes('');
-    loadData();
-    setTimeout(() => setFeedbackMsg(''), 4000);
-  };
-
-  const handleBulkDelete = async () => {
-    if (selectedDirectoryIds.length === 0) return;
-    if (!window.confirm(`Delete ${selectedDirectoryIds.length} selected listing(s)?`)) return;
-    let successCount = 0;
-    for (const bizId of selectedDirectoryIds) {
-      const res = await deleteBusinessListing(bizId);
-      if (res.success) successCount++;
-    }
-    setFeedbackMsg(`Bulk delete: ${successCount} listing(s) removed.`);
-    setSelectedDirectoryIds([]);
-    loadData();
-    setTimeout(() => setFeedbackMsg(''), 4000);
-  };
-
-  const handleEditBiz = (biz) => {
-    setCrudTargetBiz(biz);
-    setShowUnifiedCrud(true);
-  };
-
-  const handleAddBiz = () => {
-    setCrudTargetBiz(null);
-    setShowUnifiedCrud(true);
-  };
-
   const handleInquiryStatusChange = async (id, status) => {
     await updateInquiryStatus(inquiryType, id, status);
     loadData();
-    if (selectedInquiryView && selectedInquiryView.id === id) {
-      setSelectedInquiryView(prev => ({ ...prev, status }));
-    }
-  };
-
-  const handleVoicemailStatusChange = async (id, status) => {
-    await updateVoicemailStatus(id, status);
-    const vmList = await getVoicemails(voicemailStatusFilter);
-    setVoicemails(vmList);
-  };
-
-  const handleVoicemailNotesChange = async (id, notes) => {
-    await updateVoicemailStatus(id, undefined, notes);
-    const vmList = await getVoicemails(voicemailStatusFilter);
-    setVoicemails(vmList);
-  };
-
-  const handleDeleteVoicemail = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this voicemail and its recording? This action cannot be undone.')) return;
-    await deleteVoicemail(id);
-    const vmList = await getVoicemails(voicemailStatusFilter);
-    setVoicemails(vmList);
-  };
-
-  const exportVoicemailsToCsv = () => {
-    if (!voicemails || voicemails.length === 0) {
-      alert('No voicemails available to export.');
-      return;
-    }
-    const headers = ['ID', 'Date', 'Name', 'Email', 'Subject', 'Duration (s)', 'Status', 'Notes', 'Audio Key'];
-    const escapeCsv = (str) => `"${String(str || '').replace(/"/g, '""')}"`;
-    const rows = voicemails.map((v) => [
-      v.id || '',
-      v.created_at || '',
-      v.name || '',
-      v.email || '',
-      v.subject || '',
-      v.duration_seconds || 0,
-      v.status || 'new',
-      v.admin_notes || '',
-      v.r2_key || ''
-    ].map(escapeCsv).join(','));
-
-    const csvContent = [headers.join(','), ...rows].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `dcvc_voicemails_${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  const handleDeleteInquiry = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this form submission entry?')) return;
-    await deleteInquiry(inquiryType, id);
-    loadData();
-    if (selectedInquiryView && selectedInquiryView.id === id) {
-      setSelectedInquiryView(null);
-    }
-  };
-
-  const handleSaveInquiryEdit = async (e) => {
-    e?.preventDefault();
-    if (!editingInquiry) return;
-    await updateInquiry(inquiryType, editingInquiry.id, editingInquiry);
-    loadData();
-    if (selectedInquiryView && selectedInquiryView.id === editingInquiry.id) {
-      setSelectedInquiryView({ ...selectedInquiryView, ...editingInquiry });
-    }
-    setEditingInquiry(null);
-  };
-
-  const exportInquiriesToCsv = (items, categoryName = 'form_submissions') => {
-    if (!items || items.length === 0) {
-      alert('No form submissions available to export in this category.');
-      return;
-    }
-
-    const headers = [
-      'ID',
-      'Category',
-      'Name',
-      'Email',
-      'Phone',
-      'Subject / Topic / Barrier',
-      'Message / Details',
-      'Organization / City',
-      'Format / Roles / Assistive Tech',
-      'Status',
-      'Internal Notes',
-      'Created Date'
-    ];
-
-    const escapeCell = (val) => {
-      if (val === null || val === undefined) return '""';
-      const str = String(val).replace(/"/g, '""');
-      return '"' + str + '"';
-    };
-
-    const rows = items.map((inq) => [
-      inq.id || '',
-      categoryName,
-      inq.name || inq.full_name || inq.contact_name || '',
-      inq.email || inq.contact_email || '',
-      inq.phone || '',
-      inq.subject || inq.course_title || inq.barrier_description || '',
-      inq.message || inq.skills_experience || inq.goals_and_notes || '',
-      inq.organization_name || inq.city || '',
-      inq.preferred_format || inq.roles_of_interest || inq.assistive_tech || inq.page_url || '',
-      inq.status || 'unread',
-      inq.notes || inq.remediation_notes || '',
-      inq.created_at || ''
-    ]);
-
-    const csvContent = [
-      headers.map(escapeCell).join(','),
-      ...rows.map(row => row.map(escapeCell).join(','))
-    ].join('\r\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'dcvc_' + categoryName + '_submissions_' + new Date().toISOString().slice(0, 10) + '.csv';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
   };
 
   const handleResolveCorrection = async (id) => {
@@ -752,149 +453,100 @@ export default function AdminApp() {
             </p>
           </div>
 
-          {/* Auth Mode Tabs */}
-          <div className="flex rounded-xl overflow-hidden border border-slate-200 mb-6">
-            {[['otp','Email + OTP'],['google','Google'],['password','Password']].map(([mode, label]) => (
-              <button
-                key={mode}
-                type="button"
-                onClick={() => { setLoginMode(mode); setLoginError(''); setOtpSent(false); setOtpDevCode(''); }}
-                className={`flex-1 py-2.5 text-xs font-bold transition-all ${loginMode === mode ? 'bg-[#5A1E65] text-white' : 'bg-white text-slate-500 hover:bg-slate-50'}`}
-              >{label}</button>
-            ))}
-          </div>
-
           {loginError && (
-            <div className="mb-5 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-center gap-2">
+            <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 flex-shrink-0" />
               <span>{loginError}</span>
             </div>
           )}
 
-          {/* Email + OTP Mode */}
-          {loginMode === 'otp' && (
-            <form onSubmit={otpSent ? handleVerifyOtp : handleSendOtp} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Staff Email Address</label>
-                <input
-                  type="email"
-                  required
-                  value={otpEmail}
-                  onChange={(e) => setOtpEmail(e.target.value)}
-                  disabled={otpSent}
-                  placeholder="admin@diversitycollective.org"
-                  className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#5A1E65] focus:border-transparent outline-none transition-all disabled:bg-slate-50 disabled:text-slate-400"
-                />
-              </div>
-              {otpSent && (
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                    6-Digit Code
-                    {otpDevCode && <span className="ml-2 text-green-600 font-mono normal-case">Dev: {otpDevCode}</span>}
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={otpCode}
-                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g,'').slice(0,6))}
-                    placeholder="123456"
-                    maxLength={6}
-                    autoFocus
-                    className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#5A1E65] focus:border-transparent outline-none font-mono tracking-[0.5em] text-center"
-                  />
-                  <p className="text-[11px] text-slate-400 mt-1.5">Check your email for the 6-digit sign-in code (expires in 10 min).</p>
-                </div>
-              )}
-              <button
-                type="submit"
-                disabled={otpLoading}
-                className="w-full py-3.5 px-4 bg-[#5A1E65] hover:bg-purple-900 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-purple-900/20 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-50"
-              >
-                {otpLoading ? (otpSent ? 'Verifying...' : 'Sending...') : (otpSent ? 'Verify Code & Sign In' : 'Send Sign-In Code')}
-              </button>
-              {otpSent && (
-                <button
-                  type="button"
-                  disabled={otpCooldown > 0}
-                  onClick={() => { setOtpSent(false); setOtpCode(''); setOtpDevCode(''); setOtpTempToken(''); }}
-                  className="w-full text-xs text-slate-400 hover:text-[#5A1E65] transition-colors disabled:opacity-40"
-                >
-                  {otpCooldown > 0 ? `Resend in ${otpCooldown}s` : 'Use different email'}
-                </button>
-              )}
-            </form>
-          )}
-
-          {/* Google Mode */}
-          {loginMode === 'google' && (
-            <div className="space-y-4">
-              <p className="text-xs text-slate-500 text-center">Sign in instantly with your Google workspace account.</p>
-              <button
-                type="button"
-                onClick={handleGoogleLogin}
-                disabled={googleLoading}
-                className="w-full py-3.5 px-4 bg-white border-2 border-slate-200 hover:border-[#5A1E65] text-slate-700 font-extrabold text-sm rounded-xl shadow-sm active:scale-[0.99] transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-3"
-              >
-                <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-                {googleLoading ? 'Signing in...' : 'Continue with Google'}
-              </button>
-              <p className="text-[11px] text-slate-400 text-center">Dev mode: uses demo token. Add GOOGLE_CLIENT_ID for production.</p>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                Staff Email Address
+              </label>
+              <input 
+                type="email"
+                required
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                placeholder="admin@diversitycollective.org"
+                className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#5A1E65] focus:border-transparent outline-none transition-all"
+              />
             </div>
-          )}
 
-          {/* Password Mode */}
-          {loginMode === 'password' && (
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Staff Email Address</label>
-                <input
-                  type="email"
-                  required
-                  value={loginEmail}
-                  onChange={(e) => setLoginEmail(e.target.value)}
-                  placeholder="admin@diversitycollective.org"
-                  className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#5A1E65] focus:border-transparent outline-none transition-all"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Password</label>
-                <input
-                  type="password"
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                Password
+              </label>
+              <div className="relative">
+                <input 
+                  type={showLoginPassword ? "text" : "password"}
                   required
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#5A1E65] focus:border-transparent outline-none transition-all"
+                  autoComplete="current-password"
+                  className="w-full px-4 py-3 pr-11 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#5A1E65] focus:border-transparent outline-none transition-all"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowLoginPassword(!showLoginPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer p-1"
+                  aria-label={showLoginPassword ? "Hide password" : "Show password"}
+                >
+                  {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                  2FA Code <span className="text-slate-400 font-normal">(Optional for Dev)</span>
-                </label>
-                <input
-                  type="text"
-                  value={loginMfa}
-                  onChange={(e) => setLoginMfa(e.target.value)}
-                  placeholder="6-digit code"
-                  maxLength={6}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#5A1E65] focus:border-transparent outline-none font-mono"
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={isLoggingIn}
-                className="w-full py-3.5 px-4 bg-[#5A1E65] hover:bg-purple-900 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-purple-900/20 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-50"
-              >
-                {isLoggingIn ? 'Authenticating...' : 'Sign In to Portal'}
-              </button>
-            </form>
-          )}
+            </div>
 
-          <div className="mt-8 pt-6 border-t border-slate-100 text-center">
-            <p className="text-[11px] text-slate-400">
-              Secure admin portal · Diversity Collective Ventura County
-            </p>
-          </div>
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                2FA Authenticator Code
+              </label>
+              <input 
+                type="text"
+                value={loginMfa}
+                onChange={(e) => setLoginMfa(e.target.value)}
+                placeholder="6-digit code"
+                maxLength={6}
+                autoComplete="one-time-code"
+                className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#5A1E65] focus:border-transparent outline-none font-mono"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoggingIn}
+              className="w-full py-3.5 px-4 bg-[#5A1E65] hover:bg-purple-900 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-purple-900/20 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-50"
+            >
+              {isLoggingIn ? 'Authenticating...' : 'Sign In to Portal'}
+            </button>
+
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-slate-200" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white px-2 text-slate-400 font-bold">Or</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleGoogleLogin}
+              disabled={isLoggingIn}
+              className="w-full py-3.5 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 font-extrabold text-sm shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-3 cursor-pointer disabled:opacity-60"
+            >
+              <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+              </svg>
+              <span>Sign In with Google (admin@diversitycollective.org)</span>
+            </button>
+          </form>
         </div>
       </div>
     );
@@ -947,78 +599,12 @@ export default function AdminApp() {
   const navigationTabs = [
     { id: 'overview', label: 'Overview', icon: LayoutGrid, badge: 'Home' },
     { id: 'cms', label: 'Site Content', icon: Sparkles, badge: 'Live CMS' },
+    { id: 'forms', label: 'Forms & Slots', icon: FileText, badge: 'Custom Forms' },
     { id: 'directory', label: 'Directory', icon: Building2, badge: pendingBizCount > 0 ? `${pendingBizCount} Pending` : null },
-    { id: 'donations', label: 'Donations & BI', icon: Heart, badge: '$54.3k' },
-    { id: 'media', label: 'Media Library', icon: ImageIcon, badge: 'CDN' },
+    { id: 'donations', label: 'Donations & Cards', icon: Heart, badge: '$54.3k' },
     { id: 'inquiries', label: 'Inquiries', icon: Mail, badge: newInqCount > 0 ? `${newInqCount} New` : null },
-    { id: 'workflows', label: 'Workflows & Tasks', icon: CheckSquare, badge: 'Team' },
-    { id: 'operations', label: 'Operations & Health', icon: Activity, badge: '99.98%' },
-    { id: 'ai', label: 'AI Studio', icon: Zap, badge: 'Smart' },
-    { id: 'iam', label: 'IAM & 2FA', icon: ShieldCheck, badge: 'Security' },
-    { id: 'status', label: 'Site Status', icon: ShieldAlert, badge: 'Control' },
     { id: 'settings', label: 'Settings & Team', icon: Users, badge: 'Config' }
   ];
-
-  const handleTriggerAction = async (actionId) => {
-    if (actionId === 'setup_2fa') {
-      setActiveTab('iam');
-    } else if (actionId === 'backup_db') {
-      await createDatabaseSnapshot('Instant Admin Snapshot');
-      setFeedbackMsg('Instant database snapshot successfully created.');
-      setTimeout(() => setFeedbackMsg(''), 4000);
-    } else if (actionId === 'purge_cdn') {
-      await purgeCdnCache();
-      setFeedbackMsg('Global edge CDN cache successfully purged.');
-      setTimeout(() => setFeedbackMsg(''), 4000);
-    } else if (actionId === 'export_donations') {
-      setActiveTab('donations');
-      setDonationsSubTab('analytics');
-    } else if (actionId === 'generate_digest') {
-      setActiveTab('ai');
-    }
-  };
-
-  // Unified CRUD save handler for directory business listings (Add / Edit)
-  const handleSaveBizCrud = async (data) => {
-    try {
-      if (crudTargetBiz?.id) {
-        const res = await editBusinessListing(crudTargetBiz.id, {
-          business_name: data.business_name,
-          category: data.category,
-          description: data.description,
-          contact_email: data.contact_email,
-          phone: data.phone,
-          address: data.address,
-          status: data.status || crudTargetBiz.status
-        });
-        if (res.success) {
-          setFeedbackMsg(`Business "${data.business_name}" updated.`);
-          loadData();
-        } else {
-          setFeedbackMsg(res.error || 'Failed to update business listing.');
-        }
-      } else {
-        const res = await createStaffUser({
-          name: data.business_name,
-          email: data.contact_email,
-          role: 'editor',
-          title: data.category || 'Business'
-        });
-        if (res.success) {
-          setFeedbackMsg(`Business "${data.business_name}" created.`);
-          loadData();
-        } else {
-          setFeedbackMsg(res.error || 'Failed to create business listing.');
-        }
-      }
-    } catch (err) {
-      setFeedbackMsg('CRUD save failed: ' + err.message);
-    } finally {
-      setShowUnifiedCrud(false);
-      setCrudTargetBiz(null);
-      setTimeout(() => setFeedbackMsg(''), 4000);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
@@ -1042,26 +628,7 @@ export default function AdminApp() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* Quick Command Palette Launcher */}
-            <button
-              onClick={() => setShowCommandPalette(true)}
-              className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-purple-100 hover:text-white transition-all cursor-pointer flex items-center gap-2 text-xs font-semibold border border-white/10"
-              title="Global Command Palette (Cmd+K)"
-            >
-              <Search className="w-3.5 h-3.5 text-amber-300" />
-              <span className="hidden md:inline">Quick Search...</span>
-            </button>
-
-            {/* Dashboard Customizer Theme Launcher */}
-            <button
-              onClick={() => setShowDashboardCustomizer(true)}
-              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer flex items-center gap-1"
-              title="Personalize Dashboard & Brand Themes"
-            >
-              <Palette className="w-4 h-4 text-amber-300" />
-            </button>
-
+          <div className="flex items-center gap-3">
             <div className="text-right hidden sm:block">
               <span className="block text-xs font-bold text-white">{currentUser.name}</span>
               <span className="inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-white/20 text-purple-100">
@@ -1358,13 +925,13 @@ export default function AdminApp() {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h4 className="text-sm font-bold text-white">GitHub Repository & CDN Media Storage</h4>
+                    <h4 className="text-sm font-bold text-white">Media Asset Storage & Edge CDN</h4>
                     <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-mono border border-emerald-500/30">
-                      {ghConfig.token ? 'GitHub Commits Active' : 'Offline Optimization Active'}
+                      {ghConfig.token ? 'Storage Connected' : 'Local Optimization Active'}
                     </span>
                   </div>
                   <p className="text-xs text-slate-300 mt-0.5">
-                    Target Repo: <code className="text-amber-300">{ghConfig.owner}/{ghConfig.repo}</code> · Branch: <code className="text-amber-300">{ghConfig.branch}</code> · CDN: <code className="text-purple-300">{ghConfig.cdnProvider}</code>
+                    Storage Backend: <span className="text-amber-300 font-medium">Cloud Media Storage</span> · CDN: <code className="text-purple-300">Edge CDN</code>
                   </p>
                 </div>
               </div>
@@ -1374,7 +941,7 @@ export default function AdminApp() {
                 onClick={() => { setActiveTab('settings'); setSettingsSubTab('github'); }}
                 className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-colors border border-white/20 whitespace-nowrap cursor-pointer"
               >
-                Configure GitHub Token & CDN
+                Configure Media Storage & CDN
               </button>
             </div>
           </div>
@@ -1385,6 +952,13 @@ export default function AdminApp() {
             ================================================================== */}
         {activeTab === 'cms' && (
           <CmsStudio />
+        )}
+
+        {/* ==================================================================
+            TAB: FORMS & SLOT BOOKING STUDIO (CUSTOM FORMS, EDIT & CHOOSE)
+            ================================================================== */}
+        {activeTab === 'forms' && (
+          <SiteFeaturesStudio initialSubTab="forms" />
         )}
 
         {/* ==================================================================
@@ -2559,18 +2133,9 @@ export default function AdminApp() {
         {activeTab === 'directory' && (
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <div>
-                  <h2 className="text-xl font-extrabold text-slate-900">Affirming Business Directory</h2>
-                  <p className="text-xs text-slate-500">Review pending business submissions and correction requests</p>
-                </div>
-                <button
-                  onClick={handleAddBiz}
-                  className="px-4 py-2 bg-[#5A1E65] hover:bg-purple-900 text-white font-extrabold text-xs rounded-xl shadow-xs flex items-center gap-2 cursor-pointer"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add Business</span>
-                </button>
+              <div>
+                <h2 className="text-xl font-extrabold text-slate-900">Affirming Business Directory</h2>
+                <p className="text-xs text-slate-500">Review pending business submissions and correction requests</p>
               </div>
 
               {/* Status Filter */}
@@ -2589,61 +2154,21 @@ export default function AdminApp() {
                   </button>
                 ))}
               </div>
-              </div>
-
-            {/* Bulk Action Toolbar */}
-            {selectedDirectoryIds.length > 0 && (
-              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-amber-800">
-                    {selectedDirectoryIds.length} listing(s) selected
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleBulkAction('approved')}
-                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
-                  >
-                    Bulk Approve
-                  </button>
-                  <button
-                    onClick={() => handleBulkAction('rejected')}
-                    className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
-                  >
-                    Bulk Reject
-                  </button>
-                  <button
-                    onClick={handleBulkDelete}
-                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
-                  >
-                    Bulk Delete
-                  </button>
-                </div>
-              </div>
-            )}
+            </div>
 
             {/* Business Listings Grid */}
-            <div className="flex flex-col gap-4">
-              <div className={`overflow-x-auto snap-x scrollbar-hide pb-2 ${businesses.length > 0 ? 'flex flex-row gap-4 snap-start' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'}`}>
-                {businesses.length === 0 ? (
-                  <div className="col-span-full py-12 text-center bg-white rounded-2xl border border-slate-200">
-                    <p className="text-slate-400 text-sm">No listings found in "{directoryStatusFilter}" state.</p>
-                  </div>
-                ) : (
-                  businesses.map((biz) => (
-                    <div key={biz.id} className="snap-start min-w-[290px] bg-white rounded-2xl p-5 border border-slate-200 flex flex-col justify-between shadow-xs flex-shrink-0">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {businesses.length === 0 ? (
+                <div className="col-span-full py-12 text-center bg-white rounded-2xl border border-slate-200">
+                  <p className="text-slate-400 text-sm">No listings found in "{directoryStatusFilter}" state.</p>
+                </div>
+              ) : (
+                businesses.map((biz) => (
+                  <div key={biz.id} className="bg-white rounded-2xl p-5 border border-slate-200 flex flex-col justify-between shadow-xs">
                     <div>
                       <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={selectedDirectoryIds.includes(biz.id)}
-                          onChange={() => handleToggleDirectorySelection(biz.id)}
-                          className="w-4 h-4 rounded border-slate-300 text-[#5A1E65] focus:ring-[#5A1E65] cursor-pointer"
-                        />
                         <h3 className="font-bold text-base text-slate-900">{biz.business_name}</h3>
-                      </div>
-                      <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                        <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
                           biz.status === 'approved' ? 'bg-emerald-100 text-emerald-800' :
                           biz.status === 'rejected' ? 'bg-rose-100 text-rose-800' :
                           'bg-amber-100 text-amber-800'
@@ -2682,13 +2207,6 @@ export default function AdminApp() {
                       </div>
 
                       <button
-                        onClick={() => handleEditBiz(biz)}
-                        className="p-1.5 text-slate-400 hover:text-purple-600 transition-colors cursor-pointer"
-                        title="Edit Listing"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button
                         onClick={() => handleDeleteBiz(biz.id)}
                         className="p-1.5 text-slate-400 hover:text-red-600 transition-colors cursor-pointer"
                         title="Delete listing"
@@ -2700,7 +2218,6 @@ export default function AdminApp() {
                 ))
               )}
             </div>
-          </div>
 
             {/* Corrections Section */}
             {corrections.length > 0 && (
@@ -2746,6 +2263,8 @@ export default function AdminApp() {
               <div className="flex items-center gap-1.5 bg-slate-200/80 p-1 rounded-xl">
                 {[
                   { id: 'contact', label: 'Contact Us' },
+                  { id: 'appointment', label: 'Appointments' },
+                  { id: 'resource', label: 'Resources' },
                   { id: 'volunteer', label: 'Volunteers' },
                   { id: 'training', label: 'P.R.I.D.E. Training' },
                   { id: 'accessibility', label: 'A11y Reports' }
@@ -2765,22 +2284,6 @@ export default function AdminApp() {
               </div>
             </div>
 
-            {/* Export CSV action bar */}
-            <div className="flex items-center justify-between pb-2">
-              <span className="text-xs font-semibold text-slate-500">
-                Showing {inquiries.length} {inquiryType} submission{inquiries.length === 1 ? '' : 's'}
-              </span>
-              <button
-                type="button"
-                onClick={() => exportInquiriesToCsv(inquiries, inquiryType)}
-                className="px-3.5 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
-                title="Export submissions to CSV"
-              >
-                <Download className="w-3.5 h-3.5 text-purple-700" />
-                <span>Export CSV</span>
-              </button>
-            </div>
-
             {/* Inquiries List */}
             <div className="space-y-3">
               {inquiries.length === 0 ? (
@@ -2789,9 +2292,9 @@ export default function AdminApp() {
                 </div>
               ) : (
                 inquiries.map((inq) => (
-                  <div key={inq.id} className="bg-white rounded-2xl p-5 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs hover:border-purple-200 transition-colors">
-                    <div className="space-y-1 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
+                  <div key={inq.id} className="bg-white rounded-2xl p-5 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
                         <span className="font-bold text-sm text-slate-900">
                           {inq.name || inq.full_name || inq.contact_name || 'Anonymous Community Member'}
                         </span>
@@ -2802,12 +2305,11 @@ export default function AdminApp() {
                         }`}>
                           {inq.status}
                         </span>
-                        <span className="text-[10px] text-slate-400 font-mono">ID: {inq.id}</span>
                       </div>
 
                       <div className="text-xs text-slate-600">
                         {inq.subject && <span className="font-semibold block">{inq.subject}</span>}
-                        {inq.message && <p className="mt-1 line-clamp-2">{inq.message}</p>}
+                        {inq.message && <p className="mt-1">{inq.message}</p>}
                         {inq.barrier_description && (
                           <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-900 text-xs mt-1">
                             <strong>Barrier Reported:</strong> {inq.barrier_description}
@@ -2816,14 +2318,13 @@ export default function AdminApp() {
                         )}
                         {inq.roles_of_interest && <div>Roles: {inq.roles_of_interest}</div>}
                         {inq.course_title && <div>Requested Course: {inq.course_title}</div>}
-                        {inq.notes && <div className="text-[11px] text-amber-800 font-medium">Notes: {inq.notes}</div>}
                       </div>
 
                       <div className="text-[11px] text-slate-400 flex flex-wrap gap-3 pt-1">
                         <span>Email: {inq.email}</span>
                         {inq.phone && <span>Phone: {inq.phone}</span>}
                         {inq.city && <span>City: {inq.city}</span>}
-                        <span>Date: {inq.created_at ? new Date(inq.created_at).toLocaleDateString() : '—'}</span>
+                        <span>Date: {new Date(inq.created_at).toLocaleDateString()}</span>
                       </div>
                     </div>
 
@@ -2832,310 +2333,18 @@ export default function AdminApp() {
                         value={inq.status}
                         onChange={(e) => handleInquiryStatusChange(inq.id, e.target.value)}
                         className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-300 bg-white"
-                        title="Change submission status"
                       >
                         <option value="unread">Unread / Pending</option>
                         <option value="in_progress">In Progress</option>
                         <option value="resolved">Resolved</option>
                         <option value="archived">Archived</option>
                       </select>
-
-                      <button
-                        type="button"
-                        onClick={() => setSelectedInquiryView(inq)}
-                        className="p-1.5 rounded-lg text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 transition-colors cursor-pointer"
-                        title="View complete form information"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setEditingInquiry({ ...inq })}
-                        className="p-1.5 rounded-lg text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 transition-colors cursor-pointer"
-                        title="Edit entry"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteInquiry(inq.id)}
-                        className="p-1.5 rounded-lg text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors cursor-pointer"
-                        title="Delete entry"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
                     </div>
                   </div>
                 ))
               )}
             </div>
-
-            {/* MODAL: VIEW COMPLETE FORM INFORMATION */}
-            {selectedInquiryView && (
-              <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-                <div className="bg-white rounded-3xl max-w-2xl w-full border border-slate-200 shadow-2xl p-6 sm:p-8 space-y-6 my-8 animate-fade-in">
-                  <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-100 text-purple-900">
-                        {inquiryType} Submission
-                      </span>
-                      <span className="text-xs text-slate-400 font-mono">ID: {selectedInquiryView.id}</span>
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold capitalize bg-amber-100 text-amber-800">
-                        {selectedInquiryView.status || 'unread'}
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedInquiryView(null)}
-                      className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
-                    >
-                      <XCircle className="w-5 h-5" />
-                    </button>
-                  </div>
-
-                  <div className="space-y-4 text-xs">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200">
-                      <div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Name</span>
-                        <span className="text-sm font-extrabold text-slate-900 block mt-0.5">
-                          {selectedInquiryView.name || selectedInquiryView.full_name || selectedInquiryView.contact_name || 'Anonymous'}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Email</span>
-                        <a href={`mailto:${selectedInquiryView.email}`} className="text-xs font-semibold text-purple-700 hover:underline block mt-0.5">
-                          {selectedInquiryView.email || '—'}
-                        </a>
-                      </div>
-                      {selectedInquiryView.phone && (
-                        <div>
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Phone</span>
-                          <span className="text-xs font-semibold text-slate-700 block mt-0.5">{selectedInquiryView.phone}</span>
-                        </div>
-                      )}
-                      {selectedInquiryView.city && (
-                        <div>
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">City</span>
-                          <span className="text-xs font-semibold text-slate-700 block mt-0.5">{selectedInquiryView.city}</span>
-                        </div>
-                      )}
-                      <div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Date</span>
-                        <span className="text-xs text-slate-600 block mt-0.5">
-                          {selectedInquiryView.created_at ? new Date(selectedInquiryView.created_at).toLocaleString() : '—'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {(selectedInquiryView.subject || selectedInquiryView.course_title) && (
-                      <div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Subject / Course</span>
-                        <p className="text-sm font-bold text-slate-900 mt-0.5">{selectedInquiryView.subject || selectedInquiryView.course_title}</p>
-                      </div>
-                    )}
-
-                    {selectedInquiryView.message && (
-                      <div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Full Message</span>
-                        <p className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 leading-relaxed whitespace-pre-wrap mt-1">
-                          {selectedInquiryView.message}
-                        </p>
-                      </div>
-                    )}
-
-                    {selectedInquiryView.barrier_description && (
-                      <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-900">
-                        <strong className="block text-xs font-bold">Barrier Reported:</strong>
-                        <p className="mt-1">{selectedInquiryView.barrier_description}</p>
-                        {selectedInquiryView.page_url && <div className="text-[11px] text-rose-700 mt-1">Page URL: {selectedInquiryView.page_url}</div>}
-                      </div>
-                    )}
-
-                    {selectedInquiryView.notes && (
-                      <div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Staff Notes</span>
-                        <p className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 mt-1">
-                          {selectedInquiryView.notes}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold text-slate-500">Status:</span>
-                      <select
-                        value={selectedInquiryView.status || 'unread'}
-                        onChange={(e) => handleInquiryStatusChange(selectedInquiryView.id, e.target.value)}
-                        className="text-xs font-bold px-3 py-1.5 rounded-xl border border-slate-300 bg-white"
-                      >
-                        <option value="unread">Unread / Pending</option>
-                        <option value="in_progress">In Progress</option>
-                        <option value="resolved">Resolved</option>
-                        <option value="archived">Archived</option>
-                      </select>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditingInquiry({ ...selectedInquiryView });
-                          setSelectedInquiryView(null);
-                        }}
-                        className="px-4 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
-                      >
-                        <Edit className="w-3.5 h-3.5" />
-                        <span>Edit</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteInquiry(selectedInquiryView.id)}
-                        className="px-4 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        <span>Delete</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedInquiryView(null)}
-                        className="px-4 py-2 rounded-xl bg-slate-900 text-white font-bold text-xs hover:bg-slate-800 transition-colors cursor-pointer"
-                      >
-                        Close
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* MODAL: EDIT FORM SUBMISSION ENTRY */}
-            {editingInquiry && (
-              <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-                <div className="bg-white rounded-3xl max-w-xl w-full border border-slate-200 shadow-2xl p-6 sm:p-8 space-y-6 my-8 animate-fade-in">
-                  <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-                    <div>
-                      <h3 className="font-display text-lg font-black text-slate-950">Edit Submission Entry</h3>
-                      <p className="text-xs text-slate-500">ID: {editingInquiry.id}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setEditingInquiry(null)}
-                      className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
-                    >
-                      <XCircle className="w-5 h-5" />
-                    </button>
-                  </div>
-
-                  <form onSubmit={handleSaveInquiryEdit} className="space-y-4 text-xs">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Name</label>
-                        <input
-                          type="text"
-                          value={editingInquiry.name || editingInquiry.full_name || editingInquiry.contact_name || ''}
-                          onChange={(e) => setEditingInquiry(prev => ({ ...prev, name: e.target.value, full_name: e.target.value, contact_name: e.target.value }))}
-                          className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-600 font-medium"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Email</label>
-                        <input
-                          type="email"
-                          value={editingInquiry.email || ''}
-                          onChange={(e) => setEditingInquiry(prev => ({ ...prev, email: e.target.value }))}
-                          className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-600 font-medium"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Phone</label>
-                        <input
-                          type="text"
-                          value={editingInquiry.phone || ''}
-                          onChange={(e) => setEditingInquiry(prev => ({ ...prev, phone: e.target.value }))}
-                          className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-600 font-medium"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Status</label>
-                        <select
-                          value={editingInquiry.status || 'unread'}
-                          onChange={(e) => setEditingInquiry(prev => ({ ...prev, status: e.target.value }))}
-                          className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-600 font-semibold"
-                        >
-                          <option value="unread">Unread / Pending</option>
-                          <option value="in_progress">In Progress</option>
-                          <option value="resolved">Resolved</option>
-                          <option value="archived">Archived</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Subject / Title</label>
-                      <input
-                        type="text"
-                        value={editingInquiry.subject || editingInquiry.course_title || editingInquiry.barrier_description || ''}
-                        onChange={(e) => setEditingInquiry(prev => ({ ...prev, subject: e.target.value, course_title: e.target.value, barrier_description: e.target.value }))}
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-600 font-medium"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Message / Details</label>
-                      <textarea
-                        rows={4}
-                        value={editingInquiry.message || editingInquiry.skills_experience || editingInquiry.goals_and_notes || ''}
-                        onChange={(e) => setEditingInquiry(prev => ({ ...prev, message: e.target.value }))}
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-600 font-medium"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Staff Notes</label>
-                      <input
-                        type="text"
-                        value={editingInquiry.notes || ''}
-                        onChange={(e) => setEditingInquiry(prev => ({ ...prev, notes: e.target.value }))}
-                        placeholder="Internal notes on resolution or follow-up..."
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-600 font-medium"
-                      />
-                    </div>
-
-                    <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setEditingInquiry(null)}
-                        className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition-colors cursor-pointer"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="submit"
-                        className="px-5 py-2 rounded-xl bg-[#5A1E65] hover:bg-purple-900 text-white font-bold transition-colors cursor-pointer shadow-xs"
-                      >
-                        Save Changes
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              </div>
-            )}
           </div>
-        )}
-
-        {/* ==================================================================
-            TAB: SITE STATUS CONTROL
-            ================================================================== */}
-        {activeTab === 'status' && (
-          <SiteStatusManager />
         )}
 
         {/* ==================================================================
@@ -3155,7 +2364,7 @@ export default function AdminApp() {
                 }`}
               >
                 <ExternalLink className="w-3.5 h-3.5" />
-                <span>GitHub Storage & CDN</span>
+                <span>Media Storage & CDN</span>
               </button>
               <button
                 type="button"
@@ -3218,10 +2427,10 @@ export default function AdminApp() {
                     </span>
                   </div>
                   <h3 className="font-display text-xl font-bold text-slate-950 mt-1">
-                    GitHub Direct Storage & Global CDN Configuration
+                    Media Asset Storage & Global CDN Configuration
                   </h3>
                   <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
-                    Uploaded photographs are automatically compressed into optimized WebP/JPEG formats in your browser (max 1600px) and stored directly into your GitHub repository under <code>public/images/</code>. Images are distributed globally via high-speed CDN edges with zero layout collisions.
+                    Uploaded photographs are automatically compressed into optimized WebP/JPEG formats in your browser (max 1600px) and securely delivered via high-speed global CDN edges with zero layout collisions.
                   </p>
                 </div>
 
@@ -3237,25 +2446,25 @@ export default function AdminApp() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">GitHub Organization / Owner</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Storage Organization / Owner</label>
                     <input
                       type="text"
                       required
                       value={ghOwner}
                       onChange={(e) => setGhOwner(e.target.value)}
-                      placeholder="diversity-collective"
+                      placeholder="organization-or-user"
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-mono"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Repository Name</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Storage Repository / Bucket</label>
                     <input
                       type="text"
                       required
                       value={ghRepo}
                       onChange={(e) => setGhRepo(e.target.value)}
-                      placeholder="diversity-collectives-v1"
+                      placeholder="media-assets"
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-mono"
                     />
                   </div>
@@ -3313,7 +2522,7 @@ export default function AdminApp() {
                     disabled={ghTesting}
                     className="px-6 py-2.5 rounded-xl bg-[#5A1E65] hover:bg-[#43144A] text-white text-xs font-extrabold shadow-md cursor-pointer transition-colors disabled:opacity-50"
                   >
-                    {ghTesting ? 'Testing Connection...' : 'Save & Verify GitHub Storage'}
+                    {ghTesting ? 'Testing Connection...' : 'Save & Verify Media Storage'}
                   </button>
                 </div>
               </form>
@@ -3633,65 +2842,6 @@ export default function AdminApp() {
 
           </div>
         )}
-
-        {/* ==================================================================
-            TAB: MEDIA LIBRARY & ASSET MANAGER
-            ================================================================== */}
-        {activeTab === 'media' && (
-          <MediaLibraryManager onTriggerFeedback={setFeedbackMsg} />
-        )}
-
-        {/* ==================================================================
-            TAB: WORKFLOWS & COLLABORATION CENTER
-            ================================================================== */}
-        {activeTab === 'workflows' && (
-          <CollaborationCenter onTriggerFeedback={setFeedbackMsg} />
-        )}
-
-        {/* ==================================================================
-            TAB: OPERATIONS, HEALTH & FIREWALL
-            ================================================================== */}
-        {activeTab === 'operations' && (
-          <OperationsCenter onTriggerFeedback={setFeedbackMsg} />
-        )}
-
-        {/* ==================================================================
-            TAB: AI STUDIO & SMART INSIGHTS
-            ================================================================== */}
-        {activeTab === 'ai' && (
-          <SmartAutomationCenter onTriggerFeedback={setFeedbackMsg} onNavigateToTab={setActiveTab} />
-        )}
-
-        {/* ==================================================================
-            TAB: IAM, 2FA & CUSTOM ROLE BUILDER
-            ================================================================== */}
-        {activeTab === 'iam' && (
-          <IamSecurityCenter onTriggerFeedback={setFeedbackMsg} />
-        )}
-
-        {/* ==================================================================
-            GLOBAL MODALS (7-Pillar Framework)
-            ================================================================== */}
-        <CommandPaletteModal
-          isOpen={showCommandPalette}
-          onClose={() => setShowCommandPalette(false)}
-          onNavigate={setActiveTab}
-          onTriggerAction={handleTriggerAction}
-        />
-        <DashboardCustomizerModal
-          isOpen={showDashboardCustomizer}
-          onClose={() => setShowDashboardCustomizer(false)}
-          onLayoutChange={setDashboardLayout}
-          onThemeChange={setThemePrefs}
-        />
-        <UnifiedCrudModal
-          isOpen={showUnifiedCrud}
-          onClose={() => { setShowUnifiedCrud(false); setCrudTargetBiz(null); }}
-          initialData={crudTargetBiz}
-          schema={[]}
-          onSave={handleSaveBizCrud}
-          onTriggerFeedback={setFeedbackMsg}
-        />
 
       </main>
     </div>

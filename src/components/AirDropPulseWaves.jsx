@@ -86,8 +86,6 @@ const AIRDROP_PALETTES = [
  * that seamlessly illuminate the card surface with zero device lag.
  */
 export default function AirDropPulseWaves({ active = false, bizId = '', category = '', seed = 0 }) {
-  if (!active) return null;
-
   // Derive a distinct, consistent color palette per business card, or randomize on tap
   const palette = useMemo(() => {
     let hash = seed || 0;
@@ -99,6 +97,8 @@ export default function AirDropPulseWaves({ active = false, bizId = '', category
     const index = Math.abs(hash) % AIRDROP_PALETTES.length;
     return AIRDROP_PALETTES[index];
   }, [bizId, category, seed]);
+
+  if (!active) return null;
 
   return (
     <div className="airdrop-pulse-wrapper pointer-events-none" aria-hidden="true">

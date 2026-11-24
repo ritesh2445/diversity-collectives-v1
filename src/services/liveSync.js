@@ -15,7 +15,8 @@ export const STORAGE_KEYS = {
   CMS_DATA: 'dcvc_live_cms_data',
   STATE_META: 'dcvc_site_state_meta',
   SITE_STATUS: 'dcvc_site_status',
-  FEATURES: 'dcvc_site_features_v1'
+  FEATURES: 'dcvc_site_features_v1',
+  CARD_THEMES: 'dcvc_card_category_themes'
 };
 
 export const SYNC_EVENTS = {
@@ -25,20 +26,28 @@ export const SYNC_EVENTS = {
   CMS_CHANGED: 'dcvc-cms-updated',
   STATUS_CHANGED: 'dcvc-live-sync-status',
   SITE_STATUS_CHANGED: 'dcvc-site-status-changed',
-  FEATURES_CHANGED: 'dcvc-features-updated'
+  FEATURES_CHANGED: 'dcvc-features-updated',
+  CARD_THEMES_CHANGED: 'dcvc_card_themes_updated'
 };
 
 const CHANNEL_NAME = 'dcvc_live_sync';
 
-function getApiBase() {
+export function getApiBase() {
   try {
     if (typeof import.meta !== 'undefined' && import.meta.env) {
-      return import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '/api';
+      const envUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL;
+      if (envUrl) {
+        return envUrl.replace(/\/+$/, '');
+      }
     }
   } catch {
     // Node/SSR test environment
   }
   return '/api';
+}
+
+export function getFallbackApiBase() {
+  return 'https://dcvc-api.diversity-collective-vc.workers.dev/api';
 }
 
 let sharedChannel = null;
@@ -307,6 +316,36 @@ export function applySiteStatePayload(state, { broadcast = false } = {}) {
       }
     }
 
+    const deletedPodcastsList = Array.from(new Set([
+      ...(existing.deletedPodcasts || []),
+      ...(Array.isArray(state.cmsData.deletedPodcasts) ? state.cmsData.deletedPodcasts : [])
+    ]));
+    const deletedPodcastsSet = new Set(deletedPodcastsList.map(x => String(x).toLowerCase().trim()));
+
+    const deletedNewsList = Array.from(new Set([
+      ...(existing.deletedNews || []),
+      ...(Array.isArray(state.cmsData.deletedNews) ? state.cmsData.deletedNews : [])
+    ]));
+    const deletedNewsSet = new Set(deletedNewsList.map(x => String(x).toLowerCase().trim()));
+
+    const deletedResourcesList = Array.from(new Set([
+      ...(existing.deletedResources || []),
+      ...(Array.isArray(state.cmsData.deletedResources) ? state.cmsData.deletedResources : [])
+    ]));
+    const deletedResourcesSet = new Set(deletedResourcesList.map(x => String(x).toLowerCase().trim()));
+
+    const deletedSponsorshipDocsList = Array.from(new Set([
+      ...(existing.deletedSponsorshipDocuments || []),
+      ...(Array.isArray(state.cmsData.deletedSponsorshipDocuments) ? state.cmsData.deletedSponsorshipDocuments : [])
+    ]));
+    const deletedSponsorshipDocsSet = new Set(deletedSponsorshipDocsList.map(x => String(x).toLowerCase().trim()));
+
+    const deletedCommunityGroupsList = Array.from(new Set([
+      ...(existing.deletedCommunityGroups || []),
+      ...(Array.isArray(state.cmsData.deletedCommunityGroups) ? state.cmsData.deletedCommunityGroups : [])
+    ]));
+    const deletedCommunityGroupsSet = new Set(deletedCommunityGroupsList.map(x => String(x).toLowerCase().trim()));
+
     const mergedCms = {
       ...existing,
       ...state.cmsData,
@@ -314,6 +353,36 @@ export function applySiteStatePayload(state, { broadcast = false } = {}) {
       deletedPrograms: deletedSlugs,
       staff: mergedStaff,
       deletedStaff: deletedStaff,
+      podcasts: (Array.isArray(state.cmsData.podcasts) ? state.cmsData.podcasts : (existing.podcasts || [])).filter(p => {
+        const id = p?.id ? String(p.id).toLowerCase().trim() : '';
+        const slug = p?.slug ? String(p.slug).toLowerCase().trim() : '';
+        return (!id || !deletedPodcastsSet.has(id)) && (!slug || !deletedPodcastsSet.has(slug));
+      }),
+      deletedPodcasts: deletedPodcastsList,
+      news: (Array.isArray(state.cmsData.news) ? state.cmsData.news : (existing.news || [])).filter(n => {
+        const id = n?.id ? String(n.id).toLowerCase().trim() : '';
+        const slug = n?.slug ? String(n.slug).toLowerCase().trim() : '';
+        return (!id || !deletedNewsSet.has(id)) && (!slug || !deletedNewsSet.has(slug));
+      }),
+      deletedNews: deletedNewsList,
+      resources: (Array.isArray(state.cmsData.resources) ? state.cmsData.resources : (existing.resources || [])).filter(r => {
+        const id = r?.id ? String(r.id).toLowerCase().trim() : '';
+        return !id || !deletedResourcesSet.has(id);
+      }),
+      deletedResources: deletedResourcesList,
+      sponsorshipDocuments: (Array.isArray(state.cmsData.sponsorshipDocuments) ? state.cmsData.sponsorshipDocuments : (existing.sponsorshipDocuments || [])).filter(d => {
+        const id = d?.id ? String(d.id).toLowerCase().trim() : '';
+        return !id || !deletedSponsorshipDocsSet.has(id);
+      }),
+      deletedSponsorshipDocuments: deletedSponsorshipDocsList,
+      communityGroups: (Array.isArray(state.cmsData.communityGroups) ? state.cmsData.communityGroups : (existing.communityGroups || [])).filter(g => {
+        const id = g?.id ? String(g.id).toLowerCase().trim() : '';
+        const slug = g?.slug ? String(g.slug).toLowerCase().trim() : '';
+        return (!id || !deletedCommunityGroupsSet.has(id)) && (!slug || !deletedCommunityGroupsSet.has(slug));
+      }),
+      deletedCommunityGroups: deletedCommunityGroupsList,
+      businesses: Array.isArray(state.cmsData.businesses) ? state.cmsData.businesses : (existing.businesses || []),
+      weeklySchedule: Array.isArray(state.cmsData.weeklySchedule) ? state.cmsData.weeklySchedule : (existing.weeklySchedule || []),
       settings: { ...(existing.settings || {}), ...(state.cmsData.settings || {}) }
     };
     if (Array.isArray(mergedCms.events)) {
@@ -357,6 +426,17 @@ export function applySiteStatePayload(state, { broadcast = false } = {}) {
     notifyWindowEvent(SYNC_EVENTS.FEATURES_CHANGED, state.siteFeatures);
   }
 
+  if (state.cardThemes && typeof state.cardThemes === 'object') {
+    if (typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem(STORAGE_KEYS.CARD_THEMES, JSON.stringify(state.cardThemes));
+      } catch (err) {
+        console.warn('[LiveSync] LocalStorage write error (CARD_THEMES quota):', err);
+      }
+    }
+    notifyWindowEvent(SYNC_EVENTS.CARD_THEMES_CHANGED, state.cardThemes);
+  }
+
   if (broadcast) {
     broadcastPatch(state);
   }
@@ -372,12 +452,30 @@ export async function fetchAndApplyLiveSiteState({ force = false } = {}) {
     try {
       const meta = getSiteStateMeta();
       const sinceQuery = !force && meta?.version ? `?sinceVersion=${Number(meta.version)}` : '';
-      const res = await fetch(`${getApiBase()}/site-state${sinceQuery}`, {
-        method: 'GET',
-        cache: 'no-store'
-      });
-      if (!res.ok) return null;
-      const data = await res.json();
+      let res = null;
+      try {
+        res = await fetch(`${getApiBase()}/site-state${sinceQuery}`, {
+          method: 'GET',
+          cache: 'no-store'
+        });
+      } catch (e) {
+        // Fallback retry
+      }
+
+      if (!res || !res.ok) {
+        const fallbackBase = getFallbackApiBase();
+        if (getApiBase() !== fallbackBase) {
+          try {
+            res = await fetch(`${fallbackBase}/site-state${sinceQuery}`, {
+              method: 'GET',
+              cache: 'no-store'
+            });
+          } catch (e) {}
+        }
+      }
+
+      if (!res || !res.ok) return null;
+      const data = await res.json().catch(() => null);
       if (!data?.success) return null;
 
       if (data.unchanged) {
@@ -453,21 +551,56 @@ export async function publishAdminSitePatch(patch) {
     };
   }
 
+  // Include card category themes in outgoing patch if not explicitly overridden
+  if (!effectivePatch.cardThemes && typeof localStorage !== 'undefined') {
+    try {
+      const storedThemes = localStorage.getItem(STORAGE_KEYS.CARD_THEMES);
+      if (storedThemes) {
+        effectivePatch = {
+          ...effectivePatch,
+          cardThemes: JSON.parse(storedThemes)
+        };
+      }
+    } catch {}
+  }
+
   const token = getAdminSessionToken();
 
   try {
-    const res = await fetch(`${getApiBase()}/admin/site-state`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
-      },
-      credentials: 'include',
-      body: JSON.stringify(effectivePatch)
-    });
+    let res = null;
+    try {
+      res = await fetch(`${getApiBase()}/admin/site-state`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        credentials: 'include',
+        body: JSON.stringify(effectivePatch)
+      });
+    } catch (e) {
+      // Primary fetch failed, try fallback
+    }
 
-    const data = await res.json().catch(() => ({}));
-    if (res.ok && data.success) {
+    if (!res || (!res.ok && (res.status === 404 || res.status >= 500))) {
+      const fallbackBase = getFallbackApiBase();
+      if (getApiBase() !== fallbackBase) {
+        try {
+          res = await fetch(`${fallbackBase}/admin/site-state`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {})
+            },
+            credentials: 'include',
+            body: JSON.stringify(effectivePatch)
+          });
+        } catch (e) {}
+      }
+    }
+
+    const data = res ? await res.json().catch(() => ({})) : {};
+    if (res && res.ok && data.success) {
       setSiteStateMeta({
         version: Number(data.version || 1),
         updatedAt: data.updatedAt || new Date().toISOString(),
@@ -646,6 +779,12 @@ export function initLiveSiteSync({ onThemeApply, intervalMs = 12000 } = {}) {
       } catch {
         // Ignore
       }
+    } else if (e.key === STORAGE_KEYS.CARD_THEMES && e.newValue) {
+      try {
+        notifyWindowEvent(SYNC_EVENTS.CARD_THEMES_CHANGED, JSON.parse(e.newValue));
+      } catch {
+        // Ignore
+      }
     }
   };
 
@@ -664,6 +803,9 @@ export function initLiveSiteSync({ onThemeApply, intervalMs = 12000 } = {}) {
       }
       if (msg.patch.siteStatus) {
         notifyWindowEvent(SYNC_EVENTS.SITE_STATUS_CHANGED, msg.patch.siteStatus);
+      }
+      if (msg.patch.cardThemes) {
+        notifyWindowEvent(SYNC_EVENTS.CARD_THEMES_CHANGED, msg.patch.cardThemes);
       }
     } else if (msg.type === 'SITE_VERSION') {
       fetchAndApplyLiveSiteState();

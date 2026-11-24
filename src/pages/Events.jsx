@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { 
   Search, 
   Clock, 
@@ -31,7 +31,8 @@ import {
   getLocalizedWeekdays,
   isUpcomingEvent,
   isPastEvent,
-  getPacificEventEndTimestamp
+  getPacificEventEndTimestamp,
+  getCurrentPacificDate
 } from '../utils/eventDates';
 import { translationService } from '../services/translationService';
 
@@ -49,20 +50,32 @@ export default function Events() {
   }, []);
 
   const [events, setEvents] = useState(() => cmsStore.getEvents());
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchInput, setSearchInput] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [viewMode, setViewMode] = useState('list'); // 'list' | 'calendar'
-  const [activeTab, setActiveTab] = useState('upcoming'); // 'upcoming' | 'past'
+  const [searchParams] = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get('search') || '');
+  const [searchInput, setSearchInput] = useState(() => searchParams.get('search') || '');
+  const [selectedCategory, setSelectedCategory] = useState(() => searchParams.get('category') || 'All');
+  const [viewMode, setViewMode] = useState(() => searchParams.get('view') === 'calendar' ? 'calendar' : 'list'); // 'list' | 'calendar'
+  const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') === 'past' ? 'past' : 'upcoming'); // 'upcoming' | 'past'
+
+  useEffect(() => {
+    const cat = searchParams.get('category');
+    const search = searchParams.get('search');
+    const view = searchParams.get('view');
+    const tab = searchParams.get('tab');
+    if (cat !== null) setSelectedCategory(cat || 'All');
+    if (search !== null) {
+      setSearchQuery(search);
+      setSearchInput(search);
+    }
+    if (view && ['list', 'calendar'].includes(view)) setViewMode(view);
+    if (tab && ['upcoming', 'past'].includes(tab)) setActiveTab(tab);
+  }, [searchParams]);
 
   // Traditional Monthly Calendar State — smartly focuses on active scheduled events
   const [currentCalendarDate, setCurrentCalendarDate] = useState(() =>
     findBestCalendarMonth(cmsStore.getEvents())
   );
   const [selectedDateFilter, setSelectedDateFilter] = useState(null);
-
-  const upcomingCount = useMemo(() => (events || []).filter(isUpcomingEvent).length, [events]);
-  const pastCount = useMemo(() => (events || []).filter(isPastEvent).length, [events]);
 
   useEffect(() => {
     const unsubscribe = cmsStore.subscribe((data) => {
@@ -116,17 +129,65 @@ export default function Events() {
     );
   }, [events]);
 
+  // Calendar calculations for selected month
+  const calendarYear = currentCalendarDate.getFullYear();
+  const calendarMonth = currentCalendarDate.getMonth(); // 0-11
+  const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+  const firstDayOfWeek = new Date(calendarYear, calendarMonth, 1).getDay(); // 0 (Sun) to 6 (Sat)
+
+  const currentMonthName = getLocalizedMonthName(calendarMonth, currentLang);
+  const nextMonthDate = new Date(calendarYear, calendarMonth + 1, 1);
+  const nextMonthName = getLocalizedMonthName(nextMonthDate.getMonth(), currentLang);
+  const prevMonthDate = new Date(calendarYear, calendarMonth - 1, 1);
+  const prevMonthName = getLocalizedMonthName(prevMonthDate.getMonth(), currentLang);
+
+  const monthEvents = useMemo(() => {
+    return (events || []).filter((e) => {
+      const parsed = parseEventDate(e);
+      return parsed && parsed.monthIndex === calendarMonth && parsed.year === calendarYear;
+    });
+  }, [events, calendarMonth, calendarYear]);
+
+  const upcomingCount = useMemo(() => {
+    const pacificNow = getCurrentPacificDate();
+    const isCurrentCalendarMonth = calendarYear === pacificNow.year && calendarMonth === pacificNow.monthIndex;
+    if (isCurrentCalendarMonth) {
+      return monthEvents.filter(isUpcomingEvent).length;
+    }
+    return monthEvents.filter((e) => {
+      const parsed = parseEventDate(e);
+      if (!parsed) return false;
+      if (parsed.year > pacificNow.year) return true;
+      if (parsed.year === pacificNow.year && parsed.monthIndex > pacificNow.monthIndex) return true;
+      return isUpcomingEvent(e);
+    }).length;
+  }, [monthEvents, calendarMonth, calendarYear]);
+
+  const pastCount = useMemo(() => {
+    return monthEvents.filter(isPastEvent).length;
+  }, [monthEvents]);
+
   const filteredEvents = useMemo(() => {
+    const pacificNow = getCurrentPacificDate();
+    const isCurrentCalendarMonth = calendarYear === pacificNow.year && calendarMonth === pacificNow.monthIndex;
+
     return (events || [])
       .filter((evt) => {
         // If user explicitly clicked a day in calendar view or date pill, show that date
         if (selectedDateFilter) {
           const dateKey = getEventDateKey(evt);
           if (dateKey !== selectedDateFilter) return false;
-        } else if (viewMode === 'list') {
-          // In list view: strictly enforce Upcoming vs Past based on current date & Pacific timezone
-          if (activeTab === 'upcoming' && !isUpcomingEvent(evt)) return false;
-          if (activeTab === 'past' && !isPastEvent(evt)) return false;
+        } else {
+          // Strictly show events for the currently selected calendar month & year
+          const parsed = parseEventDate(evt);
+          if (!parsed || parsed.monthIndex !== calendarMonth || parsed.year !== calendarYear) {
+            return false;
+          }
+
+          if (viewMode === 'list') {
+            if (activeTab === 'past' && !isPastEvent(evt)) return false;
+            if (activeTab === 'upcoming' && isCurrentCalendarMonth && !isUpcomingEvent(evt)) return false;
+          }
         }
 
         const q = searchQuery.toLowerCase();
@@ -146,13 +207,7 @@ export default function Events() {
         // Past events sort descending (most recent first), upcoming sort ascending (soonest first)
         return activeTab === 'past' && !selectedDateFilter ? tsB - tsA : tsA - tsB;
       });
-  }, [events, searchQuery, selectedCategory, selectedDateFilter, viewMode, activeTab]);
-
-  // Calendar calculations for selected month
-  const calendarYear = currentCalendarDate.getFullYear();
-  const calendarMonth = currentCalendarDate.getMonth(); // 0-11
-  const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
-  const firstDayOfWeek = new Date(calendarYear, calendarMonth, 1).getDay(); // 0 (Sun) to 6 (Sat)
+  }, [events, searchQuery, selectedCategory, selectedDateFilter, viewMode, activeTab, calendarMonth, calendarYear]);
 
   // Group events by day of current calendar month
   const eventsByDay = useMemo(() => {
@@ -171,11 +226,13 @@ export default function Events() {
   const handlePrevMonth = () => {
     setCurrentCalendarDate(new Date(calendarYear, calendarMonth - 1, 1));
     setSelectedDateFilter(null);
+    document.getElementById('events-container')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const handleNextMonth = () => {
     setCurrentCalendarDate(new Date(calendarYear, calendarMonth + 1, 1));
     setSelectedDateFilter(null);
+    document.getElementById('events-container')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const handleSelectDay = (day) => {
@@ -207,7 +264,7 @@ export default function Events() {
             </span>
             <h1 className="font-display text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-slate-950 leading-[1.05]">
               Cultural Calendar & <br />
-              <span className="font-serif italic font-normal text-[#5A1E65]">Upcoming Gatherings.</span>
+              <span className="font-serif italic font-normal text-[#5A1E65]">Upcoming Events.</span>
             </h1>
             <p className="font-serif italic text-xl md:text-2xl text-slate-700 leading-relaxed pt-2">
               From weekly youth circles and free testing clinics to seaside Pride and annual galas, explore upcoming events across Ventura County.
@@ -481,7 +538,7 @@ export default function Events() {
               <div className="mt-6 p-4 rounded-2xl bg-purple-50 border border-purple-200 flex flex-wrap items-center justify-between gap-3 animate-fade-in">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-slate-700">
-                    Filtered by Date: <strong>{selectedDateFilter}</strong> ({filteredEvents.length} gathering{filteredEvents.length === 1 ? '' : 's'} found)
+                    Filtered by Date: <strong>{selectedDateFilter}</strong> ({filteredEvents.length} event{filteredEvents.length === 1 ? '' : 's'} found)
                   </span>
                 </div>
                 <button
@@ -489,7 +546,7 @@ export default function Events() {
                   onClick={() => setSelectedDateFilter(null)}
                   className="px-3 py-1.5 rounded-xl bg-purple-700 text-white font-bold text-xs hover:bg-purple-800 transition-colors cursor-pointer"
                 >
-                  Show All Gatherings for Month
+                  Show All Events for Month
                 </button>
               </div>
             )}
@@ -506,30 +563,30 @@ export default function Events() {
       )}
 
       {/* Event Cards Section */}
-      <section className="container-clean py-8">
+      <section className="container-clean py-8" id="events-container">
         
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
             <h2 className="font-display text-2xl sm:text-3xl font-black text-slate-950">
               {selectedDateFilter
-                ? 'Gatherings on Selected Date'
+                ? 'Events on Selected Date'
                 : viewMode === 'calendar'
-                ? 'Events for Selected Timeframe'
+                ? `Events for ${currentMonthName} ${calendarYear}`
                 : viewMode === 'weekly'
-                ? 'All Upcoming Gatherings'
+                ? 'All Upcoming Events'
                 : activeTab === 'upcoming'
-                ? 'Upcoming Gatherings'
-                : 'Past Gatherings Archive'}
+                ? `Events for ${currentMonthName} ${calendarYear}`
+                : `Past Events Archive (${currentMonthName} ${calendarYear})`}
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 font-medium">
-              Showing {filteredEvents.length} event{filteredEvents.length === 1 ? '' : 's'}
+              Showing {filteredEvents.length} event{filteredEvents.length === 1 ? '' : 's'} for {currentMonthName} {calendarYear}
               {selectedCategory !== 'All' ? ` in ${selectedCategory}` : ''}
               {searchQuery ? ` matching "${searchQuery}"` : ''}
-              {activeTab === 'upcoming' && !selectedDateFilter ? ' · Live time-evaluated' : ''}
+              {activeTab === 'upcoming' && !selectedDateFilter ? ' · Current Month' : ''}
             </p>
           </div>
 
-          {/* Toggle between Upcoming Gatherings and Past Archive in Cards View */}
+          {/* Toggle between Upcoming Events and Past Archive in Cards View */}
           {viewMode === 'list' && !selectedDateFilter && (
             <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-2xl border border-slate-200 self-start sm:self-auto">
               <button
@@ -560,22 +617,37 @@ export default function Events() {
 
         {filteredEvents.length === 0 ? (
           <div className="p-16 text-center bg-slate-50 rounded-3xl border border-slate-200 space-y-3">
-            <p className="font-display text-xl font-bold text-slate-900">No gatherings match your criteria.</p>
-            <p className="text-xs text-slate-500">Try adjusting your category filter, selected date, or search terms.</p>
-            <button 
-              onClick={() => { 
-                setSearchInput('');
-                setSearchQuery(''); 
-                setSelectedCategory('All'); 
-                setSelectedDateFilter(null);
-              }}
-              className="btn-primary py-2 px-5 text-xs font-bold mt-2 cursor-pointer"
-            >
-              Reset Filters
-            </button>
+            <p className="font-display text-xl font-bold text-slate-900">No events match your criteria for {currentMonthName} {calendarYear}.</p>
+            <p className="text-xs text-slate-500">Try adjusting your category filter, selected date, or browse upcoming months.</p>
+            <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+              <button 
+                onClick={() => { 
+                  setSearchInput('');
+                  setSearchQuery(''); 
+                  setSelectedCategory('All'); 
+                  setSelectedDateFilter(null);
+                }}
+                className="btn-primary py-2 px-5 text-xs font-bold cursor-pointer"
+              >
+                Reset Filters
+              </button>
+              <button
+                type="button"
+                onClick={handleNextMonth}
+                className="px-5 py-2 rounded-xl bg-[#5A1E65] text-white text-xs font-bold cursor-pointer hover:bg-[#43144A] transition-colors"
+              >
+                View Events for {nextMonthName}
+              </button>
+            </div>
           </div>
         ) : (
-          <div className="space-y-6 perspective-1000">
+          <MobileCarousel
+            cols={1}
+            autoScrollMs={0}
+            showDots={true}
+            cardClassName="h-full"
+            className="lg:gap-6"
+          >
             {filteredEvents.map((evt, idx) => {
               const dateGradients = [
                 'from-purple-950 via-purple-900 to-indigo-950 text-white',
@@ -587,11 +659,11 @@ export default function Events() {
               return (
                 <CardSpotlight 
                   key={evt.id}
-                  className="glass-card p-6 sm:p-8 rounded-3xl border-2 border-slate-200/90 hover:border-[#5A1E65]/80 transition-all duration-200 shadow-sm hover:shadow-xl"
-                  tilt={true}
-                  maxTilt={2.2}
-                  scale={1.008}
-                  glare={true}
+                  className="group relative overflow-hidden rounded-3xl border-2 border-purple-200/70 hover:border-[#5A1E65] bg-gradient-to-br from-white via-purple-50/35 to-amber-50/25 p-6 sm:p-7 shadow-sm hover:shadow-xl transition-all duration-300 h-full flex flex-col justify-between"
+                  tilt={false}
+                  maxTilt={0}
+                  scale={1}
+                  glare={false}
                 >
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
                     
@@ -605,24 +677,24 @@ export default function Events() {
                       const badgeYear = parsedDate?.yearStr || evt.year || '2026';
                       return (
                         <div className="md:col-span-2 flex md:justify-center">
-                          <div className={`flex flex-col items-center justify-center min-w-[80px] p-4 rounded-2xl bg-gradient-to-b ${dateGradients[idx % dateGradients.length]} shadow-md`}>
+                          <div className={`flex flex-col items-center justify-center min-w-[100px] sm:min-w-[110px] p-4 sm:p-5 rounded-2xl bg-gradient-to-b ${dateGradients[idx % dateGradients.length]} shadow-md text-white`}>
                             <span
-                              className="text-[10px] font-black uppercase tracking-wider text-amber-200 notranslate"
+                              className="text-xs font-black uppercase tracking-wider text-amber-200 notranslate leading-tight"
                               translate="no"
                             >
                               {badgeMonth}
                             </span>
-                            <span className="font-display text-2xl sm:text-3xl font-black">{badgeDay}</span>
-                            <span className="text-[10px] font-mono text-white/70 mt-0.5">{badgeYear}</span>
+                            <span className="font-display text-3xl sm:text-4xl font-black leading-tight pt-0.5">{badgeDay}</span>
+                            <span className="text-xs font-mono text-white/80 mt-0.5">{badgeYear}</span>
                           </div>
                         </div>
                       );
                     })()}
 
                     {/* Event Details */}
-                    <div className="md:col-span-7 space-y-2">
+                    <div className="md:col-span-7 space-y-2.5">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-purple-50 text-[#5A1E65] border border-purple-200">
+                        <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-purple-100/80 text-[#5A1E65] border border-purple-200">
                           {evt.category}
                         </span>
                         {evt.isCancelled && (
@@ -630,13 +702,13 @@ export default function Events() {
                             ⚠️ Cancelled / Rescheduled
                           </span>
                         )}
-                        <span className="text-xs text-slate-500 font-medium flex items-center gap-1">
+                        <span className="text-xs text-slate-600 font-bold flex items-center gap-1 bg-white/80 px-2.5 py-0.5 rounded-full border border-slate-200/80">
                           <Clock className="w-3.5 h-3.5 text-[#5A1E65]" /> {evt.time}
                         </span>
                       </div>
 
-                      <h2 className="font-display text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
-                        <Link to={`/events/${evt.slug}`} className="hover:text-[#5A1E65] transition-colors">
+                      <h2 className="font-display text-2xl sm:text-3xl font-black text-slate-950 tracking-tight break-words min-w-0">
+                        <Link to={`/events/${evt.slug}`} className="hover:text-[#5A1E65] transition-colors break-words">
                           {evt.title}
                         </Link>
                       </h2>
@@ -651,11 +723,11 @@ export default function Events() {
                         </div>
                       )}
 
-                      <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-medium">
+                      <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-medium">
                         {evt.description}
                       </p>
 
-                      <div className="flex items-center gap-1.5 text-xs text-slate-500 pt-1 font-medium">
+                      <div className="flex items-center gap-1.5 text-xs text-slate-600 pt-1 font-semibold">
                         <MapPin className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
                         <span>{evt.location} · {evt.address}</span>
                       </div>
@@ -663,20 +735,18 @@ export default function Events() {
 
                     {/* Actions & Flyer Showcase */}
                     <div className="md:col-span-3 flex flex-col md:items-end gap-2.5 relative z-20">
-                      {(evt.image || (Array.isArray(evt.images) && evt.images.length > 0)) && (
-                        <div className="w-full aspect-[16/10] rounded-2xl overflow-hidden border border-purple-200/80 shadow-xs mb-1">
-                          <AutoSlideImage
-                            images={Array.isArray(evt.images) && evt.images.length > 0 ? evt.images : [evt.image || '/images/community-gathering.jpg']}
-                            alt={evt.title}
-                            aspectRatio="aspect-[16/10]"
-                            className="w-full h-full"
-                            imageFit="cover"
-                            fallbackSrc="/images/community-gathering.jpg"
-                            showDots={true}
-                            showArrows={false}
-                          />
-                        </div>
-                      )}
+                      <div className="w-full aspect-[16/10] rounded-2xl overflow-hidden border border-purple-200/90 shadow-sm bg-slate-100 mb-1">
+                        <AutoSlideImage
+                          images={Array.isArray(evt.images) && evt.images.length > 0 ? evt.images : [evt.image || '/images/community-gathering.jpg']}
+                          alt={evt.title}
+                          aspectRatio="aspect-[16/10]"
+                          className="w-full h-full"
+                          imageFit="cover"
+                          fallbackSrc="/images/community-gathering.jpg"
+                          showDots={true}
+                          showArrows={false}
+                        />
+                      </div>
                       <Link
                         to={`/events/${evt.slug}`}
                         className="btn-primary py-3 px-6 text-xs font-bold w-full md:w-auto text-center shadow-md hover:shadow-xl inline-flex items-center justify-center gap-1.5 cursor-pointer"
@@ -706,7 +776,7 @@ export default function Events() {
                           </Link>
                         )
                       ) : (
-                        <span className="text-[11px] text-slate-400 font-medium">Free Drop-In · No Ticket Needed</span>
+                        <span className="text-[11px] text-slate-500 font-bold bg-white/70 px-2.5 py-0.5 rounded-full border border-slate-200/80">Free Drop-In · All Welcome</span>
                       )}
                     </div>
 
@@ -714,8 +784,28 @@ export default function Events() {
                 </CardSpotlight>
               );
             })}
-          </div>
+          </MobileCarousel>
         )}
+
+        {/* View Events for Next Month (and Previous Month) */}
+        <div className="pt-8 pb-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={handlePrevMonth}
+            className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-white hover:bg-slate-50 border-2 border-slate-200 text-slate-700 font-bold text-xs sm:text-sm shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <ChevronLeft className="w-4 h-4 text-[#5A1E65]" />
+            <span>View Events for {prevMonthName}</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleNextMonth}
+            className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-[#5A1E65] hover:bg-[#43144A] text-white font-black text-xs sm:text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2.5 cursor-pointer hover:scale-102 active:scale-98"
+          >
+            <span>View Events for {nextMonthName}</span>
+            <ArrowRight className="w-4 h-4 text-amber-300" />
+          </button>
+        </div>
 
       </section>
 
@@ -728,10 +818,10 @@ export default function Events() {
               <span>ANNUAL FLAGSHIPS</span>
             </span>
             <h3 className="font-display text-2xl md:text-3xl lg:text-4xl font-black text-white">
-              Signature Gatherings of Ventura County
+              Signature Events of Ventura County
             </h3>
             <p className="text-sm md:text-base text-purple-100 max-w-2xl leading-relaxed">
-              Throughout the year, DCVC convenes our county for premier celebratory milestones — including Ventura County Pride, the Diversity Gala, and the AIDS Walk.
+              Throughout the year, DCVC convenes our county for premier celebratory milestones — including Ventura County Pride, the Diversity Gala, AIDS Walk Ventura, Pride Prom, and Transgender Day of Remembrance.
             </p>
 
             <MobileCarousel cols={3} autoScrollMs={0} className="pt-4">

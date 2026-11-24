@@ -125,6 +125,20 @@ describe('DCVC Requested Updates & Weekly Recurring Calendar Engine', () => {
         assert.ok(upcoming[i].date <= upcoming[i + 1].date, 'Must be sorted in chronological order');
       }
     });
+
+    it('all weekly programs link to specific program pages rather than general community', () => {
+      DEFAULT_WEEKLY_SCHEDULE.forEach(prog => {
+        assert.ok(
+          prog.link.startsWith('/programs/'),
+          `Program "${prog.name}" link must start with /programs/, got "${prog.link}"`
+        );
+        assert.notStrictEqual(
+          prog.link,
+          '/community',
+          `Program "${prog.name}" must not point to generic /community`
+        );
+      });
+    });
   });
 
   describe('2. STI Screening Form Validation & Options Preservation', () => {

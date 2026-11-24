@@ -36,6 +36,7 @@ export default function News() {
 
   const filteredArticles = useMemo(() => {
     return articles.filter((art) => {
+      if (art.status === 'draft' || art.isDraft === true) return false;
       const matchesSearch = 
         (art.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
         (art.excerpt || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -45,7 +46,9 @@ export default function News() {
     });
   }, [articles, searchQuery, selectedCategory]);
 
-  const featured = articles[0] || articles[0];
+  const featured = useMemo(() => {
+    return articles.find(art => art.status !== 'draft' && art.isDraft !== true) || null;
+  }, [articles]);
 
   return (
     <div className="w-full max-w-full overflow-x-clip pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
@@ -113,9 +116,9 @@ export default function News() {
                 <span className="font-black uppercase tracking-wider text-[#5A1E65] bg-purple-50 px-3 py-1 rounded-full border border-purple-200">
                   {featured.category}
                 </span>
-                <span className="text-slate-400 font-bold">{featured.publishedAt || featured.date}</span>
+                <span className="text-slate-400 font-bold">{featured.publishedAt || featured.publishDate || featured.date}</span>
                 <span className="text-slate-400">·</span>
-                <span className="text-slate-500 font-bold">{featured.readingTime}</span>
+                <span className="text-slate-500 font-bold">{featured.readingTime || featured.readTime || '3 min read'}</span>
               </div>
 
               <h2 className="font-display text-2xl sm:text-4xl font-black text-slate-950 group-hover:text-[#5A1E65] transition-colors tracking-tight leading-tight">
@@ -132,10 +135,11 @@ export default function News() {
               </div>
             </div>
 
-            <div className="lg:col-span-5 h-64 md:h-80 rounded-2xl overflow-hidden shadow-md">
+            <div className="lg:col-span-5 h-64 md:h-80 rounded-2xl overflow-hidden shadow-md bg-slate-900">
               <img
-                src={featured.image}
+                src={featured.image || featured.images?.[0] || '/images/community-gathering.jpg'}
                 alt={featured.title}
+                onError={(e) => { e.currentTarget.src = '/images/community-gathering.jpg'; }}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
             </div>
@@ -145,53 +149,70 @@ export default function News() {
 
       {/* Articles Grid */}
       <section className="container-clean py-12">
-        <MobileCarousel cols={3} autoScrollMs={0} cardClassName="h-full flex flex-col">
-          {filteredArticles.map((art) => (
-            <CardSpotlight
-              key={art.slug}
-              className="p-7 rounded-3xl bg-white border-2 border-slate-200 hover:border-purple-300 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between gap-6 group"
-              tilt={true}
-              maxTilt={4}
-              glare={true}
-            >
-              <div className="space-y-4">
-                <div className="h-48 rounded-2xl overflow-hidden bg-slate-100">
-                  <img
-                    src={art.image}
-                    alt={art.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs text-slate-400 font-bold">
-                    <span className="text-[#5A1E65] uppercase text-[10px] font-black">{art.category}</span>
-                    <span>{art.readingTime}</span>
+        {filteredArticles.length > 0 ? (
+          <MobileCarousel cols={3} autoScrollMs={0} cardClassName="h-full flex flex-col">
+            {filteredArticles.map((art) => (
+              <CardSpotlight
+                key={art.slug || art.id}
+                className="h-full w-full p-7 rounded-3xl bg-white border-2 border-slate-200 hover:border-purple-300 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between group"
+                contentClassName="flex flex-col h-full justify-between"
+                tilt={true}
+                maxTilt={4}
+                glare={true}
+              >
+                <div className="flex flex-col flex-1">
+                  <div className="w-full aspect-[16/10] rounded-2xl overflow-hidden bg-slate-900 shrink-0 relative mb-4">
+                    <img
+                      src={art.image || art.images?.[0] || '/images/community-gathering.jpg'}
+                      alt={art.title}
+                      onError={(e) => { e.currentTarget.src = '/images/community-gathering.jpg'; }}
+                      loading="lazy"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
                   </div>
 
-                  <h3 className="font-display text-xl font-black text-slate-950 group-hover:text-[#5A1E65] transition-colors leading-tight">
-                    {art.title}
-                  </h3>
+                  <div className="flex flex-col flex-1 gap-2.5">
+                    <div className="flex items-center justify-between text-xs text-slate-400 font-bold">
+                      <span className="text-[#5A1E65] uppercase text-[10px] font-black">{art.category}</span>
+                      <span>{art.readingTime || art.readTime || '3 min read'}</span>
+                    </div>
 
-                  <p className="text-xs text-slate-600 leading-relaxed font-medium line-clamp-3">
-                    {art.excerpt}
-                  </p>
+                    <h3 className="font-display text-xl font-black text-slate-950 group-hover:text-[#5A1E65] transition-colors leading-snug line-clamp-2 min-h-[3.25rem]">
+                      {art.title}
+                    </h3>
+
+                    <p className="text-xs text-slate-600 leading-relaxed font-medium line-clamp-3 flex-1">
+                      {art.excerpt}
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-[#5A1E65]">
-                <span>{art.publishedAt || art.date}</span>
-                <Link
-                  to={`/news/${art.slug}`}
-                  className="inline-flex items-center gap-1 hover:underline"
-                >
-                  <span>Read Story</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-            </CardSpotlight>
-          ))}
-        </MobileCarousel>
+                <div className="pt-4 mt-auto border-t border-slate-100 flex items-center justify-between text-xs font-bold text-[#5A1E65]">
+                  <span>{art.publishedAt || art.publishDate || art.date}</span>
+                  <Link
+                    to={`/news/${art.slug}`}
+                    className="inline-flex items-center gap-1 hover:underline"
+                  >
+                    <span>Read Story</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              </CardSpotlight>
+            ))}
+          </MobileCarousel>
+        ) : (
+          <div className="max-w-xl mx-auto p-10 md:p-14 text-center rounded-3xl bg-purple-50/70 border-2 border-purple-200/80 space-y-4 shadow-sm">
+            <div className="w-14 h-14 rounded-2xl bg-white shadow-xs flex items-center justify-center mx-auto text-[#5A1E65]">
+              <BookOpen className="w-7 h-7" />
+            </div>
+            <h4 className="font-display text-xl font-bold text-slate-900">
+              No News Stories or Press Releases Published Yet
+            </h4>
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-md mx-auto">
+              Official announcements, community dispatches, and advocacy updates from Diversity Collective Ventura County will appear here once published by administrators.
+            </p>
+          </div>
+        )}
       </section>
 
     </div>

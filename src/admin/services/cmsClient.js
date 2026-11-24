@@ -70,16 +70,40 @@ export function toggleCmsEventCancel(id, notice = '') {
   return list;
 }
 
-export function saveCmsArticle(article) {
+export async function saveCmsArticle(article) {
   const list = cmsStore.saveNews(article);
-  publishAdminSitePatch({ cmsData: cmsStore.getData() }).catch(() => {});
-  return list;
+  let syncRes = null;
+  try {
+    syncRes = await publishAdminSitePatch({ cmsData: cmsStore.getData() });
+  } catch (err) {
+    console.warn('[cmsClient] Failed to publish article patch:', err);
+    return { success: false, error: err.message, list };
+  }
+  return { success: syncRes?.success !== false, error: syncRes?.error, list };
 }
 
-export function deleteCmsArticle(id) {
+export async function deleteCmsArticle(id) {
   const list = cmsStore.deleteNews(id);
-  publishAdminSitePatch({ cmsData: cmsStore.getData() }).catch(() => {});
-  return list;
+  let syncRes = null;
+  try {
+    syncRes = await publishAdminSitePatch({ cmsData: cmsStore.getData() });
+  } catch (err) {
+    console.warn('[cmsClient] Failed to publish delete article patch:', err);
+    return { success: false, error: err.message, list };
+  }
+  return { success: syncRes?.success !== false, error: syncRes?.error, list };
+}
+
+export async function deleteAllCmsArticles() {
+  const list = cmsStore.deleteAllNews();
+  let syncRes = null;
+  try {
+    syncRes = await publishAdminSitePatch({ cmsData: cmsStore.getData() });
+  } catch (err) {
+    console.warn('[cmsClient] Failed to publish delete all articles patch:', err);
+    return { success: false, error: err.message, list };
+  }
+  return { success: syncRes?.success !== false, error: syncRes?.error, list };
 }
 
 export function saveCmsResource(resource) {
@@ -194,6 +218,12 @@ export function saveCmsPodcast(podcast) {
 
 export function deleteCmsPodcast(slugOrId) {
   const list = cmsStore.deletePodcast(slugOrId);
+  publishAdminSitePatch({ cmsData: cmsStore.getData() }).catch(() => {});
+  return list;
+}
+
+export function deleteAllCmsPodcasts() {
+  const list = cmsStore.deleteAllPodcasts();
   publishAdminSitePatch({ cmsData: cmsStore.getData() }).catch(() => {});
   return list;
 }
