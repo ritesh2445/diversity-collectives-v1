@@ -1680,23 +1680,55 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="max-w-3xl mx-auto p-8 sm:p-10 rounded-3xl bg-white/90 backdrop-blur-md border-2 border-purple-200/80 shadow-md text-center space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-purple-100/80 text-[#5A1E65] flex items-center justify-center mx-auto shadow-xs">
-              <span className="text-2xl font-serif">“</span>
-            </div>
-            <h3 className="font-display text-xl sm:text-2xl font-black text-slate-950">
-              Sharing Authentic Stories Across Ventura County
-            </h3>
-            <p className="text-sm sm:text-base text-slate-700 font-medium leading-relaxed max-w-xl mx-auto">
-              We are currently gathering authentic community stories from LGBTQ+ individuals, youth, seniors, and families across Ventura County. Have an experience, reflection, or story to share?
-            </p>
-            <div className="pt-2">
-              <a
-                href="mailto:info@diversitycollective.org?subject=Community%20Story%20Submission"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#5A1E65] text-white font-bold text-xs sm:text-sm hover:bg-[#471850] shadow-md hover:shadow-lg transition-all"
-              >
-                Submit Your Story to DCVC →
-              </a>
+          <div className="max-w-3xl mx-auto p-[2px] rounded-[28px] bg-gradient-to-br from-fuchsia-400/80 via-amber-300/80 to-indigo-400/80 shadow-[0_20px_50px_-15px_rgba(126,34,206,0.32)] hover:shadow-[0_26px_65px_-12px_rgba(168,85,247,0.48)] transition-all duration-500 group">
+            <div className="relative overflow-hidden rounded-[26px] bg-gradient-to-br from-[#230B34] via-[#4A1762] to-[#1D1B4B] p-8 sm:p-11 text-center space-y-5">
+              {/* Top Spectrum Rim Light */}
+              <div
+                className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-rose-400 via-amber-300 via-emerald-300 via-sky-400 to-purple-400"
+                aria-hidden="true"
+              />
+
+              {/* Volumetric Ambient Lighting Halos */}
+              <div
+                className="absolute -top-20 -left-16 w-64 h-64 rounded-full bg-fuchsia-500/25 blur-3xl pointer-events-none group-hover:scale-110 transition-transform duration-700"
+                aria-hidden="true"
+              />
+              <div
+                className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-amber-400/20 blur-3xl pointer-events-none group-hover:scale-110 transition-transform duration-700"
+                aria-hidden="true"
+              />
+              <div
+                className="absolute -bottom-24 left-1/2 -translate-x-1/2 w-80 h-48 rounded-full bg-teal-400/15 blur-3xl pointer-events-none"
+                aria-hidden="true"
+              />
+
+              <div className="relative z-10 space-y-4">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-fuchsia-500/35 to-amber-400/30 border border-white/25 backdrop-blur-md flex items-center justify-center mx-auto shadow-[0_0_26px_rgba(232,121,249,0.45)] group-hover:scale-105 transition-transform duration-300">
+                  <span className="text-3xl font-serif leading-none text-amber-200 pt-2">“</span>
+                </div>
+
+                <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-white/10 border border-white/20 text-amber-200 backdrop-blur-xs">
+                  Community Voices · Ventura County
+                </span>
+
+                <h3 className="font-display text-2xl sm:text-3xl font-black text-white tracking-tight">
+                  Sharing Authentic Stories Across Ventura County
+                </h3>
+
+                <p className="text-sm sm:text-base text-purple-100/95 font-medium leading-relaxed max-w-xl mx-auto">
+                  We are currently gathering authentic community stories from LGBTQ+ individuals, youth, seniors, and families across Ventura County. Have an experience, reflection, or story to share?
+                </p>
+
+                <div className="pt-2">
+                  <a
+                    href="mailto:info@diversitycollective.org?subject=Community%20Story%20Submission"
+                    className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-gradient-to-r from-amber-300 via-amber-400 to-rose-400 hover:from-amber-200 hover:to-rose-300 !text-slate-950 font-black text-xs sm:text-sm shadow-[0_8px_28px_rgba(251,191,36,0.45)] hover:shadow-[0_12px_34px_rgba(251,191,36,0.65)] hover:-translate-y-0.5 transition-all"
+                  >
+                    <span>Submit Your Story to DCVC</span>
+                    <span aria-hidden="true">→</span>
+                  </a>
+                </div>
+              </div>
             </div>
           </div>
 
