@@ -112,27 +112,57 @@ export default function Sponsorships() {
           </p>
 
           {/* 4 Core Pillars of DCVC Sponsorship */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4">
-            <div className="p-3.5 rounded-2xl bg-white/80 border border-purple-100 shadow-xs flex flex-col gap-1">
-              <span className="text-[10px] font-black uppercase tracking-wider text-purple-700">Pillar I</span>
-              <span className="font-bold text-sm text-slate-900">Advocacy</span>
-              <span className="text-[11px] text-slate-500">Civic representation & policy</span>
-            </div>
-            <div className="p-3.5 rounded-2xl bg-white/80 border border-purple-100 shadow-xs flex flex-col gap-1">
-              <span className="text-[10px] font-black uppercase tracking-wider text-amber-700">Pillar II</span>
-              <span className="font-bold text-sm text-slate-900">Visibility</span>
-              <span className="text-[11px] text-slate-500">Pride & community culture</span>
-            </div>
-            <div className="p-3.5 rounded-2xl bg-white/80 border border-purple-100 shadow-xs flex flex-col gap-1">
-              <span className="text-[10px] font-black uppercase tracking-wider text-rose-700">Pillar III</span>
-              <span className="font-bold text-sm text-slate-900">Safety</span>
-              <span className="text-[11px] text-slate-500">Affirming youth peer centers</span>
-            </div>
-            <div className="p-3.5 rounded-2xl bg-white/80 border border-purple-100 shadow-xs flex flex-col gap-1">
-              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700">Pillar IV</span>
-              <span className="font-bold text-sm text-slate-900">Wellness</span>
-              <span className="text-[11px] text-slate-500">Free confidential clinical care</span>
-            </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 pt-4">
+            {[
+              {
+                pillar: 'Pillar I',
+                title: 'Advocacy',
+                desc: 'Civic representation & policy',
+                cardBg: 'bg-gradient-to-br from-purple-50 via-white to-fuchsia-50/80 border-purple-200/80 hover:border-purple-400 hover:shadow-purple-500/15',
+                badge: 'bg-purple-100/90 text-purple-800 border-purple-200',
+                bar: 'from-purple-500 to-fuchsia-500'
+              },
+              {
+                pillar: 'Pillar II',
+                title: 'Visibility',
+                desc: 'Pride & community culture',
+                cardBg: 'bg-gradient-to-br from-amber-50 via-white to-orange-50/80 border-amber-200/80 hover:border-amber-400 hover:shadow-amber-500/15',
+                badge: 'bg-amber-100/90 text-amber-800 border-amber-200',
+                bar: 'from-amber-500 to-orange-500'
+              },
+              {
+                pillar: 'Pillar III',
+                title: 'Safety',
+                desc: 'Affirming youth peer centers',
+                cardBg: 'bg-gradient-to-br from-rose-50 via-white to-pink-50/80 border-rose-200/80 hover:border-rose-400 hover:shadow-rose-500/15',
+                badge: 'bg-rose-100/90 text-rose-800 border-rose-200',
+                bar: 'from-rose-500 to-pink-500'
+              },
+              {
+                pillar: 'Pillar IV',
+                title: 'Wellness',
+                desc: 'Free confidential clinical care',
+                cardBg: 'bg-gradient-to-br from-emerald-50 via-white to-teal-50/80 border-emerald-200/80 hover:border-emerald-400 hover:shadow-emerald-500/15',
+                badge: 'bg-emerald-100/90 text-emerald-800 border-emerald-200',
+                bar: 'from-emerald-500 to-teal-500'
+              }
+            ].map((item) => (
+              <div
+                key={item.pillar}
+                className={`group relative overflow-hidden p-4 rounded-2xl border shadow-sm transition-all duration-300 ease-out hover:-translate-y-1.5 hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] flex flex-col gap-1.5 cursor-default ${item.cardBg}`}
+              >
+                <span className={`inline-block w-fit text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border transition-transform duration-300 group-hover:scale-105 ${item.badge}`}>
+                  {item.pillar}
+                </span>
+                <span className="font-display font-black text-base text-slate-900 group-hover:translate-x-0.5 transition-transform duration-300">
+                  {item.title}
+                </span>
+                <span className="text-[11px] font-medium text-slate-600 leading-snug">
+                  {item.desc}
+                </span>
+                <div className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r ${item.bar} transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left`} aria-hidden="true" />
+              </div>
+            ))}
           </div>
         </div>
       </section>
