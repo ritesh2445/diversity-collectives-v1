@@ -3772,7 +3772,7 @@ export default function CmsStudio({ currentUser: propUser = null } = {}) {
                       type="text"
                       value={trainingPageData.heroTitle || ''}
                       onChange={(e) => setTrainingPageData({ ...trainingPageData, heroTitle: e.target.value })}
-                      placeholder="Empower Your Team with LGBTQ+ Competency & Earn the DCVC Approved Seal"
+                      placeholder="Empower Your Team with LGBTQ+ Competency"
                       className="w-full px-3 py-2 border rounded-xl text-xs"
                     />
                   </div>

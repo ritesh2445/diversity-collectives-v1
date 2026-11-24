@@ -130,7 +130,11 @@ export default function Training() {
 
             <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-slate-950 leading-[1.1]">
               {trainingContent.heroTitle ? (
-                <span>{trainingContent.heroTitle}</span>
+                <span>
+                  {trainingContent.heroTitle
+                    .replace(/\s*&\s*(Earn the\s*)?DCVC Approved Seal/gi, '')
+                    .trim() || 'LGBTQ+ Competency'}
+                </span>
               ) : (
                 <>
                   Transforming Spaces. <br />
