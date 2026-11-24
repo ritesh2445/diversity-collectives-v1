@@ -3974,63 +3974,6 @@ export default function CmsStudio({ currentUser: propUser = null } = {}) {
                 </div>
               </div>
 
-              {/* Card 4: Storefront Welcome Kit Showcase */}
-              <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-4">
-                <div className="border-b border-slate-100 pb-3">
-                  <h4 className="font-display text-base font-extrabold text-slate-950">
-                    4. Storefront Welcome Kit Showcase
-                  </h4>
-                  <p className="text-xs text-slate-600 mt-0.5">
-                    Deliverables showcase highlighting the physical window decal, framed certificate, pins, and directory spotlight.
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Welcome Kit Eyebrow</label>
-                    <input
-                      type="text"
-                      value={trainingPageData.welcomeKitEyebrow || ''}
-                      onChange={(e) => setTrainingPageData({ ...trainingPageData, welcomeKitEyebrow: e.target.value })}
-                      placeholder="TANGIBLE VALUE FOR YOUR STOREFRONT"
-                      className="w-full px-3 py-2 border rounded-xl text-xs"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Welcome Kit Title</label>
-                    <input
-                      type="text"
-                      value={trainingPageData.welcomeKitTitle || ''}
-                      onChange={(e) => setTrainingPageData({ ...trainingPageData, welcomeKitTitle: e.target.value })}
-                      placeholder="What's Inside the DCVC Approved Welcome Kit?"
-                      className="w-full px-3 py-2 border rounded-xl text-xs"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Welcome Kit Subtitle</label>
-                  <textarea
-                    rows={2}
-                    value={trainingPageData.welcomeKitSubtitle || ''}
-                    onChange={(e) => setTrainingPageData({ ...trainingPageData, welcomeKitSubtitle: e.target.value })}
-                    placeholder="Upon graduating from the accreditation workshop, every certified business receives our comprehensive physical and digital welcoming package..."
-                    className="w-full px-3 py-2 border rounded-xl text-xs"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">CTA Button Text</label>
-                  <input
-                    type="text"
-                    value={trainingPageData.welcomeKitButtonText || ''}
-                    onChange={(e) => setTrainingPageData({ ...trainingPageData, welcomeKitButtonText: e.target.value })}
-                    placeholder="Get Your Storefront Kit"
-                    className="w-full px-3 py-2 border rounded-xl text-xs"
-                  />
-                </div>
-              </div>
-
               {/* Card 5: ROI Calculator, Testimonials & FAQs */}
               <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-4">
                 <div className="border-b border-slate-100 pb-3">
