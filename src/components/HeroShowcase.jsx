@@ -430,6 +430,16 @@ export default function HeroShowcase({
     : merged.statusHeadline || 'Center Open Today');
   const statusSchedule = liveOrg?.hours || merged.statusSchedule || 'Mon–Fri 1:00 PM – 5:00 PM';
   const statusTag = merged.statusTag || 'HIV/STI Screenings 1st Mon 3–7 PM';
+  const mobileMaxChars = Math.max(16, Math.min(80, Number(merged.statusMobileMaxChars) || 36));
+  const desktopMaxChars = Math.max(30, Math.min(140, Number(merged.statusDesktopMaxChars) || 72));
+  const truncateByChars = (str, limit) => {
+    const clean = String(str || '').trim();
+    if (clean.length <= limit) return clean;
+    return `${clean.slice(0, Math.max(1, limit - 1)).trimEnd()}…`;
+  };
+  const mobilePillText = truncateByChars(`${statusHeadline} • 1–5 PM`, mobileMaxChars);
+  const desktopFullText = `${statusHeadline} • ${statusSchedule} • ${statusTag}`;
+  const desktopTruncated = truncateByChars(desktopFullText, desktopMaxChars);
   const helplineText = liveOrg?.phone
     ? `Helpline: ${liveOrg.phone} · ${liveOrg?.emergencyCrisisNotice ? (liveOrg.emergencyCrisisNotice.includes('988') ? '24/7 Crisis: Dial 988' : liveOrg.emergencyCrisisNotice) : '24/7 Crisis: Dial 988'}`
     : (merged.helplineText || 'Helpline: (805) 644-5428 · 24/7 Crisis: Dial 988');
@@ -625,9 +635,9 @@ export default function HeroShowcase({
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
                 </span>
-                <span className="truncate max-w-full">
-                  <span className="sm:hidden">{`${statusHeadline} · 1–5 PM`}</span>
-                  <span className="hidden sm:inline">{`${statusHeadline} · ${statusSchedule} · ${statusTag}`}</span>
+                <span className="truncate max-w-full min-w-0">
+                  <span className="sm:hidden">{mobilePillText}</span>
+                  <span className="hidden sm:inline">{desktopTruncated}</span>
                 </span>
               </SafeNav>
 
@@ -649,16 +659,14 @@ export default function HeroShowcase({
                 previewMode={previewMode}
                 data-no-autofit="true"
                 to="/programs/community-resource-center"
-                className={`hero-status-pill group inline-flex items-center gap-2.5 sm:gap-3.5 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full border-2 shadow-md transition-all cursor-pointer w-fit max-w-full ${
-                  isMobile ? 'whitespace-normal max-w-[calc(100%-8px)]' : 'whitespace-nowrap'
-                } ${
+                className={`hero-status-pill group inline-flex items-center justify-between gap-2.5 sm:gap-3 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full border-2 shadow-md transition-all cursor-pointer w-fit max-w-full overflow-hidden ${
                   isDark
                     ? 'bg-white/10 hover:bg-white/15 border-white/25 text-white'
                     : 'bg-white/95 hover:bg-white border-purple-200/90 hover:border-purple-400 shadow-purple-500/10'
                 }`}
                 title="View Community Resource Center hours and free clinical services"
               >
-                <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 max-w-full">
+                <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1 overflow-hidden">
                   <span className="relative flex h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0">
                     {centerStatus?.isOpenNow && (
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-80"></span>
@@ -669,24 +677,30 @@ export default function HeroShowcase({
                         : 'bg-gradient-to-tr from-amber-500 to-purple-400'
                     }`}></span>
                   </span>
-                  <span className="text-xs sm:text-sm font-bold leading-snug block min-w-0">
-                    <span className="sm:hidden inline-flex items-center gap-1.5 truncate max-w-[210px] xs:max-w-[260px]">
+                  <span className="text-xs sm:text-sm font-bold leading-snug block min-w-0 truncate">
+                    <span className="sm:hidden">
                       <strong className={isDark ? 'text-emerald-300 font-extrabold' : centerStatus?.isOpenNow ? 'text-emerald-700 font-extrabold' : 'text-[#5A1E65] font-extrabold'}>
-                        {statusHeadline}
+                        {mobilePillText}
                       </strong>
-                      <span className="text-rose-400 font-black">•</span>
-                      <span className={isDark ? 'text-white/90 font-bold' : 'text-slate-900 font-bold'}>1–5 PM</span>
                     </span>
                     <span className="hidden sm:inline">
-                      <strong className={isDark ? 'text-emerald-300 font-extrabold' : centerStatus?.isOpenNow ? 'text-emerald-700 font-extrabold' : 'text-[#5A1E65] font-extrabold'}>
-                        {statusHeadline}
-                      </strong>{' '}
-                      <span className="text-rose-400 font-black">•</span>{' '}
-                      <span className={isDark ? 'text-white/90 font-bold' : 'text-slate-900 font-bold'}>{statusSchedule}</span>{' '}
-                      <span className="text-amber-500 font-black">•</span>{' '}
-                      <strong className={isDark ? 'text-amber-300 font-extrabold' : 'bg-gradient-to-r from-[#5A1E65] via-rose-600 to-indigo-700 bg-clip-text text-transparent font-extrabold'}>
-                        {statusTag}
-                      </strong>
+                      {desktopFullText.length > desktopMaxChars ? (
+                        <span className={isDark ? 'text-white/95 font-bold' : 'text-slate-900 font-bold'}>
+                          {desktopTruncated}
+                        </span>
+                      ) : (
+                        <>
+                          <strong className={isDark ? 'text-emerald-300 font-extrabold' : centerStatus?.isOpenNow ? 'text-emerald-700 font-extrabold' : 'text-[#5A1E65] font-extrabold'}>
+                            {statusHeadline}
+                          </strong>{' '}
+                          <span className="text-rose-400 font-black">•</span>{' '}
+                          <span className={isDark ? 'text-white/90 font-bold' : 'text-slate-900 font-bold'}>{statusSchedule}</span>{' '}
+                          <span className="text-amber-500 font-black">•</span>{' '}
+                          <strong className={isDark ? 'text-amber-300 font-extrabold' : 'bg-gradient-to-r from-[#5A1E65] via-rose-600 to-indigo-700 bg-clip-text text-transparent font-extrabold'}>
+                            {statusTag}
+                          </strong>
+                        </>
+                      )}
                     </span>
                   </span>
                 </div>

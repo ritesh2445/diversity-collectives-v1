@@ -24,13 +24,43 @@ export default function News() {
   const [articles, setArticles] = useState(() => cmsStore.getNews());
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalArticles, setTotalArticles] = useState(0);
 
   useEffect(() => {
     const unsubscribe = cmsStore.subscribe((data) => {
-      if (data?.news) setArticles(data.news);
+      if (data?.news && totalArticles === 0) setArticles(data.news);
     });
     return unsubscribe;
-  }, []);
+  }, [totalArticles]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, selectedCategory]);
+
+  useEffect(() => {
+    let active = true;
+    const apiBase = import.meta.env?.VITE_API_URL || import.meta.env?.VITE_API_BASE_URL || '/api';
+    const params = new URLSearchParams({
+      page: String(page),
+      limit: '12',
+      ...(selectedCategory !== 'All' ? { category: selectedCategory } : {}),
+      ...(searchQuery.trim() ? { search: searchQuery.trim() } : {})
+    });
+    fetch(`${apiBase}/news?${params.toString()}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!active || !data?.success) return;
+        if (Array.isArray(data.articles) && (data.total > 0 || page > 1)) {
+          setArticles(data.articles);
+          setTotalPages(Number(data.totalPages || 1));
+          setTotalArticles(Number(data.total || data.articles.length));
+        }
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [page, searchQuery, selectedCategory]);
 
   const categories = ['All', 'Community & Culture', 'Health & Wellness', 'Youth Empowerment', 'Advocacy & Business'];
 
@@ -211,6 +241,30 @@ export default function News() {
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-md mx-auto">
               Official announcements, community dispatches, and advocacy updates from Diversity Collective Ventura County will appear here once published by administrators.
             </p>
+          </div>
+        )}
+
+        {totalPages > 1 && (
+          <div className="mt-10 flex items-center justify-center gap-3">
+            <button
+              type="button"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-700 hover:bg-purple-50 disabled:opacity-40 cursor-pointer"
+            >
+              ← Previous
+            </button>
+            <span className="text-xs font-bold text-slate-600">
+              Page {page} of {totalPages} ({totalArticles.toLocaleString()} articles)
+            </span>
+            <button
+              type="button"
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-700 hover:bg-purple-50 disabled:opacity-40 cursor-pointer"
+            >
+              Next →
+            </button>
           </div>
         )}
       </section>

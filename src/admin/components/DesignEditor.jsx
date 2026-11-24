@@ -633,9 +633,14 @@ export default function DesignEditor({ onPublishSuccess }) {
             {selectedBlock?.type === 'hero_banner' && (
               <div className="space-y-3">
                 <div className="p-2.5 rounded-xl bg-purple-50/70 border border-purple-200 space-y-2">
-                  <p className="text-[10px] font-black uppercase tracking-wider text-[#5A1E65]">
-                    Top Center Bar
-                  </p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-[10px] font-black uppercase tracking-wider text-[#5A1E65]">
+                      Top Center Bar
+                    </p>
+                    <span className="text-[10px] font-semibold text-slate-500">
+                      Instant Live Sync
+                    </span>
+                  </div>
                   <div className="grid grid-cols-2 gap-2">
                     <input
                       type="text"
@@ -659,6 +664,44 @@ export default function DesignEditor({ onPublishSuccess }) {
                     placeholder="Free HIV/STI Screenings"
                     className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-[11px] bg-white"
                   />
+                  <div className="grid grid-cols-2 gap-2 pt-1 border-t border-purple-200/70">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 mb-0.5">
+                        Mobile Char Limit
+                      </label>
+                      <input
+                        type="number"
+                        min={16}
+                        max={80}
+                        value={selectedBlock.props?.statusMobileMaxChars ?? 36}
+                        onChange={(e) =>
+                          updateSelectedBlockProps(
+                            'statusMobileMaxChars',
+                            Math.max(16, Math.min(80, Number(e.target.value) || 36))
+                          )
+                        }
+                        className="w-full px-2.5 py-1 rounded-lg border border-slate-300 text-[11px] bg-white font-bold text-slate-800"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 mb-0.5">
+                        Desktop Char Limit
+                      </label>
+                      <input
+                        type="number"
+                        min={30}
+                        max={140}
+                        value={selectedBlock.props?.statusDesktopMaxChars ?? 72}
+                        onChange={(e) =>
+                          updateSelectedBlockProps(
+                            'statusDesktopMaxChars',
+                            Math.max(30, Math.min(140, Number(e.target.value) || 72))
+                          )
+                        }
+                        className="w-full px-2.5 py-1 rounded-lg border border-slate-300 text-[11px] bg-white font-bold text-slate-800"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div>

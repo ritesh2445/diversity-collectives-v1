@@ -23,6 +23,13 @@ import {
   undoLastSiteStateChange
 } from './siteStateService.js';
 import {
+  listNewsArticles,
+  getNewsArticleBySlugOrId,
+  upsertNewsArticle,
+  deleteNewsArticle,
+  deleteAllNewsArticles
+} from './newsService.js';
+import {
   parseAllowedSections,
   normalizeAllowedSectionsInput,
   requireSectionAccess,
@@ -1646,6 +1653,38 @@ export default {
           });
         } catch (err) {
           return errorResponse(`Failed to stream document: ${err.message}`, 500, null, cors);
+        }
+      }
+
+      // =======================================================================
+      // 4b. Paginated News & Blog Articles (GET /api/news & GET /api/news/:slug)
+      // Supports 10,000+ articles in dedicated Turso table within free tier
+      // =======================================================================
+      if (pathname === '/api/news' && request.method === 'GET') {
+        const db = getDb(env);
+        const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
+        const limit = Math.min(Math.max(1, parseInt(url.searchParams.get('limit') || '12', 10)), 100);
+        const category = (url.searchParams.get('category') || '').trim();
+        const search = (url.searchParams.get('search') || '').trim();
+        try {
+          const result = await listNewsArticles(db, { page, limit, category, search, includeDrafts: false });
+          return jsonResponse({ success: true, ...result }, 200, cors);
+        } catch (err) {
+          return errorResponse(err.message || 'Failed to load news articles', 500, null, cors);
+        }
+      }
+
+      if (pathname.startsWith('/api/news/') && request.method === 'GET') {
+        const slugOrId = decodeURIComponent(pathname.replace('/api/news/', '').trim());
+        const db = getDb(env);
+        try {
+          const article = await getNewsArticleBySlugOrId(db, slugOrId);
+          if (!article || article.status === 'draft') {
+            return errorResponse('Article not found', 404, null, cors);
+          }
+          return jsonResponse({ success: true, article }, 200, cors);
+        } catch (err) {
+          return errorResponse(err.message || 'Failed to load article', 500, null, cors);
         }
       }
 
@@ -5186,6 +5225,96 @@ export default {
             updatedBy: result.updatedBy,
             state: result.state
           }, 200, adminCors);
+        }
+
+        // 15.7e Dedicated Turso News & Blog CRUD (10,000+ article capacity)
+        if (pathname === '/api/admin/news' && request.method === 'GET') {
+          if (!requireSectionAccess(authUser, 'news', ['admin', 'editor', 'read_only'])) {
+            return errorResponse('Forbidden: News & Articles access required.', 403, null, adminCors);
+          }
+          const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
+          const limit = Math.min(Math.max(1, parseInt(url.searchParams.get('limit') || '50', 10)), 100);
+          const search = (url.searchParams.get('search') || '').trim();
+          const result = await listNewsArticles(db, { page, limit, search, includeDrafts: true });
+          return jsonResponse({ success: true, ...result }, 200, adminCors);
+        }
+
+        if (pathname === '/api/admin/news' && request.method === 'POST') {
+          if (!requireSectionAccess(authUser, 'news', ['admin', 'editor'])) {
+            return errorResponse('Forbidden: News & Articles write access required.', 403, null, adminCors);
+          }
+          const body = await request.json().catch(() => null);
+          if (!body || typeof body !== 'object') {
+            return errorResponse('Invalid JSON payload.', 400, null, adminCors);
+          }
+          try {
+            const article = await upsertNewsArticle(db, body);
+            await logAdminAction(db, {
+              userId: authUser.id || authUser.userId,
+              userEmail: authUser.email,
+              action: 'upsert_news_article',
+              targetType: 'news_article',
+              targetId: article?.id,
+              details: { title: article?.title, status: article?.status },
+              ip: clientIp
+            }).catch(() => {});
+            return jsonResponse({ success: true, article }, 200, adminCors);
+          } catch (err) {
+            return errorResponse(err.message || 'Failed to save article.', 400, null, adminCors);
+          }
+        }
+
+        if (pathname === '/api/admin/news' && request.method === 'DELETE') {
+          if (!requireSectionAccess(authUser, 'news', ['admin', 'editor'])) {
+            return errorResponse('Forbidden: News & Articles write access required.', 403, null, adminCors);
+          }
+          await deleteAllNewsArticles(db);
+          await logAdminAction(db, {
+            userId: authUser.id || authUser.userId,
+            userEmail: authUser.email,
+            action: 'delete_all_news_articles',
+            targetType: 'news_article',
+            targetId: 'all',
+            details: {},
+            ip: clientIp
+          }).catch(() => {});
+          return jsonResponse({ success: true, deletedAll: true }, 200, adminCors);
+        }
+
+        if (pathname.startsWith('/api/admin/news/') && (request.method === 'PUT' || request.method === 'DELETE')) {
+          if (!requireSectionAccess(authUser, 'news', ['admin', 'editor'])) {
+            return errorResponse('Forbidden: News & Articles write access required.', 403, null, adminCors);
+          }
+          const idOrSlug = decodeURIComponent(pathname.replace('/api/admin/news/', '').trim());
+          if (request.method === 'PUT') {
+            const body = await request.json().catch(() => null);
+            if (!body || typeof body !== 'object') {
+              return errorResponse('Invalid JSON payload.', 400, null, adminCors);
+            }
+            const article = await upsertNewsArticle(db, { ...body, id: body.id || idOrSlug });
+            await logAdminAction(db, {
+              userId: authUser.id || authUser.userId,
+              userEmail: authUser.email,
+              action: 'update_news_article',
+              targetType: 'news_article',
+              targetId: article?.id || idOrSlug,
+              details: { title: article?.title, status: article?.status },
+              ip: clientIp
+            }).catch(() => {});
+            return jsonResponse({ success: true, article }, 200, adminCors);
+          } else {
+            await deleteNewsArticle(db, idOrSlug);
+            await logAdminAction(db, {
+              userId: authUser.id || authUser.userId,
+              userEmail: authUser.email,
+              action: 'delete_news_article',
+              targetType: 'news_article',
+              targetId: idOrSlug,
+              details: {},
+              ip: clientIp
+            }).catch(() => {});
+            return jsonResponse({ success: true, deleted: true, id: idOrSlug }, 200, adminCors);
+          }
         }
 
         // 15.8 Gallery Photo Upload to GitHub & jsDelivr CDN (POST /api/admin/gallery/upload)

@@ -8,7 +8,11 @@
 import { cmsStore } from '../../services/cmsStore.js';
 import { normalizeCmsEvent, normalizeCmsEventList } from '../../utils/eventDates.js';
 import { publishAdminSitePatch, resetAdminSiteState } from '../../services/liveSync.js';
-import { getStoredUser } from './adminClient.js';
+import { getStoredUser, getStoredToken } from './adminClient.js';
+
+const ADMIN_API_BASE = typeof window !== 'undefined' && window.location.origin
+  ? (import.meta.env?.VITE_API_URL || import.meta.env?.VITE_API_BASE_URL || '/api')
+  : '/api';
 
 export const DEFAULT_CMS_SEED = cmsStore.getAllData();
 
@@ -72,38 +76,70 @@ export function toggleCmsEventCancel(id, notice = '') {
 
 export async function saveCmsArticle(article) {
   const list = cmsStore.saveNews(article);
-  let syncRes = null;
   try {
-    syncRes = await publishAdminSitePatch({ cmsData: cmsStore.getData() });
+    const token = getStoredToken();
+    const res = await fetch(`${ADMIN_API_BASE}/admin/news`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify(article)
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.success) {
+      return { success: false, error: data.error || `Server returned ${res.status}`, list };
+    }
+    return { success: true, article: data.article, list };
   } catch (err) {
-    console.warn('[cmsClient] Failed to publish article patch:', err);
+    console.warn('[cmsClient] Failed to save article to Turso:', err);
     return { success: false, error: err.message, list };
   }
-  return { success: syncRes?.success !== false, error: syncRes?.error, list };
 }
 
 export async function deleteCmsArticle(id) {
   const list = cmsStore.deleteNews(id);
-  let syncRes = null;
   try {
-    syncRes = await publishAdminSitePatch({ cmsData: cmsStore.getData() });
+    const token = getStoredToken();
+    const res = await fetch(`${ADMIN_API_BASE}/admin/news/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      credentials: 'include',
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      }
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.success) {
+      return { success: false, error: data.error || `Server returned ${res.status}`, list };
+    }
+    return { success: true, list };
   } catch (err) {
-    console.warn('[cmsClient] Failed to publish delete article patch:', err);
+    console.warn('[cmsClient] Failed to delete article from Turso:', err);
     return { success: false, error: err.message, list };
   }
-  return { success: syncRes?.success !== false, error: syncRes?.error, list };
 }
 
 export async function deleteAllCmsArticles() {
   const list = cmsStore.deleteAllNews();
-  let syncRes = null;
   try {
-    syncRes = await publishAdminSitePatch({ cmsData: cmsStore.getData() });
+    const token = getStoredToken();
+    const res = await fetch(`${ADMIN_API_BASE}/admin/news`, {
+      method: 'DELETE',
+      credentials: 'include',
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      }
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.success) {
+      return { success: false, error: data.error || `Server returned ${res.status}`, list };
+    }
+    return { success: true, list };
   } catch (err) {
-    console.warn('[cmsClient] Failed to publish delete all articles patch:', err);
+    console.warn('[cmsClient] Failed to delete all articles from Turso:', err);
     return { success: false, error: err.message, list };
   }
-  return { success: syncRes?.success !== false, error: syncRes?.error, list };
 }
 
 export function saveCmsResource(resource) {

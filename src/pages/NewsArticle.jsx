@@ -8,6 +8,8 @@ import { usePageMeta } from '../utils/seo';
 export default function NewsArticle() {
   const { slug } = useParams();
   const [articles, setArticles] = useState(() => cmsStore.getNews());
+  const [remoteArticle, setRemoteArticle] = useState(null);
+  const [loadingRemote, setLoadingRemote] = useState(false);
   const [copied, setCopied] = useState(false);
 
   // Subscribe to live CMS updates (0ms reflection when admin saves)
@@ -18,10 +20,31 @@ export default function NewsArticle() {
     return unsubscribe;
   }, []);
 
-  // Prioritize live CMS store so admin updates reflect immediately
-  const article = articles.find(a => a.slug === slug || a.id === slug) ||
-                  (cmsStore.data?.news || []).find(a => a.slug === slug || a.id === slug) ||
-                  newsArticles.find(a => a.slug === slug);
+  // Prioritize live CMS store, then remote paginated Turso article, then static seed
+  const localMatch = articles.find(a => a.slug === slug || a.id === slug) ||
+                     (cmsStore.data?.news || []).find(a => a.slug === slug || a.id === slug) ||
+                     newsArticles.find(a => a.slug === slug);
+
+  useEffect(() => {
+    if (localMatch || !slug) return;
+    let active = true;
+    setLoadingRemote(true);
+    const apiBase = import.meta.env?.VITE_API_URL || import.meta.env?.VITE_API_BASE_URL || '/api';
+    fetch(`${apiBase}/news/${encodeURIComponent(slug)}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (active && data?.success && data.article) {
+          setRemoteArticle(data.article);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (active) setLoadingRemote(false);
+      });
+    return () => { active = false; };
+  }, [slug, localMatch]);
+
+  const article = localMatch || remoteArticle;
 
   usePageMeta({
     title: article ? article.title : 'News Article',
@@ -29,6 +52,14 @@ export default function NewsArticle() {
     canonicalPath: article ? `/news/${article.slug}` : '/news',
     ogImage: article?.image
   });
+
+  if (!article && loadingRemote) {
+    return (
+      <div className="pt-20 pb-20 text-center text-sm font-bold text-slate-500">
+        Loading article...
+      </div>
+    );
+  }
 
   if (!article) {
     return <Navigate to="/news" replace />;
