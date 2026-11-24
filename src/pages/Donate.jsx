@@ -178,10 +178,10 @@ export default function Donate() {
 
         <div className="max-w-3xl relative z-10 flex flex-col gap-4">
           <span className="glass-pill text-xs font-bold text-rose-700 bg-rose-50 border-rose-200/90 shadow-xs self-start">
-            {liveDonationContent?.eyebrow || 'TAX-DEDUCTIBLE 501(C)(3) SUPPORT · 0% PLATFORM FEES'}
+            {cmsStore.getSettings()?.pageCopy?.donate?.eyebrow || liveDonationContent?.eyebrow || 'TAX-DEDUCTIBLE 501(C)(3) SUPPORT · 0% PLATFORM FEES'}
           </span>
           <h1 className="font-display text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-slate-950 leading-[1.05]">
-            {liveDonationContent?.title || (
+            {cmsStore.getSettings()?.pageCopy?.donate?.headline || liveDonationContent?.title || (
               <>
                 Powering Center &amp; <br />
                 <span className="font-serif italic font-normal text-rose-600">Lifesaving Care.</span>
@@ -189,7 +189,7 @@ export default function Donate() {
             )}
           </h1>
           <p className="font-serif italic text-xl md:text-2xl text-slate-700 leading-relaxed pt-2">
-            {liveDonationContent?.subtitle || 'Every dollar directly funds free rapid health screenings, weekly youth peer circles, harm reduction supplies, and community advocacy across Ventura County.'}
+            {cmsStore.getSettings()?.pageCopy?.donate?.description || liveDonationContent?.subtitle || 'Every dollar directly funds free rapid health screenings, weekly youth peer circles, harm reduction supplies, and community advocacy across Ventura County.'}
           </p>
         </div>
       </section>

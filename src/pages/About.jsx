@@ -63,15 +63,19 @@ export default function About() {
         />
 
         <div className="max-w-3xl relative z-10 flex flex-col gap-4">
-          <span className="glass-pill text-xs font-bold text-[#5A1E65] bg-purple-50 border-purple-200/90 shadow-xs">
-            ESTABLISHED 2014 · 501(C)(3) NONPROFIT
+          <span className="glass-pill text-xs font-bold text-[#5A1E65] bg-purple-50 border-purple-200/90 shadow-xs w-fit">
+            {cmsStore.getSettings()?.pageCopy?.about?.eyebrow || 'ESTABLISHED 2014 · 501(C)(3) NONPROFIT'}
           </span>
           <h1 className="font-display text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-slate-950 leading-[1.05]">
-            Advocacy, safety & celebration <br />
-            <span className="font-serif italic font-normal text-[#5A1E65]">since 2014.</span>
+            {cmsStore.getSettings()?.pageCopy?.about?.headline || (
+              <>
+                Advocacy, safety &amp; celebration <br />
+                <span className="font-serif italic font-normal text-[#5A1E65]">since 2014.</span>
+              </>
+            )}
           </h1>
           <p className="font-serif italic text-xl md:text-2xl text-slate-700 leading-relaxed pt-2">
-            "We believe that all people deserve a diverse, inclusive, accepting, and welcoming safe space. In lifting each other up even when it's hard, we build allies, opportunities, and resources to live our best lives."
+            {cmsStore.getSettings()?.pageCopy?.about?.description || '"We believe that all people deserve a diverse, inclusive, accepting, and welcoming safe space. In lifting each other up even when it\'s hard, we build allies, opportunities, and resources to live our best lives."'}
           </p>
         </div>
       </section>

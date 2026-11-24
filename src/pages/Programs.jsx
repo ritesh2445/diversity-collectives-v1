@@ -110,11 +110,15 @@ export default function Programs() {
             </span>
           </div>
           <h1 className="font-display text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-slate-950 leading-[1.05]">
-            Our Programs & <br />
-            <span className="font-serif italic font-normal text-[#5A1E65]">Affirming Spaces.</span>
+            {cmsStore.getSettings()?.pageCopy?.programs?.headline || (
+              <>
+                Our Programs &amp; <br />
+                <span className="font-serif italic font-normal text-[#5A1E65]">Affirming Spaces.</span>
+              </>
+            )}
           </h1>
           <p className="font-serif italic text-xl md:text-2xl text-slate-700 leading-relaxed pt-2">
-            Every program at Diversity Collective is created with a trauma-informed, culturally affirming approach to empower LGBTQ+ individuals from youth to elderhood.
+            {cmsStore.getSettings()?.pageCopy?.programs?.description || 'Every program at Diversity Collective is created with a trauma-informed, culturally affirming approach to empower LGBTQ+ individuals from youth to elderhood.'}
           </p>
         </div>
 

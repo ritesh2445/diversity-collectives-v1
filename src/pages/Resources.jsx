@@ -64,15 +64,19 @@ export default function Resources() {
       <section className="container-clean pb-14 border-b border-slate-100 relative overflow-hidden">
         <div className="absolute -top-24 right-10 w-96 h-96 rounded-full bg-purple-200/25 blur-3xl pointer-events-none" aria-hidden="true" />
         <div className="max-w-3xl relative z-10 flex flex-col gap-4">
-          <span className="glass-pill text-xs font-bold text-[#5A1E65] bg-purple-50 border-purple-200/90 shadow-xs">
-            VERIFIED DIRECTORY &amp; COMMUNITY CARE
+          <span className="glass-pill text-xs font-bold text-[#5A1E65] bg-purple-50 border-purple-200/90 shadow-xs w-fit">
+            {cmsStore.getSettings()?.pageCopy?.resources?.eyebrow || 'VERIFIED DIRECTORY & COMMUNITY CARE'}
           </span>
           <h1 className="font-display text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-slate-950 leading-[1.05]">
-            Care &amp; Crisis <br />
-            <span className="font-serif italic font-normal text-[#5A1E65]">Resource Directory.</span>
+            {cmsStore.getSettings()?.pageCopy?.resources?.headline || (
+              <>
+                Care &amp; Crisis <br />
+                <span className="font-serif italic font-normal text-[#5A1E65]">Resource Directory.</span>
+              </>
+            )}
           </h1>
           <p className="font-serif italic text-xl md:text-2xl text-slate-700 leading-relaxed pt-2">
-            A vetted network of affirming mental health clinicians, healthcare navigators, legal clinics, and basic needs programs serving Ventura County.
+            {cmsStore.getSettings()?.pageCopy?.resources?.description || 'A vetted network of affirming mental health clinicians, healthcare navigators, legal clinics, and basic needs programs serving Ventura County.'}
           </p>
         </div>
       </section>

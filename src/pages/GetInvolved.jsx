@@ -56,15 +56,19 @@ export default function GetInvolved() {
         />
 
         <div className="max-w-3xl relative z-10 flex flex-col gap-4">
-          <span className="glass-pill text-xs font-bold text-[#5A1E65] bg-purple-50 border-purple-200/90 shadow-xs">
-            PARTICIPATION & SUSTAINABILITY
+          <span className="glass-pill text-xs font-bold text-[#5A1E65] bg-purple-50 border-purple-200/90 shadow-xs w-fit">
+            {cmsStore.getSettings()?.pageCopy?.getInvolved?.eyebrow || 'PARTICIPATION & SUSTAINABILITY'}
           </span>
           <h1 className="font-display text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-slate-950 leading-[1.05]">
-            Get Involved & <br />
-            <span className="font-serif italic font-normal text-[#5A1E65]">Support Our Mission.</span>
+            {cmsStore.getSettings()?.pageCopy?.getInvolved?.headline || (
+              <>
+                Get Involved &amp; <br />
+                <span className="font-serif italic font-normal text-[#5A1E65]">Support Our Mission.</span>
+              </>
+            )}
           </h1>
           <p className="font-serif italic text-xl md:text-2xl text-slate-700 leading-relaxed pt-2">
-            "We do what we do, because of you." Join our passionate network of sponsors, donors, and grassroots volunteers building safety, care, and visibility across Ventura County.
+            {cmsStore.getSettings()?.pageCopy?.getInvolved?.description || '"We do what we do, because of you." Join our passionate network of sponsors, donors, and grassroots volunteers building safety, care, and visibility across Ventura County.'}
           </p>
         </div>
 

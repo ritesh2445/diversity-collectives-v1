@@ -4497,27 +4497,101 @@ export default function CmsStudio({ currentUser: propUser = null } = {}) {
       {activeSubTab === 'settings' && (
         <form onSubmit={handleSaveSettingsForm} className="space-y-6">
           {/* Universal All-Pages Section Copy Editor */}
-          <div className="p-6 rounded-3xl bg-white border border-purple-200 shadow-sm space-y-5">
-            <div>
-              <h3 className="font-display text-xl font-bold text-slate-950">
-                All Pages &amp; Section Copy Editor
-              </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Edit the top eyebrow, headline, and intro text across every public page (Events, News, Directory, Resources, About, Community, Get Involved, Contact, Donate). Click Save Settings below to publish live.
-              </p>
+          <div className="p-6 rounded-3xl bg-white border-2 border-purple-200 shadow-sm space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+              <div>
+                <h3 className="font-display text-xl font-bold text-slate-950">
+                  All Pages &amp; Section Copy Editor (Pre-Populated Live Text)
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Every field below is pre-filled with your current live website text. Edit any page and click <strong>Publish Page Copy</strong> to update it immediately.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  saveCmsSettings(cmsData.settings);
+                  showToast('All page headers & copy published live!');
+                }}
+                className="px-5 py-2.5 rounded-xl bg-[#5A1E65] hover:bg-purple-900 text-white text-xs font-black inline-flex items-center gap-2 shadow-md cursor-pointer shrink-0"
+              >
+                <Check className="w-4 h-4" />
+                <span>Publish Page Copy</span>
+              </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {[
-                { key: 'events', label: 'Events Page', eyebrow: 'OFFICIAL CALENDAR & CULTURAL LIFE', headline: 'Cultural Calendar & Upcoming Events.' },
-                { key: 'news', label: 'News & Blog Page', eyebrow: 'EDITORIAL & ADVOCACY DISPATCHES', headline: 'News & Community Updates.' },
-                { key: 'directory', label: 'Business Directory Page', eyebrow: 'VENTURA COUNTY AFFIRMING NETWORK', headline: 'LGBTQ+ Business Directory.' },
-                { key: 'resources', label: 'Resources Page', eyebrow: 'VERIFIED VENTURA COUNTY DIRECTORY', headline: 'Community Resources.' },
-                { key: 'about', label: 'About Us Page', eyebrow: 'OUR MISSION & HERITAGE', headline: 'Building Safe Harbor in Ventura County.' },
-                { key: 'community', label: 'Community Groups Page', eyebrow: 'SAFE HARBOR PEER CIRCLES', headline: 'Community Circles & Support.' },
-                { key: 'getInvolved', label: 'Get Involved Page', eyebrow: 'VOLUNTEER & ADVOCACY', headline: 'Get Involved With DCVC.' },
-                { key: 'contact', label: 'Contact Page', eyebrow: 'REACH OUT TO US', headline: 'Connect With Our Team.' },
-                { key: 'donate', label: 'Donate Page', eyebrow: '501(C)(3) COMMUNITY PHILANTHROPY', headline: 'Sustain Our Safe Harbor.' }
+                {
+                  key: 'events',
+                  label: 'Events Page (/events)',
+                  eyebrow: 'OFFICIAL CALENDAR & CULTURAL LIFE',
+                  headline: 'Cultural Calendar & Upcoming Events.',
+                  description: 'From weekly youth circles and free testing clinics to seaside Pride and annual galas, explore upcoming events across Ventura County.'
+                },
+                {
+                  key: 'news',
+                  label: 'News & Blog Page (/news)',
+                  eyebrow: 'EDITORIAL & ADVOCACY DISPATCHES',
+                  headline: 'Stories, Updates & Advocacy.',
+                  description: 'Dispatches from the front lines of LGBTQ+ wellness, youth empowerment, and community celebration across Ventura County.'
+                },
+                {
+                  key: 'directory',
+                  label: 'Business Directory (/directory)',
+                  eyebrow: 'VENTURA COUNTY AFFIRMING NETWORK',
+                  headline: 'LGBTQ+ Business Directory.',
+                  description: 'Discover verified welcoming spaces, healthcare providers, and local services across all 10 Ventura County cities.'
+                },
+                {
+                  key: 'programs',
+                  label: 'Programs Page (/programs)',
+                  eyebrow: 'COMMUNITY CARE & CLINICAL SERVICES',
+                  headline: 'Our Programs & Affirming Spaces.',
+                  description: 'Every program at Diversity Collective is created with a trauma-informed, culturally affirming approach to empower LGBTQ+ individuals from youth to elderhood.'
+                },
+                {
+                  key: 'resources',
+                  label: 'Resources Page (/resources)',
+                  eyebrow: 'VERIFIED DIRECTORY & COMMUNITY CARE',
+                  headline: 'Care & Crisis Resource Directory.',
+                  description: 'A vetted network of affirming mental health clinicians, healthcare navigators, legal clinics, and basic needs programs serving Ventura County.'
+                },
+                {
+                  key: 'about',
+                  label: 'About Us Page (/about)',
+                  eyebrow: 'ESTABLISHED 2014 · 501(C)(3) NONPROFIT',
+                  headline: 'Advocacy, safety & celebration since 2014.',
+                  description: '"We believe that all people deserve a diverse, inclusive, accepting, and welcoming safe space. In lifting each other up even when it\'s hard, we build allies, opportunities, and resources to live our best lives."'
+                },
+                {
+                  key: 'community',
+                  label: 'Community Circles (/community)',
+                  eyebrow: 'AFFIRMING PEER CIRCLES & GATHERINGS',
+                  headline: 'Find Your Community & Authentic Belonging.',
+                  description: '"We believe in the freedom to be your authentic self, both at home & in the community." Connect with peer support groups meeting regularly at our Community Resource Center.'
+                },
+                {
+                  key: 'getInvolved',
+                  label: 'Get Involved Page (/get-involved)',
+                  eyebrow: 'PARTICIPATION & SUSTAINABILITY',
+                  headline: 'Get Involved & Support Our Mission.',
+                  description: '"We do what we do, because of you." Join our passionate network of sponsors, donors, and grassroots volunteers building safety, care, and visibility across Ventura County.'
+                },
+                {
+                  key: 'contact',
+                  label: 'Contact Page (/contact)',
+                  eyebrow: 'LOCATION & CONTACT',
+                  headline: 'Get in Touch & Visit Our Center.',
+                  description: 'Whether you have questions about our youth peer groups, want to book an HIV/STI screening, or wish to connect with our team, we are here for you.'
+                },
+                {
+                  key: 'donate',
+                  label: 'Donate Page (/donate)',
+                  eyebrow: 'TAX-DEDUCTIBLE 501(C)(3) SUPPORT · 0% PLATFORM FEES',
+                  headline: 'Powering Center & Lifesaving Care.',
+                  description: 'Every contribution directly sustains free rapid HIV/STI testing, youth peer sanctuaries, and LGBTQ+ community mutual aid across Ventura County.'
+                }
               ].map((pg) => {
                 const currentCopy = cmsData.settings?.pageCopy?.[pg.key] || {};
                 const updatePageField = (field, val) => {
@@ -4535,30 +4609,57 @@ export default function CmsStudio({ currentUser: propUser = null } = {}) {
                     }
                   });
                 };
+                const resetPageCopy = () => {
+                  const nextPageCopy = { ...(cmsData.settings?.pageCopy || {}) };
+                  delete nextPageCopy[pg.key];
+                  setCmsData({
+                    ...cmsData,
+                    settings: { ...cmsData.settings, pageCopy: nextPageCopy }
+                  });
+                };
                 return (
-                  <div key={pg.key} className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200 space-y-2.5">
-                    <span className="text-xs font-black text-[#5A1E65] block">{pg.label}</span>
-                    <input
-                      type="text"
-                      value={currentCopy.eyebrow || ''}
-                      onChange={(e) => updatePageField('eyebrow', e.target.value)}
-                      placeholder={pg.eyebrow}
-                      className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-[11px] bg-white"
-                    />
-                    <input
-                      type="text"
-                      value={currentCopy.headline || ''}
-                      onChange={(e) => updatePageField('headline', e.target.value)}
-                      placeholder={pg.headline}
-                      className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-bold bg-white"
-                    />
-                    <textarea
-                      rows={2}
-                      value={currentCopy.description || ''}
-                      onChange={(e) => updatePageField('description', e.target.value)}
-                      placeholder="Custom intro paragraph (leave blank for default)"
-                      className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-[11px] bg-white"
-                    />
+                  <div key={pg.key} className="p-4 rounded-2xl bg-slate-50/90 border border-slate-200 space-y-2.5 flex flex-col justify-between">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-black text-[#5A1E65]">{pg.label}</span>
+                        {cmsData.settings?.pageCopy?.[pg.key] && (
+                          <button
+                            type="button"
+                            onClick={resetPageCopy}
+                            className="text-[10px] font-bold text-slate-500 hover:text-rose-600 cursor-pointer"
+                          >
+                            Reset
+                          </button>
+                        )}
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-500 mb-0.5">Eyebrow Pill</label>
+                        <input
+                          type="text"
+                          value={currentCopy.eyebrow !== undefined ? currentCopy.eyebrow : pg.eyebrow}
+                          onChange={(e) => updatePageField('eyebrow', e.target.value)}
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-[11px] bg-white text-slate-900"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-500 mb-0.5">Main Headline</label>
+                        <input
+                          type="text"
+                          value={currentCopy.headline !== undefined ? currentCopy.headline : pg.headline}
+                          onChange={(e) => updatePageField('headline', e.target.value)}
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-bold bg-white text-slate-950"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-500 mb-0.5">Intro Paragraph</label>
+                        <textarea
+                          rows={3}
+                          value={currentCopy.description !== undefined ? currentCopy.description : pg.description}
+                          onChange={(e) => updatePageField('description', e.target.value)}
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-[11px] bg-white text-slate-800 leading-relaxed"
+                        />
+                      </div>
+                    </div>
                   </div>
                 );
               })}

@@ -121,14 +121,18 @@ export default function Contact() {
 
         <div className="max-w-3xl relative z-10 flex flex-col gap-4">
           <span className="glass-pill text-xs font-bold text-[#5A1E65] bg-purple-50 border-purple-200/90 shadow-xs w-fit">
-            LOCATION & CONTACT
+            {cmsStore.getSettings()?.pageCopy?.contact?.eyebrow || 'LOCATION & CONTACT'}
           </span>
           <h1 className="font-display text-3xl sm:text-5xl md:text-7xl font-extrabold tracking-tight text-slate-950 leading-[1.05] break-words">
-            Get in Touch & <br />
-            <span className="font-serif italic font-normal text-[#5A1E65]">Visit Our Center.</span>
+            {cmsStore.getSettings()?.pageCopy?.contact?.headline || (
+              <>
+                Get in Touch &amp; <br />
+                <span className="font-serif italic font-normal text-[#5A1E65]">Visit Our Center.</span>
+              </>
+            )}
           </h1>
           <p className="font-serif italic text-lg sm:text-xl md:text-2xl text-slate-700 leading-relaxed pt-2 break-words">
-            Whether you have questions about our youth peer groups, want to book an HIV/STI screening, or wish to connect with our team, we are here for you.
+            {cmsStore.getSettings()?.pageCopy?.contact?.description || 'Whether you have questions about our youth peer groups, want to book an HIV/STI screening, or wish to connect with our team, we are here for you.'}
           </p>
         </div>
       </section>
