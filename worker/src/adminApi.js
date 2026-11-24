@@ -132,7 +132,7 @@ export function clearSessionCookie({ crossOrigin = false } = {}) {
 export const OWASP_PBKDF2_ITERATIONS = 600000;
 export const LEGACY_PBKDF2_ITERATIONS = 100000;
 
-// PBKDF2 Password Hashing via Web Crypto API
+// PBKDF2 Password Hashing via Web Crypto API (falls back safely to 100k when runtime caps PBKDF2 iterations)
 export async function hashPassword(password, salt, iterations = OWASP_PBKDF2_ITERATIONS) {
   const enc = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey(
@@ -143,44 +143,65 @@ export async function hashPassword(password, salt, iterations = OWASP_PBKDF2_ITE
     ['deriveBits', 'deriveKey']
   );
 
-  const key = await crypto.subtle.deriveKey(
-    {
-      name: 'PBKDF2',
-      salt: enc.encode(salt),
-      iterations,
-      hash: 'SHA-256'
-    },
-    keyMaterial,
-    { name: 'HMAC', hash: 'SHA-256', length: 256 },
-    true,
-    ['sign']
-  );
+  const deriveForIterations = async (iterCount) => {
+    const key = await crypto.subtle.deriveKey(
+      {
+        name: 'PBKDF2',
+        salt: enc.encode(salt),
+        iterations: iterCount,
+        hash: 'SHA-256'
+      },
+      keyMaterial,
+      { name: 'HMAC', hash: 'SHA-256', length: 256 },
+      true,
+      ['sign']
+    );
+    const exported = await crypto.subtle.exportKey('raw', key);
+    return Array.from(new Uint8Array(exported))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+  };
 
-  const exported = await crypto.subtle.exportKey('raw', key);
-  return Array.from(new Uint8Array(exported))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
+  try {
+    return await deriveForIterations(iterations);
+  } catch (err) {
+    // Cloudflare Workers WebCrypto rejects PBKDF2 iterations above 100,000 with NotSupportedError
+    if (iterations > LEGACY_PBKDF2_ITERATIONS) {
+      return await deriveForIterations(LEGACY_PBKDF2_ITERATIONS);
+    }
+    throw err;
+  }
 }
 
 /**
  * Backward-compatible verification:
- * 1. Checks using current OWASP standard (600,000 iterations).
- * 2. If not matched, falls back to legacy 100,000 iterations.
+ * 1. Checks using current OWASP standard (600,000 iterations) when supported by runtime.
+ * 2. If not matched (or runtime caps PBKDF2 at 100,000 iterations), checks 100,000 iterations.
  * 3. Returns { valid, needsUpgrade } so caller can seamlessly rehash without credential loss.
  */
 export async function verifyPasswordHash(password, salt, storedHash) {
   if (!password || !salt || !storedHash) {
     return { valid: false, needsUpgrade: false };
   }
-  // Try modern 600,000 iterations
-  const modernHash = await hashPassword(password, salt, OWASP_PBKDF2_ITERATIONS);
-  if (constantTimeEqual(modernHash, storedHash)) {
-    return { valid: true, needsUpgrade: false };
+
+  let modernSupported = true;
+  try {
+    const modernHash = await hashPassword(password, salt, OWASP_PBKDF2_ITERATIONS);
+    if (constantTimeEqual(modernHash, storedHash)) {
+      return { valid: true, needsUpgrade: false };
+    }
+  } catch {
+    modernSupported = false;
   }
-  // Fallback to legacy 100,000 iterations
-  const legacyHash = await hashPassword(password, salt, LEGACY_PBKDF2_ITERATIONS);
-  if (constantTimeEqual(legacyHash, storedHash)) {
-    return { valid: true, needsUpgrade: true };
+
+  // Fallback to 100,000 iterations (legacy hashes & Cloudflare Workers WebCrypto cap)
+  try {
+    const legacyHash = await hashPassword(password, salt, LEGACY_PBKDF2_ITERATIONS);
+    if (constantTimeEqual(legacyHash, storedHash)) {
+      return { valid: true, needsUpgrade: modernSupported };
+    }
+  } catch {
+    return { valid: false, needsUpgrade: false };
   }
   return { valid: false, needsUpgrade: false };
 }
