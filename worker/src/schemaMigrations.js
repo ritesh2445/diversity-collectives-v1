@@ -252,6 +252,7 @@ export const SCHEMA_STATEMENTS = [
     must_change_password INTEGER DEFAULT 0,
     password_updated_at TEXT,
     last_totp_step INTEGER DEFAULT 0,
+    allowed_sections TEXT,
     created_at TEXT DEFAULT (datetime('now')),
     last_login_at TEXT
   )`,

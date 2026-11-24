@@ -3,6 +3,7 @@ import { Search, Sliders, Globe, ArrowRight, X, Replace, CheckCircle2 } from 'lu
 import { searchSiteWithSuggestions } from '../../utils/smartSiteSearch';
 import { cmsStore } from '../../services/cmsStore';
 import { getSiteFeatures, saveSiteFeatures } from '../../services/siteFeaturesStore';
+import { canAccessQuickSearchItem } from '../permissions.js';
 
 /**
  * Curated Admin Control Directory + Cross-Section Global Word Search & Replace
@@ -96,7 +97,7 @@ function deepReplaceString(obj, findText, replaceText) {
   return { value: obj, count: 0 };
 }
 
-export default function AdminQuickSearch({ onNavigate }) {
+export default function AdminQuickSearch({ onNavigate, currentUser = null }) {
   const [query, setQuery] = useState('');
   const [replaceWith, setReplaceWith] = useState('');
   const [showReplace, setShowReplace] = useState(false);
@@ -131,29 +132,35 @@ export default function AdminQuickSearch({ onNavigate }) {
     const q = trimmed.toLowerCase();
     const tokens = q.split(/\s+/).filter(Boolean);
     const controls = ADMIN_CONTROLS.filter((ctrl) => {
+      if (!canAccessQuickSearchItem(currentUser, ctrl.tab, ctrl.subTab)) return false;
       const hay = `${ctrl.title} ${ctrl.subtitle} ${ctrl.keywords}`.toLowerCase();
       return tokens.every((tok) => hay.includes(tok));
     }).slice(0, 6);
 
     const siteOut = searchSiteWithSuggestions(trimmed, { limit: 6 });
 
-    // Cross-section deep word search across ALL Homepage Layout, CMS, Settings, and Forms
+    // Cross-section deep word search across Homepage Layout, CMS, Settings, and Forms (scoped to user access)
     const deepHits = [];
     try {
       const cmsData = cmsStore.getData?.() || {};
-      scanObjectForWord(cmsData.settings, q, 'Global Settings', 'cms', 'settings', deepHits);
-      scanObjectForWord(cmsData.programs, q, 'Programs', 'cms', 'programs', deepHits);
-      scanObjectForWord(cmsData.events, q, 'Events', 'cms', 'events', deepHits);
-      scanObjectForWord(cmsData.news, q, 'News', 'cms', 'news', deepHits);
-      scanObjectForWord(cmsData.resources, q, 'Resources', 'cms', 'resources', deepHits);
-      scanObjectForWord(cmsData.sponsors, q, 'Sponsors', 'cms', 'sponsors', deepHits);
-      const rawLayout = localStorage.getItem('dcvc_admin_custom_layout');
-      if (rawLayout) {
-        scanObjectForWord(JSON.parse(rawLayout), q, 'Homepage Sections', 'hero', undefined, deepHits);
+      if (canAccessQuickSearchItem(currentUser, 'cms', 'settings')) scanObjectForWord(cmsData.settings, q, 'Global Settings', 'cms', 'settings', deepHits);
+      if (canAccessQuickSearchItem(currentUser, 'cms', 'programs')) scanObjectForWord(cmsData.programs, q, 'Programs', 'cms', 'programs', deepHits);
+      if (canAccessQuickSearchItem(currentUser, 'cms', 'community')) scanObjectForWord(cmsData.communityGroups, q, 'Community Groups', 'cms', 'community', deepHits);
+      if (canAccessQuickSearchItem(currentUser, 'cms', 'events')) scanObjectForWord(cmsData.events, q, 'Events', 'cms', 'events', deepHits);
+      if (canAccessQuickSearchItem(currentUser, 'cms', 'news')) scanObjectForWord(cmsData.news, q, 'News', 'cms', 'news', deepHits);
+      if (canAccessQuickSearchItem(currentUser, 'cms', 'resources')) scanObjectForWord(cmsData.resources, q, 'Resources', 'cms', 'resources', deepHits);
+      if (canAccessQuickSearchItem(currentUser, 'cms', 'sponsors')) scanObjectForWord(cmsData.sponsors, q, 'Sponsors', 'cms', 'sponsors', deepHits);
+      if (canAccessQuickSearchItem(currentUser, 'hero', undefined)) {
+        const rawLayout = localStorage.getItem('dcvc_admin_custom_layout');
+        if (rawLayout) {
+          scanObjectForWord(JSON.parse(rawLayout), q, 'Homepage Sections', 'hero', undefined, deepHits);
+        }
       }
-      const feats = getSiteFeatures();
-      scanObjectForWord(feats.formSchemas, q, 'Site Forms', 'features', undefined, deepHits);
-      scanObjectForWord(feats.broadcastPopup, q, 'Broadcast Popup', 'features', undefined, deepHits);
+      if (canAccessQuickSearchItem(currentUser, 'features', undefined)) {
+        const feats = getSiteFeatures();
+        scanObjectForWord(feats.formSchemas, q, 'Site Forms', 'features', undefined, deepHits);
+        scanObjectForWord(feats.broadcastPopup, q, 'Broadcast Popup', 'features', undefined, deepHits);
+      }
     } catch {
       // ignore read errors
     }
@@ -163,7 +170,7 @@ export default function AdminQuickSearch({ onNavigate }) {
       siteMatches: siteOut.results || [],
       crossSectionMatches: deepHits.slice(0, 10)
     };
-  }, [hasTyped, trimmed]);
+  }, [hasTyped, trimmed, currentUser]);
 
   const handleGlobalReplace = () => {
     if (!trimmed) return;
@@ -255,13 +262,15 @@ export default function AdminQuickSearch({ onNavigate }) {
               <span className="text-[10px] font-black uppercase tracking-wider text-[#5A1E65]">
                 Cross-Section Word Search ({crossSectionMatches.length} text hits)
               </span>
-              <button
-                type="button"
-                onClick={() => setShowReplace((v) => !v)}
-                className="text-[10px] font-extrabold text-[#5A1E65] hover:underline flex items-center gap-1 cursor-pointer"
-              >
-                <Replace className="w-3 h-3" /> {showReplace ? 'Hide Replace' : 'Find & Replace'}
-              </button>
+              {(!currentUser || currentUser.role === 'admin') && (
+                <button
+                  type="button"
+                  onClick={() => setShowReplace((v) => !v)}
+                  className="text-[10px] font-extrabold text-[#5A1E65] hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <Replace className="w-3 h-3" /> {showReplace ? 'Hide Replace' : 'Find & Replace'}
+                </button>
+              )}
             </div>
             {showReplace && (
               <div className="flex items-center gap-1.5">

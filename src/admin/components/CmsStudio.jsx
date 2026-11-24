@@ -97,15 +97,24 @@ import {
 import { parseEventDate, normalizeCmsEvent } from '../../utils/eventDates.js';
 import { SYNC_EVENTS } from '../../services/liveSync.js';
 import { cmsStore } from '../../services/cmsStore.js';
+import {
+  canAccessCmsSubTab,
+  getFirstAllowedCmsSubTab,
+  isSectionRestrictedUser,
+  formatSectionLabels
+} from '../permissions.js';
 
-export default function CmsStudio() {
+export default function CmsStudio({ currentUser: propUser = null } = {}) {
+  const effectiveUser = propUser || getStoredUser();
   const [cmsData, setCmsData] = useState(getLiveCmsData());
-  const [activeSubTab, setActiveSubTab] = useState('programs'); // 'programs' | 'events' | 'news' | 'resources' | 'staff' | 'gallery' | 'settings'
+  const [activeSubTab, setActiveSubTab] = useState(() => getFirstAllowedCmsSubTab(effectiveUser) || 'programs');
   const [searchQuery, setSearchQuery] = useState('');
   const [feedbackMsg, setFeedbackMsg] = useState('');
   const [hoursValidationError, setHoursValidationError] = useState('');
-  const currentUser = getStoredUser();
-  const isAuthorizedAdmin = !currentUser || !currentUser.role || currentUser.role === 'admin';
+  const currentUser = effectiveUser;
+  const isFullAdmin = !currentUser || !currentUser.role || currentUser.role === 'admin';
+  const isRestrictedUser = isSectionRestrictedUser(currentUser);
+  const isAuthorizedAdmin = isFullAdmin || (Array.isArray(currentUser?.allowedSections) && currentUser.allowedSections.includes('settings') && currentUser?.role !== 'read_only');
 
   // Modals state
   const [modalType, setModalType] = useState(null); // 'program' | 'event' | 'news' | 'resource' | 'staff' | 'gallery' | 'milestone' | null
@@ -159,14 +168,24 @@ export default function CmsStudio() {
   };
 
   useEffect(() => {
+    if (!canAccessCmsSubTab(effectiveUser, activeSubTab)) {
+      const nextSub = getFirstAllowedCmsSubTab(effectiveUser);
+      if (nextSub) setActiveSubTab(nextSub);
+    }
+  }, [effectiveUser, activeSubTab]);
+
+  useEffect(() => {
     const onCmsUpdate = () => {
       setCmsData({ ...getLiveCmsData() });
       setTrainingPageData(getCmsTrainingPageContent());
     };
     const onSubTabNav = (e) => {
-      if (e?.detail?.subTab) setActiveSubTab(e.detail.subTab);
+      if (e?.detail?.subTab && canAccessCmsSubTab(effectiveUser, e.detail.subTab)) {
+        setActiveSubTab(e.detail.subTab);
+      }
     };
     const onCreatePodcast = (e) => {
+      if (!canAccessCmsSubTab(effectiveUser, 'podcasts')) return;
       setActiveSubTab('podcasts');
       openCreateModal('podcast');
       if (e?.detail) {
@@ -1342,7 +1361,7 @@ export default function CmsStudio() {
     { id: 'staff', label: 'Operational Staff', count: operationalStaffList.length, icon: Users },
     { id: 'gallery', label: 'Gallery & Memory Lane', count: (cmsData.gallery?.length || 0) + (cmsData.memoryLane?.length || 0), icon: Camera },
     { id: 'settings', label: 'Global Site Settings', count: null, icon: Settings }
-  ];
+  ].filter((t) => canAccessCmsSubTab(effectiveUser, t.id));
 
   return (
     <div className="space-y-6">
@@ -1378,6 +1397,12 @@ export default function CmsStudio() {
           <p className="text-xs sm:text-sm text-purple-200 mt-1 max-w-2xl leading-relaxed">
             Full administrative control over every public page, program, event cancellation notice, community resource, staff biography, and 3D gallery spotlight. Changes sync immediately across all tabs and public visitors.
           </p>
+          {isRestrictedUser && (
+            <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-400/15 border border-amber-300/40 text-amber-200 text-xs font-bold">
+              <ShieldAlert className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+              <span>Section-Scoped Access: {formatSectionLabels(currentUser?.allowedSections)}</span>
+            </div>
+          )}
         </div>
 
         {/* Global CMS Actions */}
@@ -1393,31 +1418,35 @@ export default function CmsStudio() {
             <ExternalLink className="w-3 h-3 text-purple-300" />
           </a>
 
-          <button
-            type="button"
-            onClick={handleExportJson}
-            className="px-4 py-2.5 rounded-xl bg-purple-900/60 hover:bg-purple-800 text-purple-100 text-xs font-bold flex items-center gap-1.5 transition-colors border border-purple-700"
-            title="Download full JSON database snapshot"
-          >
-            <Download className="w-4 h-4" />
-            <span>Export JSON</span>
-          </button>
+          {isFullAdmin && (
+            <>
+              <button
+                type="button"
+                onClick={handleExportJson}
+                className="px-4 py-2.5 rounded-xl bg-purple-900/60 hover:bg-purple-800 text-purple-100 text-xs font-bold flex items-center gap-1.5 transition-colors border border-purple-700"
+                title="Download full JSON database snapshot"
+              >
+                <Download className="w-4 h-4" />
+                <span>Export JSON</span>
+              </button>
 
-          <label className="px-4 py-2.5 rounded-xl bg-purple-900/60 hover:bg-purple-800 text-purple-100 text-xs font-bold flex items-center gap-1.5 transition-colors border border-purple-700 cursor-pointer">
-            <Upload className="w-4 h-4" />
-            <span>Import JSON</span>
-            <input type="file" accept=".json" onChange={handleImportJson} className="hidden" />
-          </label>
+              <label className="px-4 py-2.5 rounded-xl bg-purple-900/60 hover:bg-purple-800 text-purple-100 text-xs font-bold flex items-center gap-1.5 transition-colors border border-purple-700 cursor-pointer">
+                <Upload className="w-4 h-4" />
+                <span>Import JSON</span>
+                <input type="file" accept=".json" onChange={handleImportJson} className="hidden" />
+              </label>
 
-          <button
-            type="button"
-            onClick={() => setShowResetModal(true)}
-            className="px-4 py-2.5 rounded-xl bg-rose-950/80 hover:bg-rose-900 text-rose-200 text-xs font-bold flex items-center gap-1.5 transition-colors border border-rose-800"
-            title="Restore all collections to original factory seed"
-          >
-            <RotateCcw className="w-4 h-4" />
-            <span>Reset Defaults</span>
-          </button>
+              <button
+                type="button"
+                onClick={() => setShowResetModal(true)}
+                className="px-4 py-2.5 rounded-xl bg-rose-950/80 hover:bg-rose-900 text-rose-200 text-xs font-bold flex items-center gap-1.5 transition-colors border border-rose-800"
+                title="Restore all collections to original factory seed"
+              >
+                <RotateCcw className="w-4 h-4" />
+                <span>Reset Defaults</span>
+              </button>
+            </>
+          )}
         </div>
       </div>
 

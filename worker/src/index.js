@@ -20,6 +20,13 @@ import {
   writeSiteStatePatch,
   resetSiteState
 } from './siteStateService.js';
+import {
+  parseAllowedSections,
+  normalizeAllowedSectionsInput,
+  requireSectionAccess,
+  assertUserCanPublishSiteState,
+  SECTION_LABELS
+} from './sectionPermissions.js';
 import { processChatRequest } from './chatEngine.js';
 import { createSignedUploadParameters } from './cloudinarySigner.js';
 import {
@@ -2965,7 +2972,8 @@ export default {
             `ALTER TABLE admin_users ADD COLUMN token_version INTEGER DEFAULT 1`,
             `ALTER TABLE admin_users ADD COLUMN must_change_password INTEGER DEFAULT 0`,
             `ALTER TABLE admin_users ADD COLUMN password_updated_at TEXT`,
-            `ALTER TABLE admin_users ADD COLUMN last_totp_step INTEGER DEFAULT 0`
+            `ALTER TABLE admin_users ADD COLUMN last_totp_step INTEGER DEFAULT 0`,
+            `ALTER TABLE admin_users ADD COLUMN allowed_sections TEXT`
           ];
           for (const sql of patchSql) {
             await db.execute({ sql, args: [] }).catch(() => { });
@@ -3106,7 +3114,7 @@ export default {
           let userRow = null;
           try {
             const userRes = await db.execute({
-              sql: `SELECT id, email, name, role, is_active, COALESCE(token_version, 1) AS token_version, mfa_enabled
+              sql: `SELECT id, email, name, role, allowed_sections, is_active, COALESCE(token_version, 1) AS token_version, mfa_enabled
                     FROM admin_users WHERE LOWER(email) = LOWER(?) LIMIT 1`,
               args: [verifiedEmail]
             });
@@ -3185,12 +3193,14 @@ export default {
             })
           ]);
 
+          const auth0AllowedSections = userRow.role === 'admin' ? null : parseAllowedSections(userRow.allowed_sections);
           const sessionToken = await generateAuthToken({
             id: userRow.id,
             userId: userRow.id,
             email: userRow.email,
             name: userRow.name,
             role: userRow.role,
+            allowedSections: auth0AllowedSections,
             tv: Number(userRow.token_version || 1),
             authProvider: 'auth0',
             authSub: idPayload.sub
@@ -3204,6 +3214,7 @@ export default {
               email: userRow.email,
               name: userRow.name,
               role: userRow.role,
+              allowedSections: auth0AllowedSections,
               mfaEnabled: Boolean(userRow.mfa_enabled),
               mustChangePassword: false,
               authProvider: 'auth0'
@@ -3486,7 +3497,7 @@ export default {
           if (db) {
             try {
               const freshRes = await db.execute({
-                sql: `SELECT id, email, name, role, is_active, COALESCE(token_version, 1) AS token_version FROM admin_users WHERE id = ? LIMIT 1`,
+                sql: `SELECT id, email, name, role, allowed_sections, is_active, COALESCE(token_version, 1) AS token_version FROM admin_users WHERE id = ? LIMIT 1`,
                 args: [tempPayload.userId]
               });
               if (freshRes.rows.length > 0) {
@@ -3498,12 +3509,14 @@ export default {
             } catch {}
           }
 
+          const otpAllowedSections = userRow.role === 'admin' ? null : parseAllowedSections(userRow.allowed_sections);
           const sessionToken = await generateAuthToken({
             id: userRow.id,
             userId: userRow.id,
             email: userRow.email,
             name: userRow.name,
             role: userRow.role,
+            allowedSections: otpAllowedSections,
             tv: Number(userRow.token_version || 1),
             authProvider: 'email_otp'
           }, jwtSecret);
@@ -3527,6 +3540,7 @@ export default {
               email: userRow.email,
               name: userRow.name,
               role: userRow.role,
+              allowedSections: otpAllowedSections,
               authProvider: 'email_otp'
             }
           }, 200, {
@@ -3593,7 +3607,7 @@ export default {
           if (db) {
             try {
               const uRes = await db.execute({
-                sql: `SELECT id, email, name, role, is_active, COALESCE(token_version, 1) AS token_version FROM admin_users WHERE LOWER(email) = LOWER(?) LIMIT 1`,
+                sql: `SELECT id, email, name, role, allowed_sections, is_active, COALESCE(token_version, 1) AS token_version FROM admin_users WHERE LOWER(email) = LOWER(?) LIMIT 1`,
                 args: [verifiedEmail]
               });
               if (uRes.rows.length > 0) userRow = uRes.rows[0];
@@ -3640,12 +3654,14 @@ export default {
             };
           }
 
+          const googleAllowedSections = userRow.role === 'admin' ? null : parseAllowedSections(userRow.allowed_sections);
           const sessionToken = await generateAuthToken({
             id: userRow.id,
             userId: userRow.id,
             email: userRow.email,
             name: userRow.name,
             role: userRow.role,
+            allowedSections: googleAllowedSections,
             tv: Number(userRow.token_version || 1),
             authProvider: 'google',
             authSub: googleUser.sub
@@ -3671,6 +3687,7 @@ export default {
               email: userRow.email,
               name: userRow.name,
               role: userRow.role,
+              allowedSections: googleAllowedSections,
               mustChangePassword: false,
               picture: googleUser.picture || '',
               authProvider: 'google'
@@ -3721,7 +3738,7 @@ export default {
           if (db) {
             try {
               const userRes = await db.execute({
-                sql: `SELECT id, email, name, role, password_hash, salt, mfa_enabled, mfa_secret, is_active, COALESCE(token_version, 1) AS token_version, COALESCE(must_change_password, 0) AS must_change_password
+                sql: `SELECT id, email, name, role, allowed_sections, password_hash, salt, mfa_enabled, mfa_secret, is_active, COALESCE(token_version, 1) AS token_version, COALESCE(must_change_password, 0) AS must_change_password
                       FROM admin_users WHERE LOWER(email) = LOWER(?) LIMIT 1`,
                 args: [email]
               });
@@ -3864,6 +3881,7 @@ export default {
               directMfaOk = true;
             }
 
+            const directAllowedSections = userRow.role === 'admin' ? null : parseAllowedSections(userRow.allowed_sections);
             if (directMfaOk) {
               const sessionToken = await generateAuthToken({
                 id: userRow.id,
@@ -3871,6 +3889,7 @@ export default {
                 email: userRow.email,
                 name: userRow.name,
                 role: userRow.role,
+                allowedSections: directAllowedSections,
                 tv: Number(userRow.token_version || 1),
                 authProvider: 'password_direct'
               }, jwtSecret);
@@ -3882,6 +3901,7 @@ export default {
                   email: userRow.email,
                   name: userRow.name,
                   role: userRow.role,
+                  allowedSections: directAllowedSections,
                   mfaEnabled: Boolean(userRow.mfa_enabled),
                   authProvider: 'password'
                 }
@@ -3896,6 +3916,7 @@ export default {
           const tempJti = crypto.randomUUID();
           const tokenVersion = Number(userRow.token_version || 1);
           const mustChangePassword = Boolean(userRow.must_change_password);
+          const loginAllowedSections = userRow.role === 'admin' ? null : parseAllowedSections(userRow.allowed_sections);
           const tempExp = Math.floor(Date.now() / 1000) + 300;
 
           // Case A: User has TOTP Authenticator App configured
@@ -3906,6 +3927,7 @@ export default {
               email: userRow.email,
               name: userRow.name,
               role: userRow.role,
+              allowedSections: loginAllowedSections,
               tv: tokenVersion,
               mustChangePassword,
               mfaType: 'totp'
@@ -3935,6 +3957,7 @@ export default {
             email: userRow.email,
             name: userRow.name,
             role: userRow.role,
+            allowedSections: loginAllowedSections,
             tv: tokenVersion,
             mustChangePassword,
             authProvider: 'password'
@@ -3958,6 +3981,7 @@ export default {
               email: userRow.email,
               name: userRow.name,
               role: userRow.role,
+              allowedSections: loginAllowedSections,
               mfaEnabled: false,
               mustChangePassword,
               authProvider: 'password'
@@ -4082,12 +4106,16 @@ export default {
             clearPersistentFailures(db, ip2faKey)
           ]);
 
-          // Read latest token_version and password status before issuing JWT
+          // Read latest role, allowed_sections, token_version, and password status before issuing JWT
           const freshUserRes = await db.execute({
-            sql: `SELECT COALESCE(token_version, 1) AS token_version, COALESCE(must_change_password, 0) AS must_change_password, mfa_enabled FROM admin_users WHERE id = ? LIMIT 1`,
+            sql: `SELECT role, allowed_sections, COALESCE(token_version, 1) AS token_version, COALESCE(must_change_password, 0) AS must_change_password, mfa_enabled FROM admin_users WHERE id = ? LIMIT 1`,
             args: [tempPayload.userId]
           });
           const freshRow = freshUserRes.rows[0] || {};
+          const effectiveRole = freshRow.role || tempPayload.role;
+          const verifiedAllowedSections = effectiveRole === 'admin'
+            ? null
+            : (freshRow.allowed_sections !== undefined ? parseAllowedSections(freshRow.allowed_sections) : (tempPayload.allowedSections ?? null));
           const tokenVersion = Number(freshRow.token_version || tempPayload.tv || 1);
           const mustChangePassword = Boolean(freshRow.must_change_password);
           const sessionDurationSec = 8 * 3600;
@@ -4096,7 +4124,8 @@ export default {
             id: tempPayload.userId,
             email: tempPayload.email,
             name: tempPayload.name,
-            role: tempPayload.role,
+            role: effectiveRole,
+            allowedSections: verifiedAllowedSections,
             tv: tokenVersion
           };
 
@@ -4134,7 +4163,8 @@ export default {
               id: tempPayload.userId,
               email: tempPayload.email,
               name: tempPayload.name,
-              role: tempPayload.role,
+              role: effectiveRole,
+              allowedSections: verifiedAllowedSections,
               mfaEnabled: Boolean(freshRow.mfa_enabled ?? (tempPayload.mfaType === 'totp')),
               mustChangePassword
             }
@@ -4242,9 +4272,9 @@ export default {
             }
           }
 
-          // Verify user still exists, is active, and token_version matches
+          // Verify user still exists, is active, and sync live role, allowed_sections & token_version from DB
           const activeRes = await db.execute({
-            sql: `SELECT is_active, COALESCE(token_version, 1) AS token_version, COALESCE(must_change_password, 0) AS must_change_password, mfa_enabled FROM admin_users WHERE id = ? LIMIT 1`,
+            sql: `SELECT role, allowed_sections, is_active, COALESCE(token_version, 1) AS token_version, COALESCE(must_change_password, 0) AS must_change_password, mfa_enabled FROM admin_users WHERE id = ? LIMIT 1`,
             args: [userId]
           }).catch(() => ({ rows: [] }));
 
@@ -4264,9 +4294,13 @@ export default {
             });
           }
 
+          authUser.role = activeRes.rows[0].role || authUser.role;
+          authUser.allowedSections = authUser.role === 'admin' ? null : parseAllowedSections(activeRes.rows[0].allowed_sections);
           authUser.mfaEnabled = Boolean(activeRes.rows[0].mfa_enabled);
           authUser.mustChangePassword = authUser.authProvider === 'auth0' ? false : Boolean(activeRes.rows[0].must_change_password);
           authUser.tokenVersion = dbVersion;
+        } else {
+          authUser.allowedSections = authUser.role === 'admin' ? null : parseAllowedSections(authUser.allowedSections);
         }
 
         // 15.4 Current User Profile (GET /api/admin/auth/me)
@@ -4278,6 +4312,7 @@ export default {
               email: authUser.email,
               name: authUser.name,
               role: authUser.role,
+              allowedSections: authUser.role === 'admin' ? null : (authUser.allowedSections ?? null),
               mfaEnabled: Boolean(authUser.mfaEnabled),
               mustChangePassword: Boolean(authUser.mustChangePassword),
               authProvider: authUser.authProvider || 'password'
@@ -4411,6 +4446,7 @@ export default {
             email: authUser.email,
             name: authUser.name,
             role: authUser.role,
+            allowedSections: authUser.role === 'admin' ? null : (authUser.allowedSections ?? null),
             tv: nextVersion
           }, jwtSecret, sessionDurationSec);
 
@@ -4549,7 +4585,7 @@ export default {
           }
 
           const usersRes = await db.execute({
-            sql: `SELECT id, email, name, role, password_hash, mfa_enabled, is_active, created_at, last_login_at
+            sql: `SELECT id, email, name, role, allowed_sections, password_hash, mfa_enabled, is_active, created_at, last_login_at
                   FROM admin_users
                   ORDER BY CASE role WHEN 'admin' THEN 1 WHEN 'approver' THEN 2 WHEN 'editor' THEN 3 ELSE 4 END, created_at ASC`,
             args: []
@@ -4560,6 +4596,7 @@ export default {
             email: row.email,
             name: row.name,
             role: row.role,
+            allowedSections: row.role === 'admin' ? null : parseAllowedSections(row.allowed_sections),
             mfaEnabled: Boolean(row.mfa_enabled),
             isActive: Boolean(row.is_active),
             authMode: String(row.password_hash || '').startsWith('sso-only') ? 'sso' : 'password_or_sso',
@@ -4596,6 +4633,13 @@ export default {
             return errorResponse('Invalid role. Allowed roles: admin, approver, editor, read_only.', 400, null, adminCors);
           }
 
+          const sectionsNorm = requestedRole === 'admin'
+            ? { valid: true, serialized: null, sections: null }
+            : normalizeAllowedSectionsInput(body.allowedSections);
+          if (!sectionsNorm.valid) {
+            return errorResponse(sectionsNorm.error, 400, null, adminCors);
+          }
+
           const existingRes = await db.execute({
             sql: `SELECT id FROM admin_users WHERE LOWER(email) = LOWER(?) LIMIT 1`,
             args: [cleanEmail]
@@ -4620,9 +4664,9 @@ export default {
 
           const newId = `adm-${crypto.randomUUID().slice(0, 8)}`;
           await db.execute({
-            sql: `INSERT INTO admin_users (id, email, name, role, password_hash, salt, is_active, must_change_password, token_version)
-                  VALUES (?, ?, ?, ?, ?, ?, 1, ?, 1)`,
-            args: [newId, cleanEmail, cleanName, requestedRole, passwordHash, salt, mustChangePassword]
+            sql: `INSERT INTO admin_users (id, email, name, role, allowed_sections, password_hash, salt, is_active, must_change_password, token_version)
+                  VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, 1)`,
+            args: [newId, cleanEmail, cleanName, requestedRole, sectionsNorm.serialized, passwordHash, salt, mustChangePassword]
           });
 
           // Generate 6-digit onboarding OTP for the new user
@@ -4640,10 +4684,14 @@ export default {
 
           // Dispatch onboarding invite email with OTP code via Resend
           const panelUrl = `${env.FRONTEND_BASE_URL || 'https://diversitycollective.org'}/admin`;
+          const sectionLabels = Array.isArray(sectionsNorm.sections)
+            ? sectionsNorm.sections.map((id) => SECTION_LABELS[id] || id).join(', ')
+            : '';
           const emailContent = templateAdminUserInviteOtp({
             name: cleanName,
             email: cleanEmail,
             role: requestedRole,
+            sectionLabels,
             otpCode,
             panelUrl
           });
@@ -4673,21 +4721,22 @@ export default {
             action: 'admin_user_access_granted',
             targetType: 'admin_user',
             targetId: newId,
-            details: { grantedEmail: cleanEmail, name: cleanName, role: requestedRole, authMode: optionalPassword ? 'password_or_sso' : 'sso', emailDispatched, emailError },
+            details: { grantedEmail: cleanEmail, name: cleanName, role: requestedRole, allowedSections: sectionsNorm.sections, authMode: optionalPassword ? 'password_or_sso' : 'sso', emailDispatched, emailError },
             ip: clientIp
           });
 
           return jsonResponse({
             success: true,
             message: emailDispatched
-              ? `Access granted to ${cleanEmail} (${requestedRole}). An onboarding OTP verification code has been dispatched to their email.`
-              : `Access granted to ${cleanEmail} (${requestedRole}).`,
+              ? `Access granted to ${cleanEmail} (${requestedRole}${sectionLabels ? `: ${sectionLabels}` : ''}). An onboarding OTP verification code has been dispatched to their email.`
+              : `Access granted to ${cleanEmail} (${requestedRole}${sectionLabels ? `: ${sectionLabels}` : ''}).`,
             emailDispatched,
             user: {
               id: newId,
               email: cleanEmail,
               name: cleanName,
               role: requestedRole,
+              allowedSections: sectionsNorm.sections,
               mfaEnabled: false,
               isActive: true,
               authMode: optionalPassword ? 'password_or_sso' : 'sso',
@@ -4708,7 +4757,7 @@ export default {
 
           const targetId = decodeURIComponent(pathname.slice('/api/admin/users/'.length, -('/dispatch-otp'.length))).trim();
           const targetRes = await db.execute({
-            sql: `SELECT id, email, name, role, is_active FROM admin_users WHERE id = ? LIMIT 1`,
+            sql: `SELECT id, email, name, role, allowed_sections, is_active FROM admin_users WHERE id = ? LIMIT 1`,
             args: [targetId]
           });
 
@@ -4739,11 +4788,16 @@ export default {
             args: [otpJti, targetUser.email, otpCode, emailOtpHash, otpSalt, otpExp]
           });
 
+          const targetAllowed = targetUser.role === 'admin' ? null : parseAllowedSections(targetUser.allowed_sections);
+          const targetSectionLabels = Array.isArray(targetAllowed)
+            ? targetAllowed.map((id) => SECTION_LABELS[id] || id).join(', ')
+            : '';
           const panelUrl = `${env.FRONTEND_BASE_URL || 'https://diversitycollective.org'}/admin`;
           const emailContent = templateAdminUserInviteOtp({
             name: targetUser.name,
             email: targetUser.email,
             role: targetUser.role,
+            sectionLabels: targetSectionLabels,
             otpCode,
             panelUrl
           });
@@ -4867,7 +4921,7 @@ export default {
           const body = await request.json().catch(() => ({}));
 
           const existingRes = await db.execute({
-            sql: `SELECT id, email, name, role, is_active FROM admin_users WHERE id = ? LIMIT 1`,
+            sql: `SELECT id, email, name, role, allowed_sections, is_active FROM admin_users WHERE id = ? LIMIT 1`,
             args: [targetId]
           });
           if (existingRes.rows.length === 0) {
@@ -4888,6 +4942,20 @@ export default {
           }
           if (!ALLOWED_ADMIN_ROLES.has(nextRole)) {
             return errorResponse('Invalid role specified.', 400, null, adminCors);
+          }
+
+          let nextAllowedSectionsSql = existing.allowed_sections ?? null;
+          let nextAllowedSectionsParsed = nextRole === 'admin' ? null : parseAllowedSections(existing.allowed_sections);
+          if (nextRole === 'admin') {
+            nextAllowedSectionsSql = null;
+            nextAllowedSectionsParsed = null;
+          } else if (Object.prototype.hasOwnProperty.call(body, 'allowedSections')) {
+            const sectionsNorm = normalizeAllowedSectionsInput(body.allowedSections);
+            if (!sectionsNorm.valid) {
+              return errorResponse(sectionsNorm.error, 400, null, adminCors);
+            }
+            nextAllowedSectionsSql = sectionsNorm.serialized;
+            nextAllowedSectionsParsed = sectionsNorm.sections;
           }
 
           if (targetId === currentId && (nextRole !== 'admin' || nextActive === 0)) {
@@ -4922,9 +4990,9 @@ export default {
           const shouldRevokeSessions = nextActive === 0 || nextRole !== existing.role || nextEmail !== existing.email || passwordUpdated;
           await db.execute({
             sql: shouldRevokeSessions
-              ? `UPDATE admin_users SET email = ?, name = ?, role = ?, is_active = ?, token_version = COALESCE(token_version, 1) + 1 WHERE id = ?`
-              : `UPDATE admin_users SET email = ?, name = ?, role = ?, is_active = ? WHERE id = ?`,
-            args: [nextEmail, nextName, nextRole, nextActive, targetId]
+              ? `UPDATE admin_users SET email = ?, name = ?, role = ?, allowed_sections = ?, is_active = ?, token_version = COALESCE(token_version, 1) + 1 WHERE id = ?`
+              : `UPDATE admin_users SET email = ?, name = ?, role = ?, allowed_sections = ?, is_active = ? WHERE id = ?`,
+            args: [nextEmail, nextName, nextRole, nextAllowedSectionsSql, nextActive, targetId]
           });
 
           await logAdminAction(db, {
@@ -4933,12 +5001,13 @@ export default {
             action: 'admin_user_access_updated',
             targetType: 'admin_user',
             targetId,
-            details: { email: nextEmail, name: nextName, role: nextRole, isActive: Boolean(nextActive) },
+            details: { email: nextEmail, name: nextName, role: nextRole, allowedSections: nextAllowedSectionsParsed, isActive: Boolean(nextActive) },
             ip: clientIp
           });
 
           return jsonResponse({
             success: true,
+            allowedSections: nextAllowedSectionsParsed,
             message: `Updated access for ${nextEmail}.`
           }, 200, adminCors);
         }
@@ -5002,16 +5071,17 @@ export default {
         }
 
         if (pathname === '/api/admin/site-state' && request.method === 'PUT') {
-          if (!requireRole(authUser.role, ['admin', 'editor'])) {
-            return errorResponse('Forbidden: Administrator or editor role required to publish website changes.', 403, null, adminCors);
-          }
-          if (!db) {
-            return errorResponse('Database connection not available', 503, null, adminCors);
-          }
-
           const body = await request.json().catch(() => null);
           if (!body || typeof body !== 'object') {
             return errorResponse('Invalid JSON payload.', 400, null, adminCors);
+          }
+
+          const permCheck = assertUserCanPublishSiteState(authUser, body);
+          if (!permCheck.allowed) {
+            return errorResponse(permCheck.error || 'Forbidden: You do not have permission to edit one or more sections in this update.', 403, null, adminCors);
+          }
+          if (!db) {
+            return errorResponse('Database connection not available', 503, null, adminCors);
           }
 
           try {
@@ -5070,8 +5140,8 @@ export default {
 
         // 15.8 Gallery Photo Upload to GitHub & jsDelivr CDN (POST /api/admin/gallery/upload)
         if (pathname === '/api/admin/gallery/upload' && request.method === 'POST') {
-          if (!requireRole(authUser.role, ['admin', 'editor'])) {
-            return errorResponse('Forbidden: Administrator or editor role required to upload gallery media.', 403, null, cors);
+          if (!requireSectionAccess(authUser, 'gallery', ['admin', 'editor'])) {
+            return errorResponse('Forbidden: Photo Gallery access required to upload gallery media.', 403, null, cors);
           }
 
           const body = await request.json().catch(() => ({}));
@@ -5160,8 +5230,8 @@ export default {
 
         // 15.8b Sponsorship / Document PDF Upload (POST /api/admin/documents/upload)
         if (pathname === '/api/admin/documents/upload' && request.method === 'POST') {
-          if (!requireRole(authUser.role, ['admin', 'editor'])) {
-            return errorResponse('Forbidden: Administrator or editor role required to upload documents.', 403, null, adminCors);
+          if (!requireSectionAccess(authUser, 'sponsors', ['admin', 'editor'])) {
+            return errorResponse('Forbidden: Sponsors & Documents access required to upload documents.', 403, null, adminCors);
           }
 
           const body = await request.json().catch(() => ({}));
@@ -5260,8 +5330,8 @@ export default {
 
         // 15.9 Gallery Photo Deletion (DELETE /api/admin/gallery/:id)
         if (pathname.startsWith('/api/admin/gallery/') && request.method === 'DELETE') {
-          if (!requireRole(authUser.role, ['admin', 'editor'])) {
-            return errorResponse('Forbidden: Administrator role required to remove gallery photos.', 403, null, cors);
+          if (!requireSectionAccess(authUser, 'gallery', ['admin', 'editor'])) {
+            return errorResponse('Forbidden: Photo Gallery access required to remove gallery photos.', 403, null, cors);
           }
 
           const photoId = pathname.replace('/api/admin/gallery/', '').trim();
@@ -5308,6 +5378,9 @@ export default {
 
         // 15.3 Directory Moderation & Management List (GET /api/admin/directory)
         if (pathname === '/api/admin/directory' && request.method === 'GET') {
+          if (!requireSectionAccess(authUser, 'directory', ['admin', 'approver', 'editor', 'read_only'], { write: false })) {
+            return errorResponse('Forbidden: Business Directory access required.', 403, null, cors);
+          }
           const status = url.searchParams.get('status') || 'all';
           const db = getDb(env);
 
@@ -5329,8 +5402,8 @@ export default {
 
         // 15.3B Pre-Populate / Seed Full Business Directory (POST /api/admin/directory/seed)
         if (pathname === '/api/admin/directory/seed' && request.method === 'POST') {
-          if (!requireRole(authUser.role, ['admin', 'approver', 'editor'])) {
-            return errorResponse('Forbidden: Approver or Admin role required', 403, null, cors);
+          if (!requireSectionAccess(authUser, 'directory', ['admin', 'approver', 'editor'])) {
+            return errorResponse('Forbidden: Business Directory access required', 403, null, cors);
           }
 
           const body = await request.json().catch(() => ({}));
@@ -5394,8 +5467,8 @@ export default {
 
         // 15.3C Add Single Business to Directory (POST /api/admin/directory)
         if (pathname === '/api/admin/directory' && request.method === 'POST') {
-          if (!requireRole(authUser.role, ['admin', 'approver', 'editor'])) {
-            return errorResponse('Forbidden: Approver or Admin role required', 403, null, cors);
+          if (!requireSectionAccess(authUser, 'directory', ['admin', 'approver', 'editor'])) {
+            return errorResponse('Forbidden: Business Directory access required', 403, null, cors);
           }
 
           const body = await request.json().catch(() => ({}));
@@ -5458,8 +5531,8 @@ export default {
 
         // 15.4 Moderate Directory Listing (POST /api/admin/directory/:id/moderate)
         if (pathname.startsWith('/api/admin/directory/') && pathname.endsWith('/moderate') && request.method === 'POST') {
-          if (!requireRole(authUser.role, ['admin', 'approver'])) {
-            return errorResponse('Forbidden: Approver or Admin role required', 403, null, cors);
+          if (!requireSectionAccess(authUser, 'directory', ['admin', 'approver'])) {
+            return errorResponse('Forbidden: Business Directory moderation access required', 403, null, cors);
           }
 
           const parts = pathname.split('/');
@@ -5498,8 +5571,8 @@ export default {
 
         // 15.5 Edit Business Listing (PUT /api/admin/directory/:id)
         if (pathname.startsWith('/api/admin/directory/') && request.method === 'PUT') {
-          if (!requireRole(authUser.role, ['admin', 'editor', 'approver'])) {
-            return errorResponse('Forbidden: Editor, Approver or Admin role required', 403, null, cors);
+          if (!requireSectionAccess(authUser, 'directory', ['admin', 'editor', 'approver'])) {
+            return errorResponse('Forbidden: Business Directory access required', 403, null, cors);
           }
 
           const bizId = pathname.replace('/api/admin/directory/', '');
@@ -5552,8 +5625,8 @@ export default {
 
         // 15.6 Delete Business Listing (DELETE /api/admin/directory/:id)
         if (pathname.startsWith('/api/admin/directory/') && request.method === 'DELETE') {
-          if (!requireRole(authUser.role, ['admin', 'approver', 'editor'])) {
-            return errorResponse('Forbidden: Admin or Editor role required to delete records', 403, null, cors);
+          if (!requireSectionAccess(authUser, 'directory', ['admin', 'approver', 'editor'])) {
+            return errorResponse('Forbidden: Business Directory access required to delete records', 403, null, cors);
           }
 
           const bizId = pathname.replace('/api/admin/directory/', '');
@@ -5577,6 +5650,9 @@ export default {
 
         // 15.7 Directory Corrections List (GET /api/admin/corrections)
         if (pathname === '/api/admin/corrections' && request.method === 'GET') {
+          if (!requireSectionAccess(authUser, 'directory', ['admin', 'approver', 'editor', 'read_only'], { write: false })) {
+            return errorResponse('Forbidden: Business Directory access required.', 403, null, cors);
+          }
           const db = getDb(env);
           if (!db) return jsonResponse({ success: true, corrections: [] }, 200, cors);
 
@@ -5589,8 +5665,8 @@ export default {
 
         // 15.8 Resolve Correction (POST /api/admin/corrections/:id/resolve)
         if (pathname.startsWith('/api/admin/corrections/') && pathname.endsWith('/resolve') && request.method === 'POST') {
-          if (!requireRole(authUser.role, ['admin', 'approver'])) {
-            return errorResponse('Forbidden: Approver or Admin role required', 403, null, cors);
+          if (!requireSectionAccess(authUser, 'directory', ['admin', 'approver'])) {
+            return errorResponse('Forbidden: Business Directory moderation access required', 403, null, cors);
           }
 
           const parts = pathname.split('/');
@@ -5611,6 +5687,9 @@ export default {
 
         // 15.9 Operational Inquiries List (GET /api/admin/inquiries)
         if (pathname === '/api/admin/inquiries' && request.method === 'GET') {
+          if (!requireSectionAccess(authUser, 'inquiries', ['admin', 'approver', 'editor', 'read_only'], { write: false })) {
+            return errorResponse('Forbidden: Inquiries access required.', 403, null, cors);
+          }
           const type = url.searchParams.get('type') || 'contact';
           const db = getDb(env);
 
@@ -5646,8 +5725,8 @@ export default {
 
         // 15.10 Operational Inquiries Status Update (PATCH /api/admin/inquiries/:type/:id)
         if (pathname.startsWith('/api/admin/inquiries/') && request.method === 'PATCH') {
-          if (!requireRole(authUser.role, ['admin', 'approver', 'editor'])) {
-            return errorResponse('Forbidden', 403, null, cors);
+          if (!requireSectionAccess(authUser, 'inquiries', ['admin', 'approver', 'editor'])) {
+            return errorResponse('Forbidden: Inquiries access required.', 403, null, cors);
           }
 
           const parts = pathname.replace('/api/admin/inquiries/', '').split('/');
@@ -5673,8 +5752,8 @@ export default {
 
         // 15.10b Operational Inquiries Edit Entry (PUT /api/admin/inquiries/:type/:id)
         if (pathname.startsWith('/api/admin/inquiries/') && request.method === 'PUT') {
-          if (!requireRole(authUser.role, ['admin', 'approver', 'editor'])) {
-            return errorResponse('Forbidden', 403, null, cors);
+          if (!requireSectionAccess(authUser, 'inquiries', ['admin', 'approver', 'editor'])) {
+            return errorResponse('Forbidden: Inquiries access required.', 403, null, cors);
           }
 
           const parts = pathname.replace('/api/admin/inquiries/', '').split('/');
@@ -5783,8 +5862,8 @@ export default {
 
         // 15.10c Operational Inquiries Delete Entry (DELETE /api/admin/inquiries/:type/:id)
         if (pathname.startsWith('/api/admin/inquiries/') && request.method === 'DELETE') {
-          if (!requireRole(authUser.role, ['admin', 'approver', 'editor'])) {
-            return errorResponse('Forbidden', 403, null, cors);
+          if (!requireSectionAccess(authUser, 'inquiries', ['admin', 'approver', 'editor'])) {
+            return errorResponse('Forbidden: Inquiries access required.', 403, null, cors);
           }
 
           const parts = pathname.replace('/api/admin/inquiries/', '').split('/');
@@ -5808,8 +5887,8 @@ export default {
 
         // 15.10d Operational Inquiries Create Entry (POST /api/admin/inquiries/:type)
         if (pathname.startsWith('/api/admin/inquiries/') && request.method === 'POST') {
-          if (!requireRole(authUser.role, ['admin', 'approver', 'editor'])) {
-            return errorResponse('Forbidden', 403, null, cors);
+          if (!requireSectionAccess(authUser, 'inquiries', ['admin', 'approver', 'editor'])) {
+            return errorResponse('Forbidden: Inquiries access required.', 403, null, cors);
           }
 
           const parts = pathname.replace('/api/admin/inquiries/', '').split('/');
@@ -5900,8 +5979,8 @@ export default {
 
         // 15.10d Admin Voicemails List (GET /api/admin/voicemails)
         if (pathname === '/api/admin/voicemails' && request.method === 'GET') {
-          if (!requireRole(authUser.role, ['admin', 'approver', 'editor', 'read_only'])) {
-            return errorResponse('Forbidden', 403, null, cors);
+          if (!requireSectionAccess(authUser, 'inquiries', ['admin', 'approver', 'editor', 'read_only'], { write: false })) {
+            return errorResponse('Forbidden: Voicemail & Inquiries access required.', 403, null, cors);
           }
 
           const statusFilter = url.searchParams.get('status') || 'all';
@@ -5930,8 +6009,8 @@ export default {
 
         // 15.10e Admin Voicemail Audio Stream (GET /api/admin/voicemails/:id/audio)
         if (pathname.startsWith('/api/admin/voicemails/') && pathname.endsWith('/audio') && request.method === 'GET') {
-          if (!requireRole(authUser.role, ['admin', 'approver', 'editor', 'read_only'])) {
-            return errorResponse('Forbidden', 403, null, cors);
+          if (!requireSectionAccess(authUser, 'inquiries', ['admin', 'approver', 'editor', 'read_only'], { write: false })) {
+            return errorResponse('Forbidden: Voicemail & Inquiries access required.', 403, null, cors);
           }
 
           const id = pathname.replace('/api/admin/voicemails/', '').replace('/audio', '').trim();
@@ -5990,8 +6069,8 @@ export default {
 
         // 15.10f Admin Voicemail Status Update (PATCH /api/admin/voicemails/:id)
         if (pathname.startsWith('/api/admin/voicemails/') && request.method === 'PATCH') {
-          if (!requireRole(authUser.role, ['admin', 'approver', 'editor'])) {
-            return errorResponse('Forbidden', 403, null, cors);
+          if (!requireSectionAccess(authUser, 'inquiries', ['admin', 'approver', 'editor'])) {
+            return errorResponse('Forbidden: Voicemail & Inquiries access required.', 403, null, cors);
           }
 
           const id = pathname.replace('/api/admin/voicemails/', '').trim();
@@ -6039,8 +6118,8 @@ export default {
 
         // 15.10g Admin Voicemail Delete (DELETE /api/admin/voicemails/:id)
         if (pathname.startsWith('/api/admin/voicemails/') && request.method === 'DELETE') {
-          if (!requireRole(authUser.role, ['admin', 'approver'])) {
-            return errorResponse('Forbidden', 403, null, cors);
+          if (!requireSectionAccess(authUser, 'inquiries', ['admin', 'approver'])) {
+            return errorResponse('Forbidden: Voicemail & Inquiries access required.', 403, null, cors);
           }
 
           const id = pathname.replace('/api/admin/voicemails/', '').trim();
@@ -6064,8 +6143,8 @@ export default {
 
         // 15.10h Admin Media Suggestions List (GET /api/admin/media-suggestions)
         if (pathname === '/api/admin/media-suggestions' && request.method === 'GET') {
-          if (!requireRole(authUser.role, ['admin', 'approver', 'editor', 'read_only'])) {
-            return errorResponse('Forbidden', 403, null, cors);
+          if (!requireSectionAccess(authUser, ['podcasts', 'inquiries'], ['admin', 'approver', 'editor', 'read_only'], { write: false })) {
+            return errorResponse('Forbidden: Podcasts or Inquiries access required.', 403, null, cors);
           }
           const statusFilter = url.searchParams.get('status') || 'all';
           const db = getDb(env);
@@ -6089,8 +6168,8 @@ export default {
 
         // 15.10i Admin Media Suggestion Status Update (PATCH /api/admin/media-suggestions/:id)
         if (pathname.startsWith('/api/admin/media-suggestions/') && request.method === 'PATCH') {
-          if (!requireRole(authUser.role, ['admin', 'approver', 'editor'])) {
-            return errorResponse('Forbidden', 403, null, cors);
+          if (!requireSectionAccess(authUser, ['podcasts', 'inquiries'], ['admin', 'approver', 'editor'])) {
+            return errorResponse('Forbidden: Podcasts or Inquiries access required.', 403, null, cors);
           }
           const id = pathname.replace('/api/admin/media-suggestions/', '').trim();
           const body = await request.json().catch(() => ({}));
@@ -6111,8 +6190,8 @@ export default {
 
         // 15.10j Admin Media Suggestion Delete (DELETE /api/admin/media-suggestions/:id)
         if (pathname.startsWith('/api/admin/media-suggestions/') && request.method === 'DELETE') {
-          if (!requireRole(authUser.role, ['admin', 'approver'])) {
-            return errorResponse('Forbidden', 403, null, cors);
+          if (!requireSectionAccess(authUser, ['podcasts', 'inquiries'], ['admin', 'approver'])) {
+            return errorResponse('Forbidden: Podcasts or Inquiries access required.', 403, null, cors);
           }
           const id = pathname.replace('/api/admin/media-suggestions/', '').trim();
           const db = getDb(env);
@@ -6131,8 +6210,8 @@ export default {
         // =======================================================================
         const groupMembersMatch = pathname.match(/^\/api\/admin\/community-groups\/([^/]+)\/members$/);
         if (groupMembersMatch && request.method === 'GET') {
-          if (!requireRole(authUser.role, ['admin', 'approver', 'editor'])) {
-            return errorResponse('Forbidden', 403, null, cors);
+          if (!requireSectionAccess(authUser, 'community', ['admin', 'approver', 'editor'], { write: false })) {
+            return errorResponse('Forbidden: Community Groups access required.', 403, null, cors);
           }
 
           const slug = decodeURIComponent(groupMembersMatch[1]).trim();
@@ -6265,8 +6344,8 @@ export default {
         // =======================================================================
         const memberUpdateMatch = pathname.match(/^\/api\/admin\/community-groups\/([^/]+)\/members\/([^/]+)$/);
         if (memberUpdateMatch && request.method === 'PATCH') {
-          if (!requireRole(authUser.role, ['admin', 'approver', 'editor'])) {
-            return errorResponse('Forbidden', 403, null, cors);
+          if (!requireSectionAccess(authUser, 'community', ['admin', 'approver', 'editor'])) {
+            return errorResponse('Forbidden: Community Groups edit access required.', 403, null, cors);
           }
           const [, slug, memberId] = memberUpdateMatch;
           const body = await request.json().catch(() => ({}));
@@ -6295,8 +6374,8 @@ export default {
         // 15.10m Admin Community Group Member Delete (DELETE /api/admin/community-groups/:slug/members/:id)
         // =======================================================================
         if (memberUpdateMatch && request.method === 'DELETE') {
-          if (!requireRole(authUser.role, ['admin'])) {
-            return errorResponse('Forbidden: Administrator role required', 403, null, cors);
+          if (!requireSectionAccess(authUser, 'community', ['admin'])) {
+            return errorResponse('Forbidden: Community Groups delete access required.', 403, null, cors);
           }
           const [, , memberId] = memberUpdateMatch;
           const db = getDb(env);
@@ -6312,8 +6391,8 @@ export default {
         // =======================================================================
         const broadcastMatch = pathname.match(/^\/api\/admin\/community-groups\/([^/]+)\/broadcast$/);
         if (broadcastMatch && request.method === 'POST') {
-          if (!requireRole(authUser.role, ['admin', 'editor'])) {
-            return errorResponse('Forbidden: Administrator or Editor role required', 403, null, cors);
+          if (!requireSectionAccess(authUser, 'community', ['admin', 'editor'])) {
+            return errorResponse('Forbidden: Community Groups access required to broadcast updates.', 403, null, cors);
           }
 
           const slug = decodeURIComponent(broadcastMatch[1]).trim();
@@ -6484,8 +6563,8 @@ export default {
         // =======================================================================
         const broadcastHistoryMatch = pathname.match(/^\/api\/admin\/community-groups\/([^/]+)\/broadcasts$/);
         if (broadcastHistoryMatch && request.method === 'GET') {
-          if (!requireRole(authUser.role, ['admin', 'approver', 'editor'])) {
-            return errorResponse('Forbidden', 403, null, cors);
+          if (!requireSectionAccess(authUser, 'community', ['admin', 'approver', 'editor'], { write: false })) {
+            return errorResponse('Forbidden: Community Groups access required.', 403, null, cors);
           }
           const slug = decodeURIComponent(broadcastHistoryMatch[1]).trim();
           const db = getDb(env);
@@ -6558,6 +6637,9 @@ export default {
 
         // 15.12 Admin Audit Logs (GET /api/admin/audit-logs)
         if (pathname === '/api/admin/audit-logs' && request.method === 'GET') {
+          if (authUser.role !== 'admin' && Array.isArray(authUser.allowedSections)) {
+            return errorResponse('Forbidden: Full administrator access required to view audit logs.', 403, null, cors);
+          }
           const db = getDb(env);
           if (!db) return jsonResponse({ success: true, logs: [] }, 200, cors);
 
@@ -6621,6 +6703,9 @@ export default {
 
         // 15.15 Admin Newsletter Subscribers List (GET /api/admin/newsletter/subscribers)
         if (pathname === '/api/admin/newsletter/subscribers' && request.method === 'GET') {
+          if (!requireSectionAccess(authUser, 'inquiries', ['admin', 'approver', 'editor', 'read_only'], { write: false })) {
+            return errorResponse('Forbidden: Inquiries & Newsletter access required.', 403, null, cors);
+          }
           const db = getDb(env);
           if (!db) {
             return jsonResponse({ success: true, count: 0, activeCount: 0, subscribers: [] }, 200, cors);
@@ -6648,6 +6733,9 @@ export default {
 
         // 15.15B Admin Add Subscriber (POST /api/admin/newsletter/subscribers)
         if (pathname === '/api/admin/newsletter/subscribers' && request.method === 'POST') {
+          if (!requireSectionAccess(authUser, 'inquiries', ['admin', 'editor'])) {
+            return errorResponse('Forbidden: Newsletter access required.', 403, null, cors);
+          }
           const body = await request.json().catch(() => ({}));
           const email = (body.email || '').toLowerCase().trim();
           if (!email || !email.includes('@')) {
@@ -6667,6 +6755,9 @@ export default {
 
         // 15.15C Admin Toggle Subscriber Status (POST /api/admin/newsletter/subscribers/toggle)
         if (pathname === '/api/admin/newsletter/subscribers/toggle' && request.method === 'POST') {
+          if (!requireSectionAccess(authUser, 'inquiries', ['admin', 'editor'])) {
+            return errorResponse('Forbidden: Newsletter access required.', 403, null, cors);
+          }
           const body = await request.json().catch(() => ({}));
           const email = (body.email || '').toLowerCase().trim();
           const targetStatus = body.isActive ? 1 : 0;
@@ -6682,8 +6773,8 @@ export default {
 
         // 15.16 Admin Newsletter Broadcast (POST /api/admin/newsletter/send)
         if (pathname === '/api/admin/newsletter/send' && request.method === 'POST') {
-          if (!requireRole(authUser.role, ['admin', 'editor'])) {
-            return errorResponse('Forbidden: Editor or Admin role required to broadcast newsletters', 403, null, cors);
+          if (!requireSectionAccess(authUser, 'inquiries', ['admin', 'editor'])) {
+            return errorResponse('Forbidden: Newsletter broadcast access required', 403, null, cors);
           }
 
           const body = await request.json().catch(() => ({}));
@@ -6815,6 +6906,9 @@ export default {
         // with dynamic placeholders: {{donor_name}}, {{amount}}, {{frequency}}, etc.
         // =======================================================================
         if (pathname === '/api/admin/donations/template' && request.method === 'GET') {
+          if (!requireSectionAccess(authUser, 'donations', ['admin', 'approver', 'editor', 'read_only'], { write: false })) {
+            return errorResponse('Forbidden: Donations settings access required.', 403, null, adminCors);
+          }
           const db = getDb(env);
           let template = null;
           let updatedAt = null;
@@ -6850,8 +6944,8 @@ export default {
         }
 
         if (pathname === '/api/admin/donations/template' && request.method === 'PUT') {
-          if (!requireRole(authUser.role, ['admin', 'editor'])) {
-            return errorResponse('Forbidden: Admin or Editor role required to edit donation email template.', 403, null, adminCors);
+          if (!requireSectionAccess(authUser, 'donations', ['admin', 'editor'])) {
+            return errorResponse('Forbidden: Donations settings access required to edit donation email template.', 403, null, adminCors);
           }
 
           const body = await request.json().catch(() => ({}));
@@ -6919,6 +7013,9 @@ export default {
 
         // 15.18 Send Test Donation Thank-You Email (POST /api/admin/donations/template/test)
         if (pathname === '/api/admin/donations/template/test' && request.method === 'POST') {
+          if (!requireSectionAccess(authUser, 'donations', ['admin', 'editor'])) {
+            return errorResponse('Forbidden: Donations settings access required.', 403, null, adminCors);
+          }
           const body = await request.json().catch(() => ({}));
           const targetEmail = (body.testEmail || authUser.email || '').trim();
           const customTemplate = body.template || null;
@@ -6973,6 +7070,9 @@ export default {
 
         // 15.19 List Recent Donations (GET /api/admin/donations)
         if (pathname === '/api/admin/donations' && request.method === 'GET') {
+          if (!requireSectionAccess(authUser, 'donations', ['admin', 'approver', 'editor', 'read_only'], { write: false })) {
+            return errorResponse('Forbidden: Donations access required.', 403, null, adminCors);
+          }
           const db = getDb(env);
           if (!db) return jsonResponse({ success: true, donations: [] }, 200, adminCors);
 
@@ -6992,6 +7092,9 @@ export default {
 
         // 15.20 Resend Donor Appreciation Email (POST /api/admin/donations/:id/resend-email)
         if (pathname.startsWith('/api/admin/donations/') && pathname.endsWith('/resend-email') && request.method === 'POST') {
+          if (!requireSectionAccess(authUser, 'donations', ['admin', 'approver', 'editor'])) {
+            return errorResponse('Forbidden: Donations access required.', 403, null, adminCors);
+          }
           const donationId = pathname.replace('/api/admin/donations/', '').replace('/resend-email', '').trim();
           const db = getDb(env);
           if (!db) return errorResponse('Database not available', 503, null, adminCors);
@@ -7073,6 +7176,9 @@ export default {
 
         // 15.21 Record In-Person / Offline Contribution (POST /api/admin/donations/manual)
         if (pathname === '/api/admin/donations/manual' && request.method === 'POST') {
+          if (!requireSectionAccess(authUser, 'donations', ['admin', 'editor'])) {
+            return errorResponse('Forbidden: Donations access required.', 403, null, adminCors);
+          }
           const body = await request.json().catch(() => ({}));
           const donorName = (body.donorName || '').trim();
           const donorEmail = (body.donorEmail || '').toLowerCase().trim();

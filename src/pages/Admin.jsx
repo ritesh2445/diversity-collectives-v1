@@ -72,6 +72,14 @@ import { getSiteStateMeta, SYNC_EVENTS, fetchAndApplyLiveSiteState } from '../se
 import { cmsStore } from '../services/cmsStore.js';
 import { getMediaSuggestions, updateMediaSuggestion, deleteMediaSuggestion } from '../admin/services/cmsClient.js';
 import { setStoredToken } from '../admin/services/adminClient.js';
+import {
+  ADMIN_SECTIONS,
+  canAccessAdminTab,
+  canAccessInboxSubTab,
+  getFirstAllowedAdminTab,
+  isSectionRestrictedUser,
+  formatSectionLabels
+} from '../admin/permissions.js';
 
 const API_BASE_URL = typeof window !== 'undefined' && window.location.origin
   ? (import.meta.env?.VITE_API_URL || import.meta.env?.VITE_API_BASE_URL || '/api')
@@ -678,6 +686,10 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
   const [editingUserName, setEditingUserName] = useState('');
   const [editingUserEmail, setEditingUserEmail] = useState('');
   const [dispatchingOtpId, setDispatchingOtpId] = useState(null);
+  const [newUserUseCustomSections, setNewUserUseCustomSections] = useState(false);
+  const [newUserAllowedSections, setNewUserAllowedSections] = useState(['community']);
+  const [sectionsModalUser, setSectionsModalUser] = useState(null);
+  const [sectionsModalSaving, setSectionsModalSaving] = useState(false);
 
   // Load user session on mount via HttpOnly cookie and listen for cross-tab auth state events
   useEffect(() => {
@@ -709,19 +721,32 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
     };
   }, []);
 
-  // Load tab data
+  // Enforce valid landing tab/subtab & load permitted tab data
   useEffect(() => {
-    if (user) {
-      if (activeTab === 'inbox') {
-        if (inboxSubTab === 'newsletter') fetchSubscriberStats();
-        if (inboxSubTab === 'directory') fetchDirectoryBusinesses();
-        if (inboxSubTab === 'inquiries') fetchInquiries(inquiryType);
-        if (inboxSubTab === 'voicemail') fetchVoicemails();
-        if (inboxSubTab === 'suggestions') fetchMediaSuggestions();
+    if (!user) return;
+    if (!canAccessAdminTab(user, activeTab)) {
+      const nextTab = getFirstAllowedAdminTab(user);
+      if (nextTab !== activeTab) {
+        setActiveTab(nextTab);
+        return;
       }
-      if (activeTab === 'gallery') fetchAdminGallery();
-      if (activeTab === 'security' && user.role === 'admin') fetchTeamUsers();
     }
+    if (activeTab === 'inbox') {
+      if (!canAccessInboxSubTab(user, inboxSubTab)) {
+        const firstSub = ['directory', 'inquiries', 'voicemail', 'suggestions', 'newsletter'].find((t) => canAccessInboxSubTab(user, t));
+        if (firstSub && firstSub !== inboxSubTab) {
+          setInboxSubTab(firstSub);
+          return;
+        }
+      }
+      if (inboxSubTab === 'newsletter' && canAccessInboxSubTab(user, 'newsletter')) fetchSubscriberStats();
+      if (inboxSubTab === 'directory' && canAccessInboxSubTab(user, 'directory')) fetchDirectoryBusinesses();
+      if (inboxSubTab === 'inquiries' && canAccessInboxSubTab(user, 'inquiries')) fetchInquiries(inquiryType);
+      if (inboxSubTab === 'voicemail' && canAccessInboxSubTab(user, 'voicemail')) fetchVoicemails();
+      if (inboxSubTab === 'suggestions' && canAccessInboxSubTab(user, 'suggestions')) fetchMediaSuggestions();
+    }
+    if (activeTab === 'gallery' && canAccessAdminTab(user, 'gallery')) fetchAdminGallery();
+    if (activeTab === 'security' && user.role === 'admin') fetchTeamUsers();
   }, [user, activeTab, inboxSubTab, inquiryType]);
 
   const fetchTeamUsers = async () => {
@@ -746,6 +771,14 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
   const handleGrantAccess = async (e) => {
     e.preventDefault();
     setTeamStatus(null);
+    const shouldSendCustom = newUserRole !== 'admin' && newUserUseCustomSections;
+    if (shouldSendCustom && newUserAllowedSections.length === 0) {
+      setTeamStatus({
+        success: false,
+        message: 'Please select at least one section or choose Full Role Access.'
+      });
+      return;
+    }
     setGrantLoading(true);
     try {
       const res = await fetch(`${API_BASE_URL}/admin/users`, {
@@ -756,6 +789,7 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
           name: newUserName.trim(),
           email: newUserEmail.trim(),
           role: newUserRole,
+          allowedSections: shouldSendCustom ? newUserAllowedSections : null,
           ...(newUserPassword ? { password: newUserPassword } : {})
         })
       });
@@ -770,6 +804,8 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
         setNewUserEmail('');
         setNewUserRole('editor');
         setNewUserPassword('');
+        setNewUserUseCustomSections(false);
+        setNewUserAllowedSections(['community']);
         fetchTeamUsers();
       } else {
         setTeamStatus({ success: false, message: data.error || 'Could not grant access.' });
@@ -778,6 +814,46 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
       setTeamStatus({ success: false, message: 'Network error granting admin access.' });
     } finally {
       setGrantLoading(false);
+    }
+  };
+
+  const handleSaveUserSections = async (e) => {
+    e.preventDefault();
+    if (!sectionsModalUser) return;
+    if (sectionsModalUser.mode === 'custom' && sectionsModalUser.selectedSections.length === 0) {
+      setTeamStatus({
+        success: false,
+        message: 'Select at least one admin section or choose Full Role Access.'
+      });
+      return;
+    }
+    setSectionsModalSaving(true);
+    setTeamStatus(null);
+    try {
+      const allowedSections = sectionsModalUser.mode === 'custom' ? sectionsModalUser.selectedSections : null;
+      const res = await fetch(`${API_BASE_URL}/admin/users/${encodeURIComponent(sectionsModalUser.id)}`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ allowedSections })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTeamStatus({
+          success: true,
+          message: allowedSections
+            ? `Updated section access for ${sectionsModalUser.email}: ${formatSectionLabels(allowedSections)}.`
+            : `Restored full ${sectionsModalUser.role} access for ${sectionsModalUser.email}.`
+        });
+        setSectionsModalUser(null);
+        fetchTeamUsers();
+      } else {
+        setTeamStatus({ success: false, message: data.error || 'Failed to update section access.' });
+      }
+    } catch {
+      setTeamStatus({ success: false, message: 'Network error updating section permissions.' });
+    } finally {
+      setSectionsModalSaving(false);
     }
   };
 
@@ -3233,6 +3309,14 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-purple-100 text-[#5A1E65]">
                   {user.role}
                 </span>
+                {isSectionRestrictedUser(user) && (
+                  <span
+                    className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-900 border border-amber-200 max-w-[200px] truncate"
+                    title={formatSectionLabels(user.allowedSections)}
+                  >
+                    Scoped: {formatSectionLabels(user.allowedSections)}
+                  </span>
+                )}
                 {user.authProvider === 'auth0' && (
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-emerald-100 text-emerald-800">
                     Auth0 SSO
@@ -3246,10 +3330,11 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
           </div>
 
           <AdminQuickSearch
+            currentUser={user}
             onNavigate={(tab, subTab) => {
-              if (tab) setActiveTab(tab);
-              if (tab === 'appearance' && subTab) setAppearanceSubTab(subTab);
-              if (tab === 'cms' && subTab) {
+              if (tab && canAccessAdminTab(user, tab)) setActiveTab(tab);
+              if (tab === 'appearance' && subTab && canAccessAdminTab(user, 'appearance')) setAppearanceSubTab(subTab);
+              if (tab === 'cms' && subTab && canAccessAdminTab(user, 'cms')) {
                 setTimeout(() => {
                   window.dispatchEvent(
                     new CustomEvent('dcvc-admin-cms-subtab', { detail: { subTab } })
@@ -3311,8 +3396,9 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
           </div>
         </div>
 
-        {/* Streamlined 6-Tab Navigation */}
+        {/* Streamlined Tab Navigation (Filtered by Role & Section Access) */}
         <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-1.5 overflow-x-auto border-t border-slate-100">
+          {canAccessAdminTab(user, 'hero') && (
           <button
             type="button"
             onClick={() => setActiveTab('hero')}
@@ -3325,7 +3411,9 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
             <Sliders className="w-4 h-4" />
             <span>Homepage & Hero</span>
           </button>
+          )}
 
+          {canAccessAdminTab(user, 'appearance') && (
           <button
             type="button"
             onClick={() => setActiveTab('appearance')}
@@ -3338,7 +3426,9 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
             <Palette className="w-4 h-4" />
             <span>Colors, Fonts & Cards</span>
           </button>
+          )}
 
+          {canAccessAdminTab(user, 'cms') && (
           <button
             type="button"
             onClick={() => setActiveTab('cms')}
@@ -3351,7 +3441,9 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
             <LayoutGrid className="w-4 h-4" />
             <span>Website Content (CMS)</span>
           </button>
+          )}
 
+          {canAccessAdminTab(user, 'sponsorships') && (
           <button
             type="button"
             onClick={() => setActiveTab('sponsorships')}
@@ -3364,7 +3456,9 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
             <FileText className="w-4 h-4" />
             <span>Sponsorships & Documents</span>
           </button>
+          )}
 
+          {canAccessAdminTab(user, 'features') && (
           <button
             type="button"
             onClick={() => setActiveTab('features')}
@@ -3377,7 +3471,9 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
             <Sparkles className="w-4 h-4" />
             <span>Forms, Slots & Popups</span>
           </button>
+          )}
 
+          {canAccessAdminTab(user, 'donations') && (
           <button
             type="button"
             onClick={() => setActiveTab('donations')}
@@ -3390,7 +3486,9 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
             <Heart className="w-4 h-4 fill-current text-rose-500" />
             <span>Donations & Email Template</span>
           </button>
+          )}
 
+          {canAccessAdminTab(user, 'inbox') && (
           <button
             type="button"
             onClick={() => setActiveTab('inbox')}
@@ -3402,13 +3500,15 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
           >
             <Inbox className="w-4 h-4" />
             <span>Directory, Inquiries & Email</span>
-            {pendingBusinesses.length > 0 && (
+            {canAccessInboxSubTab(user, 'directory') && pendingBusinesses.length > 0 && (
               <span className="ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] bg-amber-100 text-amber-900 font-bold">
                 {pendingBusinesses.length}
               </span>
             )}
           </button>
+          )}
 
+          {canAccessAdminTab(user, 'gallery') && (
           <button
             type="button"
             onClick={() => setActiveTab('gallery')}
@@ -3421,7 +3521,9 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
             <Camera className="w-4 h-4" />
             <span>Photo Gallery</span>
           </button>
+          )}
 
+          {canAccessAdminTab(user, 'status') && (
           <button
             type="button"
             onClick={() => setActiveTab('status')}
@@ -3434,6 +3536,7 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
             <Clock className="w-4 h-4" />
             <span>Site Status & Countdown</span>
           </button>
+          )}
 
           <button
             type="button"
@@ -3461,7 +3564,7 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
         {/* ================================================================= */}
         {/* TAB 1: HOMEPAGE & HERO EDITOR                                     */}
         {/* ================================================================= */}
-        {activeTab === 'hero' && (
+        {activeTab === 'hero' && canAccessAdminTab(user, 'hero') && (
           <div className="space-y-6">
             <DesignEditor />
           </div>
@@ -3470,7 +3573,7 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
         {/* ================================================================= */}
         {/* TAB 2: COLORS, FONTS & CARD ORDER                                 */}
         {/* ================================================================= */}
-        {activeTab === 'appearance' && (
+        {activeTab === 'appearance' && canAccessAdminTab(user, 'appearance') && (
           <div className="space-y-6">
             <div className="bg-white rounded-2xl border border-slate-200 p-2 inline-flex flex-wrap gap-1 shadow-xs">
               <button
@@ -3504,22 +3607,22 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
         {/* ================================================================= */}
         {/* TAB 3: WEBSITE CONTENT (CMS)                                      */}
         {/* ================================================================= */}
-        {activeTab === 'cms' && (
+        {activeTab === 'cms' && canAccessAdminTab(user, 'cms') && (
           <div className="space-y-6">
-            <CmsStudio />
+            <CmsStudio currentUser={user} />
           </div>
         )}
 
         {/* ================================================================= */}
         {/* TAB: SPONSORSHIPS & CORPORATE PARTNERSHIP DOCUMENTS                */}
         {/* ================================================================= */}
-        {activeTab === 'sponsorships' && (
+        {activeTab === 'sponsorships' && canAccessAdminTab(user, 'sponsorships') && (
           <div className="space-y-6">
             <SponsorshipManager />
           </div>
         )}
 
-        {activeTab === 'features' && (
+        {activeTab === 'features' && canAccessAdminTab(user, 'features') && (
           <div className="space-y-6">
             <SiteFeaturesStudio />
           </div>
@@ -3528,7 +3631,7 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
         {/* ================================================================= */}
         {/* TAB: DONATIONS & AUTOMATED EMAIL TEMPLATE                         */}
         {/* ================================================================= */}
-        {activeTab === 'donations' && (
+        {activeTab === 'donations' && canAccessAdminTab(user, 'donations') && (
           <div className="space-y-6">
             <DonationSettingsStudio currentUser={user} />
           </div>
@@ -3537,9 +3640,10 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
         {/* ================================================================= */}
         {/* TAB 4: DIRECTORY, INQUIRIES & NEWSLETTER                          */}
         {/* ================================================================= */}
-        {activeTab === 'inbox' && (
+        {activeTab === 'inbox' && canAccessAdminTab(user, 'inbox') && (
           <div className="space-y-6">
             <div className="bg-white rounded-2xl border border-slate-200 p-2 inline-flex flex-wrap gap-1 shadow-xs">
+              {canAccessInboxSubTab(user, 'directory') && (
               <button
                 onClick={() => setInboxSubTab('directory')}
                 className={`px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-2 transition-all cursor-pointer ${
@@ -3556,6 +3660,8 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                   </span>
                 )}
               </button>
+              )}
+              {canAccessInboxSubTab(user, 'inquiries') && (
               <button
                 onClick={() => setInboxSubTab('inquiries')}
                 className={`px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-2 transition-all cursor-pointer ${
@@ -3567,6 +3673,8 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                 <Inbox className="w-3.5 h-3.5" />
                 <span>Form Submissions</span>
               </button>
+              )}
+              {canAccessInboxSubTab(user, 'voicemail') && (
               <button
                 onClick={() => {
                   setInboxSubTab('voicemail');
@@ -3586,6 +3694,8 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                   </span>
                 )}
               </button>
+              )}
+              {canAccessInboxSubTab(user, 'suggestions') && (
               <button
                 onClick={() => {
                   setInboxSubTab('suggestions');
@@ -3605,6 +3715,8 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                   </span>
                 )}
               </button>
+              )}
+              {canAccessInboxSubTab(user, 'newsletter') && (
               <button
                 onClick={() => setInboxSubTab('newsletter')}
                 className={`px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-2 transition-all cursor-pointer ${
@@ -3616,6 +3728,7 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                 <Mail className="w-3.5 h-3.5" />
                 <span>Newsletter & Subscribers ({subscriberStats.activeSubscribers})</span>
               </button>
+              )}
             </div>
 
         {inboxSubTab === 'newsletter' && (
@@ -6750,7 +6863,7 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
         {/* ================================================================= */}
         {/* TAB 5: COMMUNITY GALLERY STUDIO (GitHub + jsDelivr Multi-CDN)     */}
         {/* ================================================================= */}
-        {activeTab === 'gallery' && (
+        {activeTab === 'gallery' && canAccessAdminTab(user, 'gallery') && (
           <div className="space-y-8">
             {/* Gallery Top Banner & CDN Diagnostics */}
             <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs space-y-6">
@@ -7078,7 +7191,7 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
         {/* ================================================================= */}
         {/* TAB 3.5: SITE STATUS, LAUNCH TIMER & MAINTENANCE                  */}
         {/* ================================================================= */}
-        {activeTab === 'status' && (
+        {activeTab === 'status' && canAccessAdminTab(user, 'status') && (
           <div className="space-y-6">
             <SiteStatusManager />
           </div>
@@ -7202,28 +7315,60 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                                 }`}>
                                   {member.hasPassword ? 'Password Active' : (member.authMode === 'sso' ? 'Auth0 SSO' : 'SSO / No Password')}
                                 </span>
-                                {!member.isActive && (
-                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-100 text-rose-800">
-                                    Suspended
-                                  </span>
-                                )}
+                                  {!member.isActive && (
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-100 text-rose-800">
+                                      Suspended
+                                    </span>
+                                  )}
+                                  {member.role !== 'admin' && Array.isArray(member.allowedSections) && (
+                                    <span
+                                      className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-900 border border-amber-200 max-w-[260px] truncate"
+                                      title={formatSectionLabels(member.allowedSections)}
+                                    >
+                                      Sections: {formatSectionLabels(member.allowedSections)}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-xs text-slate-600 font-mono truncate">{member.email}</p>
                               </div>
-                              <p className="text-xs text-slate-600 font-mono truncate">{member.email}</p>
-                            </div>
 
-                            <div className="flex flex-wrap items-center gap-2 shrink-0">
-                              <select
-                                value={member.role}
-                                disabled={isSelf}
-                                onChange={(e) => handleUpdateUserAccess(member.id, { role: e.target.value })}
-                                aria-label={`Role for ${member.email}`}
-                                className="px-2.5 py-1.5 rounded-xl border border-slate-300 bg-white text-xs font-bold text-slate-800 disabled:opacity-60 cursor-pointer"
-                              >
-                                <option value="admin">Admin (Full)</option>
-                                <option value="approver">Approver</option>
-                                <option value="editor">Editor</option>
-                                <option value="read_only">Read Only</option>
-                              </select>
+                              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                                <select
+                                  value={member.role}
+                                  disabled={isSelf}
+                                  onChange={(e) => handleUpdateUserAccess(member.id, { role: e.target.value })}
+                                  aria-label={`Role for ${member.email}`}
+                                  className="px-2.5 py-1.5 rounded-xl border border-slate-300 bg-white text-xs font-bold text-slate-800 disabled:opacity-60 cursor-pointer"
+                                >
+                                  <option value="admin">Admin (Full)</option>
+                                  <option value="approver">Approver</option>
+                                  <option value="editor">Editor</option>
+                                  <option value="read_only">Read Only</option>
+                                </select>
+
+                                {member.role !== 'admin' && (
+                                  <button
+                                    type="button"
+                                    disabled={!member.isActive}
+                                    onClick={() => setSectionsModalUser({
+                                      id: member.id,
+                                      name: member.name,
+                                      email: member.email,
+                                      role: member.role,
+                                      mode: Array.isArray(member.allowedSections) ? 'custom' : 'full',
+                                      selectedSections: Array.isArray(member.allowedSections) ? [...member.allowedSections] : ['community']
+                                    })}
+                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold cursor-pointer transition-all shadow-2xs disabled:opacity-50 ${
+                                      Array.isArray(member.allowedSections)
+                                        ? 'border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-950'
+                                        : 'border-slate-200 bg-white hover:bg-purple-50 text-[#5A1E65]'
+                                    }`}
+                                    title={`Configure specific admin sections for ${member.name}`}
+                                  >
+                                    <Sliders className="w-3.5 h-3.5" />
+                                    <span>{Array.isArray(member.allowedSections) ? `Sections (${member.allowedSections.length})` : 'Section Access'}</span>
+                                  </button>
+                                )}
 
                               <button
                                 type="button"
@@ -7299,6 +7444,150 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                     <p className="text-xs text-slate-500 italic">No team accounts loaded yet.</p>
                   )}
                 </div>
+
+                {/* Modal: Configure Granular Section Permissions for Team Member */}
+                {sectionsModalUser && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150">
+                    <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-7 shadow-2xl border border-purple-200 space-y-5 animate-in zoom-in-95 duration-150">
+                      <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-9 h-9 rounded-xl bg-purple-100 text-[#5A1E65] flex items-center justify-center">
+                            <Sliders className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-bold text-slate-900">Configure Section Access</h3>
+                            <p className="text-[11px] text-slate-500 font-mono truncate max-w-[320px]">
+                              {sectionsModalUser.name} ({sectionsModalUser.email}) · Role: {sectionsModalUser.role}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setSectionsModalUser(null)}
+                          className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <form onSubmit={handleSaveUserSections} className="space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          <button
+                            type="button"
+                            onClick={() => setSectionsModalUser((prev) => ({ ...prev, mode: 'full' }))}
+                            className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                              sectionsModalUser.mode === 'full'
+                                ? 'border-[#5A1E65] bg-purple-50/70 ring-2 ring-purple-200'
+                                : 'border-slate-200 bg-white hover:bg-slate-50'
+                            }`}
+                          >
+                            <div className="text-xs font-extrabold text-slate-900">Full {sectionsModalUser.role} Access</div>
+                            <div className="text-[11px] text-slate-500 mt-0.5">Access all standard sections permitted for this role.</div>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setSectionsModalUser((prev) => ({
+                              ...prev,
+                              mode: 'custom',
+                              selectedSections: prev.selectedSections.length > 0 ? prev.selectedSections : ['community']
+                            }))}
+                            className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                              sectionsModalUser.mode === 'custom'
+                                ? 'border-[#5A1E65] bg-purple-50/70 ring-2 ring-purple-200'
+                                : 'border-slate-200 bg-white hover:bg-slate-50'
+                            }`}
+                          >
+                            <div className="text-xs font-extrabold text-slate-900">Specific Sections Only</div>
+                            <div className="text-[11px] text-slate-500 mt-0.5">Restrict this user strictly to checked tabs (enforced on server &amp; UI).</div>
+                          </button>
+                        </div>
+
+                        {sectionsModalUser.mode === 'custom' && (
+                          <div className="space-y-3 p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <span className="text-[11px] font-black uppercase tracking-wider text-slate-600">
+                                Quick Presets:
+                              </span>
+                              <div className="flex flex-wrap gap-1.5">
+                                {[
+                                  { label: 'Community Groups Only', ids: ['community'] },
+                                  { label: 'Events Only', ids: ['events'] },
+                                  { label: 'Directory Only', ids: ['directory'] },
+                                  { label: 'Gallery & Media', ids: ['gallery', 'podcasts'] }
+                                ].map((preset) => (
+                                  <button
+                                    key={preset.label}
+                                    type="button"
+                                    onClick={() => setSectionsModalUser((prev) => ({ ...prev, selectedSections: preset.ids }))}
+                                    className="px-2.5 py-1 rounded-lg bg-white border border-purple-200 hover:bg-purple-100 text-[11px] font-bold text-[#5A1E65] cursor-pointer"
+                                  >
+                                    {preset.label}
+                                  </button>
+                                ))}
+                                <button
+                                  type="button"
+                                  onClick={() => setSectionsModalUser((prev) => ({ ...prev, selectedSections: [] }))}
+                                  className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-[11px] font-bold text-slate-600 cursor-pointer"
+                                >
+                                  Clear
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto pr-1">
+                              {ADMIN_SECTIONS.map((sec) => {
+                                const checked = sectionsModalUser.selectedSections.includes(sec.id);
+                                return (
+                                  <label
+                                    key={sec.id}
+                                    className={`flex items-start gap-2.5 p-2.5 rounded-xl border cursor-pointer transition-all ${
+                                      checked
+                                        ? 'bg-white border-[#5A1E65] shadow-2xs'
+                                        : 'bg-white/60 border-slate-200 hover:bg-white'
+                                    }`}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={checked}
+                                      onChange={() => setSectionsModalUser((prev) => ({
+                                        ...prev,
+                                        selectedSections: checked
+                                          ? prev.selectedSections.filter((x) => x !== sec.id)
+                                          : [...prev.selectedSections, sec.id]
+                                      }))}
+                                      className="mt-0.5 rounded accent-[#5A1E65] w-4 h-4 shrink-0"
+                                    />
+                                    <div className="min-w-0">
+                                      <span className="text-xs font-bold text-slate-900 block leading-tight">{sec.label}</span>
+                                      <span className="text-[10px] text-slate-500 block leading-snug">{sec.desc}</span>
+                                    </div>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="flex gap-2 pt-2">
+                          <button
+                            type="button"
+                            onClick={() => setSectionsModalUser(null)}
+                            className="flex-1 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="submit"
+                            disabled={sectionsModalSaving || (sectionsModalUser.mode === 'custom' && sectionsModalUser.selectedSections.length === 0)}
+                            className="flex-1 py-2.5 rounded-xl bg-[#5A1E65] hover:bg-purple-900 text-white font-extrabold text-xs shadow-sm transition-all cursor-pointer disabled:opacity-50"
+                          >
+                            {sectionsModalSaving ? 'Saving Access...' : 'Save Section Access'}
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                )}
 
                 {/* Modal: Superadmin Set/Reset Password for Team Member */}
                 {passwordModalUser && (
@@ -7518,21 +7807,25 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                         className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-[#5A1E65] text-xs font-medium outline-none"
                       />
                     </div>
-                    <div className="space-y-1">
-                      <label htmlFor="new-team-role" className="text-xs font-bold text-slate-700 block">Permission Role</label>
-                      <select
-                        id="new-team-role"
-                        name="new_team_member_role"
-                        value={newUserRole}
-                        onChange={(e) => setNewUserRole(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-[#5A1E65] text-xs font-bold bg-white outline-none"
-                      >
-                        <option value="admin">Admin — Full Access & Team Management</option>
-                        <option value="approver">Approver — Directory Moderation</option>
-                        <option value="editor">Editor — Content & Gallery</option>
-                        <option value="read_only">Read Only — View Inbox & Reports</option>
-                      </select>
-                    </div>
+                      <div className="space-y-1">
+                        <label htmlFor="new-team-role" className="text-xs font-bold text-slate-700 block">Permission Role</label>
+                        <select
+                          id="new-team-role"
+                          name="new_team_member_role"
+                          value={newUserRole}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setNewUserRole(val);
+                            if (val === 'admin') setNewUserUseCustomSections(false);
+                          }}
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-[#5A1E65] text-xs font-bold bg-white outline-none"
+                        >
+                          <option value="admin">Admin — Full Access & Team Management</option>
+                          <option value="approver">Approver — Directory Moderation</option>
+                          <option value="editor">Editor — Content & Gallery</option>
+                          <option value="read_only">Read Only — View Inbox & Reports</option>
+                        </select>
+                      </div>
                     <div className="space-y-1">
                       <div className="flex items-center justify-between">
                         <label htmlFor="new-team-password" className="text-xs font-bold text-slate-700 block">Optional Local Password (leave blank for SSO-only)</label>
@@ -7570,10 +7863,92 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                         </button>
                       </div>
                     </div>
-                  </div>
-                  <div>
-                    <button
-                      type="submit"
+                    </div>
+
+                    {newUserRole !== 'admin' && (
+                      <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div>
+                            <span className="text-xs font-extrabold text-slate-900 block">Admin Section Access Scope</span>
+                            <span className="text-[11px] text-slate-500">Give access to all sections for this role, or restrict strictly to chosen sections (e.g. Community Groups only).</span>
+                          </div>
+                          <div className="inline-flex rounded-xl bg-white border border-slate-200 p-1 shrink-0 self-start">
+                            <button
+                              type="button"
+                              onClick={() => setNewUserUseCustomSections(false)}
+                              className={`px-3 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer transition-all ${
+                                !newUserUseCustomSections ? 'bg-[#5A1E65] text-white' : 'text-slate-600 hover:bg-slate-50'
+                              }`}
+                            >
+                              All Role Sections
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setNewUserUseCustomSections(true)}
+                              className={`px-3 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer transition-all ${
+                                newUserUseCustomSections ? 'bg-[#5A1E65] text-white' : 'text-slate-600 hover:bg-slate-50'
+                              }`}
+                            >
+                              Specific Sections Only
+                            </button>
+                          </div>
+                        </div>
+
+                        {newUserUseCustomSections && (
+                          <div className="space-y-2.5 pt-1">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 mr-1">Presets:</span>
+                              {[
+                                { label: 'Community Groups Only', ids: ['community'] },
+                                { label: 'Events Only', ids: ['events'] },
+                                { label: 'Directory Only', ids: ['directory'] },
+                                { label: 'Gallery & Media', ids: ['gallery', 'podcasts'] }
+                              ].map((preset) => (
+                                <button
+                                  key={preset.label}
+                                  type="button"
+                                  onClick={() => setNewUserAllowedSections(preset.ids)}
+                                  className="px-2.5 py-1 rounded-lg bg-white border border-purple-200 hover:bg-purple-100 text-[11px] font-bold text-[#5A1E65] cursor-pointer"
+                                >
+                                  {preset.label}
+                                </button>
+                              ))}
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-56 overflow-y-auto pr-1">
+                              {ADMIN_SECTIONS.map((sec) => {
+                                const checked = newUserAllowedSections.includes(sec.id);
+                                return (
+                                  <label
+                                    key={sec.id}
+                                    className={`flex items-start gap-2 p-2 rounded-xl border cursor-pointer transition-all ${
+                                      checked ? 'bg-white border-[#5A1E65] shadow-2xs' : 'bg-white/60 border-slate-200 hover:bg-white'
+                                    }`}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={checked}
+                                      onChange={() => setNewUserAllowedSections((prev) =>
+                                        checked ? prev.filter((x) => x !== sec.id) : [...prev, sec.id]
+                                      )}
+                                      className="mt-0.5 rounded accent-[#5A1E65] w-3.5 h-3.5 shrink-0"
+                                    />
+                                    <div className="min-w-0">
+                                      <span className="text-[11px] font-bold text-slate-900 block leading-tight">{sec.label}</span>
+                                      <span className="text-[10px] text-slate-500 block leading-tight">{sec.group}</span>
+                                    </div>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <div>
+                      <button
+                        type="submit"
                       disabled={grantLoading}
                       className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#5A1E65] to-purple-800 text-white font-extrabold text-xs shadow-sm hover:shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
                     >

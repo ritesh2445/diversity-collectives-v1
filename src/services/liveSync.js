@@ -7,7 +7,8 @@
 
 import { DEFAULT_SITE_THEME, normalizePageLayoutBlocks, upgradeOrNormalizePageLayout } from '../data/siteDefaults.js';
 import { normalizeCmsEventList } from '../utils/eventDates.js';
-import { getStoredToken } from '../admin/services/adminClient.js';
+import { getStoredToken, getStoredUser } from '../admin/services/adminClient.js';
+import { filterSiteStatePatchForUser } from '../admin/permissions.js';
 
 export const STORAGE_KEYS = {
   HERO_THEME: 'dcvc_active_hero_theme',
@@ -563,6 +564,15 @@ export async function publishAdminSitePatch(patch) {
   }
 
   const token = getAdminSessionToken();
+  const currentUser = getStoredUser();
+
+  if (currentUser && currentUser.role !== 'admin' && Array.isArray(currentUser.allowedSections)) {
+    effectivePatch = filterSiteStatePatchForUser(effectivePatch, currentUser);
+    if (!effectivePatch || Object.keys(effectivePatch).length === 0) {
+      notifyWindowEvent(SYNC_EVENTS.STATUS_CHANGED, { status: 'error', error: 'Permission denied for this section.' });
+      return { success: false, syncedToServer: false, forbidden: true, error: 'Forbidden: You do not have permission to edit this section.' };
+    }
+  }
 
   try {
     let res = null;
@@ -644,6 +654,15 @@ export async function publishAdminSitePatch(patch) {
 
 export async function resetAdminSiteState(scope = 'all') {
   const token = getAdminSessionToken();
+  const currentUser = getStoredUser();
+
+  if (currentUser && currentUser.role !== 'admin' && Array.isArray(currentUser.allowedSections)) {
+    effectivePatch = filterSiteStatePatchForUser(effectivePatch, currentUser);
+    if (!effectivePatch || Object.keys(effectivePatch).length === 0) {
+      notifyWindowEvent(SYNC_EVENTS.STATUS_CHANGED, { status: 'error', error: 'Permission denied for this section.' });
+      return { success: false, syncedToServer: false, forbidden: true, error: 'Forbidden: You do not have permission to edit this section.' };
+    }
+  }
 
   if (typeof localStorage !== 'undefined') {
     if (scope === 'all' || scope === 'hero') localStorage.removeItem(STORAGE_KEYS.HERO_THEME);

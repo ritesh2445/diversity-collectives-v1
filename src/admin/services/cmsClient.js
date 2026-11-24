@@ -156,7 +156,8 @@ export function deleteCmsMilestone(year) {
 
 export function saveCmsSettings(settingsUpdates) {
   const user = getStoredUser();
-  if (user && user.role && user.role !== 'admin') {
+  const hasExplicitSettingsAccess = Array.isArray(user?.allowedSections) && user.allowedSections.includes('settings') && user?.role !== 'read_only';
+  if (user && user.role && user.role !== 'admin' && !hasExplicitSettingsAccess) {
     throw new Error('Unauthorized: Only administrators with the Admin role can update CRC operating hours and site settings.');
   }
   const updated = cmsStore.saveSettings(settingsUpdates);

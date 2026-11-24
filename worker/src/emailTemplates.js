@@ -900,7 +900,7 @@ export function templateAdminLoginOtp({ email, otpCode }) {
 }
 
 // 14c. Admin User Onboarding & Invitation OTP Code
-export function templateAdminUserInviteOtp({ name, email, role, otpCode, panelUrl }) {
+export function templateAdminUserInviteOtp({ name, email, role, sectionLabels, otpCode, panelUrl }) {
   const cleanName = name || email.split('@')[0];
   const roleLabels = {
     admin: 'Administrator (Full Access & Team Management)',
@@ -908,7 +908,9 @@ export function templateAdminUserInviteOtp({ name, email, role, otpCode, panelUr
     editor: 'Editor (Content & Media Management)',
     read_only: 'Auditor (Read-Only Access)'
   };
-  const roleDisplay = roleLabels[role] || (role ? role.toUpperCase() : 'Staff Member');
+  const roleDisplay = sectionLabels
+    ? `${roleLabels[role] || role} — Sections: ${sectionLabels}`
+    : (roleLabels[role] || (role ? role.toUpperCase() : 'Staff Member'));
   const targetUrl = panelUrl || `${DCVC_WEBSITE}/admin`;
 
   const contentHtml = `
