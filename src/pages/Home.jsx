@@ -797,9 +797,9 @@ export default function Home() {
           ==================================================================== */}
       <section data-block-id="block-directory" style={getSectionStyle('directory_cta', 6)} className="py-14 md:py-20 bg-white border-b border-slate-100 scroll-reveal">
         <div className="container-clean">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
-            <div className="flex flex-col gap-3 max-w-2xl">
-              <span className="glass-pill text-xs font-bold text-[#5A1E65] bg-purple-50 border-purple-200">
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-10">
+            <div className="flex flex-col gap-3 max-w-2xl min-w-0">
+              <span className="glass-pill text-xs font-bold text-[#5A1E65] bg-purple-50 border-purple-200 w-fit">
                 {directoryProps.eyebrow || 'VENTURA COUNTY AFFIRMING NETWORK'}
               </span>
               <h2 className="font-display text-2xl sm:text-4xl font-extrabold text-slate-950 tracking-tight">
@@ -809,38 +809,38 @@ export default function Home() {
                 {directoryProps.description || 'Discover verified LGBTQ+ owned and affirming businesses across Ventura, Oxnard, Ojai, Camarillo, and the Conejo Valley.'}
               </p>
             </div>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
-              <Link to="/directory" className="btn-primary py-2.5 px-5 text-xs font-bold inline-flex items-center justify-center gap-1.5 shadow-sm text-center">
+            <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto lg:shrink-0">
+              <Link to="/directory" className="btn-primary py-2.5 px-5 text-xs font-bold inline-flex items-center justify-center gap-1.5 shadow-sm text-center whitespace-nowrap">
                 <span>{directoryProps.ctaText || 'Browse Full Directory'}</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                <ArrowRight className="w-3.5 h-3.5 shrink-0" />
               </Link>
-              <Link to="/directory/submit" className="btn-secondary py-2.5 px-4 text-xs font-bold inline-flex items-center justify-center gap-1.5 bg-white text-center">
+              <Link to="/directory/submit" className="btn-secondary py-2.5 px-4 text-xs font-bold inline-flex items-center justify-center gap-1.5 bg-white text-center whitespace-nowrap">
                 <span>{directoryProps.secondaryCtaText || 'Submit Your Business'}</span>
               </Link>
             </div>
           </div>
 
-          <MobileCarousel cols={3} autoScrollMs={4500}>
+          <MobileCarousel cols={3} autoScrollMs={4500} className="items-stretch" cardClassName="self-stretch flex flex-col">
             {businessDirectorySeed.slice(0, 3).map((biz) => (
-              <div key={biz.id} className="p-6 rounded-3xl bg-slate-50 border border-slate-200/90 hover:border-purple-300 transition-all shadow-xs hover:shadow-lg flex flex-col justify-between gap-4 h-full">
+              <div key={biz.id} className="p-6 rounded-3xl bg-slate-50 border border-slate-200/90 hover:border-purple-300 transition-all shadow-xs hover:shadow-lg flex flex-col justify-between gap-4 flex-1">
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
                     <span className="text-[10px] font-black uppercase tracking-wider text-[#5A1E65] bg-purple-50 px-2.5 py-1 rounded-full border border-purple-200">
                       {biz.category}
                     </span>
                     <span className="text-xs sm:text-sm font-bold text-slate-700">{biz.city}</span>
                   </div>
-                  <h3 className="font-display text-xl font-black text-slate-950">{biz.name}</h3>
+                  <h3 className="font-display text-xl font-black text-slate-950 leading-snug">{biz.name}</h3>
                   <p className="text-sm text-slate-800 leading-relaxed font-medium line-clamp-3">{biz.description}</p>
                 </div>
-                <div className="pt-3 border-t border-slate-200/80 flex items-center justify-between text-xs">
+                <div className="pt-3 border-t border-slate-200/80 flex items-center justify-between text-xs mt-auto">
                   <span className="text-emerald-700 font-bold flex items-center gap-1">
-                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
                     <span>Affirming Vetted</span>
                   </span>
-                  <Link to={`/directory/${biz.slug}`} className="text-[#5A1E65] font-black hover:underline inline-flex items-center gap-1">
+                  <Link to={`/directory/${biz.slug}`} className="text-[#5A1E65] font-black hover:underline inline-flex items-center gap-1 whitespace-nowrap">
                     <span>View Profile</span>
-                    <ArrowRight className="w-3 h-3" />
+                    <ArrowRight className="w-3 h-3 shrink-0" />
                   </Link>
                 </div>
               </div>
