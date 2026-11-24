@@ -544,50 +544,11 @@ export const DEFAULT_SPONSORSHIP_PAGE_CONTENT = {
   contactAddress: "2471 Portola Road, Suite 100, Ventura, CA 93003"
 };
 
-export const DEFAULT_SPONSORSHIP_DOCUMENTS = [
-  {
-    id: "doc-2027-cover-letter",
-    title: "DCVC 2027 Sponsorship Cover Letter",
-    description: "Official introductory correspondence from DCVC leadership presenting our 2027 community partnership alignments, mission milestones, and the executive invitation to sponsor regional LGBTQ+ programs.",
-    category: "Cover Letter",
-    year: "2027",
-    fileUrl: "/documents/sponsorships/dcvc-2027-sponsorship-cover-letter.pdf",
-    fileName: "dcvc-2027-sponsorship-cover-letter.pdf",
-    fileSize: "7.1 KB",
-    status: "published",
-    displayOrder: 1,
-    createdAt: "2026-11-20T10:00:00.000Z",
-    updatedAt: "2026-11-20T10:00:00.000Z"
-  },
-  {
-    id: "doc-2027-opportunities-packet",
-    title: "DCVC 2027 Sponsorship Opportunities Packet",
-    description: "Detailed 2027 investment tier guide (Premier, Major, Specialty, Community, and In-Kind), partner branding activations, employee engagement benefits, and partnership commitment form.",
-    category: "Sponsorship Package",
-    year: "2027",
-    fileUrl: "/documents/sponsorships/dcvc-2027-sponsorship-opportunities-packet.pdf",
-    fileName: "dcvc-2027-sponsorship-opportunities-packet.pdf",
-    fileSize: "8.1 KB",
-    status: "published",
-    displayOrder: 2,
-    createdAt: "2026-11-20T10:00:00.000Z",
-    updatedAt: "2026-11-20T10:00:00.000Z"
-  },
-  {
-    id: "doc-2027-strategic-proposal",
-    title: "DCVC 2027 Strategic Partnership Proposal",
-    description: "Strategic impact blueprint communicating DCVC's four core impact pillars (Advocacy, Visibility, Safety, Wellness), regional promotional reach across 10 Ventura County cities, and community value.",
-    category: "Strategic Proposal",
-    year: "2027",
-    fileUrl: "/documents/sponsorships/dcvc-2027-strategic-partnership-proposal.pdf",
-    fileName: "dcvc-2027-strategic-partnership-proposal.pdf",
-    fileSize: "6.9 KB",
-    status: "published",
-    displayOrder: 3,
-    createdAt: "2026-11-20T10:00:00.000Z",
-    updatedAt: "2026-11-20T10:00:00.000Z"
-  }
-];
+// Sponsorship document seed is intentionally empty.
+// Real sponsorship PDFs are uploaded and managed via the Admin Panel (Sponsorship Manager).
+// Do NOT add placeholder documents here — they would reappear after every liveSync poll
+// overwriting any real documents the admin has uploaded.
+export const DEFAULT_SPONSORSHIP_DOCUMENTS = [];
 
 export function mergeSponsorshipDocumentsWithDefaults(savedDocs = [], defaultDocs = DEFAULT_SPONSORSHIP_DOCUMENTS, deletedIds = []) {
   const seed = Array.isArray(defaultDocs) && defaultDocs.length > 0 ? defaultDocs : DEFAULT_SPONSORSHIP_DOCUMENTS;

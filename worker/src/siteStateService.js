@@ -27,6 +27,36 @@ const FAKE_PODCAST_IDS = new Set([
 ]);
 
 /**
+ * Fake placeholder sponsorship document IDs that were seeded during development.
+ * Strip these from the live state so admin-uploaded real PDFs are never replaced.
+ */
+const FAKE_SPONSORSHIP_DOC_IDS = new Set([
+  'doc-2027-cover-letter',
+  'doc-2027-opportunities-packet',
+  'doc-2027-strategic-proposal'
+]);
+
+/**
+ * Fix stale CMS text that was saved with incorrect wording.
+ * Replaces "Gatherings" with "Events" in any page block CTA text.
+ */
+function fixStaleCtaText(state) {
+  if (!state || !Array.isArray(state.pageBlocks)) return false;
+  let changed = false;
+  for (const block of state.pageBlocks) {
+    if (block && typeof block.ctaText === 'string' && block.ctaText.includes('Gatherings')) {
+      block.ctaText = block.ctaText.replace(/Gatherings/g, 'Events');
+      changed = true;
+    }
+    if (block && typeof block.description === 'string' && block.description.includes('community gatherings')) {
+      block.description = block.description.replace(/community gatherings/g, 'community events');
+      changed = true;
+    }
+  }
+  return changed;
+}
+
+/**
  * Strip fake seed podcasts from a parsed state object (mutates state.cmsData.podcasts in-place).
  * Returns true when at least one fake episode was removed (caller may want to re-persist).
  */
@@ -38,6 +68,20 @@ function purgeFakePodcasts(state) {
     return !FAKE_PODCAST_IDS.has(ep.id) && !FAKE_PODCAST_IDS.has(ep.slug);
   });
   return state.cmsData.podcasts.length < before;
+}
+
+/**
+ * Strip fake seed sponsorship documents from a parsed state object.
+ * Returns true when at least one fake document was removed.
+ */
+function purgeFakeSponsorshipDocs(state) {
+  if (!state || !state.cmsData || !Array.isArray(state.cmsData.sponsorshipDocuments)) return false;
+  const before = state.cmsData.sponsorshipDocuments.length;
+  state.cmsData.sponsorshipDocuments = state.cmsData.sponsorshipDocuments.filter(doc => {
+    if (!doc || typeof doc !== 'object') return false;
+    return !FAKE_SPONSORSHIP_DOC_IDS.has(doc.id);
+  });
+  return state.cmsData.sponsorshipDocuments.length < before;
 }
 
 const MAX_STATE_BYTES = 5 * 1024 * 1024; // 5 MB cap on serialized live state
@@ -375,7 +419,11 @@ export async function readSiteState(db) {
     }
     // Strip any fake seed podcast episodes that may have survived previous deploys
     const hadFakes = purgeFakePodcasts(parsed);
-    if (hadFakes) {
+    // Strip any fake seed sponsorship documents that may have survived previous deploys
+    const hadFakeSponsors = purgeFakeSponsorshipDocs(parsed);
+    // Fix stale "Gatherings" CTA text saved before the rename
+    const hadStaleText = fixStaleCtaText(parsed);
+    if (hadFakes || hadFakeSponsors || hadStaleText) {
       // Persist the cleansed state back so the row is clean for future reads
       try {
         await db.execute({
@@ -408,6 +456,10 @@ export async function writeSiteStatePatch(db, patch, actorEmail = 'admin@diversi
   const nextState = sanitizeSiteStatePatch(patch, current.state);
   // Always strip fake seed podcasts from whatever is about to be persisted
   purgeFakePodcasts(nextState);
+  // Always strip fake seed sponsorship documents from whatever is about to be persisted
+  purgeFakeSponsorshipDocs(nextState);
+  // Fix stale "Gatherings" CTA text
+  fixStaleCtaText(nextState);
   const nextVersion = Number(current.version || 0) + 1;
   const nowIso = new Date().toISOString();
 

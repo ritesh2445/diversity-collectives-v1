@@ -222,10 +222,10 @@ export default function Header() {
                 {/* On mobile: compact stacked two lines matching mockup */}
                 <div className="flex flex-col md:hidden leading-none">
                   <span className="font-display font-black text-[13px] tracking-tight text-slate-950 group-hover:text-[#5A1E65] transition-colors truncate">
-                    diversity
+                    Diversity
                   </span>
                   <span className="font-display font-black text-[13px] tracking-tight text-slate-950 group-hover:text-[#5A1E65] transition-colors mt-0.5 truncate">
-                    collective
+                    Collective
                   </span>
                 </div>
 

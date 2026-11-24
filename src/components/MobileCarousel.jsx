@@ -157,7 +157,7 @@ export default function MobileCarousel({
         onTouchStart={stopAutoScrollOnMobile}
         onTouchMove={stopAutoScrollOnMobile}
         onPointerDown={stopAutoScrollOnMobile}
-        className={`flex items-stretch overflow-x-auto gap-4 sm:gap-6 snap-x snap-mandatory pb-3 scroll-smooth mobile-card-scroll -mx-4 px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 lg:grid ${colsClass} lg:auto-rows-fr lg:overflow-visible ${className}`}
+        className={`flex items-stretch overflow-x-auto gap-4 sm:gap-6 snap-x snap-mandatory pb-3 mobile-card-scroll -mx-4 px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 lg:grid ${colsClass} lg:auto-rows-fr lg:overflow-visible ${className}`}
         style={{ touchAction: 'pan-y pan-x', overscrollBehaviorX: 'contain' }}
       >
         {validChildren.map((child, i) => (

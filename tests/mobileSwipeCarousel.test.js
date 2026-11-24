@@ -61,7 +61,9 @@ test('Mobile Swipe Carousel Feature Suite', async (t) => {
       'Events.jsx should import MobileCarousel'
     );
     assert.ok(
-      eventsContent.includes('<MobileCarousel cols={3} autoScrollMs={0}'),
+      eventsContent.includes('<MobileCarousel') &&
+        eventsContent.includes('cols={3}') &&
+        eventsContent.includes('autoScrollMs={0}'),
       'Events.jsx should wrap event cards with MobileCarousel cols={3} autoScrollMs={0}'
     );
   });
@@ -99,8 +101,8 @@ test('Mobile Swipe Carousel Feature Suite', async (t) => {
 
     const aboutContent = fs.readFileSync(path.resolve('src/pages/About.jsx'), 'utf8');
     assert.ok(
-      aboutContent.includes('max-w-5xl mx-auto w-full items-stretch'),
-      'About.jsx partner boxes must preserve center-aligned max-w-5xl mx-auto layout'
+      aboutContent.includes('max-w-5xl mx-auto w-full') && aboutContent.includes('MobileCarousel'),
+      'About.jsx partner boxes must preserve center-aligned max-w-5xl mx-auto layout with MobileCarousel'
     );
     assert.ok(
       aboutContent.includes('[overflow-wrap:anywhere]'),

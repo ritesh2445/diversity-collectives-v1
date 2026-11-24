@@ -30,28 +30,14 @@ describe('Sponsorship & Corporate Partnerships Document Library', () => {
     cmsStore.resetToFactoryDefaults();
   });
 
-  it('1. Initial Seed: 3 official 2027 sponsorship documents are available and published', () => {
+  it('1. Initial Seed: DEFAULT_SPONSORSHIP_DOCUMENTS is empty so no fake placeholder PDFs overwrite admin uploads', () => {
     const docs = getPublishedSponsorshipDocuments();
-    assert.strictEqual(docs.length, 3, 'Should have exactly 3 initial published documents');
-
-    const titles = docs.map(d => d.title);
-    assert.ok(titles.some(t => t.includes('Cover Letter')), 'Has Cover Letter');
-    assert.ok(titles.some(t => t.includes('Opportunities Packet')), 'Has Opportunities Packet');
-    assert.ok(titles.some(t => t.includes('Strategic Partnership Proposal')), 'Has Strategic Proposal');
-
-    // Verify categories
-    const categories = docs.map(d => d.category);
-    assert.ok(categories.includes('Cover Letter'));
-    assert.ok(categories.includes('Sponsorship Package'));
-    assert.ok(categories.includes('Strategic Proposal'));
-
-    // Verify all have year 2027
-    docs.forEach(doc => {
-      assert.strictEqual(doc.year, '2027');
-      assert.strictEqual(doc.status, 'published');
-      assert.ok(doc.fileUrl.endsWith('.pdf'), 'fileUrl must be a PDF');
-      assert.ok(doc.description.length > 20, 'description must be meaningful');
-    });
+    assert.ok(Array.isArray(docs), 'Should return an array');
+    assert.strictEqual(docs.length, 0, 'Should have 0 fake seed documents by default');
+    assert.ok(
+      docs.every(d => !['doc-2027-cover-letter', 'doc-2027-opportunities-packet', 'doc-2027-strategic-proposal'].includes(d.id)),
+      'Must not contain fake placeholder sponsorship documents'
+    );
   });
 
   it('2. Public access is strictly restricted to published documents only (Drafts hidden)', () => {
@@ -139,8 +125,22 @@ describe('Sponsorship & Corporate Partnerships Document Library', () => {
   });
 
   it('5. CRUD: Full lifecycle of upload, edit, reorder, and deletion with confirmation', () => {
-    // Create new document
-    const newDoc = {
+    const initialCount = getSponsorshipDocuments(true).length;
+
+    // Create two new documents
+    const doc1 = {
+      id: 'doc-real-sponsor-packet-2027',
+      title: '2027 Real Sponsor Packet',
+      description: 'Official corporate partnership tiers for DCVC.',
+      category: 'Sponsorship Package',
+      year: '2027',
+      fileUrl: '/documents/sponsorships/real-packet.pdf',
+      fileName: 'real-packet.pdf',
+      fileSize: '240 KB',
+      status: 'published',
+      displayOrder: 1
+    };
+    const doc2 = {
       id: 'doc-in-kind-guidelines-2027',
       title: '2027 In-Kind Contribution Guidelines',
       description: 'Accepted technology, clinic testing kits, and professional services for DCVC.',
@@ -150,12 +150,13 @@ describe('Sponsorship & Corporate Partnerships Document Library', () => {
       fileName: 'in-kind-guidelines.pdf',
       fileSize: '120 KB',
       status: 'published',
-      displayOrder: 4
+      displayOrder: 2
     };
 
-    saveCmsSponsorshipDocument(newDoc);
+    saveCmsSponsorshipDocument(doc1);
+    saveCmsSponsorshipDocument(doc2);
     let list = getSponsorshipDocuments(true);
-    assert.strictEqual(list.length, 4, 'List should now have 4 documents');
+    assert.strictEqual(list.length, initialCount + 2, 'List should now have 2 added documents');
     const created = list.find(d => d.id === 'doc-in-kind-guidelines-2027');
     assert.ok(created);
     assert.strictEqual(created.title, '2027 In-Kind Contribution Guidelines');
@@ -172,22 +173,21 @@ describe('Sponsorship & Corporate Partnerships Document Library', () => {
     assert.strictEqual(updated.title, '2027 Official In-Kind Donor & Supply Packet');
     assert.strictEqual(updated.category, 'Sponsorship Package');
 
-    // Reorder documents (put newly created document first)
+    // Reorder documents (put doc2 first)
     const reorderedIds = [
       'doc-in-kind-guidelines-2027',
-      'doc-2027-cover-letter',
-      'doc-2027-opportunities-packet',
-      'doc-2027-strategic-proposal'
+      'doc-real-sponsor-packet-2027'
     ];
     reorderCmsSponsorshipDocuments(reorderedIds);
     list = getSponsorshipDocuments(true);
     assert.strictEqual(list[0].id, 'doc-in-kind-guidelines-2027');
     assert.strictEqual(list[0].displayOrder, 1);
 
-    // Delete document
+    // Delete documents
     deleteCmsSponsorshipDocument('doc-in-kind-guidelines-2027');
+    deleteCmsSponsorshipDocument('doc-real-sponsor-packet-2027');
     list = getSponsorshipDocuments(true);
-    assert.strictEqual(list.length, 3, 'Should be back to 3 documents');
+    assert.strictEqual(list.length, initialCount, 'Should be back to initial count');
     assert.strictEqual(list.some(d => d.id === 'doc-in-kind-guidelines-2027'), false);
   });
 
@@ -233,22 +233,27 @@ describe('Sponsorship & Corporate Partnerships Document Library', () => {
   });
 
   it('8. mergeSponsorshipDocumentsWithDefaults prevents duplicate entries and respects deletions', () => {
-    const saved = [
-      { id: 'doc-2027-cover-letter', title: 'Custom Cover Letter Title', displayOrder: 1 }
+    const customDefaults = [
+      { id: 'doc-custom-1', title: 'Default 1', displayOrder: 1 },
+      { id: 'doc-custom-2', title: 'Default 2', displayOrder: 2 },
+      { id: 'doc-custom-3', title: 'Default 3', displayOrder: 3 }
     ];
-    const deleted = ['doc-2027-strategic-proposal'];
+    const saved = [
+      { id: 'doc-custom-1', title: 'Custom Cover Letter Title', displayOrder: 1 }
+    ];
+    const deleted = ['doc-custom-3'];
 
-    const merged = mergeSponsorshipDocumentsWithDefaults(saved, DEFAULT_SPONSORSHIP_DOCUMENTS, deleted);
+    const merged = mergeSponsorshipDocumentsWithDefaults(saved, customDefaults, deleted);
 
     // Cover letter has custom title
-    const coverLetter = merged.find(d => d.id === 'doc-2027-cover-letter');
+    const coverLetter = merged.find(d => d.id === 'doc-custom-1');
     assert.strictEqual(coverLetter.title, 'Custom Cover Letter Title');
 
-    // Strategic proposal was deleted, must NOT be present
-    assert.strictEqual(merged.some(d => d.id === 'doc-2027-strategic-proposal'), false);
+    // doc-custom-3 was deleted, must NOT be present
+    assert.strictEqual(merged.some(d => d.id === 'doc-custom-3'), false);
 
-    // Opportunities packet was not modified or deleted, seed is preserved
-    assert.ok(merged.some(d => d.id === 'doc-2027-opportunities-packet'));
+    // doc-custom-2 was not modified or deleted, seed is preserved
+    assert.ok(merged.some(d => d.id === 'doc-custom-2'));
   });
 
 });

@@ -77,7 +77,7 @@ export default function EventDetail() {
 
   usePageMeta({
     title: event ? event.title : 'Event Details',
-    description: event ? event.description : 'Gathering and community calendar details for Diversity Collective Ventura County.',
+    description: event ? event.description : 'Event and community calendar details for Diversity Collective Ventura County.',
     canonicalPath: event ? `/events/${event.slug}` : '/events',
     ogImage: event?.image
   });
@@ -114,7 +114,7 @@ export default function EventDetail() {
           className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-[#5A1E65] py-1.5 px-3.5 rounded-full border border-slate-200 hover:bg-slate-50 transition-all cursor-pointer"
         >
           {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Share2 className="w-3.5 h-3.5" />}
-          <span>{copied ? 'Link Copied!' : 'Share Gathering'}</span>
+          <span>{copied ? 'Link Copied!' : 'Share Event'}</span>
         </button>
       </div>
 
@@ -126,8 +126,8 @@ export default function EventDetail() {
           <div className="mb-8 p-5 rounded-2xl bg-rose-50 border-2 border-rose-300 text-rose-900 flex items-center gap-3">
             <AlertTriangle className="w-6 h-6 text-rose-600 flex-shrink-0" />
             <div>
-              <span className="font-display font-black text-sm uppercase tracking-wide block">Notice: Gathering Cancelled or Rescheduled</span>
-              <span className="text-xs">Please contact {event.contactEmail || orgInfo.email} for revised gathering dates and questions.</span>
+              <span className="font-display font-black text-sm uppercase tracking-wide block">Notice: Event Cancelled or Rescheduled</span>
+              <span className="text-xs">Please contact {event.contactEmail || orgInfo.email} for revised event dates and questions.</span>
             </div>
           </div>
         )}
@@ -176,7 +176,7 @@ export default function EventDetail() {
             {/* Description Body */}
             <div className="space-y-4 text-base text-slate-600 leading-relaxed font-medium">
               <h2 className="font-display text-2xl font-black text-slate-950">
-                About This Gathering
+                About This Event
               </h2>
               <p>
                 {event.description}
@@ -190,7 +190,7 @@ export default function EventDetail() {
             <div className="p-6 rounded-2xl bg-purple-50/70 border border-purple-200 space-y-3">
               <span className="text-xs font-black uppercase tracking-wider text-[#5A1E65] flex items-center gap-1.5">
                 <Calendar className="w-4 h-4" />
-                <span>Add Gathering to Your Calendar</span>
+                <span>Add Event to Your Calendar</span>
               </span>
               <div className="flex flex-wrap items-center gap-3">
                 <button
@@ -220,7 +220,7 @@ export default function EventDetail() {
               {isExpired ? (
                 <div className="p-4 bg-slate-100 border-2 border-slate-300 rounded-2xl text-xs text-slate-700 font-bold flex items-center gap-2">
                   <Clock className="w-4 h-4 text-slate-500" />
-                  <span>Registration Closed for this Occurrence — This gathering has concluded.</span>
+                  <span>Registration Closed for this Occurrence — This event has concluded.</span>
                 </div>
               ) : event.slug === 'free-hiv-sti-screening' ? (
                 <Link
@@ -278,7 +278,7 @@ export default function EventDetail() {
                     <span className="font-display text-lg font-black">Registration Closed for this Occurrence</span>
                   </div>
                   <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
-                    This gathering has already taken place. Please check our community calendar to join upcoming circles, workshops, and celebrations.
+                    This event has already taken place. Please check our community calendar to join upcoming circles, workshops, and celebrations.
                   </p>
                   <Link
                     to="/events"

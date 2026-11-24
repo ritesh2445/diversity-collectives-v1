@@ -329,7 +329,7 @@ export default function Events() {
               <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
               <input 
                 type="text"
-                placeholder="Search gatherings, screenings, topics, or venues..."
+                placeholder="Search events, screenings, topics, or venues..."
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 className="w-full pl-11 pr-4 py-3 text-sm bg-slate-50 border border-slate-200 focus:border-[#5A1E65] focus:bg-white focus:ring-2 focus:ring-purple-100 rounded-2xl outline-none transition-all font-medium text-slate-900"
@@ -525,7 +525,7 @@ export default function Events() {
               return (
                 <CardSpotlight 
                   key={evt.id}
-                  className={`${['card-vibrant-purple', 'card-vibrant-rose', 'card-vibrant-amber', 'card-vibrant-teal', 'card-vibrant-indigo'][idx % 5]} p-5 sm:p-6 shadow-sm hover:shadow-xl transition-all duration-200 h-full flex flex-col justify-between rounded-3xl border-2 border-purple-200/70 overflow-hidden group`}
+                  className={`${['card-vibrant-purple', 'card-vibrant-rose', 'card-vibrant-amber', 'card-vibrant-teal', 'card-vibrant-indigo'][idx % 5]} p-5 sm:p-6 shadow-sm hover:shadow-xl transition-all duration-200 flex-1 h-full flex flex-col justify-between rounded-3xl border-2 border-purple-200/70 overflow-hidden group`}
                   contentClassName="flex flex-col justify-between h-full"
                   tilt={false}
                   maxTilt={0}
@@ -578,13 +578,13 @@ export default function Events() {
                     </div>
 
                     {/* Title & Description with Standardized Uniform Heights */}
-                    <div className="flex flex-col gap-1.5 flex-1 min-h-[5.5rem]">
-                      <h3 className="font-display text-lg font-black text-slate-950 pt-0.5 line-clamp-2 group-hover:text-[#5A1E65] transition-colors leading-snug">
+                    <div className="flex flex-col gap-1.5 flex-1">
+                      <h3 className="font-display text-lg font-black text-slate-950 pt-0.5 line-clamp-2 min-h-[3.25rem] group-hover:text-[#5A1E65] transition-colors leading-snug">
                         <Link to={`/events/${evt.slug}`} className="hover:text-[#5A1E65] transition-colors">
                           {evt.title}
                         </Link>
                       </h3>
-                      <p className="text-xs sm:text-sm text-slate-700 font-medium leading-relaxed line-clamp-2">
+                      <p className="text-xs sm:text-sm text-slate-700 font-medium leading-relaxed line-clamp-2 min-h-[2.75rem]">
                         {evt.description}
                       </p>
                     </div>
@@ -598,7 +598,7 @@ export default function Events() {
                     )}
 
                     {/* Standardized Bottom Action */}
-                    <div className="pt-3 border-t border-purple-100/80 mt-auto flex flex-col gap-2 relative z-20">
+                    <div className="pt-3 border-t border-purple-100/80 mt-auto flex flex-col justify-start gap-2 min-h-[4.25rem] relative z-20">
                       <Link 
                         to={`/events/${evt.slug}`}
                         className="btn-secondary text-xs py-2 px-4 w-full text-center font-bold justify-center"
@@ -661,35 +661,41 @@ export default function Events() {
       </section>
 
       {/* Annual Signature Events Spotlight */}
-      <section className="container-clean pt-6">
-        <div className="p-8 md:p-12 aurora-bg text-white rounded-3xl shadow-2xl relative overflow-hidden">
-          <div className="space-y-6 relative z-10">
+      <section className="container-clean pt-6 pb-8">
+        <div className="p-5 sm:p-8 md:p-12 aurora-bg text-white rounded-3xl shadow-2xl relative overflow-hidden">
+          <div className="space-y-4 sm:space-y-6 relative z-10">
             <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-xs font-bold text-amber-300 border border-amber-400/30 backdrop-blur-md">
               <Sparkles className="w-3.5 h-3.5 text-amber-300" />
               <span>ANNUAL FLAGSHIPS</span>
             </span>
-            <h3 className="font-display text-2xl md:text-3xl lg:text-4xl font-black text-white">
+            <h3 className="font-display text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-white leading-tight">
               Signature Events of Ventura County
             </h3>
-            <p className="text-sm md:text-base text-purple-100 max-w-2xl leading-relaxed">
+            <p className="text-xs sm:text-sm md:text-base text-purple-100 max-w-2xl leading-relaxed">
               Throughout the year, DCVC convenes our county for premier celebratory milestones — including Ventura County Pride, the Diversity Gala, AIDS Walk Ventura, Pride Prom, and Transgender Day of Remembrance.
             </p>
 
-            <MobileCarousel cols={3} autoScrollMs={0} className="pt-4">
+            <MobileCarousel
+              cols={3}
+              autoScrollMs={0}
+              className="pt-2 sm:pt-4 items-stretch"
+              cardClassName="h-full flex flex-col"
+            >
               {annualSignatureEvents.map((sig) => (
                 <Link
                   key={sig.title}
                   to={sig.link.startsWith('http') ? '/events' : sig.link}
-                  className="p-6 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 hover:border-amber-300 transition-all hover:scale-102 flex flex-col justify-between group cursor-pointer h-full"
+                  className="p-4 sm:p-6 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 hover:border-amber-300 transition-all hover:scale-102 flex flex-col justify-between group cursor-pointer flex-1 h-full gap-3"
                 >
-                  <div className="space-y-2">
-                    <span className="text-[11px] font-black uppercase tracking-wider text-amber-300">{sig.season || 'Annual'}</span>
-                    <h4 className="font-display text-xl font-bold text-white group-hover:text-amber-200 transition-colors flex items-center justify-between">
-                      <span>{sig.title}</span>
-                      <ArrowUpRight className="w-4 h-4 text-amber-300" />
+                  <div className="space-y-1.5 flex-1">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-amber-300 block">{sig.season || 'Annual'}</span>
+                    <h4 className="font-display text-base sm:text-xl font-bold text-white group-hover:text-amber-200 transition-colors flex items-start justify-between gap-2">
+                      <span className="line-clamp-2">{sig.title}</span>
+                      <ArrowUpRight className="w-4 h-4 text-amber-300 shrink-0 mt-0.5" />
                     </h4>
-                    <p className="text-xs text-purple-100 leading-relaxed">{sig.description}</p>
+                    <p className="text-xs text-purple-100 leading-relaxed line-clamp-3">{sig.description}</p>
                   </div>
+                  <span className="text-[11px] font-bold text-amber-300/80 mt-1 block">{sig.schedule || sig.date || ''}</span>
                 </Link>
               ))}
             </MobileCarousel>

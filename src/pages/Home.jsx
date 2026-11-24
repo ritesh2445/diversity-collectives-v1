@@ -345,7 +345,7 @@ export default function Home() {
     {
       amount: 100,
       title: "Youth Peer Circle Sponsor",
-      impact: "Covers creative workshop supplies and refreshments for a full month of Rainbow Umbrella youth gatherings."
+      impact: "Covers creative workshop supplies and refreshments for a full month of Rainbow Umbrella youth events."
     },
     {
       amount: 250,
@@ -871,7 +871,7 @@ export default function Home() {
                 {signatureEventsProps.headline || 'Events That Unite Ventura County.'}
               </h2>
               <p className="text-slate-700 max-w-xl text-sm font-medium leading-relaxed">
-                {signatureEventsProps.description || 'Celebrate, remember, and advocate together at our flagship annual community gatherings.'}
+                {signatureEventsProps.description || 'Celebrate, remember, and advocate together at our flagship annual community events.'}
               </p>
             </div>
             <Link to="/events" className="btn-secondary shrink-0">
@@ -884,32 +884,30 @@ export default function Home() {
             {annualSignatureEvents.map((sigEvt, idx) => (
               <CardSpotlight
                 key={sigEvt.id || sigEvt.title}
-                className={`${['card-vibrant-rose', 'card-vibrant-purple', 'card-vibrant-amber', 'card-vibrant-teal', 'card-vibrant-indigo'][idx % 5]} overflow-hidden flex flex-col justify-between shadow-md hover:shadow-xl`}
-                contentClassName="flex flex-col justify-between h-full"
+                className={`${['card-vibrant-rose', 'card-vibrant-purple', 'card-vibrant-amber', 'card-vibrant-teal', 'card-vibrant-indigo'][idx % 5]} overflow-hidden flex flex-col flex-1 h-full shadow-md hover:shadow-xl`}
+                contentClassName="flex flex-col h-full"
                 tilt={false}
                 maxTilt={0}
                 scale={1}
                 glare={false}
               >
-                <div>
-                  <div className="aspect-[16/10] overflow-hidden bg-slate-100 relative">
-                    <img
-                      src={sigEvt.image || '/images/community-gathering.jpg'}
-                      alt={sigEvt.title}
-                      className="w-full h-full object-cover"
-                      onError={(e) => { e.target.src = '/images/community-gathering.jpg'; }}
-                    />
-                  </div>
-                  <div className="p-6 space-y-2">
-                    <span className="inline-block text-[11px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-purple-100 text-[#5A1E65] border border-purple-200">
-                      0{idx + 1} · {sigEvt.schedule || 'Signature Event'}
-                    </span>
-                    <h3 className="font-display text-xl font-black text-slate-950">{sigEvt.title}</h3>
-                    <p className="text-sm italic font-serif text-[#5A1E65] font-bold">"{sigEvt.tagline}"</p>
-                    <p className="text-sm text-slate-900 font-semibold leading-relaxed">{sigEvt.description}</p>
-                  </div>
+                <div className="aspect-[16/10] overflow-hidden bg-slate-100 relative shrink-0">
+                  <img
+                    src={sigEvt.image || '/images/community-gathering.jpg'}
+                    alt={sigEvt.title}
+                    className="w-full h-full object-cover"
+                    onError={(e) => { e.target.src = '/images/community-gathering.jpg'; }}
+                  />
                 </div>
-                <div className="p-6 pt-0">
+                <div className="p-5 sm:p-6 space-y-2 flex-1 flex flex-col">
+                  <span className="inline-block w-fit text-[11px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-purple-100 text-[#5A1E65] border border-purple-200 shrink-0">
+                    0{idx + 1} · {sigEvt.schedule || 'Signature Event'}
+                  </span>
+                  <h3 className="font-display text-lg sm:text-xl font-black text-slate-950 shrink-0 line-clamp-2 min-h-[3.25rem]">{sigEvt.title}</h3>
+                  <p className="text-sm italic font-serif text-[#5A1E65] font-bold shrink-0 line-clamp-2 min-h-[2.5rem]">"{sigEvt.tagline}"</p>
+                  <p className="text-sm text-slate-900 font-semibold leading-relaxed line-clamp-3 min-h-[4.25rem] flex-1">{sigEvt.description}</p>
+                </div>
+                <div className="p-5 sm:p-6 pt-0 mt-auto shrink-0">
                   <Link to={sigEvt.link || '/events'} className="btn-secondary w-full justify-center text-xs font-bold">
                     <span>Event Details & Info</span>
                     <ArrowRight className="w-3.5 h-3.5" />
@@ -1441,7 +1439,7 @@ export default function Home() {
               return (
                 <CardSpotlight
                   key={evt.id}
-                  className={`${['card-vibrant-purple', 'card-vibrant-rose', 'card-vibrant-amber', 'card-vibrant-teal', 'card-vibrant-indigo'][idx % 5]} p-5 sm:p-6 shadow-sm hover:shadow-xl transition-all duration-200 h-full flex flex-col justify-between rounded-3xl border-2 border-purple-200/70 overflow-hidden group`}
+                  className={`${['card-vibrant-purple', 'card-vibrant-rose', 'card-vibrant-amber', 'card-vibrant-teal', 'card-vibrant-indigo'][idx % 5]} p-5 sm:p-6 shadow-sm hover:shadow-xl transition-all duration-200 flex-1 h-full flex flex-col justify-between rounded-3xl border-2 border-purple-200/70 overflow-hidden group`}
                   contentClassName="flex flex-col justify-between h-full"
                   tilt={false}
                   maxTilt={0}

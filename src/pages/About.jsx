@@ -16,6 +16,7 @@ import { orgInfo, boardMembers, sponsorsList, staffMembers, getBoardMemberSlug }
 import { cmsStore } from '../services/cmsStore';
 import CardSpotlight from '../components/CardSpotlight';
 import MemoryLaneSection from '../components/MemoryLaneSection';
+import MobileCarousel from '../components/MobileCarousel';
 
 export default function About() {
   const location = useLocation();
@@ -246,7 +247,7 @@ export default function About() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 perspective-1000">
+          <MobileCarousel cols={3} autoScrollMs={0} className="perspective-1000 items-stretch" cardClassName="h-full flex flex-col">
             {board.map((member) => {
               const slug = getBoardMemberSlug(member);
               return (
@@ -254,10 +255,10 @@ export default function About() {
                   key={slug || member.name}
                   to={`/board/${slug}`}
                   aria-label={`View full profile for ${member.name}, ${member.role}`}
-                  className="block group focus:outline-none focus:ring-4 focus:ring-purple-300 rounded-2xl"
+                  className="block flex-1 h-full group focus:outline-none focus:ring-4 focus:ring-purple-300 rounded-2xl"
                 >
                   <CardSpotlight 
-                    className="glass-card h-full p-7 rounded-2xl border-2 border-slate-200/80 group-hover:border-[#5A1E65] group-hover:shadow-2xl group-hover:-translate-y-1.5 transition-all duration-300 interactive-card-3d flex flex-col justify-between cursor-pointer"
+                    className="glass-card h-full p-6 sm:p-7 rounded-2xl border-2 border-slate-200/80 group-hover:border-[#5A1E65] group-hover:shadow-2xl group-hover:-translate-y-1.5 transition-all duration-300 interactive-card-3d flex flex-col justify-between cursor-pointer"
                     tilt={true}
                     maxTilt={6}
                     glare={true}
@@ -308,7 +309,7 @@ export default function About() {
                 </Link>
               );
             })}
-          </div>
+          </MobileCarousel>
         </section>
       )}
 
@@ -327,11 +328,11 @@ export default function About() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <MobileCarousel cols={4} autoScrollMs={0} className="items-stretch" cardClassName="h-full flex flex-col">
             {operationalStaff.map((staff, idx) => (
               <div 
                 key={staff.id || staff.slug || idx}
-                className="p-6 rounded-3xl bg-white border-2 border-slate-200/80 hover:border-emerald-500 hover:shadow-xl transition-all flex flex-col justify-between gap-4"
+                className="p-6 rounded-3xl bg-white border-2 border-slate-200/80 hover:border-emerald-500 hover:shadow-xl transition-all flex flex-col justify-between gap-4 flex-1 h-full"
               >
                 <div className="space-y-3">
                   <div className="h-44 rounded-2xl overflow-hidden bg-purple-50 border border-slate-100">
@@ -380,7 +381,7 @@ export default function About() {
                 </div>
               </div>
             ))}
-          </div>
+          </MobileCarousel>
         </section>
       )}
 
@@ -399,14 +400,15 @@ export default function About() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto w-full items-stretch">
+          <div className="max-w-5xl mx-auto w-full">
+          <MobileCarousel cols={3} autoScrollMs={0} className="items-stretch" cardClassName="h-full flex flex-col">
             {sponsors.map((sponsor) => (
               <a
                 key={sponsor.shortName}
                 href={sponsor.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="sponsor-card h-full w-full bg-white p-5 sm:p-6 lg:p-7 rounded-2xl border-2 border-slate-200/80 hover:border-[#5A1E65] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl text-center shadow-md group cursor-pointer flex flex-col justify-between overflow-hidden min-w-0 box-border"
+                className="sponsor-card flex-1 h-full w-full bg-white p-5 sm:p-6 lg:p-7 rounded-2xl border-2 border-slate-200/80 hover:border-[#5A1E65] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl text-center shadow-md group cursor-pointer flex flex-col justify-between overflow-hidden min-w-0 box-border"
               >
                 <div className="h-20 flex items-center justify-center mb-5 shrink-0 w-full overflow-hidden">
                   <img 
@@ -426,6 +428,7 @@ export default function About() {
                 </div>
               </a>
             ))}
+          </MobileCarousel>
           </div>
 
           <div className="text-center mt-12">
