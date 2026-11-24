@@ -41,6 +41,7 @@ export default function FlexSpaceBookingSection({ props = {}, style = {} }) {
 
   const schema = features.formSchemas?.flex_space;
   const liveStatus = computeFlexSpaceStatus(flexCfg);
+  const isManuallyClosed = flexCfg?.manualStatus === 'closed';
   const slots = getSlotAvailability('flex', selectedDate, features);
 
   const handleFieldChange = (id, val) => {
@@ -50,6 +51,11 @@ export default function FlexSpaceBookingSection({ props = {}, style = {} }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     setStatusMsg(null);
+
+    if (isManuallyClosed) {
+      setStatusMsg({ ok: false, text: 'Bookings are currently unavailable while Flex Space is closed.' });
+      return;
+    }
 
     const check = isDateAllowedForFlex(selectedDate, flexCfg);
     if (!check.allowed) {
@@ -149,13 +155,33 @@ export default function FlexSpaceBookingSection({ props = {}, style = {} }) {
                   {schema?.title || 'Reserve a Flex Space Slot'}
                 </h3>
                 <p className="text-xs text-slate-600 font-medium">
-                  Select a date and available time window below.
+                  {isManuallyClosed
+                    ? 'Flex Space reservations are currently paused by staff.'
+                    : 'Select a date and available time window below.'}
                 </p>
               </div>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-50 text-[#5A1E65] border border-purple-200">
-                <Users className="w-3.5 h-3.5" /> Real-Time Slots
-              </span>
+              {isManuallyClosed ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-800 border border-rose-200">
+                  <AlertCircle className="w-3.5 h-3.5" /> Bookings Unavailable
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-50 text-[#5A1E65] border border-purple-200">
+                  <Users className="w-3.5 h-3.5" /> Real-Time Slots
+                </span>
+              )}
             </div>
+
+            {isManuallyClosed && (
+              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-300 text-amber-950 text-xs flex items-start gap-3">
+                <AlertCircle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <span className="font-extrabold block">Bookings Currently Unavailable — Flex Space Closed</span>
+                  <p className="text-amber-900/90 leading-relaxed">
+                    Online Flex Space slot reservations are temporarily closed. Please check back soon or contact DCVC staff for assistance.
+                  </p>
+                </div>
+              </div>
+            )}
 
             {statusMsg && (
               <div
@@ -171,69 +197,81 @@ export default function FlexSpaceBookingSection({ props = {}, style = {} }) {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-800 mb-1.5 flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-[#5A1E65]" /> 1. Select Available Weekday (Mon–Fri, 1–5 PM) *
-                  </label>
-                  <BookingCalendarPicker
-                    selectedDate={selectedDate}
-                    onSelectDate={(newDate) => {
-                      setSelectedDate(newDate);
-                      setSelectedSlot('');
-                    }}
-                    mode="flex"
-                    config={flexCfg}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-800 mb-1.5 flex items-center justify-between">
-                    <span className="flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-[#5A1E65]" /> 2. Available Time Slots *
-                    </span>
-                    <span className="text-[11px] text-purple-900 font-semibold lowercase">
-                      (1:00 PM – 5:00 PM)
-                    </span>
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {slots.map((s) => (
-                      <button
-                        key={s.slot}
-                        type="button"
-                        disabled={s.isFull}
-                        onClick={() => setSelectedSlot(s.slot)}
-                        className={`px-3 py-2.5 rounded-xl border text-left text-xs font-bold transition-all cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed ${
-                          selectedSlot === s.slot
-                            ? 'bg-[#5A1E65] text-white border-[#5A1E65] shadow-sm'
-                            : s.isFull
-                              ? 'bg-slate-100 text-slate-400 border-slate-200'
-                              : 'bg-white text-slate-800 border-slate-300 hover:border-purple-400'
-                        }`}
-                      >
-                        <div className="truncate font-extrabold text-xs sm:text-sm">{s.slot}</div>
-                        <div className={`text-[10px] font-semibold mt-0.5 ${selectedSlot === s.slot ? 'text-amber-200' : s.isFull ? 'text-rose-600' : 'text-emerald-700'}`}>
-                          {s.isFull ? 'Booked' : `${s.remaining} slot left`}
-                        </div>
-                      </button>
-                    ))}
+              <fieldset
+                disabled={isManuallyClosed}
+                className={isManuallyClosed ? 'space-y-4 opacity-50 pointer-events-none select-none' : 'space-y-4'}
+              >
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-800 mb-1.5 flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-[#5A1E65]" /> 1. Select Available Weekday (Mon–Fri, 1–5 PM) *
+                    </label>
+                    <BookingCalendarPicker
+                      selectedDate={selectedDate}
+                      onSelectDate={(newDate) => {
+                        setSelectedDate(newDate);
+                        setSelectedSlot('');
+                      }}
+                      mode="flex"
+                      config={flexCfg}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-800 mb-1.5 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-[#5A1E65]" /> 2. Available Time Slots *
+                      </span>
+                      <span className="text-[11px] text-purple-900 font-semibold lowercase">
+                        (1:00 PM – 5:00 PM)
+                      </span>
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {slots.map((s) => (
+                        <button
+                          key={s.slot}
+                          type="button"
+                          disabled={isManuallyClosed || s.isFull}
+                          onClick={() => setSelectedSlot(s.slot)}
+                          className={`px-3 py-2.5 rounded-xl border text-left text-xs font-bold transition-all cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed ${
+                            selectedSlot === s.slot
+                              ? 'bg-[#5A1E65] text-white border-[#5A1E65] shadow-sm'
+                              : s.isFull
+                                ? 'bg-slate-100 text-slate-400 border-slate-200'
+                                : 'bg-white text-slate-800 border-slate-300 hover:border-purple-400'
+                          }`}
+                        >
+                          <div className="truncate font-extrabold text-xs sm:text-sm">{s.slot}</div>
+                          <div className={`text-[10px] font-semibold mt-0.5 ${selectedSlot === s.slot ? 'text-amber-200' : s.isFull ? 'text-rose-600' : 'text-emerald-700'}`}>
+                            {isManuallyClosed ? 'Unavailable' : s.isFull ? 'Booked' : `${s.remaining} slot left`}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <DynamicSchemaFields
-                formId="flex_space"
-                fields={schema?.fields || []}
-                values={formValues}
-                onChange={handleFieldChange}
-                inputClassName="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 bg-white focus:border-[#5A1E65] outline-none"
-                labelClassName="block text-xs font-bold text-slate-800"
-              />
+                <DynamicSchemaFields
+                  formId="flex_space"
+                  fields={schema?.fields || []}
+                  values={formValues}
+                  onChange={handleFieldChange}
+                  inputClassName="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 bg-white focus:border-[#5A1E65] outline-none"
+                  labelClassName="block text-xs font-bold text-slate-800"
+                />
+              </fieldset>
 
               <button
                 type="submit"
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#5A1E65] to-purple-800 text-white font-extrabold text-sm shadow-md hover:shadow-lg transition-all cursor-pointer"
+                disabled={isManuallyClosed}
+                className={`w-full py-3.5 rounded-xl font-extrabold text-sm transition-all ${
+                  isManuallyClosed
+                    ? 'bg-slate-200 text-slate-600 border border-slate-300 cursor-not-allowed shadow-none'
+                    : 'bg-gradient-to-r from-[#5A1E65] to-purple-800 text-white shadow-md hover:shadow-lg cursor-pointer'
+                }`}
               >
-                {schema?.submitLabel || props.ctaText || 'Book Flex Space Slot'}
+                {isManuallyClosed
+                  ? 'Bookings Unavailable (Flex Space Closed)'
+                  : (schema?.submitLabel || props.ctaText || 'Book Flex Space Slot')}
               </button>
             </form>
           </div>

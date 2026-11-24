@@ -505,6 +505,10 @@ export function bookTimeSlot(kind, { date, slot, name, contact, email, phone, pu
   }
   const features = getSiteFeatures();
 
+  if (kind === 'flex' && features.flexSpace?.manualStatus === 'closed') {
+    return { ok: false, error: 'Bookings are currently unavailable because Flex Space is closed.' };
+  }
+
   // Strict date validation by service kind when enabled
   if (validateDate) {
     if (kind === 'hiv') {
