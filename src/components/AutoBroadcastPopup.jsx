@@ -100,7 +100,7 @@ export default function AutoBroadcastPopup() {
       <div
         role="dialog"
         aria-label={activePopup.badge || 'Community Announcement'}
-        className="fixed bottom-20 left-2 right-auto max-w-[calc(100vw-96px)] sm:bottom-6 sm:left-6 sm:right-auto sm:w-[320px] sm:max-w-[330px] z-50 animate-fadeIn"
+        className="fixed bottom-20 left-2 right-auto max-w-[calc(100vw-88px)] sm:bottom-6 sm:left-6 sm:right-auto sm:w-[320px] sm:max-w-[330px] z-50 animate-fadeIn"
       >
         {/* Compact, sleek broadcast notification */}
         <div
@@ -108,7 +108,7 @@ export default function AutoBroadcastPopup() {
           onMouseLeave={() => setIsPaused(false)}
           onTouchStart={() => setIsPaused(true)}
           onTouchEnd={() => setIsPaused(false)}
-          className="h-[48px] min-h-[48px] max-h-[48px] w-full bg-white rounded-xl shadow-xl border border-[#5A1E65]/25 p-1 px-2 sm:px-2.5 relative overflow-hidden flex items-center justify-between"
+          className="h-[52px] sm:h-[48px] min-h-[52px] sm:min-h-[48px] w-full bg-white rounded-xl shadow-xl border border-[#5A1E65]/25 p-1 px-2 sm:px-2.5 relative overflow-hidden flex items-center justify-between"
         >
           {/* Top Rainbow Accent Strip */}
           <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#5A1E65] via-rose-500 to-amber-500" />

@@ -8,7 +8,7 @@ import { translationService } from '../services/translationService';
  * Section #7: Dedicated Interactive Calendar Section on Homepage
  * Distinct from Programs and Signature Events — displays scheduled dates cleanly.
  */
-export default function HomeCalendarSection({ events = [], props = {}, style = {} }) {
+export default function HomeCalendarSection({ events = [], props = {}, style = {}, onSelectDate = null }) {
   const [currentLang, setCurrentLang] = useState(() => translationService.getLanguage?.() || 'en');
 
   useEffect(() => {
@@ -16,8 +16,8 @@ export default function HomeCalendarSection({ events = [], props = {}, style = {
   }, []);
 
   const now = new Date();
-  const [viewYear, setViewYear] = useState(now.getFullYear());
-  const [viewMonth, setViewMonth] = useState(now.getMonth());
+  const [viewYear, setViewYear] = useState(() => props.initialYear || now.getFullYear());
+  const [viewMonth, setViewMonth] = useState(() => (typeof props.initialMonth === 'number' ? props.initialMonth : now.getMonth()));
   const [selectedDay, setSelectedDay] = useState(now.getDate());
 
   const eventMap = useMemo(() => {
@@ -95,10 +95,12 @@ export default function HomeCalendarSection({ events = [], props = {}, style = {
               {props.description || 'Browse scheduled dates at a glance — distinct from our recurring Programs and Signature Events.'}
             </p>
           </div>
-          <Link to="/events" className="btn-secondary w-full sm:w-auto shrink-0 max-w-full">
-            <span>{props.ctaText || 'Open Full Calendar Page'}</span>
-            <CalendarIcon className="w-4 h-4 text-[#5A1E65]" />
-          </Link>
+          {!props.hideCta && (
+            <Link to="/events" className="btn-secondary w-full sm:w-auto shrink-0 max-w-full">
+              <span>{props.ctaText || 'Open Full Calendar Page'}</span>
+              <CalendarIcon className="w-4 h-4 text-[#5A1E65]" />
+            </Link>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-4 items-start">
@@ -154,7 +156,10 @@ export default function HomeCalendarSection({ events = [], props = {}, style = {
                   <button
                     key={day}
                     type="button"
-                    onClick={() => setSelectedDay(day)}
+                    onClick={() => {
+                      setSelectedDay(day);
+                      onSelectDate?.(day, viewMonth, viewYear);
+                    }}
                     className={`h-9 sm:h-12 rounded-xl flex flex-col items-center justify-center text-xs sm:text-sm font-bold transition-all cursor-pointer relative min-w-0 ${
                       isSelected
                         ? 'bg-gradient-to-br from-[#5A1E65] via-purple-700 to-indigo-600 text-white shadow-md shadow-purple-500/30 scale-[1.04]'

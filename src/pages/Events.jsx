@@ -22,6 +22,7 @@ import CardSpotlight from '../components/CardSpotlight';
 import AutoSlideImage from '../components/AutoSlideImage.jsx';
 import MobileCarousel from '../components/MobileCarousel.jsx';
 import WeeklyProgramsCalendar from '../components/WeeklyProgramsCalendar.jsx';
+import HomeCalendarSection from '../components/HomeCalendarSection.jsx';
 import { usePageMeta } from '../utils/seo';
 import {
   parseEventDate,
@@ -381,178 +382,26 @@ export default function Events() {
         </div>
       </section>
 
-      {/* Traditional Interactive Monthly Calendar View */}
+      {/* Monthly Interactive Calendar View (Identical to Home Page Calendar) */}
       {viewMode === 'calendar' && (
-        <section className="container-clean py-10">
-          <div className="p-6 sm:p-8 rounded-3xl bg-white border-2 border-slate-200 shadow-xl mb-12">
-            
-            {/* Calendar Month Header */}
-            <div className="flex items-center justify-between pb-6 border-b border-slate-100 mb-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-purple-100 text-[#5A1E65] flex items-center justify-center font-bold">
-                  <CalendarIcon className="w-5 h-5" />
-                </div>
-                <div>
-                  <h2
-                    className="font-display text-2xl sm:text-3xl font-black text-slate-950 notranslate"
-                    translate="no"
-                  >
-                    {getLocalizedMonthName(calendarMonth, currentLang)} {calendarYear}
-                  </h2>
-                  <p className="text-xs text-slate-500 font-medium">
-                    Click any highlighted date to view events scheduled on that day
-                  </p>
-                </div>
-              </div>
-
-              {/* Month Switcher Controls */}
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handlePrevMonth}
-                  className="w-10 h-10 rounded-xl border border-slate-200 hover:bg-purple-50 hover:text-[#5A1E65] flex items-center justify-center text-slate-700 transition-colors cursor-pointer"
-                  title="Previous Month"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={handleNextMonth}
-                  className="w-10 h-10 rounded-xl border border-slate-200 hover:bg-purple-50 hover:text-[#5A1E65] flex items-center justify-center text-slate-700 transition-colors cursor-pointer"
-                  title="Next Month"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-
-            {scheduledMonths.length > 0 && (
-              <div className="flex flex-wrap items-center gap-2 mb-6">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mr-1">
-                  Months With Scheduled Events:
-                </span>
-                {scheduledMonths.map((bucket) => {
-                  const isActiveMonth = bucket.year === calendarYear && bucket.monthIndex === calendarMonth;
-                  return (
-                    <button
-                      key={bucket.key}
-                      type="button"
-                      onClick={() => {
-                        setCurrentCalendarDate(new Date(bucket.year, bucket.monthIndex, 1));
-                        setSelectedDateFilter(null);
-                      }}
-                      className={`px-3 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer border notranslate ${
-                        isActiveMonth
-                          ? 'bg-[#5A1E65] text-white border-[#5A1E65] shadow-xs'
-                          : 'bg-purple-50/70 text-[#5A1E65] border-purple-200 hover:bg-purple-100'
-                      }`}
-                      translate="no"
-                    >
-                      {getLocalizedMonthAbbr(bucket.monthIndex, currentLang)} {bucket.year} ({bucket.count})
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Days of the Week */}
-            <div
-              className="grid grid-cols-7 gap-2 text-center text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 notranslate"
-              translate="no"
-            >
-              {getLocalizedWeekdays(currentLang, 3).map((w, idx) => (
-                <span key={idx}>{w}</span>
-              ))}
-            </div>
-
-            {/* Month Days Grid */}
-            <div className="grid grid-cols-7 gap-2">
-              {/* Blank offset cells */}
-              {Array.from({ length: firstDayOfWeek }).map((_, i) => (
-                <div key={`blank-${i}`} className="min-h-[72px] sm:min-h-[96px] rounded-2xl bg-slate-50/50 border border-transparent" />
-              ))}
-
-              {/* Day cells */}
-              {Array.from({ length: daysInMonth }).map((_, i) => {
-                const dayNum = i + 1;
-                const dayEvents = eventsByDay[dayNum] || [];
-                const monthStr = String(calendarMonth + 1).padStart(2, '0');
-                const dayStr = String(dayNum).padStart(2, '0');
-                const dateKey = `${calendarYear}-${monthStr}-${dayStr}`;
-                const isSelected = selectedDateFilter === dateKey;
-                const hasEvents = dayEvents.length > 0;
-
-                return (
-                  <button
-                    key={`day-${dayNum}`}
-                    type="button"
-                    onClick={() => handleSelectDay(dayNum)}
-                    className={`min-h-[72px] sm:min-h-[96px] p-2 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer ${
-                      isSelected
-                        ? 'border-purple-600 bg-purple-50 ring-2 ring-purple-600 shadow-md'
-                        : hasEvents
-                        ? 'border-purple-200 bg-white hover:border-[#5A1E65] hover:shadow-md'
-                        : 'border-slate-100 bg-white/70 text-slate-400 hover:bg-slate-50'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className={`text-xs sm:text-sm font-black ${
-                        isSelected 
-                          ? 'text-[#5A1E65]' 
-                          : hasEvents 
-                          ? 'text-slate-900' 
-                          : 'text-slate-400'
-                      }`}>
-                        {dayNum}
-                      </span>
-                      {hasEvents && (
-                        <span className="w-2 h-2 rounded-full bg-purple-600 animate-pulse" />
-                      )}
-                    </div>
-
-                    {hasEvents && (
-                      <div className="space-y-1 mt-1">
-                        {dayEvents.slice(0, 2).map((ev) => (
-                          <div 
-                            key={ev.id}
-                            className="text-[10px] sm:text-[11px] font-bold text-[#5A1E65] truncate bg-purple-100/70 px-1.5 py-0.5 rounded-md leading-tight"
-                            title={ev.title}
-                          >
-                            {ev.title}
-                          </div>
-                        ))}
-                        {dayEvents.length > 2 && (
-                          <span className="text-[9px] text-slate-500 font-bold block">
-                            +{dayEvents.length - 2} more
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Selected Date Filter Banner */}
-            {selectedDateFilter && (
-              <div className="mt-6 p-4 rounded-2xl bg-purple-50 border border-purple-200 flex flex-wrap items-center justify-between gap-3 animate-fade-in">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-700">
-                    Filtered by Date: <strong>{selectedDateFilter}</strong> ({filteredEvents.length} event{filteredEvents.length === 1 ? '' : 's'} found)
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setSelectedDateFilter(null)}
-                  className="px-3 py-1.5 rounded-xl bg-purple-700 text-white font-bold text-xs hover:bg-purple-800 transition-colors cursor-pointer"
-                >
-                  Show All Events for Month
-                </button>
-              </div>
-            )}
-
-          </div>
-        </section>
+        <HomeCalendarSection
+          events={events}
+          props={{
+            hideCta: true,
+            eyebrow: 'COMMUNITY CALENDAR',
+            headline: 'Interactive Schedule & Dates',
+            description: 'Browse scheduled dates at a glance — distinct from our recurring Programs and Signature Events.',
+            initialYear: calendarYear,
+            initialMonth: calendarMonth
+          }}
+          onSelectDate={(dayNum, monthIdx, yearNum) => {
+            const monthStr = String(monthIdx + 1).padStart(2, '0');
+            const dayStr = String(dayNum).padStart(2, '0');
+            const dateKey = `${yearNum}-${monthStr}-${dayStr}`;
+            setSelectedDateFilter(dateKey);
+            document.getElementById('events-container')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }}
+        />
       )}
 
       {/* Weekly Programs Calendar View */}
@@ -642,141 +491,143 @@ export default function Events() {
           </div>
         ) : (
           <MobileCarousel
-            cols={1}
+            cols={3}
             autoScrollMs={0}
             showDots={true}
-            cardClassName="h-full"
-            className="lg:gap-6"
+            className="items-stretch gap-6"
+            cardClassName="h-full flex flex-col"
           >
             {filteredEvents.map((evt, idx) => {
               const dateGradients = [
-                'from-purple-950 via-purple-900 to-indigo-950 text-white',
-                'from-amber-600 via-amber-500 to-amber-700 text-white',
-                'from-emerald-700 via-teal-700 to-emerald-800 text-white',
-                'from-slate-900 via-slate-800 to-purple-950 text-white'
+                'from-purple-800 via-[#5A1E65] to-indigo-900 text-white shadow-purple-500/25',
+                'from-amber-500 via-orange-500 to-rose-600 text-white shadow-amber-500/25',
+                'from-emerald-600 via-teal-600 to-cyan-700 text-white shadow-teal-500/25',
+                'from-rose-600 via-pink-600 to-purple-800 text-white shadow-rose-500/25',
+                'from-blue-600 via-indigo-600 to-purple-700 text-white shadow-blue-500/25',
+                'from-violet-600 via-purple-700 to-fuchsia-800 text-white shadow-violet-500/25',
+                'from-emerald-700 via-teal-700 to-slate-900 text-white shadow-emerald-500/25'
               ];
+
+              let catBadge = "text-purple-800 bg-purple-100/70 border-purple-200";
+              const catLower = (evt.category || '').toLowerCase();
+              if (catLower.includes('youth')) catBadge = "text-amber-800 bg-amber-100/70 border-amber-200";
+              else if (catLower.includes('health') || catLower.includes('screen')) catBadge = "text-teal-800 bg-teal-100/70 border-teal-200";
+              else if (catLower.includes('senior') || catLower.includes('55')) catBadge = "text-emerald-800 bg-emerald-100/70 border-emerald-200";
+              else if (catLower.includes('growth') || catLower.includes('toastmaster')) catBadge = "text-indigo-800 bg-indigo-100/70 border-indigo-200";
+              else if (catLower.includes('pride') || catLower.includes('signature') || catLower.includes('walk') || catLower.includes('gala')) catBadge = "text-rose-800 bg-rose-100/70 border-rose-200";
+
+              const parsedDate = parseEventDate(evt);
+              const badgeMonth = parsedDate
+                ? getLocalizedMonthAbbr(parsedDate.monthIndex, currentLang)
+                : (evt.month || 'EVT');
+              const badgeDay = evt.day || parsedDate?.dayStr || '—';
 
               return (
                 <CardSpotlight 
                   key={evt.id}
-                  className="group relative overflow-hidden rounded-3xl border-2 border-purple-200/70 hover:border-[#5A1E65] bg-gradient-to-br from-white via-purple-50/35 to-amber-50/25 p-6 sm:p-7 shadow-sm hover:shadow-xl transition-all duration-300 h-full flex flex-col justify-between"
+                  className={`${['card-vibrant-purple', 'card-vibrant-rose', 'card-vibrant-amber', 'card-vibrant-teal', 'card-vibrant-indigo'][idx % 5]} p-5 sm:p-6 shadow-sm hover:shadow-xl transition-all duration-200 h-full flex flex-col justify-between rounded-3xl border-2 border-purple-200/70 overflow-hidden group`}
+                  contentClassName="flex flex-col justify-between h-full"
                   tilt={false}
                   maxTilt={0}
                   scale={1}
                   glare={false}
                 >
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+                  <div className="flex flex-col justify-between h-full gap-3.5">
                     
-                    {/* Large Typographic Date Badge */}
-                    {(() => {
-                      const parsedDate = parseEventDate(evt);
-                      const badgeMonth = parsedDate
-                        ? getLocalizedMonthAbbr(parsedDate.monthIndex, currentLang)
-                        : (evt.month || 'TBD');
-                      const badgeDay = parsedDate?.dayStr || evt.day || '—';
-                      const badgeYear = parsedDate?.yearStr || evt.year || '2026';
-                      return (
-                        <div className="md:col-span-2 flex md:justify-center">
-                          <div className={`flex flex-col items-center justify-center min-w-[100px] sm:min-w-[110px] p-4 sm:p-5 rounded-2xl bg-gradient-to-b ${dateGradients[idx % dateGradients.length]} shadow-md text-white`}>
-                            <span
-                              className="text-xs font-black uppercase tracking-wider text-amber-200 notranslate leading-tight"
-                              translate="no"
-                            >
-                              {badgeMonth}
-                            </span>
-                            <span className="font-display text-3xl sm:text-4xl font-black leading-tight pt-0.5">{badgeDay}</span>
-                            <span className="text-xs font-mono text-white/80 mt-0.5">{badgeYear}</span>
-                          </div>
-                        </div>
-                      );
-                    })()}
-
-                    {/* Event Details */}
-                    <div className="md:col-span-7 space-y-2.5">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-purple-100/80 text-[#5A1E65] border border-purple-200">
-                          {evt.category}
-                        </span>
-                        {evt.isCancelled && (
-                          <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-rose-600 text-white">
-                            ⚠️ Cancelled / Rescheduled
+                    {/* Event Photography Header */}
+                    <div className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden bg-slate-100 shadow-xs border border-purple-200/60 shrink-0">
+                      <img
+                        src={evt.image || '/images/community-gathering.jpg'}
+                        alt={evt.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        onError={(e) => { e.target.src = '/images/community-gathering.jpg'; }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent pointer-events-none" />
+                      
+                      {/* Floating Date Badge */}
+                      <div className="absolute bottom-2.5 left-2.5">
+                        <div className={`flex flex-col items-center justify-center min-w-[64px] sm:min-w-[70px] px-2.5 py-1.5 rounded-xl bg-gradient-to-b ${dateGradients[idx % dateGradients.length]} text-white shadow-md backdrop-blur-xs`}>
+                          <span className="text-[10px] font-black uppercase tracking-wider text-amber-200 leading-tight notranslate" translate="no">
+                            {badgeMonth}
                           </span>
-                        )}
-                        <span className="text-xs text-slate-600 font-bold flex items-center gap-1 bg-white/80 px-2.5 py-0.5 rounded-full border border-slate-200/80">
-                          <Clock className="w-3.5 h-3.5 text-[#5A1E65]" /> {evt.time}
-                        </span>
+                          <span className="font-display text-lg sm:text-xl font-black leading-none pt-0.5">{badgeDay}</span>
+                        </div>
                       </div>
 
-                      <h2 className="font-display text-2xl sm:text-3xl font-black text-slate-950 tracking-tight break-words min-w-0">
-                        <Link to={`/events/${evt.slug}`} className="hover:text-[#5A1E65] transition-colors break-words">
-                          {evt.title}
-                        </Link>
-                      </h2>
-
-                      {evt.isCancelled && evt.cancellationNotice && (
-                        <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold flex items-start gap-2">
-                          <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
-                          <div>
-                            <strong className="block text-rose-950 font-bold">Important Notice:</strong>
-                            <span>{evt.cancellationNotice}</span>
-                          </div>
-                        </div>
-                      )}
-
-                      <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-medium">
-                        {evt.description}
-                      </p>
-
-                      <div className="flex items-center gap-1.5 text-xs text-slate-600 pt-1 font-semibold">
-                        <MapPin className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
-                        <span>{evt.location} · {evt.address}</span>
+                      {/* Category & Cancellation Chips */}
+                      <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5">
+                        {evt.isCancelled && (
+                          <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-rose-600 text-white shadow-xs">
+                            Cancelled
+                          </span>
+                        )}
+                        <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-xs backdrop-blur-md ${catBadge}`}>
+                          {evt.category}
+                        </span>
                       </div>
                     </div>
 
-                    {/* Actions & Flyer Showcase */}
-                    <div className="md:col-span-3 flex flex-col md:items-end gap-2.5 relative z-20">
-                      <div className="w-full aspect-[16/10] rounded-2xl overflow-hidden border border-purple-200/90 shadow-sm bg-slate-100 mb-1">
-                        <AutoSlideImage
-                          images={Array.isArray(evt.images) && evt.images.length > 0 ? evt.images : [evt.image || '/images/community-gathering.jpg']}
-                          alt={evt.title}
-                          aspectRatio="aspect-[16/10]"
-                          className="w-full h-full"
-                          imageFit="cover"
-                          fallbackSrc="/images/community-gathering.jpg"
-                          showDots={true}
-                          showArrows={false}
-                        />
+                    {/* Time & Location Row */}
+                    <div className="flex items-center justify-between gap-2 pt-0.5">
+                      <span className="text-xs text-slate-700 flex items-center gap-1.5 font-bold">
+                        <Clock className="w-3.5 h-3.5 text-[#5A1E65]" /> {evt.time}
+                      </span>
+                      <span className="text-[11px] text-slate-500 font-semibold truncate">
+                        📍 {evt.location || 'Ventura'}
+                      </span>
+                    </div>
+
+                    {/* Title & Description with Standardized Uniform Heights */}
+                    <div className="flex flex-col gap-1.5 flex-1 min-h-[5.5rem]">
+                      <h3 className="font-display text-lg font-black text-slate-950 pt-0.5 line-clamp-2 group-hover:text-[#5A1E65] transition-colors leading-snug">
+                        <Link to={`/events/${evt.slug}`} className="hover:text-[#5A1E65] transition-colors">
+                          {evt.title}
+                        </Link>
+                      </h3>
+                      <p className="text-xs sm:text-sm text-slate-700 font-medium leading-relaxed line-clamp-2">
+                        {evt.description}
+                      </p>
+                    </div>
+
+                    {/* Cancellation Notice if applicable */}
+                    {evt.isCancelled && evt.cancellationNotice && (
+                      <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-[11px] font-semibold flex items-start gap-1.5">
+                        <AlertTriangle className="w-3.5 h-3.5 text-rose-600 flex-shrink-0 mt-0.5" />
+                        <span className="line-clamp-2">{evt.cancellationNotice}</span>
                       </div>
-                      <Link
+                    )}
+
+                    {/* Standardized Bottom Action */}
+                    <div className="pt-3 border-t border-purple-100/80 mt-auto flex flex-col gap-2 relative z-20">
+                      <Link 
                         to={`/events/${evt.slug}`}
-                        className="btn-primary py-3 px-6 text-xs font-bold w-full md:w-auto text-center shadow-md hover:shadow-xl inline-flex items-center justify-center gap-1.5 cursor-pointer"
+                        className="btn-secondary text-xs py-2 px-4 w-full text-center font-bold justify-center"
                       >
                         <span>Details & RSVP</span>
                         <ArrowRight className="w-3.5 h-3.5" />
                       </Link>
-
-                      {evt.registrationUrl ? (
-                        evt.registrationUrl.startsWith('http') ? (
-                          <a
-                            href={evt.registrationUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs font-bold text-[#5A1E65] hover:underline flex items-center gap-1 py-1"
-                          >
-                            <span>External Registration Link</span>
-                            <ArrowUpRight className="w-3.5 h-3.5" />
-                          </a>
-                        ) : (
-                          <Link
-                            to={evt.registrationUrl}
-                            className="text-xs font-bold text-[#5A1E65] hover:underline flex items-center gap-1 py-1"
-                          >
-                            <span>{evt.category === 'Health & Wellness' ? 'Book Screening Slot' : 'Direct Registration'}</span>
-                            <ArrowUpRight className="w-3.5 h-3.5" />
-                          </Link>
-                        )
-                      ) : (
-                        <span className="text-[11px] text-slate-500 font-bold bg-white/70 px-2.5 py-0.5 rounded-full border border-slate-200/80">Free Drop-In · All Welcome</span>
+                      {evt.registrationUrl && (
+                        <div className="text-center">
+                          {evt.registrationUrl.startsWith('http') ? (
+                            <a
+                              href={evt.registrationUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[11px] font-bold text-[#5A1E65] hover:underline inline-flex items-center gap-1"
+                            >
+                              <span>External Registration</span>
+                              <ArrowUpRight className="w-3 h-3" />
+                            </a>
+                          ) : (
+                            <Link
+                              to={evt.registrationUrl}
+                              className="text-[11px] font-bold text-[#5A1E65] hover:underline inline-flex items-center gap-1"
+                            >
+                              <span>{evt.category === 'Health & Wellness' ? 'Book Screening Slot' : 'Direct Registration'}</span>
+                              <ArrowUpRight className="w-3 h-3" />
+                            </Link>
+                          )}
+                        </div>
                       )}
                     </div>
 

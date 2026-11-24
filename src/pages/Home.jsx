@@ -644,7 +644,7 @@ export default function Home() {
           </div>
 
           {/* Clean Category Tabs with Vibrant Active Gradients */}
-          <div className="flex flex-wrap items-center gap-2.5 my-6">
+          <div className="flex flex-wrap items-center gap-2.5 mt-6 mb-8">
             {programCategories.map(cat => (
               <button
                 key={cat.id}
@@ -660,8 +660,8 @@ export default function Home() {
             ))}
           </div>
 
-          {/* Cards Grid with Unified Equal-Height Cards & 3D Tilt */}
-          <MobileCarousel cols={3} autoScrollMs={4500} className="pt-2 perspective-1000 items-stretch sm:auto-rows-fr" cardClassName="h-full flex flex-col">
+          {/* Cards Grid with Unified Equal-Height Cards */}
+          <MobileCarousel cols={3} autoScrollMs={4500} className="pt-3 items-stretch sm:auto-rows-fr" cardClassName="h-full flex flex-col">
             {filteredPrograms.map((program) => {
               // Dynamic jewel-toned card themes & badge colors
               let cardTheme = "card-vibrant-purple";
@@ -692,11 +692,11 @@ export default function Home() {
               return (
                 <CardSpotlight 
                   key={program.slug}
-                  className={`${cardTheme} h-full w-full overflow-hidden flex flex-col justify-between interactive-card-3d shadow-md hover:shadow-xl`}
+                  className={`${cardTheme} h-full w-full overflow-hidden flex flex-col justify-between shadow-md hover:shadow-xl transition-all group`}
                   contentClassName="h-full w-full flex flex-col justify-between"
                   tilt={true}
-                  maxTilt={2.2}
-                  scale={1.006}
+                  maxTilt={1.5}
+                  scale={1.005}
                   glare={true}
                 >
                   <div className="flex flex-col flex-1">
@@ -714,7 +714,7 @@ export default function Home() {
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none" />
                     </div>
 
-                    <div className="p-6 md:p-8 flex flex-col gap-2.5 flex-1">
+                    <div className="p-6 md:p-8 flex flex-col gap-2 flex-1">
                       <div className="h-6 flex items-center">
                         <span 
                           className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border w-fit block shadow-2xs ${program.audienceColor ? '' : audienceBadgeColor}`}
@@ -727,18 +727,24 @@ export default function Home() {
                           {program.audience}
                         </span>
                       </div>
-                      <h3 className="font-display text-xl sm:text-2xl font-black text-slate-950 group-hover:text-[#5A1E65] transition-colors line-clamp-1 min-h-[2rem] flex items-center">
-                        {program.title}
-                      </h3>
-                      <p className="text-sm sm:text-[15px] italic font-serif text-[#5A1E65] font-semibold leading-snug line-clamp-2 min-h-[2.5rem]">
-                        "{program.tagline}"
-                      </p>
-                      <p className="text-sm text-slate-800 font-medium leading-relaxed pt-1 line-clamp-3 min-h-[4rem]">
-                        {program.summary}
-                      </p>
+                      <div className="h-14 flex items-center">
+                        <h3 className="font-display text-lg sm:text-xl font-black text-slate-950 group-hover:text-[#5A1E65] transition-colors line-clamp-2 leading-snug">
+                          {program.title}
+                        </h3>
+                      </div>
+                      <div className="h-10 flex items-center">
+                        <p className="text-xs sm:text-sm italic font-serif text-[#5A1E65] font-semibold leading-snug line-clamp-2">
+                          {program.tagline ? `"${program.tagline}"` : ''}
+                        </p>
+                      </div>
+                      <div className="h-16 overflow-hidden">
+                        <p className="text-xs sm:text-sm text-slate-800 font-medium leading-relaxed line-clamp-3">
+                          {program.summary}
+                        </p>
+                      </div>
 
                       {/* Compact Standardized Logistics Box */}
-                      <div className="p-3.5 bg-slate-50/90 rounded-2xl border border-slate-200/90 space-y-1.5 text-xs mt-2 min-h-[5.25rem]">
+                      <div className="p-3.5 bg-slate-50/90 rounded-2xl border border-slate-200/90 space-y-1.5 text-xs mt-2 h-[5.25rem] flex flex-col justify-center">
                         <div className="flex items-start gap-2">
                           <Clock className="w-3.5 h-3.5 text-[#5A1E65] shrink-0 mt-0.5" />
                           <div className="min-w-0">

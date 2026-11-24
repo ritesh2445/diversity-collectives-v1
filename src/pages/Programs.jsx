@@ -185,11 +185,11 @@ export default function Programs() {
               return (
                 <CardSpotlight
                   key={prog.slug}
-                  className="h-full w-full rounded-3xl bg-white shadow-xl hover:shadow-2xl border-2 border-slate-200/90 hover:border-purple-300 transition-all flex flex-col justify-between overflow-hidden interactive-card-3d group"
+                  className="h-full w-full rounded-3xl bg-white shadow-lg hover:shadow-2xl border-2 border-slate-200/90 hover:border-purple-300 transition-all flex flex-col justify-between overflow-hidden group"
                   contentClassName="h-full w-full flex flex-col justify-between"
                   tilt={true}
-                  maxTilt={4}
-                  scale={1.01}
+                  maxTilt={1.5}
+                  scale={1.005}
                   glare={true}
                 >
                   <div className="flex flex-col flex-1">
@@ -216,30 +216,38 @@ export default function Programs() {
                       </div>
                     </div>
 
-                    {/* Card Body */}
-                    <div className="p-6 flex flex-col gap-2.5 flex-1">
-                      <span 
-                        className="text-[10px] font-black tracking-wider px-2.5 py-0.5 rounded-full border uppercase w-fit transition-colors"
-                        style={{
-                          color: prog.audienceColor || '#7E22CE',
-                          backgroundColor: prog.audienceColor ? `${prog.audienceColor}14` : 'rgb(250 245 255)',
-                          borderColor: prog.audienceColor ? `${prog.audienceColor}33` : 'rgb(233 213 255)'
-                        }}
-                      >
-                        {prog.audience}
-                      </span>
-                      <h2 className="font-display text-xl sm:text-2xl font-black text-slate-950 tracking-tight leading-snug line-clamp-1 min-h-[1.75rem]">
-                        {prog.title}
-                      </h2>
-                      <p className="font-serif italic text-xs sm:text-sm text-[#5A1E65] font-semibold leading-snug line-clamp-2 min-h-[2.5rem]">
-                        "{prog.tagline}"
-                      </p>
-                      <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed line-clamp-3 min-h-[3.75rem] pt-1">
-                        {prog.description}
-                      </p>
+                    {/* Card Body with Identical Container Heights on Every Card */}
+                    <div className="p-6 flex flex-col gap-2 flex-1">
+                      <div className="h-6 flex items-center">
+                        <span 
+                          className="text-[10px] font-black tracking-wider px-2.5 py-0.5 rounded-full border uppercase w-fit block transition-colors"
+                          style={{
+                            color: prog.audienceColor || '#7E22CE',
+                            backgroundColor: prog.audienceColor ? `${prog.audienceColor}14` : 'rgb(250 245 255)',
+                            borderColor: prog.audienceColor ? `${prog.audienceColor}33` : 'rgb(233 213 255)'
+                          }}
+                        >
+                          {prog.audience}
+                        </span>
+                      </div>
+                      <div className="h-14 flex items-center">
+                        <h2 className="font-display text-lg sm:text-xl font-black text-slate-950 tracking-tight leading-snug line-clamp-2">
+                          {prog.title}
+                        </h2>
+                      </div>
+                      <div className="h-10 flex items-center">
+                        <p className="font-serif italic text-xs sm:text-sm text-[#5A1E65] font-semibold leading-snug line-clamp-2">
+                          {prog.tagline ? `"${prog.tagline}"` : ''}
+                        </p>
+                      </div>
+                      <div className="h-16 overflow-hidden">
+                        <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed line-clamp-3">
+                          {prog.description}
+                        </p>
+                      </div>
 
-                      {/* Compact Logistics Card */}
-                      <div className="p-3.5 bg-slate-50/90 rounded-2xl border border-slate-200/90 space-y-1.5 text-xs mt-2 min-h-[5.25rem]">
+                      {/* Compact Standardized Logistics Box */}
+                      <div className="p-3.5 bg-slate-50/90 rounded-2xl border border-slate-200/90 space-y-1.5 text-xs mt-2 h-[5.25rem] flex flex-col justify-center">
                         <div className="flex items-start gap-2">
                           <Clock className="w-3.5 h-3.5 text-[#5A1E65] shrink-0 mt-0.5" />
                           <div className="min-w-0">
@@ -258,30 +266,30 @@ export default function Programs() {
                     </div>
                   </div>
 
-                  {/* Card Actions (Always Pinned at Bottom) */}
-                  <div className="p-6 pt-0 flex flex-wrap items-center gap-2.5 mt-auto">
+                  {/* Card Actions (Always Uniform Height Grid Pinned at Bottom) */}
+                  <div className="p-6 pt-0 mt-auto grid grid-cols-2 gap-2.5 w-full">
                     <Link
                       to={`/programs/${prog.slug}`}
-                      className="btn-primary py-2.5 px-4 text-xs font-bold shadow-md hover:shadow-lg flex-1 inline-flex items-center justify-center gap-1.5 text-center"
+                      className="btn-primary py-2.5 px-3 text-xs font-bold shadow-md hover:shadow-lg inline-flex items-center justify-center gap-1.5 text-center truncate"
                     >
-                      <span>Explore</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
+                      <span className="truncate">Explore</span>
+                      <ArrowRight className="w-3.5 h-3.5 shrink-0" />
                     </Link>
                     {prog.slug === 'diversity-shines' ? (
                       <Link
                         to="/appointments"
-                        className="btn-secondary py-2.5 px-3.5 text-xs font-bold inline-flex items-center gap-1.5"
+                        className="btn-secondary py-2.5 px-3 text-xs font-bold inline-flex items-center justify-center gap-1.5 text-center truncate"
                       >
-                        <Heart className="w-3.5 h-3.5 text-rose-500" />
-                        <span>Screening</span>
+                        <Heart className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                        <span className="truncate">Screening</span>
                       </Link>
                     ) : (
                       <Link
                         to="/contact"
-                        className="btn-secondary py-2.5 px-3.5 text-xs font-bold inline-flex items-center gap-1.5"
+                        className="btn-secondary py-2.5 px-3 text-xs font-bold inline-flex items-center justify-center gap-1.5 text-center truncate"
                       >
-                        <Heart className="w-3.5 h-3.5 text-rose-500" />
-                        <span>Connect</span>
+                        <Heart className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                        <span className="truncate">Connect</span>
                       </Link>
                     )}
                   </div>

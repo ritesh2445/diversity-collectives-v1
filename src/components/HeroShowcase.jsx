@@ -623,7 +623,10 @@ export default function HeroShowcase({
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
                 </span>
-                <span>{`${statusHeadline} · ${statusSchedule} · ${statusTag}`}</span>
+                <span className="truncate max-w-full">
+                  <span className="sm:hidden">{`${statusHeadline} · 1–5 PM`}</span>
+                  <span className="hidden sm:inline">{`${statusHeadline} · ${statusSchedule} · ${statusTag}`}</span>
+                </span>
               </SafeNav>
 
               {liveOrg.voicemailOnly ? (
@@ -664,16 +667,25 @@ export default function HeroShowcase({
                         : 'bg-gradient-to-tr from-amber-500 to-purple-400'
                     }`}></span>
                   </span>
-                  <span className={`text-xs sm:text-sm font-bold leading-snug ${isMobile ? 'break-words' : 'whitespace-nowrap truncate'} block min-w-0`}>
-                    <strong className={isDark ? 'text-emerald-300 font-extrabold' : centerStatus?.isOpenNow ? 'text-emerald-700 font-extrabold' : 'text-[#5A1E65] font-extrabold'}>
-                      {statusHeadline}
-                    </strong>{' '}
-                    <span className="text-rose-400 font-black">•</span>{' '}
-                    <span className={isDark ? 'text-white/90 font-bold' : 'text-slate-900 font-bold'}>{statusSchedule}</span>{' '}
-                    <span className="text-amber-500 font-black">•</span>{' '}
-                    <strong className={isDark ? 'text-amber-300 font-extrabold' : 'bg-gradient-to-r from-[#5A1E65] via-rose-600 to-indigo-700 bg-clip-text text-transparent font-extrabold'}>
-                      {statusTag}
-                    </strong>
+                  <span className="text-xs sm:text-sm font-bold leading-snug block min-w-0">
+                    <span className="sm:hidden inline-flex items-center gap-1.5 truncate max-w-[210px] xs:max-w-[260px]">
+                      <strong className={isDark ? 'text-emerald-300 font-extrabold' : centerStatus?.isOpenNow ? 'text-emerald-700 font-extrabold' : 'text-[#5A1E65] font-extrabold'}>
+                        {statusHeadline}
+                      </strong>
+                      <span className="text-rose-400 font-black">•</span>
+                      <span className={isDark ? 'text-white/90 font-bold' : 'text-slate-900 font-bold'}>1–5 PM</span>
+                    </span>
+                    <span className="hidden sm:inline">
+                      <strong className={isDark ? 'text-emerald-300 font-extrabold' : centerStatus?.isOpenNow ? 'text-emerald-700 font-extrabold' : 'text-[#5A1E65] font-extrabold'}>
+                        {statusHeadline}
+                      </strong>{' '}
+                      <span className="text-rose-400 font-black">•</span>{' '}
+                      <span className={isDark ? 'text-white/90 font-bold' : 'text-slate-900 font-bold'}>{statusSchedule}</span>{' '}
+                      <span className="text-amber-500 font-black">•</span>{' '}
+                      <strong className={isDark ? 'text-amber-300 font-extrabold' : 'bg-gradient-to-r from-[#5A1E65] via-rose-600 to-indigo-700 bg-clip-text text-transparent font-extrabold'}>
+                        {statusTag}
+                      </strong>
+                    </span>
                   </span>
                 </div>
                 <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-all flex-shrink-0 ${isDark ? 'bg-white/20 text-white' : 'bg-purple-100/80 group-hover:bg-[#5A1E65]'}`}>
