@@ -123,7 +123,7 @@ export default function DevicePreviewFrame({
           {/* Browser Address Bar Pill */}
           <div className="flex items-center gap-1.5 bg-white px-2.5 sm:px-4 py-1 rounded-full border border-slate-300/80 text-slate-700 font-semibold text-[10px] sm:text-[11px] shadow-2xs max-w-sm w-full mx-1 sm:mx-2 justify-center min-w-0">
             <Lock className="w-3 h-3 text-emerald-600 shrink-0" />
-            <span className="truncate">https://diversitycollective.org</span>
+            <span className="truncate">https://diversitycollective.org{previewUrl.split('?')[0] === '/' ? '' : previewUrl.split('?')[0]}</span>
           </div>
 
           {/* Device Dimension Badge & New Tab Launcher */}
@@ -166,6 +166,7 @@ export default function DevicePreviewFrame({
               }}
             >
               <iframe
+                key={frameSrc}
                 ref={iframeRef}
                 src={frameSrc}
                 onLoad={onIframeLoad}

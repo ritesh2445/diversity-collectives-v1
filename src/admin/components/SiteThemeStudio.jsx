@@ -566,6 +566,51 @@ export default function SiteThemeStudio({ onThemeSaved }) {
             </p>
           </div>
 
+          {/* Global Website Font Size Scale */}
+          <div className="space-y-2.5 pt-2 border-t border-slate-100">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                Global Website Font Size
+              </label>
+              <span className="text-xs font-black text-[#5A1E65] bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
+                {Math.round((Number(theme.fontScale) || 1) * 100)}%
+              </span>
+            </div>
+            <input
+              type="range"
+              min="0.85"
+              max="1.20"
+              step="0.05"
+              value={Number(theme.fontScale) || 1}
+              onChange={(e) => handleColorChange('fontScale', Number(e.target.value))}
+              className="w-full accent-[#5A1E65] cursor-pointer"
+            />
+            <div className="grid grid-cols-4 gap-1.5">
+              {[
+                { label: '90%', val: 0.9 },
+                { label: '100% Default', val: 1 },
+                { label: '110%', val: 1.1 },
+                { label: '115%', val: 1.15 }
+              ].map((opt) => (
+                <button
+                  key={opt.val}
+                  type="button"
+                  onClick={() => handleColorChange('fontScale', opt.val)}
+                  className={`py-1.5 px-2 rounded-lg text-[11px] font-bold border transition-all cursor-pointer ${
+                    Math.abs((Number(theme.fontScale) || 1) - opt.val) < 0.01
+                      ? 'bg-[#5A1E65] text-white border-[#5A1E65]'
+                      : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-purple-50'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <p className="text-[11px] text-slate-500">
+              Increases or decreases all headings, paragraphs, buttons, and card text across the entire website.
+            </p>
+          </div>
+
           {/* Card Corner Radius */}
           <div className="space-y-2 pt-2 border-t border-slate-100">
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">

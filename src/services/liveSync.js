@@ -736,6 +736,9 @@ export function applySiteThemeToDOM(theme) {
   if (merged.bodyFont) {
     root.style.setProperty('--font-sans', `'${merged.bodyFont}', sans-serif`);
   }
+  const fontScale = Math.max(0.85, Math.min(1.25, Number(merged.fontScale) || 1));
+  root.style.setProperty('--dcvc-font-scale', String(fontScale));
+  root.style.fontSize = `${(16 * fontScale).toFixed(2)}px`;
   root.style.setProperty('--dcvc-card-radius', merged.cardRadius);
 }
 

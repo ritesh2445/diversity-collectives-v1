@@ -47,7 +47,8 @@ import {
   HERO_THEMES,
   resolveHeroTheme
 } from '../../services/heroThemeStore';
-import { SYNC_EVENTS } from '../../services/liveSync';
+import { SYNC_EVENTS, applySiteThemeToDOM, publishAdminSitePatch } from '../../services/liveSync';
+import { loadSiteTheme, THEME_STORAGE_KEY } from './SiteThemeStudio.jsx';
 import { cmsStore } from '../../services/cmsStore';
 import { saveCmsSettings } from '../services/cmsClient.js';
 import HeroShowcase from '../../components/HeroShowcase';
@@ -160,6 +161,7 @@ const QUICK_HERO_PHOTOS = [
 export default function DesignEditor({ onPublishSuccess }) {
   const [selectedPageKey, setSelectedPageKey] = useState('home');
   const [cmsSettings, setCmsSettings] = useState(() => cmsStore.getSettings() || {});
+  const [siteThemeState, setSiteThemeState] = useState(() => loadSiteTheme());
   const [blocks, setBlocks] = useState(getSavedPageLayout);
   const [selectedBlockId, setSelectedBlockId] = useState(
     () => getSavedPageLayout()[0]?.id || 'block-hero'
@@ -512,6 +514,67 @@ export default function DesignEditor({ onPublishSuccess }) {
                 </option>
               ))}
             </select>
+
+            {/* Quick Global Font Size & Primary Color Controls */}
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] font-bold text-slate-500 uppercase">Text:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextScale = Math.max(0.85, Number(((Number(siteThemeState.fontScale) || 1) - 0.05).toFixed(2)));
+                    const updated = { ...siteThemeState, fontScale: nextScale };
+                    try { localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(updated)); } catch {}
+                    setSiteThemeState(updated);
+                    applySiteThemeToDOM(updated);
+                    publishAdminSitePatch({ siteTheme: updated }).catch(() => {});
+                  }}
+                  className="px-2 py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-purple-50 text-[11px] font-black text-slate-700 cursor-pointer"
+                  title="Decrease Website Font Size"
+                >
+                  A-
+                </button>
+                <span className="text-[11px] font-black text-[#5A1E65] px-1">
+                  {Math.round((Number(siteThemeState.fontScale) || 1) * 100)}%
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextScale = Math.min(1.2, Number(((Number(siteThemeState.fontScale) || 1) + 0.05).toFixed(2)));
+                    const updated = { ...siteThemeState, fontScale: nextScale };
+                    try { localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(updated)); } catch {}
+                    setSiteThemeState(updated);
+                    applySiteThemeToDOM(updated);
+                    publishAdminSitePatch({ siteTheme: updated }).catch(() => {});
+                  }}
+                  className="px-2 py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-purple-50 text-[11px] font-black text-slate-700 cursor-pointer"
+                  title="Increase Website Font Size"
+                >
+                  A+
+                </button>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] font-bold text-slate-500 uppercase">Color:</span>
+                <input
+                  type="color"
+                  value={siteThemeState.btnPrimaryBg || '#5A1E65'}
+                  onChange={(e) => {
+                    const updated = {
+                      ...siteThemeState,
+                      btnPrimaryBg: e.target.value,
+                      btnPrimaryBgGradient: e.target.value,
+                      navBtnActiveBg: e.target.value
+                    };
+                    try { localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(updated)); } catch {}
+                    setSiteThemeState(updated);
+                    applySiteThemeToDOM(updated);
+                    publishAdminSitePatch({ siteTheme: updated }).catch(() => {});
+                  }}
+                  className="w-6 h-6 rounded-md border border-slate-300 cursor-pointer p-0"
+                  title="Primary Brand Color"
+                />
+              </div>
+            </div>
           </div>
 
           {selectedPageKey !== 'home' ? (
