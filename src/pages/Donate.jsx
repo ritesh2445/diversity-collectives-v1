@@ -85,6 +85,7 @@ export default function Donate() {
   );
   const [designation, setDesignation] = useState(() => fundsList[0]?.title || 'Greatest Need & General Fund');
   const effectiveAmount = customAmount ? parseFloat(customAmount) || 0 : selectedTier || 50;
+  const currentAppreciationTier = getTierForAmount(effectiveAmount);
 
   // Synchronize state if URL query params change
   useEffect(() => {
@@ -181,6 +182,7 @@ export default function Donate() {
   }, [donorName, donorEmail, effectiveAmount, frequency, isAnonymous]);
 
   const handleConfetti = () => {
+    const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (!prefersReducedMotion) {
       try {
         confetti({
@@ -483,7 +485,7 @@ export default function Donate() {
                 <div className="space-y-1">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                     <span className="text-xs font-extrabold uppercase tracking-wider text-purple-950">
-                      Unlocks: {currentAppreciationTier.title} ({currentAppreciationTier.circleName})
+                      Unlocks: {currentAppreciationTier?.title || 'Community Ally'} ({currentAppreciationTier?.circleName || 'Friend Circle'})
                     </span>
                     <span className="text-[11px] font-bold text-[#5A1E65] bg-purple-100/80 px-2 py-0.5 rounded-md">
                       Certificate Inscription: <strong>{isAnonymous ? 'Affirming Friend of DCVC' : (donorName.trim() || 'Your Name')}</strong>
