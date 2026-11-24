@@ -50,10 +50,10 @@ const AVAILABLE_VARIABLES = [
 export default function DonationSettingsStudio({ currentUser }) {
   const [activeSubTab, setActiveSubTab] = useState('campaigns'); // 'campaigns' | 'template' | 'donations'
   const [zeffyGeneralUrl, setZeffyGeneralUrl] = useState(() => {
-    return cmsStore.getSettings?.()?.zeffyGeneralUrl || cmsStore.getSettings?.()?.zeffyDonationUrl || 'https://www.zeffy.com/donation-form/diversity-collective-general-fund';
+    return cmsStore.getSettings?.()?.zeffyGeneralUrl || cmsStore.getSettings?.()?.zeffyDonationUrl || 'https://www.zeffy.com/en-US/donation-form/donate-to-change-lives-30236';
   });
   const [zeffyGemUrl, setZeffyGemUrl] = useState(() => {
-    return cmsStore.getSettings?.()?.zeffyGemUrl || 'https://www.zeffy.com/donation-form/diversity-collective-gem-membership';
+    return cmsStore.getSettings?.()?.zeffyGemUrl || 'https://www.zeffy.com/en-US/donation-form/gem';
   });
   const [campaignUrlError, setCampaignUrlError] = useState(null);
   const [savingCampaigns, setSavingCampaigns] = useState(false);
@@ -503,7 +503,7 @@ export default function DonationSettingsStudio({ currentUser }) {
               <input
                 type="url"
                 required
-                placeholder="https://www.zeffy.com/donation-form/diversity-collective-general-fund"
+                placeholder="https://www.zeffy.com/en-US/donation-form/donate-to-change-lives-30236"
                 value={zeffyGeneralUrl}
                 onChange={(e) => setZeffyGeneralUrl(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl border border-slate-300 text-xs sm:text-sm font-mono bg-white outline-none focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200"
@@ -536,7 +536,7 @@ export default function DonationSettingsStudio({ currentUser }) {
               <input
                 type="url"
                 required
-                placeholder="https://www.zeffy.com/donation-form/diversity-collective-gem-membership"
+                placeholder="https://www.zeffy.com/en-US/donation-form/gem"
                 value={zeffyGemUrl}
                 onChange={(e) => setZeffyGemUrl(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl border border-slate-300 text-xs sm:text-sm font-mono bg-white outline-none focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200"

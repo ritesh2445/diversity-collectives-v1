@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, Heart, MapPin, Phone, Mail, ShieldCheck } from 'lucide-react';
 import LanguageSelector from './LanguageSelector';
+import SendVoicemailButton from './SendVoicemailButton';
 import { orgInfo, sponsorsList } from '../data/dcvcData';
 import { cmsStore } from '../services/cmsStore';
 import { useLiveOrgInfo } from '../hooks/useCmsLive';
@@ -73,7 +74,7 @@ export default function Footer() {
                 <span className="font-serif italic font-normal bg-gradient-to-r from-purple-400 via-rose-400 to-amber-300 bg-clip-text text-transparent">Ventura County</span>
               </h2>
               <p className="text-sm md:text-base text-slate-200 max-w-lg leading-relaxed pt-1">
-                {orgInfo.mission} A safe, vibrant, and affirming cultural center for every intersecting LGBTQ+ identity across our coastal and inland communities.
+                {orgInfoData.mission || orgInfo.mission} A safe, vibrant, and affirming cultural center for every intersecting LGBTQ+ identity across our coastal and inland communities.
               </p>
             </div>
 
@@ -104,14 +105,14 @@ export default function Footer() {
                 <div className="flex items-start gap-2.5">
                   <MapPin className="w-4 h-4 text-amber-400 flex-shrink-0 mt-1" />
                   <div>
-                    <p className="font-semibold text-white">Suite 100</p>
-                    <p className="text-white">2471 Portola Road</p>
-                    <p className="text-white">Ventura, CA 93003</p>
+                    <p className="text-white">
+                      {orgInfoData.address?.full || (typeof orgInfoData.address === 'string' ? orgInfoData.address : orgInfo.address?.full || '2471 Portola Road, Suite 100, Ventura, CA 93003')}
+                    </p>
                   </div>
                 </div>
                 <div className="pt-2">
                   <a 
-                    href={orgInfo.address.googleMapsUrl}
+                    href={orgInfoData.address?.googleMapsUrl || orgInfo.address?.googleMapsUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 text-xs font-semibold text-white hover:text-amber-300 transition-colors"
@@ -124,16 +125,23 @@ export default function Footer() {
             </div>
 
             <div className="pt-4 border-t border-slate-800 flex flex-col gap-2.5 text-sm">
-              <div className="flex items-center gap-2.5">
-                <Phone className="w-4 h-4 text-amber-400 flex-shrink-0" />
-                <a href={`tel:${orgInfo.phoneRaw}`} className="text-white hover:text-amber-300 transition-colors">
-                  {orgInfo.phone}
-                </a>
-              </div>
+              {orgInfoData.voicemailOnly ? (
+                <div className="flex items-center gap-2.5">
+                  <Phone className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                  <SendVoicemailButton className="text-xs py-1 px-3" />
+                </div>
+              ) : (
+                <div className="flex items-center gap-2.5">
+                  <Phone className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                  <a href={`tel:${orgInfoData.phoneRaw || (orgInfoData.phone ? `+1${orgInfoData.phone.replace(/[^0-9]/g, '')}` : orgInfo.phoneRaw)}`} className="text-white hover:text-amber-300 transition-colors">
+                    {orgInfoData.phone || orgInfo.phone}
+                  </a>
+                </div>
+              )}
               <div className="flex items-center gap-2.5">
                 <Mail className="w-4 h-4 text-amber-400 flex-shrink-0" />
-                <a href={`mailto:${orgInfo.email}`} className="text-white hover:text-amber-300 transition-colors">
-                  {orgInfo.email}
+                <a href={`mailto:${orgInfoData.email || orgInfo.email}`} className="text-white hover:text-amber-300 transition-colors">
+                  {orgInfoData.email || orgInfo.email}
                 </a>
               </div>
             </div>
@@ -174,7 +182,7 @@ export default function Footer() {
               <span className="text-xs text-slate-300 block mb-2">Connect with DCVC:</span>
               <div className="flex items-center gap-3">
                 <a 
-                  href={orgInfo.socials.instagram} 
+                  href={orgInfoData.socials?.instagram || orgInfo.socials.instagram} 
                   target="_blank" 
                   rel="noopener noreferrer" 
                   className="text-xs text-white/90 hover:text-amber-300 transition-colors flex items-center gap-1"
@@ -183,7 +191,7 @@ export default function Footer() {
                 </a>
                 <span className="text-slate-500">·</span>
                 <a 
-                  href={orgInfo.socials.facebook} 
+                  href={orgInfoData.socials?.facebook || orgInfo.socials.facebook} 
                   target="_blank" 
                   rel="noopener noreferrer" 
                   className="text-xs text-white/90 hover:text-amber-300 transition-colors flex items-center gap-1"
@@ -192,7 +200,7 @@ export default function Footer() {
                 </a>
                 <span className="text-slate-500">·</span>
                 <a 
-                  href={orgInfo.socials.youtube} 
+                  href={orgInfoData.socials?.youtube || orgInfo.socials.youtube} 
                   target="_blank" 
                   rel="noopener noreferrer" 
                   className="text-xs text-white/90 hover:text-amber-300 transition-colors flex items-center gap-1"
@@ -212,7 +220,7 @@ export default function Footer() {
               Diversity Collective Ventura County is a California 501(c)(3) nonprofit public benefit corporation.
             </p>
             <p className="text-slate-300">
-              Federal EIN: <span className="font-mono text-white font-semibold">{orgInfo.ein}</span> · CA Corp Number: <span className="font-mono text-white font-semibold">{orgInfo.caCorpNumber}</span>
+              Federal EIN: <span className="font-mono text-white font-semibold">{orgInfoData.ein || orgInfo.ein}</span> · CA Corp Number: <span className="font-mono text-white font-semibold">{orgInfoData.caCorpNumber || orgInfo.caCorpNumber}</span>
             </p>
           </div>
 

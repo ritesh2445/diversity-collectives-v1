@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { cmsStore } from '../services/cmsStore';
-import { orgInfo, trainingCourses, communityGroups, sponsorsList } from '../data/dcvcData';
+import { cmsStore } from '../services/cmsStore.js';
+import { orgInfo, trainingCourses, communityGroups, sponsorsList } from '../data/dcvcData.js';
 
 /**
  * Normalizes flat CMS settings onto the rich orgInfo shape expected by public pages.
@@ -12,10 +12,27 @@ export function buildLiveOrgInfo(settings) {
       ? s.address.trim()
       : s.address?.full || orgInfo.address?.full || '';
 
+  const zeffyUrl = s.zeffyDonationUrl || s.zeffyGeneralUrl || orgInfo.zeffyDonationUrl;
+
   return {
     ...orgInfo,
     ...s,
+    name: s.name || orgInfo.name,
+    tagline: s.tagline || orgInfo.tagline,
+    mission: s.mission || orgInfo.mission,
+    ein: s.ein || orgInfo.ein,
+    caCorpNumber: s.caCorpNumber || orgInfo.caCorpNumber,
+    phone: s.phone || orgInfo.phone,
+    phoneRaw: s.phone ? `+1${s.phone.replace(/[^0-9]/g, '')}` : (s.phoneRaw || orgInfo.phoneRaw),
+    email: s.email || orgInfo.email,
+    hours: s.hours || orgInfo.hours,
     voicemailOnly: Boolean(s.voicemailOnly ?? orgInfo.voicemailOnly),
+    zeffyDonationUrl: zeffyUrl,
+    zeffyGeneralUrl: zeffyUrl,
+    emergencyCrisisNotice: s.emergencyCrisisNotice || orgInfo.emergencyCrisisNotice || "24/7 LGBTQ+ Suicide & Crisis Lifeline: Dial 988 or text 'START' to 678-678 (Trevor Project).",
+    bannerAlertActive: s.bannerAlertActive !== false,
+    bannerAlertText: typeof s.bannerAlertText === 'string' ? s.bannerAlertText : '',
+    bannerAlertLink: s.bannerAlertLink || '/events',
     address: {
       ...(orgInfo.address || {}),
       ...(typeof s.address === 'object' && s.address ? s.address : {}),

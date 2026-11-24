@@ -33,7 +33,8 @@ import {
   Palette,
   Mic,
   Radio,
-  Loader2
+  Loader2,
+  Headphones
 } from 'lucide-react';
 import ImagePicker from './ImagePicker.jsx';
 import MultiImagePicker from './MultiImagePicker.jsx';

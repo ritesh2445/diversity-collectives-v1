@@ -116,15 +116,16 @@ export default function Contact() {
                 Community Resource Center
               </h2>
               <address className="not-italic text-sm text-slate-600 space-y-1 font-medium">
-                <p className="font-bold text-slate-900">2471 Portola Road, Suite 100</p>
-                <p>Ventura, CA 93003</p>
+                <p className="font-bold text-slate-900">
+                  {orgInfo.address?.full || (typeof orgInfo.address === 'string' ? orgInfo.address : '2471 Portola Road, Suite 100, Ventura, CA 93003')}
+                </p>
                 <p className="text-xs text-slate-400 pt-1">
                   Near the intersection of Telephone Rd & Market St. Drop-ins welcome!
                 </p>
               </address>
               <div className="pt-2">
                 <a
-                  href={orgInfo.address.googleMapsUrl}
+                  href={orgInfo.address?.googleMapsUrl || orgInfo.googleMapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn-primary py-3 px-5 text-xs font-bold inline-flex items-center gap-2 shadow-md hover:shadow-xl cursor-pointer"
@@ -172,7 +173,11 @@ export default function Contact() {
                 <span>Immediate 24/7 Crisis Support</span>
               </span>
               <p className="text-slate-700 leading-relaxed font-medium">
-                DCVC is an advocacy and wellness center. If you or a loved one is in crisis, please dial <strong>988</strong> (Suicide & Crisis Lifeline) or call The Trevor Project at <a href="tel:18664887386" className="font-bold text-rose-700 underline">1-866-488-7386</a>.
+                {orgInfo.emergencyCrisisNotice || (
+                  <>
+                    DCVC is an advocacy and wellness center. If you or a loved one is in crisis, please dial <strong>988</strong> (Suicide & Crisis Lifeline) or call The Trevor Project at <a href="tel:18664887386" className="font-bold text-rose-700 underline">1-866-488-7386</a>.
+                  </>
+                )}
               </p>
             </div>
 

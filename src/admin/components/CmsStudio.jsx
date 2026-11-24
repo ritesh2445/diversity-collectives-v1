@@ -40,7 +40,8 @@ import {
   FileSpreadsheet,
   CheckCircle,
   MessageSquare,
-  Shield
+  Shield,
+  Headphones
 } from 'lucide-react';
 import ImagePicker from './ImagePicker.jsx';
 import MultiImagePicker from './MultiImagePicker.jsx';
@@ -4628,10 +4629,17 @@ export default function CmsStudio() {
                   type="text"
                   placeholder="e.g. https://www.zeffy.com/donation-form/diversity-collective-general-fund or your campaign slug"
                   value={cmsData.settings?.zeffyDonationUrl || ''}
-                  onChange={(e) => setCmsData({
-                    ...cmsData,
-                    settings: { ...cmsData.settings, zeffyDonationUrl: e.target.value }
-                  })}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setCmsData({
+                      ...cmsData,
+                      settings: {
+                        ...cmsData.settings,
+                        zeffyDonationUrl: val,
+                        zeffyGeneralUrl: val
+                      }
+                    });
+                  }}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#5A1E65] outline-none"
                 />
                 <p className="text-[11px] text-slate-500 mt-1">

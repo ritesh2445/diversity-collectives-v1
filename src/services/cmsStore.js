@@ -650,9 +650,9 @@ export const INITIAL_CMS_DATA = {
     bannerAlertText: "Center Open Today · Mon–Fri 1:00 PM – 5:00 PM · HIV/STI Screenings 1st Mon 3–7 PM",
     bannerAlertLink: "/events",
     donationUrl: orgInfo.donationUrl || "/donate",
-    zeffyDonationUrl: orgInfo.zeffyDonationUrl || "https://www.zeffy.com/donation-form/diversity-collective-general-fund",
-    zeffyGeneralUrl: orgInfo.zeffyGeneralUrl || orgInfo.zeffyDonationUrl || "https://www.zeffy.com/donation-form/diversity-collective-general-fund",
-    zeffyGemUrl: orgInfo.zeffyGemUrl || "https://www.zeffy.com/donation-form/diversity-collective-gem-membership",
+    zeffyDonationUrl: orgInfo.zeffyDonationUrl || "https://www.zeffy.com/en-US/donation-form/donate-to-change-lives-30236",
+    zeffyGeneralUrl: orgInfo.zeffyGeneralUrl || orgInfo.zeffyDonationUrl || "https://www.zeffy.com/en-US/donation-form/donate-to-change-lives-30236",
+    zeffyGemUrl: orgInfo.zeffyGemUrl || "https://www.zeffy.com/en-US/donation-form/gem",
     volunteerUrl: orgInfo.volunteerUrl || "/volunteer",
     facebook: orgInfo.socials?.facebook || "https://www.facebook.com/diversitycollectivevc",
     instagram: orgInfo.socials?.instagram || "https://www.instagram.com/diversitycollectivevc",
@@ -812,6 +812,7 @@ class CmsStoreEngine {
     this._syncPromise = (async () => {
       const sanityData = await fetchAllSanityWebsiteData();
       if (!sanityData) return null;
+      if (!force && hasPublishedSiteState()) return this.data;
 
       const preloadUrls = [];
       const fallbackMap = (arr = [], key = 'slug') =>
@@ -1047,7 +1048,7 @@ class CmsStoreEngine {
 
       // 9. Site Settings, Hero, Theme Colors & Section Order
       const ss = sanityData.siteSettings;
-      if (ss) {
+      if (ss && (!hasPublishedSiteState() || force)) {
         nextData.settings = {
           ...nextData.settings,
           name: ss.orgName || nextData.settings.name,

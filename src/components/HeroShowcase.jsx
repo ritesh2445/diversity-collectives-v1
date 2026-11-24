@@ -428,14 +428,16 @@ export default function HeroShowcase({
   const statusHeadline = centerStatus?.headline || (centerStatus?.isOpenNow
     ? 'Center Open Now'
     : merged.statusHeadline || 'Center Open Today');
-  const statusSchedule = merged.statusSchedule || 'Mon–Fri 1:00 PM – 5:00 PM';
+  const statusSchedule = liveOrg?.hours || merged.statusSchedule || 'Mon–Fri 1:00 PM – 5:00 PM';
   const statusTag = merged.statusTag || 'HIV/STI Screenings 1st Mon 3–7 PM';
-  const helplineText = merged.helplineText || 'Helpline: (805) 644-5428 · 24/7 Crisis: Dial 988';
+  const helplineText = liveOrg?.phone
+    ? `Helpline: ${liveOrg.phone} · ${liveOrg?.emergencyCrisisNotice ? (liveOrg.emergencyCrisisNotice.includes('988') ? '24/7 Crisis: Dial 988' : liveOrg.emergencyCrisisNotice) : '24/7 Crisis: Dial 988'}`
+    : (merged.helplineText || 'Helpline: (805) 644-5428 · 24/7 Crisis: Dial 988');
   const auroraPhoto = merged.photoUrl || '/images/volunteers.jpg';
   const spotlightPhoto = merged.spotlightImage || merged.photoUrl || '/images/community-gathering.jpg';
   const primaryLink = merged.primaryCtaUrl || merged.primaryCtaLink || '/programs';
   const secondaryLink = merged.secondaryCtaUrl || merged.secondaryCtaLink || '/contact';
-  const emailAddr = merged.emailAddress || 'info@diversitycollective.org';
+  const emailAddr = liveOrg?.email || merged.emailAddress || 'info@diversitycollective.org';
   const activeServiceObj = SERVICE_PATHS.find((s) => s.id === heroService) || SERVICE_PATHS[0];
 
   const renderAuroraHeadline = ({ compactSize = false, darkMode = isDark } = {}) => {

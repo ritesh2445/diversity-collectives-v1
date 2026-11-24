@@ -163,6 +163,36 @@ export default function Header() {
 
   return (
     <>
+      {/* Universal Announcement & Emergency Crisis Hotline Banner */}
+      {liveOrg.bannerAlertActive !== false && (Boolean(liveOrg.bannerAlertText?.trim()) || Boolean(liveOrg.emergencyCrisisNotice?.trim())) && (
+        <aside
+          id="site-announcement-banner"
+          aria-label="Universal Site Announcement & Emergency Crisis Support"
+          className="bg-[#3b0764] text-white py-1.5 px-3 sm:px-4 text-[11px] sm:text-xs font-semibold border-b border-purple-900/60 relative z-50 transition-all duration-200"
+        >
+          <div className="max-w-[1720px] mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-4 w-full">
+            {liveOrg.bannerAlertText?.trim() ? (
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0 animate-pulse" aria-hidden="true" />
+                {liveOrg.bannerAlertLink ? (
+                  <Link to={liveOrg.bannerAlertLink} className="truncate hover:text-amber-300 transition-colors underline decoration-amber-400/50 underline-offset-2">
+                    {liveOrg.bannerAlertText}
+                  </Link>
+                ) : (
+                  <span className="truncate">{liveOrg.bannerAlertText}</span>
+                )}
+              </div>
+            ) : <div />}
+            {liveOrg.emergencyCrisisNotice?.trim() && (
+              <div className="flex items-center gap-1.5 shrink-0 text-amber-200 text-[10px] sm:text-[11px] font-bold">
+                <span className="hidden sm:inline text-purple-300/80">·</span>
+                <span>{liveOrg.emergencyCrisisNotice}</span>
+              </div>
+            )}
+          </div>
+        </aside>
+      )}
+
       {/* Primary Sticky Header Bar */}
       <header
         id="main-header"

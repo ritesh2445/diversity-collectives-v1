@@ -177,16 +177,26 @@ export default function AccessibilityStatement() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-            <a
-              href={`tel:${orgInfo.phoneRaw}`}
-              className="p-4 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/10 transition-colors flex items-center gap-3"
-            >
-              <Phone className="w-5 h-5 text-amber-400" aria-hidden="true" />
-              <div>
-                <span className="text-[11px] text-slate-400 block font-bold uppercase">Phone</span>
-                <span className="text-xs font-bold text-white">{orgInfo.phone}</span>
+            {orgInfo.voicemailOnly ? (
+              <div className="p-4 rounded-2xl bg-white/10 border border-white/10 transition-colors flex items-center gap-3">
+                <Phone className="w-5 h-5 text-amber-400" aria-hidden="true" />
+                <div>
+                  <span className="text-[11px] text-slate-400 block font-bold uppercase mb-1">Direct Audio</span>
+                  <SendVoicemailButton className="text-xs py-1 px-3" />
+                </div>
               </div>
-            </a>
+            ) : (
+              <a
+                href={`tel:${orgInfo.phoneRaw}`}
+                className="p-4 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/10 transition-colors flex items-center gap-3"
+              >
+                <Phone className="w-5 h-5 text-amber-400" aria-hidden="true" />
+                <div>
+                  <span className="text-[11px] text-slate-400 block font-bold uppercase">Phone</span>
+                  <span className="text-xs font-bold text-white">{orgInfo.phone}</span>
+                </div>
+              </a>
+            )}
 
             <a
               href={`mailto:${orgInfo.email}`}
@@ -200,7 +210,7 @@ export default function AccessibilityStatement() {
             </a>
 
             <a
-              href={orgInfo.address.googleMapsUrl}
+              href={orgInfo.address?.googleMapsUrl || (orgInfo.address?.full ? `https://maps.google.com/?q=${encodeURIComponent(orgInfo.address.full)}` : '#')}
               target="_blank"
               rel="noopener noreferrer"
               className="p-4 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/10 transition-colors flex items-center gap-3"
@@ -208,7 +218,7 @@ export default function AccessibilityStatement() {
               <MapPin className="w-5 h-5 text-amber-400" aria-hidden="true" />
               <div>
                 <span className="text-[11px] text-slate-400 block font-bold uppercase">Center</span>
-                <span className="text-xs font-bold text-white">Ventura, CA 93003</span>
+                <span className="text-xs font-bold text-white line-clamp-1">{orgInfo.address?.full || 'Ventura, CA 93003'}</span>
               </div>
             </a>
           </div>

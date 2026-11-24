@@ -27,9 +27,9 @@ export const orgInfo = {
   voicemailOnly: false,
   email: "info@diversitycollective.org",
   donationUrl: "/donate",
-  zeffyDonationUrl: "https://www.zeffy.com/donation-form/diversity-collective-general-fund",
-  zeffyGeneralUrl: "https://www.zeffy.com/donation-form/diversity-collective-general-fund",
-  zeffyGemUrl: "https://www.zeffy.com/donation-form/diversity-collective-gem-membership",
+  zeffyDonationUrl: "https://www.zeffy.com/en-US/donation-form/donate-to-change-lives-30236",
+  zeffyGeneralUrl: "https://www.zeffy.com/en-US/donation-form/donate-to-change-lives-30236",
+  zeffyGemUrl: "https://www.zeffy.com/en-US/donation-form/gem",
   volunteerUrl: "/volunteer",
   brochureUrl: "/images/botanical-flyer.jpg",
   socials: {

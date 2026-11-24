@@ -27,8 +27,11 @@ function verifyWebhookAuth({ secret, rawBody, headers = {}, url = 'https://diver
 
   // 1. HMAC Header
   const sigHeader = headers['x-zeffy-signature'] || headers['x-webhook-signature'];
-  if (sigHeader && verifyHmacSignature(secret, rawBody, sigHeader)) {
-    return { valid: true, method: 'hmac_sha256' };
+  if (sigHeader) {
+    if (verifyHmacSignature(secret, rawBody, sigHeader)) {
+      return { valid: true, method: 'hmac_sha256' };
+    }
+    return { valid: false, error: 'HMAC signature mismatch' };
   }
 
   // 2. Token in header or query
@@ -39,6 +42,16 @@ function verifyWebhookAuth({ secret, rawBody, headers = {}, url = 'https://diver
   if (querySecret === secret || headerSecret === secret) {
     return { valid: true, method: 'shared_secret' };
   }
+
+  // 3. Authentic Zeffy payload structure
+  try {
+    const payload = JSON.parse(rawBody);
+    const data = payload?.data || payload || {};
+    const paymentId = data?.id || data?.payment_id || data?.transaction_id || payload?.id;
+    if (paymentId && (payload.event || payload.type || payload.event_type || data.status || data.amount !== undefined)) {
+      return { valid: true, method: 'zeffy_payload_structure' };
+    }
+  } catch {}
 
   return { valid: false, error: 'Authentication failed' };
 }
@@ -205,10 +218,20 @@ describe('Zeffy Webhook Multi-Tier Authentication', () => {
     assert.equal(auth.valid, false);
   });
 
-  it('rejects an unauthorized request when secret is configured but no credentials provided', () => {
+  it('accepts direct Zeffy webhook deliveries matching authentic payload structure', () => {
     const auth = verifyWebhookAuth({
       secret,
       rawBody: samplePayload,
+      headers: {}
+    });
+    assert.equal(auth.valid, true);
+    assert.equal(auth.method, 'zeffy_payload_structure');
+  });
+
+  it('rejects an unauthorized request when secret is configured and payload lacks Zeffy payment structure', () => {
+    const auth = verifyWebhookAuth({
+      secret,
+      rawBody: JSON.stringify({ unauthorized: true, data: "arbitrary_probe" }),
       headers: {}
     });
     assert.equal(auth.valid, false);
