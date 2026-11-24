@@ -112,15 +112,19 @@ export default function News() {
         />
 
         <div className="max-w-3xl relative z-10 flex flex-col gap-4">
-          <span className="glass-pill text-xs font-bold text-[#5A1E65] bg-purple-50 border-purple-200/90 shadow-xs">
-            EDITORIAL & ADVOCACY DISPATCHES
+          <span className="glass-pill text-xs font-bold text-[#5A1E65] bg-purple-50 border-purple-200/90 shadow-xs w-fit">
+            {cmsStore.getSettings()?.pageCopy?.news?.eyebrow || 'EDITORIAL & ADVOCACY DISPATCHES'}
           </span>
           <h1 className="font-display text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-slate-950 leading-[1.05]">
-            Stories, Updates <br />
-            <span className="font-serif italic font-normal text-[#5A1E65]">& Advocacy.</span>
+            {cmsStore.getSettings()?.pageCopy?.news?.headline || (
+              <>
+                Stories, Updates <br />
+                <span className="font-serif italic font-normal text-[#5A1E65]">&amp; Advocacy.</span>
+              </>
+            )}
           </h1>
           <p className="font-serif italic text-xl md:text-2xl text-slate-700 leading-relaxed pt-2">
-            Dispatches from the front lines of LGBTQ+ wellness, youth empowerment, and community celebration across Ventura County.
+            {cmsStore.getSettings()?.pageCopy?.news?.description || 'Dispatches from the front lines of LGBTQ+ wellness, youth empowerment, and community celebration across Ventura County.'}
           </p>
         </div>
 

@@ -260,15 +260,19 @@ export default function Events() {
 
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 relative z-10">
           <div className="max-w-3xl flex flex-col gap-4">
-            <span className="glass-pill text-xs font-bold text-[#5A1E65] bg-purple-50 border-purple-200/90 shadow-xs">
-              OFFICIAL CALENDAR & CULTURAL LIFE
+            <span className="glass-pill text-xs font-bold text-[#5A1E65] bg-purple-50 border-purple-200/90 shadow-xs w-fit">
+              {cmsStore.getSettings()?.pageCopy?.events?.eyebrow || 'OFFICIAL CALENDAR & CULTURAL LIFE'}
             </span>
             <h1 className="font-display text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-slate-950 leading-[1.05]">
-              Cultural Calendar & <br />
-              <span className="font-serif italic font-normal text-[#5A1E65]">Upcoming Events.</span>
+              {cmsStore.getSettings()?.pageCopy?.events?.headline || (
+                <>
+                  Cultural Calendar & <br />
+                  <span className="font-serif italic font-normal text-[#5A1E65]">Upcoming Events.</span>
+                </>
+              )}
             </h1>
             <p className="font-serif italic text-xl md:text-2xl text-slate-700 leading-relaxed pt-2">
-              From weekly youth circles and free testing clinics to seaside Pride and annual galas, explore upcoming events across Ventura County.
+              {cmsStore.getSettings()?.pageCopy?.events?.description || 'From weekly youth circles and free testing clinics to seaside Pride and annual galas, explore upcoming events across Ventura County.'}
             </p>
           </div>
 
@@ -555,36 +559,37 @@ export default function Events() {
                       </div>
 
                       {/* Category & Cancellation Chips */}
-                      <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5">
+                      <div className="absolute top-2.5 right-2.5 left-2.5 flex items-center justify-end gap-1.5 pointer-events-none">
                         {evt.isCancelled && (
-                          <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-rose-600 text-white shadow-xs">
+                          <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-rose-600 text-white shadow-xs shrink-0">
                             Cancelled
                           </span>
                         )}
-                        <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-xs backdrop-blur-md ${catBadge}`}>
+                        <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-xs backdrop-blur-md truncate max-w-[65%] ${catBadge}`}>
                           {evt.category}
                         </span>
                       </div>
                     </div>
 
                     {/* Time & Location Row */}
-                    <div className="flex items-center justify-between gap-2 pt-0.5">
-                      <span className="text-xs text-slate-700 flex items-center gap-1.5 font-bold">
-                        <Clock className="w-3.5 h-3.5 text-[#5A1E65]" /> {evt.time}
+                    <div className="flex items-center justify-between gap-2 pt-0.5 min-w-0">
+                      <span className="text-xs text-slate-700 flex items-center gap-1.5 font-bold min-w-0 truncate">
+                        <Clock className="w-3.5 h-3.5 text-[#5A1E65] shrink-0" />
+                        <span className="truncate">{evt.time}</span>
                       </span>
-                      <span className="text-[11px] text-slate-500 font-semibold truncate">
+                      <span className="text-[11px] text-slate-500 font-semibold truncate max-w-[48%] shrink-0">
                         📍 {evt.location || 'Ventura'}
                       </span>
                     </div>
 
                     {/* Title & Description with Standardized Uniform Heights */}
-                    <div className="flex flex-col gap-1.5 flex-1">
-                      <h3 className="font-display text-lg font-black text-slate-950 pt-0.5 line-clamp-2 min-h-[3.25rem] group-hover:text-[#5A1E65] transition-colors leading-snug">
+                    <div className="flex flex-col gap-1.5 flex-1 min-w-0 overflow-hidden">
+                      <h3 className="font-display text-lg font-black text-slate-950 pt-0.5 line-clamp-2 min-h-[3.25rem] group-hover:text-[#5A1E65] transition-colors leading-snug break-words">
                         <Link to={`/events/${evt.slug}`} className="hover:text-[#5A1E65] transition-colors">
                           {evt.title}
                         </Link>
                       </h3>
-                      <p className="text-xs sm:text-sm text-slate-700 font-medium leading-relaxed line-clamp-2 min-h-[2.75rem]">
+                      <p className="text-xs sm:text-sm text-slate-700 font-medium leading-relaxed line-clamp-2 min-h-[2.75rem] break-words">
                         {evt.description}
                       </p>
                     </div>

@@ -363,18 +363,22 @@ export default function Directory() {
           <div className="max-w-4xl flex flex-col gap-3">
             <div className="flex flex-wrap items-center gap-2">
               <span className="glass-pill text-xs font-bold text-[#5A1E65] bg-purple-50 border-purple-200/90 shadow-xs">
-                VENTURA COUNTY AFFIRMING NETWORK
+                {cmsStore.getSettings()?.pageCopy?.directory?.eyebrow || 'VENTURA COUNTY AFFIRMING NETWORK'}
               </span>
               <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
                 100% Verified
               </span>
             </div>
             <h1 className="font-display text-[clamp(2rem,4.6vw,3.75rem)] font-extrabold tracking-tight text-slate-950 leading-[1.08]">
-              LGBTQ+ Business{' '}
-              <span className="font-serif italic font-normal text-[#5A1E65]">Directory.</span>
+              {cmsStore.getSettings()?.pageCopy?.directory?.headline || (
+                <>
+                  LGBTQ+ Business{' '}
+                  <span className="font-serif italic font-normal text-[#5A1E65]">Directory.</span>
+                </>
+              )}
             </h1>
             <p className="font-serif italic text-[clamp(1rem,1.65vw,1.35rem)] text-slate-700 leading-relaxed">
-              Discover verified welcoming spaces, healthcare providers, and local services across all 10 Ventura County cities.
+              {cmsStore.getSettings()?.pageCopy?.directory?.description || 'Discover verified welcoming spaces, healthcare providers, and local services across all 10 Ventura County cities.'}
             </p>
           </div>
 

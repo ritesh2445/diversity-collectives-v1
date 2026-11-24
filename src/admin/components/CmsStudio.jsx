@@ -52,6 +52,7 @@ import NewsWritingPad from './NewsWritingPad.jsx';
 import CardGradientStudio from './CardGradientStudio.jsx';
 import SponsorshipManager from './SponsorshipManager.jsx';
 import WeeklyScheduleManager from './WeeklyScheduleManager.jsx';
+import { DEFAULT_WELCOME_KIT_ITEMS } from '../../components/training/ApprovedWelcomeKitShowcase.jsx';
 import {
   getLiveCmsData,
   saveLiveCmsData,
@@ -4226,6 +4227,160 @@ export default function CmsStudio({ currentUser: propUser = null } = {}) {
                 </div>
               </div>
 
+              {/* 3b. Storefront Welcome Kit Showcase & Item Images */}
+              <div className="p-5 rounded-2xl border border-purple-200 bg-purple-50/30 space-y-4">
+                <h4 className="text-sm font-black text-slate-900 border-b border-purple-200/70 pb-2 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-[#5A1E65]" />
+                  <span>Storefront Welcome Kit Showcase &amp; Images</span>
+                </h4>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Eyebrow Pill</label>
+                    <input
+                      type="text"
+                      value={trainingPageData.welcomeKitEyebrow || ''}
+                      onChange={(e) => setTrainingPageData({ ...trainingPageData, welcomeKitEyebrow: e.target.value })}
+                      placeholder="TANGIBLE VALUE FOR YOUR STOREFRONT"
+                      className="w-full px-3 py-2 border rounded-xl text-xs bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Section Title</label>
+                    <input
+                      type="text"
+                      value={trainingPageData.welcomeKitTitle || ''}
+                      onChange={(e) => setTrainingPageData({ ...trainingPageData, welcomeKitTitle: e.target.value })}
+                      placeholder="What's Inside the DCVC Approved Welcome Kit?"
+                      className="w-full px-3 py-2 border rounded-xl text-xs bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Section Subtitle</label>
+                  <textarea
+                    rows={2}
+                    value={trainingPageData.welcomeKitSubtitle || ''}
+                    onChange={(e) => setTrainingPageData({ ...trainingPageData, welcomeKitSubtitle: e.target.value })}
+                    placeholder="Upon graduating from the accreditation workshop, every certified business receives..."
+                    className="w-full px-3 py-2 border rounded-xl text-xs bg-white"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">CTA Button Text</label>
+                    <input
+                      type="text"
+                      value={trainingPageData.welcomeKitButtonText || ''}
+                      onChange={(e) => setTrainingPageData({ ...trainingPageData, welcomeKitButtonText: e.target.value })}
+                      placeholder="Get Your Storefront Kit"
+                      className="w-full px-3 py-2 border rounded-xl text-xs bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Bottom Shipping Note</label>
+                    <input
+                      type="text"
+                      value={trainingPageData.welcomeKitFooterNote || ''}
+                      onChange={(e) => setTrainingPageData({ ...trainingPageData, welcomeKitFooterNote: e.target.value })}
+                      placeholder="Accredited businesses receive kit shipment within 5 business days of graduation."
+                      className="w-full px-3 py-2 border rounded-xl text-xs bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3 pt-2">
+                  <span className="text-xs font-black text-slate-800 block">
+                    Welcome Kit Tabs &amp; Images (5 Items)
+                  </span>
+                  {(Array.isArray(trainingPageData.welcomeKitItems) && trainingPageData.welcomeKitItems.length > 0
+                    ? trainingPageData.welcomeKitItems
+                    : DEFAULT_WELCOME_KIT_ITEMS
+                  ).map((kitItem, kIdx) => {
+                    const currentKitItems =
+                      Array.isArray(trainingPageData.welcomeKitItems) && trainingPageData.welcomeKitItems.length > 0
+                        ? trainingPageData.welcomeKitItems
+                        : DEFAULT_WELCOME_KIT_ITEMS;
+                    const updateKitItem = (field, val) => {
+                      const next = currentKitItems.map((it, i) =>
+                        i === kIdx ? { ...it, [field]: val } : it
+                      );
+                      setTrainingPageData({ ...trainingPageData, welcomeKitItems: next });
+                    };
+                    return (
+                      <div key={kitItem.id || kIdx} className="p-4 rounded-xl bg-white border border-slate-200 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-black text-[#5A1E65]">
+                            Kit Item #{kIdx + 1}: {kitItem.title}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-600 mb-1">Title / Tab Label</label>
+                            <input
+                              type="text"
+                              value={kitItem.title || ''}
+                              onChange={(e) => updateKitItem('title', e.target.value)}
+                              className="w-full px-2.5 py-1.5 border rounded-lg text-xs"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-600 mb-1">Category Badge</label>
+                            <input
+                              type="text"
+                              value={kitItem.category || ''}
+                              onChange={(e) => updateKitItem('category', e.target.value)}
+                              className="w-full px-2.5 py-1.5 border rounded-lg text-xs"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-600 mb-1">Spec Pill</label>
+                            <input
+                              type="text"
+                              value={kitItem.badge || ''}
+                              onChange={(e) => updateKitItem('badge', e.target.value)}
+                              className="w-full px-2.5 py-1.5 border rounded-lg text-xs"
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div className="space-y-2">
+                            <label className="block text-[11px] font-bold text-slate-600">Description</label>
+                            <textarea
+                              rows={3}
+                              value={kitItem.description || ''}
+                              onChange={(e) => updateKitItem('description', e.target.value)}
+                              className="w-full px-2.5 py-1.5 border rounded-lg text-xs"
+                            />
+                            <label className="block text-[11px] font-bold text-slate-600">Key Features (1 per line)</label>
+                            <textarea
+                              rows={3}
+                              value={Array.isArray(kitItem.highlights) ? kitItem.highlights.join('\n') : ''}
+                              onChange={(e) =>
+                                updateKitItem(
+                                  'highlights',
+                                  e.target.value.split('\n').map((s) => s.trim()).filter(Boolean)
+                                )
+                              }
+                              className="w-full px-2.5 py-1.5 border rounded-lg text-xs"
+                            />
+                          </div>
+                          <div>
+                            <ImagePicker
+                              label={`Kit Item #${kIdx + 1} Image (Upload or Pick)`}
+                              value={kitItem.image || ''}
+                              onChange={(url) => updateKitItem('image', url)}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Bottom Sticky Action Bar */}
               <div className="p-4 rounded-2xl bg-white border-2 border-emerald-300 shadow-md flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="text-xs text-slate-600">
@@ -4341,6 +4496,75 @@ export default function CmsStudio({ currentUser: propUser = null } = {}) {
           ====================================================================== */}
       {activeSubTab === 'settings' && (
         <form onSubmit={handleSaveSettingsForm} className="space-y-6">
+          {/* Universal All-Pages Section Copy Editor */}
+          <div className="p-6 rounded-3xl bg-white border border-purple-200 shadow-sm space-y-5">
+            <div>
+              <h3 className="font-display text-xl font-bold text-slate-950">
+                All Pages &amp; Section Copy Editor
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Edit the top eyebrow, headline, and intro text across every public page (Events, News, Directory, Resources, About, Community, Get Involved, Contact, Donate). Click Save Settings below to publish live.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[
+                { key: 'events', label: 'Events Page', eyebrow: 'OFFICIAL CALENDAR & CULTURAL LIFE', headline: 'Cultural Calendar & Upcoming Events.' },
+                { key: 'news', label: 'News & Blog Page', eyebrow: 'EDITORIAL & ADVOCACY DISPATCHES', headline: 'News & Community Updates.' },
+                { key: 'directory', label: 'Business Directory Page', eyebrow: 'VENTURA COUNTY AFFIRMING NETWORK', headline: 'LGBTQ+ Business Directory.' },
+                { key: 'resources', label: 'Resources Page', eyebrow: 'VERIFIED VENTURA COUNTY DIRECTORY', headline: 'Community Resources.' },
+                { key: 'about', label: 'About Us Page', eyebrow: 'OUR MISSION & HERITAGE', headline: 'Building Safe Harbor in Ventura County.' },
+                { key: 'community', label: 'Community Groups Page', eyebrow: 'SAFE HARBOR PEER CIRCLES', headline: 'Community Circles & Support.' },
+                { key: 'getInvolved', label: 'Get Involved Page', eyebrow: 'VOLUNTEER & ADVOCACY', headline: 'Get Involved With DCVC.' },
+                { key: 'contact', label: 'Contact Page', eyebrow: 'REACH OUT TO US', headline: 'Connect With Our Team.' },
+                { key: 'donate', label: 'Donate Page', eyebrow: '501(C)(3) COMMUNITY PHILANTHROPY', headline: 'Sustain Our Safe Harbor.' }
+              ].map((pg) => {
+                const currentCopy = cmsData.settings?.pageCopy?.[pg.key] || {};
+                const updatePageField = (field, val) => {
+                  setCmsData({
+                    ...cmsData,
+                    settings: {
+                      ...cmsData.settings,
+                      pageCopy: {
+                        ...(cmsData.settings?.pageCopy || {}),
+                        [pg.key]: {
+                          ...currentCopy,
+                          [field]: val
+                        }
+                      }
+                    }
+                  });
+                };
+                return (
+                  <div key={pg.key} className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200 space-y-2.5">
+                    <span className="text-xs font-black text-[#5A1E65] block">{pg.label}</span>
+                    <input
+                      type="text"
+                      value={currentCopy.eyebrow || ''}
+                      onChange={(e) => updatePageField('eyebrow', e.target.value)}
+                      placeholder={pg.eyebrow}
+                      className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-[11px] bg-white"
+                    />
+                    <input
+                      type="text"
+                      value={currentCopy.headline || ''}
+                      onChange={(e) => updatePageField('headline', e.target.value)}
+                      placeholder={pg.headline}
+                      className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-bold bg-white"
+                    />
+                    <textarea
+                      rows={2}
+                      value={currentCopy.description || ''}
+                      onChange={(e) => updatePageField('description', e.target.value)}
+                      placeholder="Custom intro paragraph (leave blank for default)"
+                      className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-[11px] bg-white"
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
           <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-6">
             <div>
               <h3 className="font-display text-xl font-bold text-slate-950">

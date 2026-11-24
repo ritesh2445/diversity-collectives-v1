@@ -13,7 +13,7 @@ import {
 import { Link } from 'react-router-dom';
 import DcvcApprovedBadge from '../DcvcApprovedBadge';
 
-const KIT_ITEMS = [
+export const DEFAULT_WELCOME_KIT_ITEMS = [
   {
     id: 'window-decal',
     title: 'Physical Storefront Window Decal Cling',
@@ -83,8 +83,12 @@ const KIT_ITEMS = [
 ];
 
 export default function ApprovedWelcomeKitShowcase({ content }) {
-  const [activeTab, setActiveTab] = useState(KIT_ITEMS[0].id);
-  const activeItem = KIT_ITEMS.find(item => item.id === activeTab) || KIT_ITEMS[0];
+  const kitItems =
+    Array.isArray(content?.welcomeKitItems) && content.welcomeKitItems.length > 0
+      ? content.welcomeKitItems
+      : DEFAULT_WELCOME_KIT_ITEMS;
+  const [activeTab, setActiveTab] = useState(kitItems[0]?.id || 'window-decal');
+  const activeItem = kitItems.find(item => item.id === activeTab) || kitItems[0];
 
   return (
     <div className="w-full rounded-3xl bg-slate-900 text-white p-6 sm:p-12 shadow-2xl relative overflow-hidden border border-purple-500/30">
@@ -126,7 +130,7 @@ export default function ApprovedWelcomeKitShowcase({ content }) {
 
         {/* Tab Navigation */}
         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-          {KIT_ITEMS.map((item) => (
+          {kitItems.map((item) => (
             <button
               key={item.id}
               type="button"
@@ -194,9 +198,10 @@ export default function ApprovedWelcomeKitShowcase({ content }) {
           {/* Right Column: Visual Preview */}
           <div className="lg:col-span-5 relative rounded-2xl overflow-hidden border-2 border-purple-400/40 shadow-2xl h-64 sm:h-80 bg-slate-950 flex items-center justify-center group">
             <img
-              src={activeItem.image}
+              src={activeItem.image || '/images/crc-building.jpg'}
               alt={activeItem.title}
-              className="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-500"
+              onError={(e) => { e.currentTarget.src = '/images/crc-building.jpg'; }}
+              className="w-full h-full object-cover opacity-85 group-hover:scale-105 transition-transform duration-500"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
 
@@ -227,8 +232,8 @@ export default function ApprovedWelcomeKitShowcase({ content }) {
         {/* Bottom CTA */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-white/10">
           <div className="flex items-center gap-3 text-xs text-purple-200">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span>Accredited businesses receive kit shipment within 5 business days of graduation.</span>
+            <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>{content?.welcomeKitFooterNote || 'Accredited businesses receive kit shipment within 5 business days of graduation.'}</span>
           </div>
 
           <Link
