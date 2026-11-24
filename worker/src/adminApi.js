@@ -107,7 +107,7 @@ export function parseCookies(cookieHeader) {
 export function buildSessionCookie(token, { crossOrigin = false, maxAgeSec = 28800 } = {}) {
   const parts = [
     `dcvc_admin_session=${encodeURIComponent(token)}`,
-    'Path=/api/admin',
+    'Path=/api',
     `Max-Age=${maxAgeSec}`,
     'HttpOnly',
     'Secure',
@@ -119,7 +119,7 @@ export function buildSessionCookie(token, { crossOrigin = false, maxAgeSec = 288
 export function clearSessionCookie({ crossOrigin = false } = {}) {
   const parts = [
     'dcvc_admin_session=',
-    'Path=/api/admin',
+    'Path=/api',
     'Max-Age=0',
     'HttpOnly',
     'Secure',
@@ -128,8 +128,12 @@ export function clearSessionCookie({ crossOrigin = false } = {}) {
   return parts.join('; ');
 }
 
-// PBKDF2 Password Hashing & Verification via Web Crypto API
-export async function hashPassword(password, salt) {
+// OWASP Recommended Configuration: PBKDF2-HMAC-SHA256 with 600,000 iterations
+export const OWASP_PBKDF2_ITERATIONS = 600000;
+export const LEGACY_PBKDF2_ITERATIONS = 100000;
+
+// PBKDF2 Password Hashing via Web Crypto API
+export async function hashPassword(password, salt, iterations = OWASP_PBKDF2_ITERATIONS) {
   const enc = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey(
     'raw',
@@ -143,7 +147,7 @@ export async function hashPassword(password, salt) {
     {
       name: 'PBKDF2',
       salt: enc.encode(salt),
-      iterations: 100000,
+      iterations,
       hash: 'SHA-256'
     },
     keyMaterial,
@@ -156,6 +160,29 @@ export async function hashPassword(password, salt) {
   return Array.from(new Uint8Array(exported))
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
+}
+
+/**
+ * Backward-compatible verification:
+ * 1. Checks using current OWASP standard (600,000 iterations).
+ * 2. If not matched, falls back to legacy 100,000 iterations.
+ * 3. Returns { valid, needsUpgrade } so caller can seamlessly rehash without credential loss.
+ */
+export async function verifyPasswordHash(password, salt, storedHash) {
+  if (!password || !salt || !storedHash) {
+    return { valid: false, needsUpgrade: false };
+  }
+  // Try modern 600,000 iterations
+  const modernHash = await hashPassword(password, salt, OWASP_PBKDF2_ITERATIONS);
+  if (constantTimeEqual(modernHash, storedHash)) {
+    return { valid: true, needsUpgrade: false };
+  }
+  // Fallback to legacy 100,000 iterations
+  const legacyHash = await hashPassword(password, salt, LEGACY_PBKDF2_ITERATIONS);
+  if (constantTimeEqual(legacyHash, storedHash)) {
+    return { valid: true, needsUpgrade: true };
+  }
+  return { valid: false, needsUpgrade: false };
 }
 
 // Fail-closed signing secret check (no hardcoded fallback)

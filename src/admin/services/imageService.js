@@ -23,31 +23,44 @@ export const DCVC_IMAGE_LIBRARY = [
  * Get GitHub storage credentials from localStorage or environment
  */
 export function getGitHubStorageConfig() {
+  const envOwner = (typeof window !== 'undefined' ? import.meta.env?.VITE_GITHUB_OWNER : (typeof process !== 'undefined' ? process?.env?.VITE_GITHUB_OWNER : '')) || 'diversity-collective';
+  const envRepo = (typeof window !== 'undefined' ? import.meta.env?.VITE_GITHUB_REPO : (typeof process !== 'undefined' ? process?.env?.VITE_GITHUB_REPO : '')) || 'diversity-collectives-v1';
+  const envBranch = (typeof window !== 'undefined' ? import.meta.env?.VITE_GITHUB_BRANCH : (typeof process !== 'undefined' ? process?.env?.VITE_GITHUB_BRANCH : '')) || 'main';
+  const envToken = (typeof window !== 'undefined' ? import.meta.env?.VITE_GITHUB_TOKEN : (typeof process !== 'undefined' ? process?.env?.VITE_GITHUB_TOKEN : '')) || '';
+  const envCdn = (typeof window !== 'undefined' ? import.meta.env?.VITE_CDN_PROVIDER : (typeof process !== 'undefined' ? process?.env?.VITE_CDN_PROVIDER : '')) || 'jsdelivr';
+
   if (typeof localStorage === 'undefined') {
     return {
-      owner: '',
-      repo: '',
-      branch: 'main',
-      token: '',
-      cdnProvider: 'jsdelivr'
+      owner: envOwner,
+      repo: envRepo,
+      branch: envBranch,
+      token: envToken,
+      cdnProvider: envCdn
     };
   }
 
   const stored = localStorage.getItem('dcvc_github_storage_config');
   if (stored) {
     try {
-      return JSON.parse(stored);
+      const parsed = JSON.parse(stored);
+      return {
+        owner: parsed.owner || envOwner,
+        repo: parsed.repo || envRepo,
+        branch: parsed.branch || envBranch,
+        token: parsed.token || envToken,
+        cdnProvider: parsed.cdnProvider || envCdn
+      };
     } catch {
       // fallback
     }
   }
 
   return {
-    owner: '',
-    repo: '',
-    branch: 'main',
-    token: '',
-    cdnProvider: 'jsdelivr' // 'jsdelivr' | 'github_raw' | 'relative'
+    owner: envOwner,
+    repo: envRepo,
+    branch: envBranch,
+    token: envToken,
+    cdnProvider: envCdn // 'jsdelivr' | 'github_raw' | 'relative'
   };
 }
 

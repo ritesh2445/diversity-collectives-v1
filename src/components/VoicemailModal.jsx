@@ -32,7 +32,7 @@ export default function VoicemailModal({ isOpen, onClose, defaultSubject = '' })
               <h3 id="voicemail-modal-title" className="font-display font-black text-slate-900 text-base">
                 Send Us a Voice Message
               </h3>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs sm:text-sm text-slate-700 font-medium">
                 Staff will listen to your recording and reply promptly.
               </p>
             </div>
@@ -41,7 +41,7 @@ export default function VoicemailModal({ isOpen, onClose, defaultSubject = '' })
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+            className="p-1.5 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
             aria-label="Close voice message modal"
           >
             <X className="w-5 h-5" />

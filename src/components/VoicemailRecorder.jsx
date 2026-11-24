@@ -274,11 +274,11 @@ export default function VoicemailRecorder({
           <div>
             <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
               <span>Leave Us a Voice Message</span>
-              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 tracking-wider">
+              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 tracking-wider">
                 Voicemail Active
               </span>
             </h3>
-            <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+            <p className="text-xs sm:text-sm text-slate-700 font-medium mt-1 leading-relaxed">
               Can't reach our team right now? Leave us a voice message, and someone from our team will get back to you.
             </p>
           </div>
@@ -287,7 +287,7 @@ export default function VoicemailRecorder({
         <button
           type="button"
           onClick={() => setIsOpen((prev) => !prev)}
-          className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors flex-shrink-0 cursor-pointer"
+          className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors flex-shrink-0 cursor-pointer"
           title={isOpen ? 'Collapse voice message recorder' : 'Expand voice message recorder'}
           aria-expanded={isOpen}
         >
@@ -321,8 +321,8 @@ export default function VoicemailRecorder({
           <div className="space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Your Name <span className="text-rose-500">*</span>
+                <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-1">
+                  Your Name <span className="text-rose-600 font-bold">*</span>
                 </label>
                 <input
                   type="text"
@@ -331,13 +331,13 @@ export default function VoicemailRecorder({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="First & last name"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-600 disabled:bg-slate-100"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm text-slate-900 font-medium placeholder:text-slate-500 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-600 disabled:bg-slate-100"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Email Address <span className="text-rose-500">*</span>
+                <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-1">
+                  Email Address <span className="text-rose-600 font-bold">*</span>
                 </label>
                 <input
                   type="email"
@@ -346,14 +346,14 @@ export default function VoicemailRecorder({
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your.email@example.org"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-600 disabled:bg-slate-100"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm text-slate-900 font-medium placeholder:text-slate-500 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-600 disabled:bg-slate-100"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Subject / Topic <span className="text-slate-400 font-normal lowercase">(optional)</span>
+              <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-1">
+                Subject / Topic <span className="text-slate-600 font-medium lowercase">(optional)</span>
               </label>
               <input
                 type="text"
@@ -361,7 +361,7 @@ export default function VoicemailRecorder({
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
                 placeholder="e.g. Youth peer circle, resource inquiry, event question..."
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-600 disabled:bg-slate-100"
+                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm text-slate-900 font-medium placeholder:text-slate-500 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-600 disabled:bg-slate-100"
               />
             </div>
           </div>
@@ -388,10 +388,10 @@ export default function VoicemailRecorder({
                 </span>
               </div>
 
-              <div className="flex items-center gap-1.5 text-slate-600 font-mono text-xs font-bold">
-                <Clock className="w-3.5 h-3.5 text-slate-400" />
+              <div className="flex items-center gap-1.5 text-slate-800 font-mono text-xs font-bold">
+                <Clock className="w-3.5 h-3.5 text-slate-600" />
                 <span>{formatTime(duration)}</span>
-                <span className="text-slate-400">/ 02:00 max</span>
+                <span className="text-slate-600 font-semibold">/ 02:00 max</span>
               </div>
             </div>
 
@@ -489,17 +489,17 @@ export default function VoicemailRecorder({
                       <span>{isPlaying ? 'Pause' : 'Listen Back'}</span>
                     </button>
 
-                    <div className="text-[11px] font-mono text-slate-500">
+                    <div className="text-xs font-mono text-slate-800 font-bold">
                       {formatTime(Math.floor(playbackTime))} / {formatTime(duration)}
                     </div>
 
                     <button
                       type="button"
                       onClick={handleReRecord}
-                      className="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                      className="px-3 py-1.5 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
                       title="Clear recording and start over"
                     >
-                      <RotateCcw className="w-3 h-3 text-slate-400" />
+                      <RotateCcw className="w-3.5 h-3.5 text-slate-600" />
                       <span>Re-record</span>
                     </button>
                   </div>

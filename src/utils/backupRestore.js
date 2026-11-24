@@ -19,6 +19,161 @@ export const BACKBLAZE_FREE_TIER_LIMIT_BYTES = 10 * 1024 * 1024 * 1024; // 10 GB
 export const DEFAULT_RETENTION_DAYS = 14;
 
 /**
+ * Validate that an encryption key is a genuine, non-default 32-byte (64 hex characters) hex key
+ */
+export function assertValidEncryptionKey(hexKey) {
+  if (!hexKey || typeof hexKey !== 'string') {
+    throw new Error('Encryption rejected: BACKUP_ENCRYPTION_KEY is required and must be a string');
+  }
+  const cleanKey = hexKey.trim();
+  if (!/^[0-9a-fA-F]{64}$/.test(cleanKey)) {
+    throw new Error('Encryption rejected: BACKUP_ENCRYPTION_KEY must be a valid 32-byte hexadecimal string (exactly 64 hex characters)');
+  }
+  return cleanKey;
+}
+
+/**
+ * Compute a non-reversible cryptographic key fingerprint (SHA-256 slice).
+ * Identifies which historical key was used to encrypt a package without exposing key material.
+ */
+export function generateKeyFingerprint(hexKey) {
+  const validKey = assertValidEncryptionKey(hexKey);
+  return crypto.createHash('sha256').update(validKey).digest('hex').slice(0, 16);
+}
+
+/**
+ * Authoritative Topological Table Restoration Ordering
+ * Resolves all foreign-key dependencies (Parents inserted before Children)
+ */
+export const TOPOLOGICAL_RESTORE_ORDER = [
+  // 1. Independent Identity & Core Entity Tables
+  'admin_users',
+  'businesses',
+  'donation_intents',
+  'donation_appreciation_cards',
+  'contact_submissions',
+  'volunteer_applications',
+  'training_bookings',
+  'accessibility_feedback',
+  'newsletter_subscribers',
+  'event_rsvps',
+  'webhook_events',
+  'reconciliation_sync_state',
+  'site_state',
+  'voicemails',
+  'media_suggestions',
+  'community_group_joins',
+  'community_group_broadcasts',
+  'gallery_photos',
+  'uploaded_documents',
+  'admin_revoked_tokens',
+  'admin_used_temp_tokens',
+  'admin_email_otps',
+  'admin_rate_limits',
+
+  // 2. Dependent Child Tables Enforcing Foreign Key Integrity
+  'business_corrections',       // FK -> businesses(id) ON DELETE CASCADE
+  'admin_audit_logs',           // FK -> admin_users(id) ON DELETE SET NULL
+  'donation_reconciliations'    // FK -> donation_intents(id) ON DELETE SET NULL
+];
+
+/**
+ * Post-Restoration Security Hygiene Queries
+ * Explicit policy to invalidate transient authentication records and prevent session replay:
+ * 1. Bumps token_version for all admin users, invalidating all pre-disaster JWT sessions.
+ * 2. Marks all pending or in-flight email OTPs as consumed and exhausted.
+ * 3. Marks all temporary authentication and MFA tokens as consumed.
+ * 4. Clears transient rate limit lockouts for clean operational access.
+ * Note: admin_revoked_tokens records are preserved as-is so blacklisted tokens remain revoked.
+ */
+export const POST_RESTORE_SECURITY_QUERIES = [
+  {
+    name: 'bump_token_version',
+    description: 'Invalidate all pre-disaster admin sessions by incrementing token version',
+    sql: 'UPDATE admin_users SET token_version = COALESCE(token_version, 1) + 1;'
+  },
+  {
+    name: 'invalidate_email_otps',
+    description: 'Invalidate pending email OTPs to prevent code replay post-recovery',
+    sql: 'UPDATE admin_email_otps SET consumed = 1, attempts = 5;'
+  },
+  {
+    name: 'invalidate_temp_tokens',
+    description: 'Invalidate temporary 2FA/MFA setup tokens',
+    sql: 'UPDATE admin_used_temp_tokens SET consumed = 1;'
+  },
+  {
+    name: 'reset_rate_limits',
+    description: 'Reset transient IP and email rate limit counters',
+    sql: 'DELETE FROM admin_rate_limits;'
+  }
+];
+
+/**
+ * Verify Foreign-Key Integrity Across Restored Tables
+ * Evaluates all foreign key constraints before accepting restore.
+ */
+export function checkForeignKeyIntegrity(tablesData = {}) {
+  const violations = [];
+
+  // 1. business_corrections.business_id -> businesses.id
+  if (Array.isArray(tablesData.business_corrections) && Array.isArray(tablesData.businesses)) {
+    const businessIds = new Set(tablesData.businesses.map(b => b.id).filter(Boolean));
+    for (const corr of tablesData.business_corrections) {
+      if (corr.business_id && !businessIds.has(corr.business_id)) {
+        violations.push({
+          table: 'business_corrections',
+          rowId: corr.id,
+          fkColumn: 'business_id',
+          targetTable: 'businesses',
+          foreignKey: corr.business_id,
+          error: `Foreign key violation: business_id '${corr.business_id}' does not exist in businesses table`
+        });
+      }
+    }
+  }
+
+  // 2. admin_audit_logs.user_id -> admin_users.id (nullable)
+  if (Array.isArray(tablesData.admin_audit_logs) && Array.isArray(tablesData.admin_users)) {
+    const userIds = new Set(tablesData.admin_users.map(u => u.id).filter(Boolean));
+    for (const log of tablesData.admin_audit_logs) {
+      if (log.user_id && !userIds.has(log.user_id)) {
+        violations.push({
+          table: 'admin_audit_logs',
+          rowId: log.id,
+          fkColumn: 'user_id',
+          targetTable: 'admin_users',
+          foreignKey: log.user_id,
+          error: `Foreign key violation: user_id '${log.user_id}' does not exist in admin_users table`
+        });
+      }
+    }
+  }
+
+  // 3. donation_reconciliations.assigned_intent_id -> donation_intents.id (nullable)
+  if (Array.isArray(tablesData.donation_reconciliations) && Array.isArray(tablesData.donation_intents)) {
+    const intentIds = new Set(tablesData.donation_intents.map(i => i.id).filter(Boolean));
+    for (const rec of tablesData.donation_reconciliations) {
+      if (rec.assigned_intent_id && !intentIds.has(rec.assigned_intent_id)) {
+        violations.push({
+          table: 'donation_reconciliations',
+          rowId: rec.id,
+          fkColumn: 'assigned_intent_id',
+          targetTable: 'donation_intents',
+          foreignKey: rec.assigned_intent_id,
+          error: `Foreign key violation: assigned_intent_id '${rec.assigned_intent_id}' does not exist in donation_intents table`
+        });
+      }
+    }
+  }
+
+  return {
+    valid: violations.length === 0,
+    violations
+  };
+}
+
+/**
  * Generate a verified backup archive from in-memory or database records
  */
 export async function createDatabaseSnapshot(tablesData = {}, metadata = {}) {
@@ -56,13 +211,8 @@ export async function createDatabaseSnapshot(tablesData = {}, metadata = {}) {
  * Format: [12 bytes IV] + [16 bytes Auth Tag] + [Ciphertext]
  */
 export function encryptPayload(dataBufferOrString, hexKey) {
-  if (!hexKey) {
-    throw new Error('Encryption rejected: BACKUP_ENCRYPTION_KEY is required');
-  }
-  const key = Buffer.from(hexKey, 'hex');
-  if (key.length !== 32) {
-    throw new Error('Encryption rejected: BACKUP_ENCRYPTION_KEY must be a 32-byte (64 hex characters) key');
-  }
+  const validKey = assertValidEncryptionKey(hexKey);
+  const key = Buffer.from(validKey, 'hex');
 
   const iv = crypto.randomBytes(12);
   const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
@@ -82,13 +232,8 @@ export function encryptPayload(dataBufferOrString, hexKey) {
  * Decrypt AES-256-GCM encrypted backup package
  */
 export function decryptPayload(encryptedBuffer, hexKey) {
-  if (!hexKey) {
-    throw new Error('Decryption rejected: BACKUP_ENCRYPTION_KEY is required');
-  }
-  const key = Buffer.from(hexKey, 'hex');
-  if (key.length !== 32) {
-    throw new Error('Decryption rejected: BACKUP_ENCRYPTION_KEY must be a 32-byte (64 hex characters) key');
-  }
+  const validKey = assertValidEncryptionKey(hexKey);
+  const key = Buffer.from(validKey, 'hex');
 
   if (!Buffer.isBuffer(encryptedBuffer) || encryptedBuffer.length < 28) {
     throw new Error('Decryption rejected: Encrypted package buffer is malformed or too short');
@@ -121,6 +266,7 @@ export async function createEncryptedBackupPackage(tablesData, hexKey, extraMeta
     .map(b => b.toString(16).padStart(2, '0'))
     .join('');
 
+  const keyFingerprint = generateKeyFingerprint(hexKey);
   const backupId = `dcvc-backup-${new Date().toISOString().replace(/[:.]/g, '-')}`;
 
   const manifest = {
@@ -132,6 +278,7 @@ export async function createEncryptedBackupPackage(tablesData, hexKey, extraMeta
     encryption: {
       algorithm: 'AES-256-GCM',
       keyLengthBits: 256,
+      keyFingerprint,
       ivLengthBytes: 12,
       authTagLengthBytes: 16
     },
@@ -306,18 +453,38 @@ export async function validateBackupArchive(snapshot) {
 
 /**
  * Restore database records from verified backup archive
+ * Enforces:
+ *   1. Foreign-key topological ordering (parents before children)
+ *   2. Strict foreign-key integrity validation (rejects orphaned child rows)
+ *   3. Post-restore security hygiene (JWT token_version bump, OTP & temp token invalidation)
  */
-export async function restoreDatabaseFromSnapshot(snapshot, mockDb = null) {
+export async function restoreDatabaseFromSnapshot(snapshot, mockDb = null, options = {}) {
   const validation = await validateBackupArchive(snapshot);
   if (!validation.valid) {
     throw new Error(`Restore rejected: ${validation.error}`);
   }
 
-  const restoredTables = {};
   const { tables } = snapshot.archive;
 
-  for (const [tableName, rows] of Object.entries(tables)) {
-    restoredTables[tableName] = Array.isArray(rows) ? [...rows] : [];
+  // 1. Verify foreign-key constraints before accepting restore
+  const fkCheck = checkForeignKeyIntegrity(tables);
+  if (!fkCheck.valid) {
+    const errorDetails = fkCheck.violations.map(v => v.error).join('; ');
+    throw new Error(`Restore rejected: Foreign key integrity check failed! Detected ${fkCheck.violations.length} violation(s): ${errorDetails}`);
+  }
+
+  const restoredTables = {};
+
+  // Determine restore ordering: order by TOPOLOGICAL_RESTORE_ORDER, followed by any remaining tables
+  const presentTableNames = Object.keys(tables);
+  const orderedTables = [
+    ...TOPOLOGICAL_RESTORE_ORDER.filter(t => presentTableNames.includes(t)),
+    ...presentTableNames.filter(t => !TOPOLOGICAL_RESTORE_ORDER.includes(t))
+  ];
+
+  for (const tableName of orderedTables) {
+    const rows = tables[tableName];
+    restoredTables[tableName] = Array.isArray(rows) ? rows.map(r => ({ ...r })) : [];
     
     // If mockDb is provided, populate it
     if (mockDb && typeof mockDb.insertMany === 'function') {
@@ -325,11 +492,61 @@ export async function restoreDatabaseFromSnapshot(snapshot, mockDb = null) {
     }
   }
 
+  // 2. Apply Post-Restore Security Hygiene
+  const applyHygiene = options.applySecurityHygiene !== false;
+  let securityApplied = false;
+
+  if (applyHygiene) {
+    // If database runner has an execute method, run SQL queries
+    if (mockDb && typeof mockDb.execute === 'function') {
+      for (const query of POST_RESTORE_SECURITY_QUERIES) {
+        await mockDb.execute(query.sql);
+      }
+      securityApplied = true;
+    } else {
+      // In-memory application of security hygiene policies
+      if (restoredTables.admin_users) {
+        for (const user of restoredTables.admin_users) {
+          user.token_version = (Number(user.token_version) || 1) + 1;
+        }
+        if (mockDb && typeof mockDb.insertMany === 'function') {
+          await mockDb.insertMany('admin_users', restoredTables.admin_users);
+        }
+      }
+      if (restoredTables.admin_email_otps) {
+        for (const otp of restoredTables.admin_email_otps) {
+          otp.consumed = 1;
+          otp.attempts = 5;
+        }
+        if (mockDb && typeof mockDb.insertMany === 'function') {
+          await mockDb.insertMany('admin_email_otps', restoredTables.admin_email_otps);
+        }
+      }
+      if (restoredTables.admin_used_temp_tokens) {
+        for (const temp of restoredTables.admin_used_temp_tokens) {
+          temp.consumed = 1;
+        }
+        if (mockDb && typeof mockDb.insertMany === 'function') {
+          await mockDb.insertMany('admin_used_temp_tokens', restoredTables.admin_used_temp_tokens);
+        }
+      }
+      if (restoredTables.admin_rate_limits) {
+        restoredTables.admin_rate_limits = [];
+        if (mockDb && typeof mockDb.insertMany === 'function') {
+          await mockDb.insertMany('admin_rate_limits', []);
+        }
+      }
+      securityApplied = true;
+    }
+  }
+
   return {
     success: true,
     restoredAt: new Date().toISOString(),
-    restoredTables: Object.keys(restoredTables),
-    totalRecordsRestored: validation.totalRecords
+    restoredTables: orderedTables,
+    totalRecordsRestored: validation.totalRecords,
+    foreignKeyIntegrity: 'verified',
+    securityHygieneApplied: securityApplied
   };
 }
 

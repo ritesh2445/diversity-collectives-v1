@@ -2,6 +2,9 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import {
   hashPassword,
+  verifyPasswordHash,
+  OWASP_PBKDF2_ITERATIONS,
+  LEGACY_PBKDF2_ITERATIONS,
   generateAuthToken,
   verifyAuthToken,
   requireRole,
@@ -292,6 +295,28 @@ describe('Admin Authentication & RBAC Engine', () => {
     const cleared = clearSessionCookie({ crossOrigin: true });
     assert.ok(cleared.includes('Max-Age=0'));
     assert.ok(cleared.includes('SameSite=None'));
+  });
+
+  it('18. verifies password hashes with OWASP 600,000 iterations and supports legacy 100,000 iteration fallback', async () => {
+    const testSalt = 'dcvc_salt_upgrade_test';
+    const pwd = 'TestAdminPassword2026!';
+
+    // Modern OWASP standard hash (600,000 iterations)
+    const modernHash = await hashPassword(pwd, testSalt, OWASP_PBKDF2_ITERATIONS);
+    const modernCheck = await verifyPasswordHash(pwd, testSalt, modernHash);
+    assert.strictEqual(modernCheck.valid, true);
+    assert.strictEqual(modernCheck.needsUpgrade, false);
+
+    // Legacy hash (100,000 iterations)
+    const legacyHash = await hashPassword(pwd, testSalt, LEGACY_PBKDF2_ITERATIONS);
+    const legacyCheck = await verifyPasswordHash(pwd, testSalt, legacyHash);
+    assert.strictEqual(legacyCheck.valid, true);
+    assert.strictEqual(legacyCheck.needsUpgrade, true);
+
+    // Wrong password check
+    const wrongCheck = await verifyPasswordHash('IncorrectPassword123!', testSalt, modernHash);
+    assert.strictEqual(wrongCheck.valid, false);
+    assert.strictEqual(wrongCheck.needsUpgrade, false);
   });
 
   // =====================================================================

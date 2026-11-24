@@ -13,7 +13,10 @@ import {
   Mail,
   RefreshCw,
   Gift,
-  ExternalLink
+  ExternalLink,
+  User,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
 import { useLiveOrgInfo } from '../hooks/useCmsLive';
 import { cmsStore } from '../services/cmsStore';
@@ -66,6 +69,72 @@ export default function Donate() {
     initialFreqParam === 'monthly' || initialFreqParam === 'gem' ? 'gem' : 'general'
   );
   const [iframeLoading, setIframeLoading] = useState(true);
+
+  // Pre-donation donor information state (Requirement 7.A)
+  const [donorName, setDonorName] = useState('');
+  const [donorEmail, setDonorEmail] = useState('');
+  const [isAnonymous, setIsAnonymous] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [isSubmittingIntent, setIsSubmittingIntent] = useState(false);
+  const [checkoutReady, setCheckoutReady] = useState(false);
+  const [registeredIntent, setRegisteredIntent] = useState(null);
+
+  const handleProceedToZeffy = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    setFormError('');
+
+    const trimmedName = donorName.trim();
+    const trimmedEmail = donorEmail.trim().toLowerCase();
+
+    if (!isAnonymous && !trimmedName) {
+      setFormError('Please enter your name as you would like it to appear on your keepsake card, or select Anonymous.');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!trimmedEmail || !emailRegex.test(trimmedEmail)) {
+      setFormError('Please enter a valid email address so we can associate your donation and deliver your keepsake card.');
+      return;
+    }
+
+    setIsSubmittingIntent(true);
+    try {
+      const apiBase = (typeof import.meta !== 'undefined' && (import.meta.env?.VITE_API_URL || import.meta.env?.VITE_API_BASE_URL)) || '/api';
+      const cleanApiBase = apiBase.replace(/\/+$/, '');
+      const response = await fetch(`${cleanApiBase}/donations/intent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          donorName: isAnonymous ? 'Affirming Supporter' : trimmedName,
+          donorEmail: trimmedEmail,
+          frequency: activeTab === 'gem' ? 'monthly' : 'one-time',
+          campaign: activeTab === 'gem' ? 'gem' : 'donate-to-change-lives-30236',
+          isAnonymous
+        })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to prepare donation session.');
+      }
+      setRegisteredIntent({
+        donorName: isAnonymous ? 'Affirming Supporter' : trimmedName,
+        donorEmail: trimmedEmail,
+        intentToken: data.intentToken,
+        intentId: data.intentId,
+        campaign: data.campaign
+      });
+      setCheckoutReady(true);
+    } catch (err) {
+      setFormError(err.message || 'Unable to register keepsake details. You may proceed directly or retry.');
+    } finally {
+      setIsSubmittingIntent(false);
+    }
+  };
+
+  const handleDirectSkip = () => {
+    setRegisteredIntent(null);
+    setCheckoutReady(true);
+  };
 
   // Synchronize state if URL query params change
   useEffect(() => {
@@ -179,47 +248,201 @@ export default function Donate() {
               </p>
             </div>
 
-            {/* Embedded Zeffy Checkout Container */}
-            <div className="relative rounded-2xl overflow-hidden border border-purple-100 bg-slate-50 shadow-inner min-h-[640px]">
-              {iframeLoading && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50/90 backdrop-blur-xs z-10 space-y-3 p-6 text-center">
-                  <RefreshCw className="w-8 h-8 text-[#5A1E65] animate-spin" />
-                  <p className="text-xs font-bold text-slate-700">
-                    Connecting to secure Zeffy donation gateway...
+            {!checkoutReady ? (
+              /* Pre-Donation Donor Information Form (Requirement 7.A) */
+              <form onSubmit={handleProceedToZeffy} className="space-y-5">
+                <div className="p-4 rounded-2xl bg-purple-50/80 border border-purple-200/80 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-purple-700" />
+                    <h3 className="text-sm font-extrabold text-purple-950 uppercase tracking-wide">
+                      Step 1 of 2: Keepsake Card Personalization
+                    </h3>
+                  </div>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Every gift unlocks a customized digital DCVC Appreciation Card. Please provide your name and email so our system can prepare your keepsake and match your completed gift.
                   </p>
-                  <span className="text-[11px] text-slate-500">
-                    PCI Level 1 Compliant · 256-Bit SSL
-                  </span>
                 </div>
-              )}
-              
-              <iframe
-                title="Diversity Collective Secure Donation via Zeffy"
-                src={activeEmbedUrl}
-                onLoad={() => setIframeLoading(false)}
-                className="w-full border-0 rounded-2xl min-h-[640px] h-[720px] bg-white"
-                allow="payment"
-                allowPaymentRequest
-                allowTransparency="true"
-              />
-            </div>
 
-            {/* External Direct Fallback */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 pt-2 text-xs text-slate-500 border-t border-slate-100">
-              <div className="flex items-center gap-1.5 font-medium">
-                <CreditCard className="w-3.5 h-3.5 text-purple-700 shrink-0" />
-                <span>Credit/Debit Card, Apple Pay, Google Pay &amp; ACH accepted</span>
+                {formError && (
+                  <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 flex items-start gap-2.5 text-xs text-rose-800">
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                    <span>{formError}</span>
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="donor-name-input" className="block text-xs font-bold text-slate-700 mb-1">
+                      Donor Name (as it should appear on your Keepsake Card) <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" />
+                      <input
+                        id="donor-name-input"
+                        type="text"
+                        disabled={isAnonymous}
+                        value={isAnonymous ? 'Anonymous' : donorName}
+                        onChange={(e) => setDonorName(e.target.value)}
+                        placeholder="e.g. Maria Gonzalez or The Rivera Family"
+                        className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-600 focus:bg-white disabled:bg-slate-100 disabled:text-slate-500 transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="donor-email-input" className="block text-xs font-bold text-slate-700 mb-1">
+                      Donor Email Address <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" />
+                      <input
+                        id="donor-email-input"
+                        type="email"
+                        required
+                        value={donorEmail}
+                        onChange={(e) => setDonorEmail(e.target.value)}
+                        placeholder="you@example.com"
+                        className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-600 focus:bg-white transition-all"
+                      />
+                    </div>
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      Please enter the same email you plan to enter at Zeffy checkout to guarantee automatic keepsake matching.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1">
+                    <input
+                      id="anonymous-checkbox"
+                      type="checkbox"
+                      checked={isAnonymous}
+                      onChange={(e) => setIsAnonymous(e.target.checked)}
+                      className="w-4 h-4 rounded text-purple-700 focus:ring-purple-600 border-slate-300"
+                    />
+                    <label htmlFor="anonymous-checkbox" className="text-xs text-slate-600 font-medium select-none cursor-pointer">
+                      Keep my name anonymous on public recognition rolls (card will still be issued to your email)
+                    </label>
+                  </div>
+                </div>
+
+                {/* Privacy & Payment Security Note */}
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-1">
+                  <div className="flex items-center gap-1.5 font-bold text-slate-800">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                    <span>Privacy &amp; Payment Security Assurance</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 leading-relaxed">
+                    DCVC respects your privacy. Details provided here are strictly used to associate your donation with your digital keepsake card and deliver your tax acknowledgment. No credit card numbers or banking credentials are collected on this site; all transactions take place through Zeffy&apos;s PCI Level 1 encrypted payment gateway.
+                  </p>
+                </div>
+
+                <div className="space-y-2 pt-2">
+                  <button
+                    type="submit"
+                    disabled={isSubmittingIntent}
+                    className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-[#5A1E65] to-purple-800 hover:from-purple-900 hover:to-purple-950 text-white font-bold text-sm shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-60"
+                  >
+                    {isSubmittingIntent ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Preparing Keepsake Intent...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Continue to Secure Zeffy Checkout</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+
+                  <div className="text-center pt-1">
+                    <button
+                      type="button"
+                      onClick={handleDirectSkip}
+                      className="text-xs text-slate-500 hover:text-purple-800 underline cursor-pointer"
+                    >
+                      Skip personalization and proceed directly to Zeffy checkout &rarr;
+                    </button>
+                  </div>
+                </div>
+              </form>
+            ) : (
+              /* Embedded Zeffy Checkout Container & Intent Confirmation */
+              <div className="space-y-4">
+                {registeredIntent ? (
+                  <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-between gap-3 text-xs">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <div>
+                        <span className="font-bold text-emerald-950">Keepsake Reserved: </span>
+                        <span className="text-emerald-900 font-medium">{registeredIntent.donorName}</span>
+                        <span className="text-emerald-700 text-[11px] block">
+                          Checkout with <strong className="font-mono">{registeredIntent.donorEmail}</strong> to link your card
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setCheckoutReady(false)}
+                      className="text-xs font-bold text-purple-900 hover:text-purple-950 underline shrink-0 cursor-pointer"
+                    >
+                      Edit Info
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between text-xs text-slate-500 pb-1">
+                    <span>Direct checkout mode</span>
+                    <button
+                      type="button"
+                      onClick={() => setCheckoutReady(false)}
+                      className="text-xs font-bold text-purple-900 hover:text-purple-950 underline cursor-pointer"
+                    >
+                      Add Keepsake Personalization
+                    </button>
+                  </div>
+                )}
+
+                <div className="relative rounded-2xl overflow-hidden border border-purple-100 bg-slate-50 shadow-inner min-h-[640px]">
+                  {iframeLoading && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50/90 backdrop-blur-xs z-10 space-y-3 p-6 text-center">
+                      <RefreshCw className="w-8 h-8 text-[#5A1E65] animate-spin" />
+                      <p className="text-xs font-bold text-slate-700">
+                        Connecting to secure Zeffy donation gateway...
+                      </p>
+                      <span className="text-[11px] text-slate-500">
+                        PCI Level 1 Compliant · 256-Bit SSL
+                      </span>
+                    </div>
+                  )}
+                  
+                  <iframe
+                    title="Diversity Collective Secure Donation via Zeffy"
+                    src={activeEmbedUrl}
+                    onLoad={() => setIframeLoading(false)}
+                    className="w-full border-0 rounded-2xl min-h-[640px] h-[720px] bg-white"
+                    allow="payment"
+                    allowPaymentRequest
+                    allowTransparency="true"
+                  />
+                </div>
+
+                {/* External Direct Fallback */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 pt-2 text-xs text-slate-500 border-t border-slate-100">
+                  <div className="flex items-center gap-1.5 font-medium">
+                    <CreditCard className="w-3.5 h-3.5 text-purple-700 shrink-0" />
+                    <span>Credit/Debit Card, Apple Pay, Google Pay &amp; ACH accepted</span>
+                  </div>
+                  <a
+                    href={activeDirectUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[#5A1E65] hover:text-purple-900 font-bold transition-colors"
+                  >
+                    <span>Having trouble? Open full screen checkout</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
               </div>
-              <a
-                href={activeDirectUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-[#5A1E65] hover:text-purple-900 font-bold transition-colors"
-              >
-                <span>Having trouble? Open full screen checkout</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-            </div>
+            )}
 
             {/* Appreciation Card Unlock Note */}
             <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-50 via-fuchsia-50/50 to-amber-50/50 border border-purple-200 flex items-start gap-3.5">

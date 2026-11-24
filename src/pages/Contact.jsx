@@ -149,7 +149,7 @@ export default function Contact() {
                 <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-200/80">
                   <Mail className="w-5 h-5 text-[#5A1E65] flex-shrink-0" />
                   <div>
-                    <span className="text-[11px] text-slate-400 block font-bold uppercase">General Inquiry Email</span>
+                    <span className="text-[11px] text-slate-600 block font-bold uppercase">General Inquiry Email</span>
                     <a href={`mailto:${orgInfo.email}`} className="font-bold text-slate-900 hover:text-[#5A1E65] text-sm">
                       {orgInfo.email}
                     </a>
@@ -159,7 +159,7 @@ export default function Contact() {
                 <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-200/80">
                   <Clock className="w-5 h-5 text-amber-600 flex-shrink-0" />
                   <div>
-                    <span className="text-[11px] text-slate-400 block font-bold uppercase">Center Drop-in Hours</span>
+                    <span className="text-[11px] text-slate-600 block font-bold uppercase">Center Drop-in Hours</span>
                     <p className="text-slate-800 font-bold text-sm">{orgInfo.hours}</p>
                   </div>
                 </div>

@@ -2279,7 +2279,7 @@ font {
 }
 
 /* 1. Header Navigation Bar (Pill Frame geometry: text strictly inside the capsule) */
-.nav-bar-btn {
+#main-navigation .nav-bar-btn {
   white-space: nowrap !important;
   display: inline-flex !important;
   align-items: center !important;
@@ -2287,15 +2287,25 @@ font {
   box-sizing: border-box !important;
 }
 
-html.translated-ltr .nav-bar-btn,
-html.translated-rtl .nav-bar-btn,
-html:not([lang="en"]) .nav-bar-btn {
+html.translated-ltr #main-navigation .nav-bar-btn,
+html.translated-rtl #main-navigation .nav-bar-btn,
+html:not([lang="en"]) #main-navigation .nav-bar-btn {
   white-space: nowrap !important;
   font-size: clamp(0.68rem, 0.8vw, 0.82rem) !important;
   padding-left: 0.75rem !important;
   padding-right: 0.75rem !important;
   letter-spacing: -0.01em !important;
   line-height: 1.25 !important;
+}
+
+/* Mobile Navigation Drawer Links - strictly uniform full-width cards */
+.mobile-nav-item {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  box-sizing: border-box !important;
+  white-space: normal !important;
 }
 
 /* 2. All Action Buttons, CTAs, and Navigation Pills (Preserve exact English component geometry) */
@@ -2313,9 +2323,9 @@ a.btn-dark,
   max-width: 100%;
 }
 
-html.translated-ltr .nav-bar-btn,
-html.translated-rtl .nav-bar-btn,
-html:not([lang="en"]) .nav-bar-btn,
+html.translated-ltr #main-navigation .nav-bar-btn,
+html.translated-rtl #main-navigation .nav-bar-btn,
+html:not([lang="en"]) #main-navigation .nav-bar-btn,
 html.translated-ltr .nav-donate-btn,
 html.translated-rtl .nav-donate-btn,
 html:not([lang="en"]) .nav-donate-btn,
@@ -2341,9 +2351,9 @@ html:not([lang="en"]) .btn-dark {
 }
 
 /* Child elements inside buttons and pills must inherit single-line layout and font scaling */
-html.translated-ltr .nav-bar-btn *,
-html.translated-rtl .nav-bar-btn *,
-html:not([lang="en"]) .nav-bar-btn *,
+html.translated-ltr #main-navigation .nav-bar-btn *,
+html.translated-rtl #main-navigation .nav-bar-btn *,
+html:not([lang="en"]) #main-navigation .nav-bar-btn *,
 html.translated-ltr .nav-donate-btn *,
 html.translated-rtl .nav-donate-btn *,
 html:not([lang="en"]) .nav-donate-btn *,

@@ -107,8 +107,8 @@ export default function VoicemailItemRow({
           >
             {statusConfig[currentStatus]?.label || currentStatus}
           </span>
-          <span className="text-xs text-slate-400 flex items-center gap-1 font-mono">
-            <Clock className="w-3 h-3 text-slate-400" />
+          <span className="text-xs text-slate-600 flex items-center gap-1 font-mono font-medium">
+            <Clock className="w-3.5 h-3.5 text-slate-600" />
             {v.created_at ? new Date(v.created_at).toLocaleString() : 'Recently'}
           </span>
           <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-purple-50 text-purple-900 border border-purple-200">

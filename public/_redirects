@@ -46,3 +46,7 @@
 /terms-of-use                            /terms                          301
 /terms-of-use/*                          /terms                          301
 
+# Single Page Application (SPA) client-side routing fallback for Cloudflare Pages
+/*                                       /index.html                     200
+
+

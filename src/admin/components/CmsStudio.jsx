@@ -3147,7 +3147,9 @@ export default function CmsStudio() {
           <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-50 via-white to-amber-50/50 border border-purple-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <p className="text-xs text-slate-700 font-extrabold">
-                Official Roster: 1. Steve Somann · 2. Celia Sandhya Daniels · 3. AJ Holmes · 4. Roland Catabona · 5. Luis Andrade · 6. Unique Dowtin
+                Official Roster: {boardList.length > 0
+                  ? boardList.map((m, idx) => `${idx + 1}. ${m.name}`).join(' · ')
+                  : '1. Steve Somann · 2. Celia Sandhya Daniels · 3. AJ Holmes · 4. Luis Andrade · 5. Unique Dowtin · 6. Earl Montealegre'}
               </p>
               <p className="text-[11px] text-slate-500 mt-0.5">
                 Click &quot;Edit &amp; Photo&quot; to update headshots, names, pronouns, or bio. Click the trash icon to remove any card.

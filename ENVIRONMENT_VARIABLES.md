@@ -10,7 +10,10 @@ This document details all configuration keys and credentials across the Diversit
 | :--- | :--- | :--- | :---: | :---: | :--- |
 | `VITE_API_URL` | Frontend | Public (Client) | No (defaults `/api`) | Yes | Full URL to Cloudflare Worker backend |
 | `VITE_TURNSTILE_SITE_KEY` | Frontend | Public (Client) | No (bypassed) | Yes | Cloudflare Turnstile public site key |
-| `VITE_CLOUDINARY_CLOUD_NAME` | Frontend | Public (Client) | No (local fallback) | Yes | Cloudinary account name for media transforms |
+| `VITE_GITHUB_OWNER` | Frontend | Public (Client) | No (`diversity-collective`) | Yes | GitHub repository owner for media assets |
+| `VITE_GITHUB_REPO` | Frontend | Public (Client) | No (`diversity-collectives-v1`) | Yes | GitHub repository name for media storage |
+| `VITE_GITHUB_BRANCH` | Frontend | Public (Client) | No (`main`) | Yes | Target branch for jsDelivr CDN delivery |
+| `VITE_CDN_PROVIDER` | Frontend | Public (Client) | No (`jsdelivr`) | Yes | CDN provider (`jsdelivr`, `github_raw`, `relative`) |
 | `VITE_SANITY_PROJECT_ID` | Frontend | Public (Client) | Yes | Yes | Sanity project identifier |
 | `VITE_SANITY_DATASET` | Frontend | Public (Client) | Yes | Yes | Target dataset (`production`) |
 | `VITE_ZEFFY_DONATION_FORM_URL`| Frontend | Public (Client) | No | Yes | Zeffy non-profit donation form URL |
@@ -42,7 +45,10 @@ Create `.env` at the root of `diversity-collectives-v1/`:
 ```bash
 VITE_API_URL=https://api.diversitycollective.org/api
 VITE_TURNSTILE_SITE_KEY=0x4AAAAAAAXXXXXXXXXXXXXX
-VITE_CLOUDINARY_CLOUD_NAME=dcvc
+VITE_GITHUB_OWNER=diversity-collective
+VITE_GITHUB_REPO=diversity-collectives-v1
+VITE_GITHUB_BRANCH=main
+VITE_CDN_PROVIDER=jsdelivr
 VITE_SANITY_PROJECT_ID=v7z28m5x
 VITE_SANITY_DATASET=production
 VITE_ZEFFY_DONATION_FORM_URL=https://www.zeffy.com/donation-form/diversity-collective-general-fund

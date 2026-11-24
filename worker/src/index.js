@@ -33,6 +33,9 @@ import {
 } from './galleryService.js';
 import {
   hashPassword,
+  verifyPasswordHash,
+  OWASP_PBKDF2_ITERATIONS,
+  LEGACY_PBKDF2_ITERATIONS,
   generateAuthToken,
   verifyAuthToken,
   requireRole,
@@ -341,17 +344,72 @@ function maskEmailForDisplay(email) {
   return `${local[0]}***${local[local.length - 1]}@${domain}`;
 }
 
-// Helper: Verify Zeffy HMAC-SHA256 Webhook Signature with constant-time comparison
-async function verifyZeffySignature(rawBody, signatureHeader, secretKey) {
+// Helper: Parse Zeffy Signature Header (format: t=timestamp,v1=signature)
+function parseZeffySignatureHeader(header) {
+  if (!header || typeof header !== 'string') return null;
+  const parts = header.split(',');
+  let timestamp = null;
+  const signatures = [];
+  for (const part of parts) {
+    const eqIdx = part.indexOf('=');
+    if (eqIdx === -1) continue;
+    const key = part.slice(0, eqIdx).trim().toLowerCase();
+    const val = part.slice(eqIdx + 1).trim();
+    if (key === 't') {
+      timestamp = val;
+    } else if (key === 'v1') {
+      signatures.push(val.toLowerCase());
+    }
+  }
+  if (!timestamp || signatures.length === 0) return null;
+  return { timestamp, signatures };
+}
+
+// Helper: Verify Official Zeffy HMAC-SHA256 Webhook Signature with constant-time comparison
+// Conforms strictly to official Zeffy protocol:
+// - Header: Zeffy-Signature (format: t=timestamp,v1=signature)
+// - HMAC-SHA256 input: {timestamp}.{rawBody}
+// - Secret prefix: whsec_... (or configured signing secret)
+// - Freshness: 5-minute (300s) tolerance window to prevent replay attacks
+// - Comparison: Constant-time signature comparison
+// - Fail-closed: Missing secretKey ALWAYS fails closed; never returns valid or bypassed
+async function verifyZeffySignature(rawBody, signatureHeader, secretKey, options = {}) {
   if (!secretKey) {
-    return { valid: true, bypassed: true };
+    return { valid: false, error: 'ZEFFY_WEBHOOK_SECRET is not configured' };
   }
 
   if (!signatureHeader) {
-    return { valid: false, error: 'Missing signature header' };
+    return { valid: false, error: 'Missing Zeffy-Signature header' };
+  }
+
+  const parsed = parseZeffySignatureHeader(signatureHeader);
+  if (!parsed) {
+    return { valid: false, error: 'Invalid Zeffy-Signature header format (expected t=timestamp,v1=signature)' };
+  }
+
+  // Strict integer Unix timestamp validation (rejects floats, letters, hex, or negative numbers)
+  const trimmedTs = String(parsed.timestamp).trim();
+  if (!/^\d{9,12}$/.test(trimmedTs)) {
+    return { valid: false, error: 'Malformed timestamp: must be an integer Unix timestamp' };
+  }
+
+  const eventTimestamp = Number(trimmedTs);
+  if (!Number.isSafeInteger(eventTimestamp) || eventTimestamp <= 0) {
+    return { valid: false, error: 'Malformed timestamp: must be a positive integer' };
+  }
+
+  const toleranceSeconds = options.toleranceSeconds ?? 300;
+  const currentTimestamp = options.currentTimestamp ?? Math.floor(Date.now() / 1000);
+
+  if (Math.abs(currentTimestamp - eventTimestamp) > toleranceSeconds) {
+    return {
+      valid: false,
+      error: `Webhook timestamp outside tolerance window (${Math.abs(currentTimestamp - eventTimestamp)}s > ${toleranceSeconds}s)`
+    };
   }
 
   try {
+    const signedPayload = `${trimmedTs}.${rawBody}`;
     const encoder = new TextEncoder();
     const key = await crypto.subtle.importKey(
       'raw',
@@ -361,103 +419,64 @@ async function verifyZeffySignature(rawBody, signatureHeader, secretKey) {
       ['sign']
     );
 
-    const signatureBuffer = await crypto.subtle.sign('HMAC', key, encoder.encode(rawBody));
+    const signatureBuffer = await crypto.subtle.sign('HMAC', key, encoder.encode(signedPayload));
     const computedSignature = Array.from(new Uint8Array(signatureBuffer))
       .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
+      .join('')
+      .toLowerCase();
 
-    const cleanHeader = signatureHeader.replace(/^sha256=/, '').trim().toLowerCase();
-
-    // Constant-time comparison
-    let diff = cleanHeader.length ^ computedSignature.length;
-    for (let i = 0; i < cleanHeader.length && i < computedSignature.length; i++) {
-      diff |= cleanHeader.charCodeAt(i) ^ computedSignature.charCodeAt(i);
-    }
-
-    const valid = diff === 0;
-    return { valid, error: valid ? null : 'HMAC signature mismatch' };
+    // Constant-time comparison against all supplied v1 signatures
+    const valid = parsed.signatures.some(sig => constantTimeEqual(computedSignature, sig));
+    return {
+      valid,
+      timestamp: eventTimestamp,
+      error: valid ? null : 'HMAC signature mismatch'
+    };
   } catch (err) {
-    console.error('Signature calculation failed:', err);
+    console.error('Zeffy signature calculation failed:', err);
     return { valid: false, error: err.message };
   }
 }
 
-// Multi-Tier Zeffy Webhook Verification: HMAC -> Shared Secret (Header / Query) -> Authoritative Zeffy API Fallback
+// Multi-Tier Zeffy Webhook Verification: Strict Signature Verification Only
+// Strictly rejects unverified requests, query-parameter tokens, non-conforming signatures,
+// and API keys used as signing secret substitutes. Fail-closed in all configurations.
 async function verifyZeffyWebhookRequest(request, rawBody, env, payload) {
-  const secretKey = env.ZEFFY_WEBHOOK_SECRET;
-  const apiKey = env.ZEFFY_API_KEY;
-  const url = new URL(request.url);
+  const secretKey = env?.ZEFFY_WEBHOOK_SECRET;
 
-  // If neither secret nor API key is configured, allow in development/testing with warning
-  if (!secretKey && !apiKey) {
-    console.warn('⚠️ ZEFFY_WEBHOOK_SECRET and ZEFFY_API_KEY not configured. Allowing test payload in development.');
-    return { valid: true, bypassed: true, method: 'dev_bypass' };
-  }
-
-  // 1. Check HMAC-SHA256 signature header (x-zeffy-signature or x-webhook-signature)
-  const signatureHeader = request.headers.get('x-zeffy-signature') ||
-    request.headers.get('x-webhook-signature') || '';
-  if (secretKey && signatureHeader) {
-    const hmacRes = await verifyZeffySignature(rawBody, signatureHeader, secretKey);
-    if (hmacRes.valid) {
-      return { valid: true, method: 'hmac_sha256' };
+  // 1. Missing Secret Handling (Fail-closed)
+  if (!secretKey) {
+    // Isolated non-production test bypass ONLY when explicitly enabled via configuration
+    const isExplicitNonProdTest = env?.ENVIRONMENT === 'test' && env?.ALLOW_INSECURE_DEV_BYPASS === 'true';
+    if (isExplicitNonProdTest) {
+      console.warn('⚠️ Non-production test bypass flag active. Marking verification as bypassed.');
+      return { 
+        valid: false, 
+        bypassed: true, 
+        error: 'Webhook signature verification bypassed in non-production test mode' 
+      };
     }
-    return { valid: false, error: 'HMAC signature verification failed' };
+
+    return { 
+      valid: false, 
+      bypassed: false, 
+      error: 'ZEFFY_WEBHOOK_SECRET is not configured on this environment' 
+    };
   }
 
-  // 2. Check Shared Secret Token via header or URL query parameter
-  const headerToken = (request.headers.get('x-zeffy-secret') ||
-    request.headers.get('x-api-key') ||
-    request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '').trim();
-  const queryToken = (url.searchParams.get('secret') || url.searchParams.get('token') || '').trim();
-
-  if (secretKey) {
-    if (headerToken === secretKey || queryToken === secretKey) {
-      return { valid: true, method: 'shared_secret' };
-    }
+  // 2. Enforce official Zeffy-Signature header (case-insensitive retrieval via fetch headers)
+  const signatureHeader = request.headers.get('zeffy-signature') || '';
+  if (!signatureHeader) {
+    return { valid: false, bypassed: false, error: 'Missing Zeffy-Signature header' };
   }
 
-  // 3. Authoritative Out-of-Band Verification via Zeffy REST API
-  // If ZEFFY_API_KEY is configured, verify against Zeffy's authoritative endpoint
-  const data = payload?.data || payload || {};
-  const paymentId = data.id || data.payment_id || data.transaction_id || payload?.id;
-  if (apiKey && paymentId) {
-    try {
-      const zeffyRes = await fetch(`https://api.zeffy.com/api/v1/payments/${encodeURIComponent(paymentId)}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Accept': 'application/json'
-        }
-      });
-
-      if (zeffyRes.ok) {
-        const authoritativeData = await zeffyRes.json();
-        return { valid: true, method: 'authoritative_api', authoritativeData };
-      } else if (zeffyRes.status === 404) {
-        return { valid: false, error: 'Transaction ID not recognized by Zeffy API' };
-      }
-    } catch (apiErr) {
-      console.warn('Authoritative Zeffy API verification network attempt failed:', apiErr.message);
-    }
+  // 3. Verify HMAC signature
+  const hmacRes = await verifyZeffySignature(rawBody, signatureHeader, secretKey);
+  if (hmacRes.valid) {
+    return { valid: true, bypassed: false, method: 'hmac_sha256', timestamp: hmacRes.timestamp };
   }
 
-  // 4. Structural Verification for Official Zeffy Webhooks
-  // Zeffy's outbound webhooks send direct POST notifications to the configured organization endpoint without custom signature headers.
-  // Validate that the payload conforms to authentic Zeffy event structure (contains event type and transaction/payment reference)
-  if (paymentId && (payload.event || payload.type || payload.event_type || data.status || data.amount !== undefined)) {
-    console.log('[Zeffy Webhook] Accepted authentic Zeffy event payload for payment reference:', paymentId);
-    return { valid: true, method: 'zeffy_payload_structure' };
-  }
-
-  if (secretKey) {
-    return { valid: false, error: 'Invalid webhook signature or secret token' };
-  }
-  if (apiKey) {
-    return { valid: false, error: 'Unable to verify payment with Zeffy API' };
-  }
-
-  return { valid: false, error: 'Webhook authentication failed' };
+  return { valid: false, bypassed: false, error: hmacRes.error || 'HMAC signature verification failed' };
 }
 
 // Helper: Resend Email Dispatch
@@ -687,15 +706,21 @@ export default {
           return errorResponse('Invalid JSON payload', 400, null, cors);
         }
 
-        // 1. Multi-tier Authentication & Signature Verification
+        // 1. Strict Authentication & Signature Verification (Fail-closed in production)
         const authVerification = await verifyZeffyWebhookRequest(request, rawBody, env, payload);
-        if (!authVerification.valid) {
-          console.error('Zeffy webhook authentication failed:', authVerification.error);
-          return errorResponse('Invalid webhook signature or unauthorized token', 401, authVerification.error, cors);
+        if (!authVerification.valid || authVerification.bypassed) {
+          console.error('[Zeffy Webhook Rejected]', authVerification.error || 'Bypassed verification disallowed');
+          const statusCode = !env.ZEFFY_WEBHOOK_SECRET ? 500 : 401;
+          return errorResponse(
+            authVerification.error || 'Invalid or bypassed webhook signature',
+            statusCode,
+            null,
+            cors
+          );
         }
 
-        // 2. Event Type Normalization
-        const eventType = payload.event || payload.type || payload.event_type || 'payment.completed';
+        // 2. Event Type & Identifier Resolution
+        const eventType = payload.event || payload.type || payload.event_type || 'payment.created';
         const data = payload.data || payload;
         const paymentReference = String(data.id || data.payment_id || data.transaction_id || payload.id || '').trim();
 
@@ -709,15 +734,80 @@ export default {
         const payloadHash = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(rawBody))))
           .map(b => b.toString(16).padStart(2, '0')).join('');
 
-        // 3. Handle Refund Events safely
-        if (eventType === 'payment.refunded' || eventType === 'refund.created' || data.status === 'refunded') {
+        // Webhook event IDs tracked independently from payment references
+        const webhookEventId = String(payload.event_id || payload.eventId || (payload.id && String(payload.id).trim() !== paymentReference ? payload.id : `evt_${paymentReference}_${payloadHash.slice(0, 12)}`)).trim();
+
+        // 3. ATOMIC EVENT RESERVATION & CONCURRENCY PROTECTION (Requirement 4)
+        // Guard against race conditions and concurrent deliveries via database uniqueness constraint
+        if (db) {
+          try {
+            await db.execute({
+              sql: `INSERT INTO webhook_events (id, event_id, event_type, payload_hash, status) VALUES (?, ?, ?, ?, 'processing')`,
+              args: [crypto.randomUUID(), webhookEventId, eventType, payloadHash]
+            });
+          } catch (reservationErr) {
+            const isUniqueViolation = reservationErr.message?.includes('UNIQUE') || reservationErr.message?.includes('constraint');
+            if (isUniqueViolation) {
+              console.log(`[Concurrency Guard] Webhook event ${webhookEventId} already reserved or processed concurrently.`);
+              const existingCard = await db.execute({
+                sql: `SELECT id, card_token FROM donation_appreciation_cards WHERE payment_reference = ? LIMIT 1`,
+                args: [paymentReference]
+              });
+              return jsonResponse({
+                success: true,
+                status: 'already_processed',
+                eventId: webhookEventId,
+                cardToken: existingCard.rows[0]?.card_token || null,
+                message: 'This webhook event is already being processed or has already completed.'
+              }, 200, cors);
+            }
+            console.warn('[Concurrency Guard] Reservation insert note:', reservationErr.message);
+          }
+        }
+
+        // 4. Retrieve Authoritative Payment Resource when webhook provides only ID reference
+        let paymentData = data;
+        if ((!paymentData.status || paymentData.amount === undefined) && env.ZEFFY_API_KEY) {
+          try {
+            const zeffyApiRes = await fetch(`https://api.zeffy.com/api/v1/payments/${encodeURIComponent(paymentReference)}`, {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${env.ZEFFY_API_KEY}`,
+                'Accept': 'application/json'
+              }
+            });
+            if (zeffyApiRes.ok) {
+              const authJson = await zeffyApiRes.json();
+              paymentData = authJson.data || authJson;
+            }
+          } catch (apiErr) {
+            console.warn('[Zeffy Webhook] Authoritative payment lookup note:', apiErr.message);
+          }
+        }
+
+        // 5. Documented Refund & Dispute Handling (Requirement 3: payment.updated)
+        const paymentStatus = String(paymentData.status || 'succeeded').toLowerCase();
+        const isRefundOrDispute = paymentStatus === 'refunded' ||
+          paymentStatus === 'disputed' ||
+          Boolean(paymentData.refunded) ||
+          eventType === 'payment.refunded' ||
+          eventType === 'refund.created';
+
+        if (isRefundOrDispute) {
           if (db) {
             try {
               await db.execute({
                 sql: `UPDATE webhook_events SET status = 'refunded' WHERE event_id = ?`,
+                args: [webhookEventId]
+              });
+              await db.execute({
+                sql: `UPDATE donation_appreciation_cards 
+                      SET status = 'revoked_refunded', 
+                          admin_notes = json_set(COALESCE(admin_notes, '{}'), '$.refunded', true, '$.refundedAt', datetime('now')) 
+                      WHERE payment_reference = ?`,
                 args: [paymentReference]
               });
-              console.log(`[Zeffy Webhook] Payment ${paymentReference} marked as refunded.`);
+              console.log(`[Zeffy Webhook] Payment ${paymentReference} (event ${webhookEventId}) recorded as refunded/disputed.`);
             } catch (refErr) {
               console.warn('[Zeffy Webhook] Refund event log update skipped:', refErr.message);
             }
@@ -726,62 +816,96 @@ export default {
             success: true,
             status: 'refund_recorded',
             paymentReference,
-            message: 'Refund event recorded successfully.'
+            eventId: webhookEventId,
+            message: 'Payment refund or dispute recorded successfully.'
           }, 200, cors);
         }
 
-        // 4. Ignore Non-Donation Events
+        // 6. Suppress duplicate cards/acknowledgements on payment.updated when already processed
+        if (db) {
+          try {
+            const existingCard = await db.execute({
+              sql: `SELECT id, card_token, tier_name FROM donation_appreciation_cards WHERE payment_reference = ? LIMIT 1`,
+              args: [paymentReference]
+            });
+
+            if (existingCard.rows.length > 0) {
+              console.log(`[Idempotency] Payment ${paymentReference} already processed with issued card. Suppressing duplicate on ${eventType}.`);
+              await db.execute({
+                sql: `UPDATE webhook_events SET status = 'processed' WHERE event_id = ?`,
+                args: [webhookEventId]
+              });
+              return jsonResponse({
+                success: true,
+                status: 'already_processed',
+                eventId: webhookEventId,
+                cardToken: existingCard.rows[0].card_token,
+                message: 'Payment has already been processed and card issued. No duplicate card issued.'
+              }, 200, cors);
+            }
+          } catch (dbErr) {
+            console.warn('[Idempotency] Existing card query check skipped:', dbErr.message);
+          }
+        }
+
+        // 7. Validate Supported Documented Donation Events
         const validDonationEvents = [
+          'payment.created', 'payment.updated',
+          'donation.created', 'donation.updated',
+          'order.created', 'order.updated',
           'payment.completed', 'donation.completed', 'order.completed',
-          'payment.succeeded', 'donation.succeeded', 'payment.created',
-          'donation.created', 'order.succeeded'
+          'payment.succeeded', 'donation.succeeded'
         ];
         if (!validDonationEvents.includes(eventType)) {
+          if (db) {
+            try {
+              await db.execute({
+                sql: `UPDATE webhook_events SET status = 'ignored' WHERE event_id = ?`,
+                args: [webhookEventId]
+              });
+            } catch {}
+          }
           return jsonResponse({
             success: true,
             status: 'ignored',
+            eventId: webhookEventId,
             message: `Event type ${eventType} ignored. Only completed donations receive appreciation cards.`
           }, 200, cors);
         }
 
-        // 5. Strict Payment Status Check: Do not mark pending or failed payments as successful
-        const paymentStatus = String(data.status || 'succeeded').toLowerCase();
+        // 8. Strict Payment Status Check: Do not mark pending or failed payments as successful
         if (['pending', 'in_progress', 'processing'].includes(paymentStatus)) {
+          if (db) {
+            try {
+              await db.execute({
+                sql: `UPDATE webhook_events SET status = 'pending' WHERE event_id = ?`,
+                args: [webhookEventId]
+              });
+            } catch {}
+          }
           return jsonResponse({
             success: true,
             status: 'pending_ignored',
+            eventId: webhookEventId,
             message: 'Payment is pending. Cards and confirmation emails are issued only upon completion.'
           }, 200, cors);
         }
 
         if (['failed', 'declined', 'cancelled', 'canceled'].includes(paymentStatus)) {
+          if (db) {
+            try {
+              await db.execute({
+                sql: `UPDATE webhook_events SET status = 'failed' WHERE event_id = ?`,
+                args: [webhookEventId]
+              });
+            } catch {}
+          }
           return jsonResponse({
             success: true,
             status: 'failed_ignored',
+            eventId: webhookEventId,
             message: 'Payment was not successful. No card issued.'
           }, 200, cors);
-        }
-
-        // 6. IDEMPOTENCY CHECK: Ensure we never double-issue a card or duplicate emails
-        if (db) {
-          try {
-            const existing = await db.execute({
-              sql: `SELECT id, card_token, tier_name FROM donation_appreciation_cards WHERE payment_reference = ? LIMIT 1`,
-              args: [paymentReference]
-            });
-
-            if (existing.rows.length > 0) {
-              console.log(`[Idempotency] Webhook for payment ${paymentReference} already processed.`);
-              return jsonResponse({
-                success: true,
-                status: 'already_processed',
-                cardToken: existing.rows[0].card_token,
-                message: 'This payment has already been processed.'
-              }, 200, cors);
-            }
-          } catch (dbErr) {
-            console.warn('[Idempotency] DB query check skipped:', dbErr.message);
-          }
         }
 
         // 7. Determine Authoritative Amount Credited (in USD Dollars & Cents)
@@ -820,12 +944,57 @@ export default {
         const firstName = (donorObj.first_name || donorObj.firstName || data.first_name || data.firstName || '').trim();
         const lastName = (donorObj.last_name || donorObj.lastName || data.last_name || data.lastName || '').trim();
         const rawFullName = (donorObj.name || donorObj.fullName || data.donor_name || data.name || `${firstName} ${lastName}`).trim();
-        const donorDisplayName = isAnonymous || !rawFullName ? 'Affirming Friend of DCVC' : rawFullName;
 
         const donorEmail = (donorObj.email || data.donor_email || data.email || '').trim().toLowerCase();
         const frequency = data.frequency ||
           data.recurring_interval ||
           ((data.is_recurring || data.isRecurring || data.isMonthly || data.subscription_id) ? 'monthly' : 'one-time');
+
+        // Deterministic matching against donation_intents
+        let matchedIntent = null;
+        if (donorEmail && db) {
+          try {
+            const candidateIntents = await db.execute({
+              sql: `SELECT id, intent_token, donor_name, donor_email, amount_cents, frequency, is_anonymous, campaign, status, created_at
+                    FROM donation_intents
+                    WHERE lower(donor_email) = lower(?) AND status = 'pending'
+                    ORDER BY created_at DESC
+                    LIMIT 5`,
+              args: [donorEmail]
+            });
+            const candidates = candidateIntents.rows || [];
+            if (candidates.length === 1) {
+              matchedIntent = candidates[0];
+            } else if (candidates.length > 1) {
+              const matchingAmount = candidates.filter(i => Number(i.amount_cents) === amountCents);
+              if (matchingAmount.length === 1) {
+                matchedIntent = matchingAmount[0];
+              } else {
+                console.warn(`[Zeffy Webhook] Ambiguous donor intent match for email: ${donorEmail} (${candidates.length} candidates)`);
+                await db.execute({
+                  sql: `INSERT OR IGNORE INTO donation_reconciliations 
+                        (id, payment_reference, donor_name, donor_email, amount_cents, payment_status, reconciliation_type, status, admin_notes)
+                        VALUES (?, ?, ?, ?, ?, 'succeeded', 'ambiguous_match', 'pending', ?)`,
+                  args: [
+                    crypto.randomUUID(),
+                    paymentReference,
+                    rawFullName || 'Unknown',
+                    donorEmail,
+                    amountCents,
+                    `Ambiguous match: found ${candidates.length} pending intents for this email.`
+                  ]
+                }).catch(() => {});
+              }
+            }
+          } catch (intentErr) {
+            console.warn('[Zeffy Webhook] Error resolving donor intent:', intentErr.message);
+          }
+        }
+
+        const isEffectiveAnon = isAnonymous || (matchedIntent ? Boolean(matchedIntent.is_anonymous) : false);
+        const donorDisplayName = isEffectiveAnon
+          ? 'Affirming Friend of DCVC'
+          : (matchedIntent?.donor_name?.trim() || rawFullName || 'Affirming Friend of DCVC');
 
         // 9. Resolve Appreciation Tier & Message
         const tierInfo = resolveAppreciationTier(amountInDollars, env);
@@ -864,11 +1033,37 @@ export default {
             });
 
             await db.execute({
-              sql: `INSERT OR REPLACE INTO webhook_events (id, event_id, event_type, payload_hash, status) VALUES (?, ?, ?, ?, ?)`,
-              args: [crypto.randomUUID(), paymentReference, eventType, payloadHash, 'processed']
+              sql: `UPDATE webhook_events SET status = 'processed' WHERE event_id = ?`,
+              args: [webhookEventId]
             });
+
+            if (matchedIntent) {
+              await db.execute({
+                sql: `UPDATE donation_intents SET status = 'matched', matched_payment_reference = ?, card_token = ? WHERE id = ?`,
+                args: [paymentReference, cardToken, matchedIntent.id]
+              }).catch(() => {});
+            } else {
+              await db.execute({
+                sql: `INSERT OR IGNORE INTO donation_reconciliations 
+                      (id, payment_reference, donor_name, donor_email, amount_cents, payment_status, reconciliation_type, status, admin_notes)
+                      VALUES (?, ?, ?, ?, ?, 'succeeded', 'unmatched_direct_donor', 'resolved', 'Direct Zeffy checkout without prior intent')`,
+                args: [
+                  crypto.randomUUID(),
+                  paymentReference,
+                  donorDisplayName,
+                  donorEmail || 'anonymous@privacy.dcvc',
+                  amountCents
+                ]
+              }).catch(() => {});
+            }
           } catch (dbInsertErr) {
             console.error('Failed to persist appreciation card in database:', dbInsertErr);
+            if (db) {
+              await db.execute({
+                sql: `UPDATE webhook_events SET status = 'failed' WHERE event_id = ?`,
+                args: [webhookEventId]
+              }).catch(() => {});
+            }
             return errorResponse('Failed to record donation in database', 500, dbInsertErr.message, cors);
           }
         }
@@ -1172,10 +1367,15 @@ export default {
         const donorEmail = (body.donorEmail || '').toLowerCase().trim();
         const amount = Number(body.amount || 0);
         const frequency = body.frequency || 'one-time';
+        const campaign = (body.campaign || '').trim() || (frequency === 'monthly' || frequency === 'gem' ? 'gem' : 'donate-to-change-lives-30236');
         const isAnonymous = Boolean(body.isAnonymous);
 
-        if (!donorEmail && !isAnonymous) {
-          return errorResponse('Email address is required for donation matching', 400, null, cors);
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!donorEmail || !emailRegex.test(donorEmail)) {
+          return errorResponse('Valid email address is required for donation matching and keepsake delivery', 400, null, cors);
+        }
+        if (!donorName && !isAnonymous) {
+          return errorResponse('Donor name is required for keepsake card personalization (or mark as anonymous)', 400, null, cors);
         }
 
         // Mint cryptographically secure intent token
@@ -1185,22 +1385,27 @@ export default {
         const hashBuf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(intentToken));
         const tokenHash = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
 
+        const emailHashBuf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(donorEmail));
+        const emailHash = Array.from(new Uint8Array(emailHashBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
+
         const intentId = crypto.randomUUID();
         const db = getDb(env);
 
         if (db) {
           await db.execute({
             sql: `INSERT INTO donation_intents 
-                  (id, intent_token, token_hash, donor_name, donor_email, amount_cents, frequency, is_anonymous, status)
-                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+                  (id, intent_token, token_hash, donor_name, donor_email, donor_email_hash, amount_cents, frequency, campaign, is_anonymous, status, expires_at)
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now', '+48 hours'))`,
             args: [
               intentId,
               intentToken,
               tokenHash,
               donorName || 'Affirming Supporter',
-              donorEmail || 'anonymous@privacy.dcvc',
+              donorEmail,
+              emailHash,
               Math.round(amount * 100),
               frequency,
+              campaign,
               isAnonymous ? 1 : 0
             ]
           }).catch(err => console.warn('Intent DB insert skipped:', err.message));
@@ -1209,7 +1414,8 @@ export default {
         return jsonResponse({
           success: true,
           intentToken,
-          intentId
+          intentId,
+          campaign
         }, 201, cors);
       }
 
@@ -2669,8 +2875,53 @@ export default {
       }
 
       // =======================================================================
-      // 14. Cloudinary Server-Side Upload Signing (POST /api/media/sign-upload)
+      // 14. Media Storage & Delivery (GitHub Repository & jsDelivr CDN)
       // =======================================================================
+      if (pathname === '/api/media/upload' && request.method === 'POST') {
+        const body = await request.json().catch(() => ({}));
+        const { folder = 'media', fileData, fileName } = body;
+        if (!fileData) {
+          return errorResponse('File data (base64) is required.', 400, null, cors);
+        }
+        const cleanName = sanitizeFilename(fileName || `media-${Date.now()}.jpg`);
+        const gitPath = `public/images/${folder}/${cleanName}`;
+        const ghOwner = env.GITHUB_OWNER || 'diversity-collective';
+        const ghRepo = env.GITHUB_REPO || 'diversity-collectives-v1';
+        const ghBranch = env.GITHUB_BRANCH || 'main';
+
+        let githubSha = null;
+        if (env.GITHUB_TOKEN) {
+          const ghRes = await uploadToGitHub({
+            githubToken: env.GITHUB_TOKEN,
+            owner: ghOwner,
+            repo: ghRepo,
+            branch: ghBranch,
+            path: gitPath,
+            contentBase64: fileData,
+            commitMessage: `feat(media): upload ${cleanName} to ${folder}`
+          });
+          if (ghRes.success) {
+            githubSha = ghRes.sha;
+          }
+        }
+
+        const cdnUrl = buildJsDelivrUrl({
+          owner: ghOwner,
+          repo: ghRepo,
+          branch: ghBranch,
+          path: gitPath
+        });
+
+        return jsonResponse({
+          success: true,
+          cdnUrl,
+          url: cdnUrl,
+          path: gitPath,
+          githubSha,
+          provider: 'jsdelivr'
+        }, 200, cors);
+      }
+
       if (pathname === '/api/media/sign-upload' && request.method === 'POST') {
         const body = await request.json().catch(() => ({}));
         const signedParams = await createSignedUploadParameters({
@@ -2681,7 +2932,9 @@ export default {
 
         return jsonResponse({
           success: true,
-          ...signedParams
+          ...signedParams,
+          provider: 'github_jsdelivr',
+          note: 'Image storage is powered by GitHub repository with jsDelivr multi-CDN delivery.'
         }, 200, cors);
       }
 
@@ -3552,9 +3805,22 @@ export default {
             return errorResponse('Account is deactivated. Please contact a system administrator.', 403, null, adminCors);
           }
 
-          const computedHash = await hashPassword(password, userRow.salt);
-          const isPasswordValid = constantTimeEqual(computedHash, userRow.password_hash) ||
-            (isDevAdmin && password === 'DCVC-Admin-2026!');
+          const pwdCheck = await verifyPasswordHash(password, userRow.salt, userRow.password_hash);
+          const isPasswordValid = pwdCheck.valid || (isDevAdmin && password === 'DCVC-Admin-2026!');
+
+          // Opportunistic Upgrade: If verified using legacy iterations, seamlessly rehash to OWASP standard (600,000 iterations)
+          if (pwdCheck.valid && pwdCheck.needsUpgrade && db) {
+            try {
+              const upgradedHash = await hashPassword(password, userRow.salt, OWASP_PBKDF2_ITERATIONS);
+              await db.execute({
+                sql: `UPDATE admin_users SET password_hash = ? WHERE id = ?`,
+                args: [upgradedHash, userRow.id]
+              });
+              console.log(`[Security] Upgraded password hash for admin ${userRow.email} to OWASP 600,000 iterations standard.`);
+            } catch (upgradeErr) {
+              console.warn('[Security] Opportunistic password hash upgrade skipped:', upgradeErr.message);
+            }
+          }
 
           if (!isPasswordValid) {
             if (db) {
@@ -4102,8 +4368,8 @@ export default {
             if (!currentPassword) {
               return errorResponse('Current password is required to change password.', 400, null, adminCors);
             }
-            const computedCurrent = await hashPassword(currentPassword, uRow.salt);
-            if (!constantTimeEqual(computedCurrent, uRow.password_hash)) {
+            const currentCheck = await verifyPasswordHash(currentPassword, uRow.salt, uRow.password_hash);
+            if (!currentCheck.valid) {
               return errorResponse('Current password is incorrect.', 401, null, adminCors);
             }
           }
@@ -7024,4 +7290,10 @@ export default {
         .catch(err => console.error('[Scheduled Cron] Zeffy sync error:', err))
     );
   }
+};
+
+export {
+  parseZeffySignatureHeader,
+  verifyZeffySignature,
+  verifyZeffyWebhookRequest
 };

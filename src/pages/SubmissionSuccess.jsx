@@ -76,6 +76,16 @@ export default function SubmissionSuccess() {
       icon: Mail,
       accent: 'from-fuchsia-600 to-pink-600'
     },
+    donation: {
+      title: 'Donation Confirmed & Appreciation Keepsake',
+      subtitle: 'Thank you for your generous gift to Diversity Collective Ventura County!',
+      description: 'Your contribution powers our Ventura Community Resource Center, free HIV/STI screenings, and youth peer programs. Once Zeffy completes verification, your official DCVC Appreciation Card keepsake will be delivered directly to your email inbox.',
+      nextStep: 'You can explore our interactive donor recognition tiers or browse community programs.',
+      ctaText: 'Explore Appreciation Cards',
+      ctaLink: '/appreciation-card/preview',
+      icon: Heart,
+      accent: 'from-purple-700 to-rose-600'
+    },
     general: {
       title: 'Submission Confirmed',
       subtitle: 'Thank you for connecting with Diversity Collective.',

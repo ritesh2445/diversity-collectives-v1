@@ -422,14 +422,14 @@ export async function getMediaLibraryAssets(folderId = 'all', searchQuery = '') 
     assets = JSON.parse(stored);
   } else {
     assets = [
-      { id: 'media-1', name: 'community-center-front.webp', folder: 'banners', size: '245 KB', dimensions: '1600x900', url: '/images/crc-building.jpg', cdnUrl: '/images/crc-building.jpg', uploadedAt: '2026-03-01T10:00:00Z' },
-      { id: 'media-2', name: 'rainbow-umbrella-circle.webp', folder: 'programs', size: '180 KB', dimensions: '1200x800', url: '/images/youth-umbrella.jpg', cdnUrl: '/images/youth-umbrella.jpg', uploadedAt: '2026-03-02T12:00:00Z' },
-      { id: 'media-3', name: 'shines-health-screening.webp', folder: 'programs', size: '210 KB', dimensions: '1200x800', url: '/images/shines-screening.jpg', cdnUrl: '/images/shines-screening.jpg', uploadedAt: '2026-03-02T14:30:00Z' },
-      { id: 'media-4', name: 'pride-prom-dance.jpeg', folder: 'events', size: '420 KB', dimensions: '1920x1080', url: '/images/pride-prom.jpeg', cdnUrl: '/images/pride-prom.jpeg', uploadedAt: '2026-02-28T18:00:00Z' },
-      { id: 'media-5', name: 'little-unicorns-families.png', folder: 'programs', size: '310 KB', dimensions: '1000x1000', url: '/images/little-unicorns.png', cdnUrl: '/images/little-unicorns.png', uploadedAt: '2026-02-20T11:00:00Z' },
-      { id: 'media-6', name: 'volunteers-pride-booth.webp', folder: 'events', size: '265 KB', dimensions: '1400x900', url: '/images/volunteers.jpg', cdnUrl: '/images/volunteers.jpg', uploadedAt: '2026-03-01T09:00:00Z' },
-      { id: 'media-7', name: 'dcvc-logo-square-gold.png', folder: 'banners', size: '95 KB', dimensions: '512x512', url: '/images/logo-square.png', cdnUrl: '/images/logo-square.png', uploadedAt: '2026-01-10T10:00:00Z' },
-      { id: 'media-8', name: 'dcvc-logo-horizontal.png', folder: 'banners', size: '120 KB', dimensions: '1200x320', url: '/images/logo-horizontal.png', cdnUrl: '/images/logo-horizontal.png', uploadedAt: '2026-01-10T10:05:00Z' }
+      { id: 'media-1', name: 'community-center-front.webp', folder: 'banners', size: '245 KB', dimensions: '1600x900', url: '/images/crc-building.jpg', cdnUrl: 'https://cdn.jsdelivr.net/gh/diversity-collective/diversity-collectives-v1@main/public/images/crc-building.jpg', uploadedAt: '2026-03-01T10:00:00Z' },
+      { id: 'media-2', name: 'rainbow-umbrella-circle.webp', folder: 'programs', size: '180 KB', dimensions: '1200x800', url: '/images/youth-umbrella.jpg', cdnUrl: 'https://cdn.jsdelivr.net/gh/diversity-collective/diversity-collectives-v1@main/public/images/youth-umbrella.jpg', uploadedAt: '2026-03-02T12:00:00Z' },
+      { id: 'media-3', name: 'shines-health-screening.webp', folder: 'programs', size: '210 KB', dimensions: '1200x800', url: '/images/shines-screening.jpg', cdnUrl: 'https://cdn.jsdelivr.net/gh/diversity-collective/diversity-collectives-v1@main/public/images/shines-screening.jpg', uploadedAt: '2026-03-02T14:30:00Z' },
+      { id: 'media-4', name: 'pride-prom-dance.jpeg', folder: 'events', size: '420 KB', dimensions: '1920x1080', url: '/images/pride-prom.jpeg', cdnUrl: 'https://cdn.jsdelivr.net/gh/diversity-collective/diversity-collectives-v1@main/public/images/pride-prom.jpeg', uploadedAt: '2026-02-28T18:00:00Z' },
+      { id: 'media-5', name: 'little-unicorns-families.png', folder: 'programs', size: '310 KB', dimensions: '1000x1000', url: '/images/little-unicorns.png', cdnUrl: 'https://cdn.jsdelivr.net/gh/diversity-collective/diversity-collectives-v1@main/public/images/little-unicorns.png', uploadedAt: '2026-02-20T11:00:00Z' },
+      { id: 'media-6', name: 'volunteers-pride-booth.webp', folder: 'events', size: '265 KB', dimensions: '1400x900', url: '/images/volunteers.jpg', cdnUrl: 'https://cdn.jsdelivr.net/gh/diversity-collective/diversity-collectives-v1@main/public/images/volunteers.jpg', uploadedAt: '2026-03-01T09:00:00Z' },
+      { id: 'media-7', name: 'dcvc-logo-square-gold.png', folder: 'banners', size: '95 KB', dimensions: '512x512', url: '/images/logo-square.png', cdnUrl: 'https://cdn.jsdelivr.net/gh/diversity-collective/diversity-collectives-v1@main/public/images/logo-square.png', uploadedAt: '2026-01-10T10:00:00Z' },
+      { id: 'media-8', name: 'dcvc-logo-horizontal.png', folder: 'banners', size: '120 KB', dimensions: '1200x320', url: '/images/logo-horizontal.png', cdnUrl: 'https://cdn.jsdelivr.net/gh/diversity-collective/diversity-collectives-v1@main/public/images/logo-horizontal.png', uploadedAt: '2026-01-10T10:05:00Z' }
     ];
     localStorage.setItem('dcvc_admin_media_assets', JSON.stringify(assets));
   }
@@ -570,8 +570,8 @@ export async function getRealTimeHealthMetrics() {
       { name: 'Turso (libSQL Serverless DB)', status: 'operational', latencyMs: 38, region: 'US-West (San Jose)', uptime: '100%' },
       { name: 'Cloudflare Worker Edge Network', status: 'operational', latencyMs: 14, region: 'Edge Anycast (LAX)', uptime: '99.99%' },
       { name: 'Resend Transactional Email API', status: 'operational', latencyMs: 142, region: 'US-East', uptime: '100%' },
-      { name: 'Cloudinary Media Optimization', status: 'operational', latencyMs: 65, region: 'Global Edge', uptime: '99.95%' },
-      { name: 'GitHub jsDelivr Asset CDN', status: 'operational', latencyMs: 22, region: 'Cloudflare Edge', uptime: '100%' },
+      { name: 'GitHub Media Storage & Commits', status: 'operational', latencyMs: 45, region: 'GitHub API', uptime: '99.98%' },
+      { name: 'GitHub jsDelivr Asset CDN', status: 'operational', latencyMs: 22, region: 'Global Edge', uptime: '100%' },
       { name: 'Workers AI (Llama 3.1 Inference)', status: 'operational', latencyMs: 280, region: 'Cloudflare GPUs', uptime: '99.91%' }
     ],
     systemLoad: {

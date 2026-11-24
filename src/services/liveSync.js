@@ -507,16 +507,11 @@ export async function fetchAndApplyLiveSiteState({ force = false } = {}) {
 }
 
 function getAdminSessionToken() {
-  try {
-    if (typeof sessionStorage !== 'undefined') {
-      const st = sessionStorage.getItem('dcvc_admin_token');
-      if (st) return st;
-    }
-    if (typeof localStorage !== 'undefined') {
-      return localStorage.getItem('dcvc_admin_token') || null;
-    }
-  } catch {
-    // Ignore storage restriction
+  if (typeof window !== 'undefined') {
+    try {
+      sessionStorage.removeItem('dcvc_admin_token');
+      localStorage.removeItem('dcvc_admin_token');
+    } catch {}
   }
   return null;
 }
@@ -726,7 +721,7 @@ export function applySiteThemeToDOM(theme) {
  * Subscribe to live synchronization inside AppLayout.
  * Ensures public tabs AND admin tabs reflect updates instantaneously without page reload.
  */
-export function initLiveSiteSync({ onThemeApply, intervalMs = 12000 } = {}) {
+export function initLiveSiteSync({ onThemeApply, intervalMs = 3000 } = {}) {
   if (typeof window === 'undefined') return () => {};
 
   const applyLatestTheme = (themeObj) => {

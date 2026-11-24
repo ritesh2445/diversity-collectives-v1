@@ -24,7 +24,7 @@ flowchart TD
 
     subgraph Data ["Data & Storage Layer"]
         Turso["Turso Database (libSQL)\nDistributed SQLite with FTS5\n(Directory & Submissions)"]
-        Cloudinary["Cloudinary CDN\n(Auto WebP/AVIF Media Delivery)"]
+        GitHub_CDN["GitHub Repository & jsDelivr Multi-CDN\n(High-Performance Edge Media Delivery)"]
     end
 
     subgraph Integrations ["Third-Party Integrations"]
@@ -41,7 +41,7 @@ flowchart TD
     Browser -->|HTTPS / Assets| CF_Pages
     Browser -->|Form Submissions & Directory Queries| CF_Worker
     Browser -->|Giving Portal| Zeffy
-    Browser -->|Optimized Images| Cloudinary
+    Browser -->|Optimized Images| GitHub_CDN
     Browser -->|Read Editorial Content| Sanity_CDN
 
     CF_Worker -->|Verify Captcha| Turnstile

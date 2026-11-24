@@ -6,20 +6,27 @@
 
 const API_BASE = import.meta.env?.VITE_API_URL || '/api';
 
+let inMemoryAuthToken = null;
+
 export function getStoredToken() {
-  if (typeof window === 'undefined') return null;
-  return sessionStorage.getItem('dcvc_admin_token') || localStorage.getItem('dcvc_admin_token');
+  if (typeof window === 'undefined') return inMemoryAuthToken;
+  // Security Hardening: Never store persistent tokens in localStorage or sessionStorage.
+  // Purge any legacy tokens if encountered in storage.
+  try {
+    sessionStorage.removeItem('dcvc_admin_token');
+    localStorage.removeItem('dcvc_admin_token');
+  } catch {}
+  return inMemoryAuthToken;
 }
 
 export function setStoredToken(token) {
+  inMemoryAuthToken = token || null;
   if (typeof window === 'undefined') return;
-  if (token) {
-    sessionStorage.setItem('dcvc_admin_token', token);
-    localStorage.setItem('dcvc_admin_token', token);
-  } else {
+  // Security Hardening: Enforce that no authentication credentials are stored in client storage
+  try {
     sessionStorage.removeItem('dcvc_admin_token');
     localStorage.removeItem('dcvc_admin_token');
-  }
+  } catch {}
 }
 
 export function getStoredUser() {
@@ -49,7 +56,8 @@ async function fetchWithAuth(endpoint, options = {}) {
 
   const res = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
-    headers
+    headers,
+    credentials: 'include'
   });
 
   if (res.status === 401) {

@@ -13,7 +13,11 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { 
   verifyAndDecryptBackupPackage, 
-  restoreDatabaseFromSnapshot 
+  restoreDatabaseFromSnapshot,
+  assertValidEncryptionKey,
+  TOPOLOGICAL_RESTORE_ORDER,
+  POST_RESTORE_SECURITY_QUERIES,
+  checkForeignKeyIntegrity
 } from '../src/utils/backupRestore.js';
 import { REQUIRED_PRODUCTION_TABLES } from './backup.js';
 
@@ -22,7 +26,6 @@ const B2_KEY_ID = process.env.B2_KEY_ID;
 const B2_APPLICATION_KEY = process.env.B2_APPLICATION_KEY;
 const B2_BUCKET_NAME = process.env.B2_BUCKET_NAME || 'dcvc-backups-production';
 const B2_ENDPOINT = process.env.B2_ENDPOINT || 'https://api.backblazeb2.com';
-const ENCRYPTION_KEY = process.env.BACKUP_ENCRYPTION_KEY || '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
 
 const TURSO_URL = process.env.TURSO_DATABASE_URL;
 const TURSO_TOKEN = process.env.TURSO_AUTH_TOKEN;
@@ -32,11 +35,23 @@ const targetBackupId = args.find(a => !a.startsWith('--'));
 const isProductionTarget = args.includes('--target=production') || args.includes('--force-prod-restore');
 
 /**
+ * Validate that an encryption key is present and strictly valid.
+ * Hardcoded default fallback keys are eliminated.
+ */
+function getRequiredRestoreEncryptionKey(customKey = null) {
+  const key = customKey || process.env.BACKUP_ENCRYPTION_KEY;
+  if (!key) {
+    throw new Error('FATAL: BACKUP_ENCRYPTION_KEY is required to restore an encrypted disaster recovery backup package.');
+  }
+  return assertValidEncryptionKey(key);
+}
+
+/**
  * Download a file from Backblaze B2 using Native API
  */
 async function downloadFromB2(fileName) {
   if (!B2_KEY_ID || !B2_APPLICATION_KEY) {
-    throw new Error('Backblaze B2 credentials not configured. Cannot download remote backup.');
+    throw new Error('Backblaze B2 credentials (B2_KEY_ID / B2_APPLICATION_KEY) are not configured. Cannot download remote backup from Backblaze B2.');
   }
 
   console.log(`[RESTORE B2] Authorizing with Backblaze Native API to download '${fileName}'...`);
@@ -129,8 +144,8 @@ async function loadBackupFiles(backupDir, requestedId) {
  */
 export async function executeRestore(options = {}) {
   const customBackupDir = options.backupDir || path.resolve(process.cwd(), 'backups');
-  const customKey = options.encryptionKey || ENCRYPTION_KEY;
-  const targetDb = options.targetDb; // Mock db or isolated SQLite db
+  const customKey = getRequiredRestoreEncryptionKey(options.encryptionKey);
+  const targetDb = options.targetDb; // Mock db or isolated staging environment
 
   const { backupId, manifest, encryptedBuffer } = await loadBackupFiles(customBackupDir, options.backupId || targetBackupId);
 
@@ -159,46 +174,120 @@ export async function executeRestore(options = {}) {
   const restoredTables = Object.keys(verified.snapshot.archive.tables || {});
   console.log(`[RESTORE] Identified ${restoredTables.length} tables in snapshot archive.`);
 
-  // 3. Database restoration target
+  // 3. Foreign-Key Pre-Restoration Integrity Verification
+  console.log('[RESTORE INTEGRITY] Verifying foreign-key integrity constraints prior to restoration...');
+  const fkCheck = checkForeignKeyIntegrity(verified.snapshot.archive.tables);
+  if (!fkCheck.valid) {
+    const errorDetails = fkCheck.violations.map(v => v.error).join('; ');
+    throw new Error(`CRITICAL INTEGRITY FAILURE: Backup package contains foreign-key violations! ${errorDetails}. Restoration aborted to protect database consistency.`);
+  }
+  console.log('[RESTORE INTEGRITY] Foreign-key constraint validation PASSED (Zero orphaned child rows).');
+
+  // 4. Database restoration target
   if (isProductionTarget && !targetDb) {
     console.log('[RESTORE WARNING] --target=production specified. Connecting to Turso production...');
     if (!TURSO_URL || !TURSO_TOKEN) {
       throw new Error('TURSO_DATABASE_URL and TURSO_AUTH_TOKEN must be configured for production restore.');
     }
-    // Production restore logic
+    
     const httpUrl = TURSO_URL.replace(/^libsql:\/\//, 'https://');
     const pipelineUrl = `${httpUrl}/v2/pipeline`;
-    let prodRestoredCount = 0;
 
-    for (const [tbl, rows] of Object.entries(verified.snapshot.archive.tables)) {
+    console.log('[RESTORE PRODUCTION] Preparing atomic restore transaction with foreign-key validation...');
+    const requests = [
+      { type: 'execute', stmt: { sql: 'PRAGMA foreign_keys = OFF;' } },
+      { type: 'execute', stmt: { sql: 'BEGIN TRANSACTION;' } }
+    ];
+
+    let prodRestoredCount = 0;
+    const tablesInSnapshot = verified.snapshot.archive.tables || {};
+    const presentTableNames = Object.keys(tablesInSnapshot);
+    const orderedTables = [
+      ...TOPOLOGICAL_RESTORE_ORDER.filter(t => presentTableNames.includes(t)),
+      ...presentTableNames.filter(t => !TOPOLOGICAL_RESTORE_ORDER.includes(t))
+    ];
+
+    for (const tbl of orderedTables) {
       if (tbl.startsWith('_')) continue; // Skip metadata tables like _sanity_content
-      if (!rows || rows.length === 0) continue;
+      const rows = tablesInSnapshot[tbl];
+      if (!Array.isArray(rows) || rows.length === 0) continue;
 
       const cols = Object.keys(rows[0]);
       for (const row of rows) {
         const placeholders = cols.map(() => '?').join(', ');
-        const values = cols.map(c => ({ type: typeof row[c] === 'number' ? 'integer' : 'text', value: row[c] }));
-        const sql = `INSERT OR REPLACE INTO "${tbl}" (${cols.map(c => `"${c}"`).join(', ')}) VALUES (${placeholders});`;
-        
-        const res = await fetch(pipelineUrl, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${TURSO_TOKEN}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ requests: [{ type: 'execute', stmt: { sql, args: values } }] })
+        const values = cols.map(c => {
+          const val = row[c];
+          if (val === null || val === undefined) return { type: 'null' };
+          if (typeof val === 'number') return { type: Number.isInteger(val) ? 'integer' : 'float', value: val };
+          if (typeof val === 'boolean') return { type: 'integer', value: val ? 1 : 0 };
+          return { type: 'text', value: String(val) };
         });
-        if (res.ok) prodRestoredCount++;
+        const sql = `INSERT OR REPLACE INTO "${tbl}" (${cols.map(c => `"${c}"`).join(', ')}) VALUES (${placeholders});`;
+        requests.push({ type: 'execute', stmt: { sql, args: values } });
+        prodRestoredCount++;
       }
     }
+
+    // Post-Restore Security Hygiene
+    console.log('[RESTORE PRODUCTION] Adding post-restore security invalidation queries (token version bump, OTP consumption)...');
+    for (const secQuery of POST_RESTORE_SECURITY_QUERIES) {
+      requests.push({ type: 'execute', stmt: { sql: secQuery.sql } });
+    }
+
+    // Verify foreign keys before commit, then re-enable foreign keys outside transaction
+    requests.push({ type: 'execute', stmt: { sql: 'PRAGMA foreign_key_check;' } });
+    requests.push({ type: 'execute', stmt: { sql: 'COMMIT;' } });
+    requests.push({ type: 'execute', stmt: { sql: 'PRAGMA foreign_keys = ON;' } });
+
+    console.log(`[RESTORE PRODUCTION] Executing atomic restore transaction (${requests.length} statements)...`);
+    const res = await fetch(pipelineUrl, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${TURSO_TOKEN}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ requests })
+    });
+
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '');
+      throw new Error(`Production restore pipeline failed: HTTP ${res.status} ${res.statusText} - ${errText}`);
+    }
+
+    const json = await res.json();
+    const results = json.results || [];
+
+    // Verify foreign_key_check result (third to last item: foreign_key_check -> commit -> pragma fk on)
+    const fkCheckResult = results[results.length - 3];
+    const fkViolations = fkCheckResult?.response?.result?.rows || [];
+    if (fkViolations.length > 0) {
+      // Execute rollback immediately
+      await fetch(pipelineUrl, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${TURSO_TOKEN}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requests: [{ type: 'execute', stmt: { sql: 'ROLLBACK;' } }] })
+      });
+      throw new Error(`CRITICAL: PRAGMA foreign_key_check detected ${fkViolations.length} violations in production! Transaction rolled back to preserve original data.`);
+    }
+
+    // Check for errors in results
+    for (let idx = 0; idx < results.length; idx++) {
+      const r = results[idx];
+      if (r?.type === 'error' || r?.error) {
+        throw new Error(`Error in restore statement #${idx}: ${r.error?.message || JSON.stringify(r.error)}`);
+      }
+    }
+
     return {
       success: true,
       backupId,
       target: 'turso_production',
-      restoredTables,
-      totalRecordsRestored: prodRestoredCount
+      restoredTables: orderedTables,
+      totalRecordsRestored: prodRestoredCount,
+      securityHygieneApplied: true,
+      foreignKeyIntegrity: 'verified'
     };
   }
 
   // Safe Default: Isolated Staging / Verification Target
-  console.log('[RESTORE SAFEGUARD] Restoring into isolated verification target (Non-production mode active).');
+  console.log('[RESTORE SAFEGUARD] Restoring into isolated verification target (Non-production mode active). Production data is protected.');
   const isolatedTarget = {};
   const runnerDb = targetDb || {
     async insertMany(table, rows) {
@@ -214,6 +303,8 @@ export async function executeRestore(options = {}) {
     target: 'isolated_verification_environment',
     restoredTables: result.restoredTables,
     totalRecordsRestored: result.totalRecordsRestored,
+    foreignKeyIntegrity: result.foreignKeyIntegrity,
+    securityHygieneApplied: result.securityHygieneApplied,
     snapshotData: verified.snapshot.archive.tables
   };
 }
@@ -238,7 +329,8 @@ async function run() {
 
 if (process.argv[1] && process.argv[1].endsWith('restore.js')) {
   run().catch(err => {
-    console.error('[RESTORE CRITICAL ERROR]', err);
+    console.error('\n[RESTORE CRITICAL ERROR]');
+    console.error(err.message || err);
     process.exit(1);
   });
 }

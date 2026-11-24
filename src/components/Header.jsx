@@ -458,7 +458,7 @@ export default function Header() {
 
             {/* Scrollable Navigation List */}
             <div
-              className="flex-1 overflow-y-auto overflow-x-hidden px-5 py-4 space-y-3 divide-y divide-slate-100 overscroll-contain"
+              className="flex-1 overflow-y-auto overflow-x-hidden px-5 py-4 space-y-2 overscroll-contain"
               style={{ touchAction: 'pan-y' }}
             >
 
@@ -472,7 +472,7 @@ export default function Header() {
                   setMobileMenuOpen(false);
                   setSearchOpen(true);
                 }}
-                className="flex items-center gap-2.5 w-full py-2.5 px-3.5 rounded-xl bg-white border border-purple-200 hover:border-[#5A1E65] text-slate-600 text-xs font-semibold shadow-2xs cursor-pointer text-left min-w-0"
+                className="w-full flex items-center gap-2.5 py-2.5 px-3.5 rounded-xl bg-white border border-purple-200 hover:border-[#5A1E65] text-slate-600 text-xs font-semibold shadow-2xs cursor-pointer text-left min-w-0"
               >
                 <Search className="w-4 h-4 text-[#5A1E65] flex-shrink-0" />
                 <span className="truncate min-w-0">Search programs, events, board, resources...</span>
@@ -485,7 +485,7 @@ export default function Header() {
                   setMobileMenuOpen(false);
                   setCalendarOpen(true);
                 }}
-                className="flex items-center gap-2.5 w-full py-2.5 px-3.5 rounded-xl bg-white border border-purple-200 hover:border-[#5A1E65] text-slate-700 text-xs font-semibold shadow-2xs cursor-pointer text-left min-w-0"
+                className="w-full flex items-center gap-2.5 py-2.5 px-3.5 rounded-xl bg-white border border-purple-200 hover:border-[#5A1E65] text-slate-700 text-xs font-semibold shadow-2xs cursor-pointer text-left min-w-0"
               >
                 <Calendar className="w-4 h-4 text-[#5A1E65] flex-shrink-0" />
                 <span className="truncate min-w-0">Events Calendar Quick View & Dates...</span>
@@ -499,7 +499,7 @@ export default function Header() {
                   setMobileMenuOpen(false);
                   window.dispatchEvent(new CustomEvent('openAskDcvc'));
                 }}
-                className="mobile-ask-luna-btn flex items-center justify-between py-2.5 px-3 rounded-xl bg-gradient-to-r from-purple-50 via-fuchsia-50/40 to-amber-50/50 border border-purple-200/90 hover:border-purple-400 transition-all group w-full text-left cursor-pointer shadow-2xs pt-3 min-w-0"
+                className="mobile-ask-luna-btn mobile-nav-item flex items-center justify-between py-2.5 px-3 rounded-xl bg-gradient-to-r from-purple-50 via-fuchsia-50/40 to-amber-50/50 border border-purple-200/90 hover:border-purple-400 transition-all group w-full text-left cursor-pointer shadow-2xs min-w-0"
               >
                 <div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
                   <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#5A1E65] to-purple-800 text-amber-300 flex items-center justify-center flex-shrink-0 shadow-xs">
@@ -518,18 +518,24 @@ export default function Header() {
               <Link
                 to="/"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-purple-50/60 transition-colors group pt-3 min-w-0"
+                className={`mobile-nav-item w-full flex items-center justify-between py-2.5 px-3 rounded-xl transition-all group min-w-0 ${
+                  location.pathname === '/'
+                    ? 'bg-gradient-to-r from-[#5A1E65] to-purple-800 text-white font-bold shadow-md'
+                    : 'hover:bg-purple-50/60 font-bold'
+                }`}
               >
                 <div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
-                  <div className="w-9 h-9 rounded-lg bg-purple-100/80 text-[#5A1E65] flex items-center justify-center flex-shrink-0">
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                    location.pathname === '/' ? 'bg-white/20 text-white' : 'bg-purple-100/80 text-[#5A1E65]'
+                  }`}>
                     <Home className="w-4 h-4" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <span className="font-bold text-slate-900 group-hover:text-[#5A1E65] text-sm block truncate">Home</span>
-                    <span className="text-[11px] text-slate-500 block truncate">Sanctuary homepage & announcements</span>
+                    <span className={`font-bold text-sm block truncate ${location.pathname === '/' ? 'text-white' : 'text-slate-900 group-hover:text-[#5A1E65]'}`}>Home</span>
+                    <span className={`text-[11px] block mt-0.5 truncate ${location.pathname === '/' ? 'text-white/90 font-medium' : 'text-slate-500'}`}>Sanctuary homepage & announcements</span>
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform flex-shrink-0" />
+                <ChevronRight className={`w-4 h-4 transition-transform group-hover:translate-x-0.5 flex-shrink-0 ${location.pathname === '/' ? 'text-white' : 'text-slate-400 group-hover:text-[#5A1E65]'}`} />
               </Link>
 
               {allNavItems.map((item) => {
@@ -541,27 +547,27 @@ export default function Header() {
                     key={item.to}
                     to={item.to}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`nav-bar-btn flex items-center justify-between py-2.5 px-3 rounded-xl transition-all group min-w-0 ${isActive
-                        ? 'nav-bar-btn-active font-bold shadow-md'
-                        : 'font-bold'
+                    className={`mobile-nav-item w-full flex items-center justify-between py-2.5 px-3 rounded-xl transition-all group min-w-0 ${isActive
+                        ? 'bg-gradient-to-r from-[#5A1E65] to-purple-800 text-white font-bold shadow-md'
+                        : 'hover:bg-purple-50/60 font-bold'
                       }`}
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
-                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${isActive ? 'bg-white/20' : 'bg-slate-100 text-slate-800 group-hover:bg-white/20'
+                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-800 group-hover:bg-purple-100 group-hover:text-[#5A1E65]'
                         }`}>
                         <ItemIcon className="w-4 h-4" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <span className={`nav-title font-bold text-sm block truncate ${isActive ? '!text-white text-white' : 'text-slate-900 group-hover:text-white'}`}>
+                        <span className={`nav-title font-bold text-sm block truncate ${isActive ? '!text-white text-white' : 'text-slate-900 group-hover:text-[#5A1E65]'}`}>
                           {item.label}
                         </span>
-                        <span className={`nav-desc text-[11px] block mt-0.5 truncate ${isActive ? '!text-white/90 text-white/90 font-medium' : 'text-slate-500 group-hover:text-white/90'
+                        <span className={`nav-desc text-[11px] block mt-0.5 truncate ${isActive ? '!text-white/90 text-white/90 font-medium' : 'text-slate-500 group-hover:text-slate-700'
                           }`}>
                           {item.desc}
                         </span>
                       </div>
                     </div>
-                    <ChevronRight className={`w-4 h-4 transition-transform group-hover:translate-x-0.5 flex-shrink-0 ${isActive ? '!text-white text-white' : 'text-slate-400 group-hover:text-white'
+                    <ChevronRight className={`w-4 h-4 transition-transform group-hover:translate-x-0.5 flex-shrink-0 ${isActive ? '!text-white text-white' : 'text-slate-400 group-hover:text-[#5A1E65]'
                       }`} />
                   </Link>
                 );
@@ -570,18 +576,24 @@ export default function Header() {
               <Link
                 to="/contact"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-purple-50/60 transition-colors group min-w-0"
+                className={`mobile-nav-item w-full flex items-center justify-between py-2.5 px-3 rounded-xl transition-all group min-w-0 ${
+                  location.pathname === '/contact'
+                    ? 'bg-gradient-to-r from-[#5A1E65] to-purple-800 text-white font-bold shadow-md'
+                    : 'hover:bg-purple-50/60 font-bold'
+                }`}
               >
                 <div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
-                  <div className="w-9 h-9 rounded-lg bg-teal-100 text-teal-800 flex items-center justify-center flex-shrink-0">
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                    location.pathname === '/contact' ? 'bg-white/20 text-white' : 'bg-teal-100 text-teal-800 group-hover:bg-teal-200'
+                  }`}>
                     <MapPin className="w-4 h-4" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <span className="font-bold text-slate-900 group-hover:text-teal-800 text-sm block truncate">Contact & Directions</span>
-                    <span className="text-[11px] text-slate-500 block truncate">2471 Portola Road, Suite 100, Ventura</span>
+                    <span className={`font-bold text-sm block truncate ${location.pathname === '/contact' ? 'text-white' : 'text-slate-900 group-hover:text-teal-800'}`}>Contact & Directions</span>
+                    <span className={`text-[11px] block mt-0.5 truncate ${location.pathname === '/contact' ? 'text-white/90 font-medium' : 'text-slate-500'}`}>2471 Portola Road, Suite 100, Ventura</span>
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform flex-shrink-0" />
+                <ChevronRight className={`w-4 h-4 transition-transform group-hover:translate-x-0.5 flex-shrink-0 ${location.pathname === '/contact' ? 'text-white' : 'text-slate-400 group-hover:text-teal-800'}`} />
               </Link>
 
               {/* Mobile Accessibility Companion Toggle */}
@@ -591,7 +603,7 @@ export default function Header() {
                   setMobileMenuOpen(false);
                   a11yStore.toggleToolbar();
                 }}
-                className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-amber-50/70 transition-colors group w-full text-left cursor-pointer min-w-0"
+                className="mobile-nav-item w-full flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-amber-50/70 transition-colors group text-left cursor-pointer min-w-0 font-bold"
               >
                 <div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
                   <div className="w-9 h-9 rounded-lg bg-amber-100 text-[#5A1E65] flex items-center justify-center flex-shrink-0">
@@ -599,7 +611,7 @@ export default function Header() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <span className="font-bold text-slate-900 group-hover:text-[#5A1E65] text-sm block truncate">Accessibility Companion</span>
-                    <span className="text-[11px] text-slate-500 block truncate">Speech reader, focus audio, dyslexia fonts & contrast</span>
+                    <span className="text-[11px] text-slate-500 block truncate mt-0.5">Speech reader, focus audio, dyslexia fonts & contrast</span>
                   </div>
                 </div>
                 <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform flex-shrink-0" />

@@ -288,17 +288,14 @@ export default function Admin() {
 
 function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
 
-  // Auth State (Available across sibling tabs & restored on refresh)
-  const [token, setToken] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return sessionStorage.getItem('dcvc_admin_token') || localStorage.getItem('dcvc_admin_token') || '';
-    }
-    return '';
-  });
+  // Auth State: Authenticated via secure HttpOnly session cookies (zero tokens in client storage)
+  const [token, setToken] = useState('');
   const [user, setUser] = useState(() => {
     if (typeof window !== 'undefined') {
       try {
-        const stored = sessionStorage.getItem('dcvc_admin_user') || localStorage.getItem('dcvc_admin_user');
+        sessionStorage.removeItem('dcvc_admin_token');
+        localStorage.removeItem('dcvc_admin_token');
+        const stored = sessionStorage.getItem('dcvc_admin_user');
         return stored ? JSON.parse(stored) : null;
       } catch {
         return null;
@@ -306,14 +303,7 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
     }
     return null;
   });
-  const [isVerifyingSession, setIsVerifyingSession] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const storedToken = sessionStorage.getItem('dcvc_admin_token') || localStorage.getItem('dcvc_admin_token');
-      const storedUser = sessionStorage.getItem('dcvc_admin_user') || localStorage.getItem('dcvc_admin_user');
-      return Boolean(storedToken && !storedUser);
-    }
-    return false;
-  });
+  const [isVerifyingSession, setIsVerifyingSession] = useState(true);
 
   useEffect(() => {
     if (isVerifyingSession) {
@@ -688,10 +678,35 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
   const [editingUserEmail, setEditingUserEmail] = useState('');
   const [dispatchingOtpId, setDispatchingOtpId] = useState(null);
 
-  // Load user session on mount (supports both Bearer token and HttpOnly cookie session)
+  // Load user session on mount via HttpOnly cookie and listen for cross-tab auth state events
   useEffect(() => {
     fetchCurrentUser();
-  }, [token]);
+
+    let authChannel = null;
+    if (typeof window !== 'undefined' && typeof BroadcastChannel !== 'undefined') {
+      try {
+        authChannel = new BroadcastChannel('dcvc_admin_auth');
+        authChannel.onmessage = (event) => {
+          if (event?.data?.type === 'ADMIN_AUTH_LOGOUT') {
+            setUser(null);
+            setToken('');
+            setPending2fa(null);
+            if (typeof sessionStorage !== 'undefined') {
+              sessionStorage.removeItem('dcvc_admin_user');
+            }
+          } else if (event?.data?.type === 'ADMIN_AUTH_STATE_CHANGED') {
+            fetchCurrentUser();
+          }
+        };
+      } catch {}
+    }
+
+    return () => {
+      if (authChannel) {
+        try { authChannel.close(); } catch {}
+      }
+    };
+  }, []);
 
   // Load tab data
   useEffect(() => {
@@ -1064,16 +1079,19 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
 
   const setClientSession = (authToken, authUser) => {
     if (typeof window !== 'undefined') {
-      if (authToken) {
-        sessionStorage.setItem('dcvc_admin_token', authToken);
-        localStorage.setItem('dcvc_admin_token', authToken);
-      }
+      // Security: Purge any authentication tokens from client storage
+      sessionStorage.removeItem('dcvc_admin_token');
+      localStorage.removeItem('dcvc_admin_token');
       if (authUser) {
         sessionStorage.setItem('dcvc_admin_user', JSON.stringify(authUser));
-        localStorage.setItem('dcvc_admin_user', JSON.stringify(authUser));
       }
+      try {
+        const ch = new BroadcastChannel('dcvc_admin_auth');
+        ch.postMessage({ type: 'ADMIN_AUTH_STATE_CHANGED' });
+        ch.close();
+      } catch {}
     }
-    if (authToken) setToken(authToken);
+    if (authToken) setToken(authToken); // In-memory only for this tab turn
     if (authUser) setUser(authUser);
   };
 
@@ -1083,6 +1101,11 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
       localStorage.removeItem('dcvc_admin_token');
       sessionStorage.removeItem('dcvc_admin_user');
       localStorage.removeItem('dcvc_admin_user');
+      try {
+        const ch = new BroadcastChannel('dcvc_admin_auth');
+        ch.postMessage({ type: 'ADMIN_AUTH_LOGOUT' });
+        ch.close();
+      } catch {}
     }
     setToken('');
     setUser(null);
@@ -1090,12 +1113,6 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
   };
 
   const fetchCurrentUser = async () => {
-    const currentToken = token || (typeof window !== 'undefined' ? (sessionStorage.getItem('dcvc_admin_token') || localStorage.getItem('dcvc_admin_token')) : '');
-    if (!currentToken) {
-      setIsVerifyingSession(false);
-      return;
-    }
-
     try {
       const res = await fetch(`${API_BASE_URL}/admin/auth/me`, {
         credentials: 'include',
@@ -1104,8 +1121,8 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
       if (res.ok) {
         const data = await res.json();
         setUser(data.user);
-        if (typeof localStorage !== 'undefined' && data.user) {
-          localStorage.setItem('dcvc_admin_user', JSON.stringify(data.user));
+        if (typeof sessionStorage !== 'undefined' && data.user) {
+          sessionStorage.setItem('dcvc_admin_user', JSON.stringify(data.user));
         }
         if (data.user?.mustChangePassword) {
           setActiveTab('security');
@@ -1114,7 +1131,7 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
         clearClientSession();
       }
     } catch {
-      // Retain session on network errors if token is present
+      // Retain session on network errors if user profile is cached
     } finally {
       setIsVerifyingSession(false);
     }

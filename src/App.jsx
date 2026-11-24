@@ -106,7 +106,7 @@ function AppLayout() {
   const [siteStatus, setSiteStatus] = useState(null);
 
   useEffect(() => {
-    return initLiveSiteSync({ onThemeApply: applySiteThemeToDOM });
+    return initLiveSiteSync({ onThemeApply: applySiteThemeToDOM, intervalMs: 3000 });
   }, []);
 
   // Guarantee all scroll locks are cleared upon route transitions
@@ -189,6 +189,7 @@ function AppLayout() {
             </div>
           }>
             <Routes>
+              <Route path="/admin/*" element={<Admin />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="*" element={<Navigate to="/admin" replace />} />
             </Routes>

@@ -18,9 +18,13 @@ import crypto from 'node:crypto';
 import { 
   createEncryptedBackupPackage, 
   verifyAndDecryptBackupPackage, 
-  restoreDatabaseFromSnapshot 
+  restoreDatabaseFromSnapshot,
+  checkForeignKeyIntegrity,
+  decryptPayload,
+  POST_RESTORE_SECURITY_QUERIES
 } from '../src/utils/backupRestore.js';
 import { fetchTursoTables, fetchSanityStructuredContent, REQUIRED_PRODUCTION_TABLES } from './backup.js';
+import { exportSanityMediaAndAssets, createEncryptedMediaPackage } from './backupMedia.js';
 
 async function runDisasterRecoveryDrill() {
   console.log('================================================================');
@@ -32,8 +36,8 @@ async function runDisasterRecoveryDrill() {
 
   // 1. Assemble Full 12-table dataset + Sanity content
   console.log('\n[TEST 1] Assembling complete production dataset (12 Turso tables + Sanity)...');
-  const sourceData = await fetchTursoTables();
-  const sourceSanity = await fetchSanityStructuredContent();
+  const sourceData = await fetchTursoTables({ allowFixtures: true });
+  const sourceSanity = await fetchSanityStructuredContent({ allowFixtures: true });
   sourceData._sanity_content = sourceSanity;
 
   for (const table of REQUIRED_PRODUCTION_TABLES) {
@@ -70,7 +74,7 @@ async function runDisasterRecoveryDrill() {
   const decryptResult = await verifyAndDecryptBackupPackage(pkg.encryptedBuffer, pkg.manifest, testKey);
   assert.strictEqual(decryptResult.valid, true, 'Package must be marked valid after decryption');
 
-  const restoreResult = await restoreDatabaseFromSnapshot(decryptResult.snapshot, mockDbRunner);
+  const restoreResult = await restoreDatabaseFromSnapshot(decryptResult.snapshot, mockDbRunner, { applySecurityHygiene: false });
   assert.strictEqual(restoreResult.success, true, 'Restore operation must succeed');
   assert.strictEqual(restoreResult.totalRecordsRestored, initialRecordCount, 'Restored record count must exactly match original count');
 
@@ -137,8 +141,84 @@ async function runDisasterRecoveryDrill() {
   }
   assert.strictEqual(caughtTruncation, true, 'Truncated package MUST be rejected');
 
+  // 8. Test Foreign-Key Constraint Validation & Orphaned Child Rollback
+  console.log('\n[TEST 8] Testing strict foreign-key integrity validation and rejection of orphaned child rows...');
+  const corruptedFkData = JSON.parse(JSON.stringify(sourceData));
+  corruptedFkData.business_corrections.push({
+    id: 'corrupt-corr-999',
+    business_id: 'non-existent-parent-biz',
+    details: 'Orphaned correction row'
+  });
+
+  const corruptedPkg = await createEncryptedBackupPackage(corruptedFkData, testKey);
+  const decryptedCorrupt = await verifyAndDecryptBackupPackage(corruptedPkg.encryptedBuffer, corruptedPkg.manifest, testKey);
+
+  let caughtFkViolation = false;
+  try {
+    await restoreDatabaseFromSnapshot(decryptedCorrupt.snapshot, mockDbRunner);
+  } catch (err) {
+    caughtFkViolation = true;
+    assert.match(err.message, /Foreign key integrity check failed.*non-existent-parent-biz/i);
+    console.log(`[PASS] Correctly rejected orphaned child record: ${err.message}`);
+  }
+  assert.strictEqual(caughtFkViolation, true, 'Snapshot with foreign key violations MUST be rejected');
+
+  // 9. Test Post-Restore Security Hygiene (Token version bump, OTP consumption, rate limit flush)
+  console.log('\n[TEST 9] Testing post-restore authentication recovery policy & security hygiene...');
+  const hygieneTarget = {};
+  const hygieneRunner = {
+    async insertMany(tbl, rows) {
+      hygieneTarget[tbl] = [...rows];
+    }
+  };
+
+  const hygieneResult = await restoreDatabaseFromSnapshot(decryptResult.snapshot, hygieneRunner, { applySecurityHygiene: true });
+  assert.strictEqual(hygieneResult.securityHygieneApplied, true);
+
+  // Check admin users token_version incremented
+  const restoredAdminUsers = hygieneTarget.admin_users;
+  assert.ok(restoredAdminUsers && restoredAdminUsers.length > 0);
+  assert.strictEqual(restoredAdminUsers[0].token_version, 2, 'token_version must be incremented by 1');
+
+  // Check OTPs consumed
+  const restoredOtps = hygieneTarget.admin_email_otps;
+  assert.ok(restoredOtps && restoredOtps.length > 0);
+  assert.strictEqual(restoredOtps[0].consumed, 1, 'admin_email_otps must be marked consumed');
+
+  // Check rate limits cleared
+  const restoredRateLimits = hygieneTarget.admin_rate_limits;
+  assert.deepStrictEqual(restoredRateLimits, [], 'admin_rate_limits must be flushed clean');
+
+  // Check revoked tokens preserved
+  const restoredRevoked = hygieneTarget.admin_revoked_tokens;
+  assert.ok(restoredRevoked && restoredRevoked.length > 0);
+  assert.strictEqual(restoredRevoked[0].jti, 'revoked_jwt_jti_demo_01', 'admin_revoked_tokens must be preserved');
+  console.log('[PASS] Post-restore security hygiene verified! All pre-disaster sessions invalidated, OTPs consumed, revoked tokens preserved.');
+
+  // 10. Test Media Archive Creation and AES-256-GCM Decryption Drill
+  console.log('\n[TEST 10] Testing media & asset archive creation with asset count matching and encryption drill...');
+  const sanityMedia = await exportSanityMediaAndAssets({ allowFixtures: true, projectId: 'mock' });
+  assert.strictEqual(sanityMedia.downloadedAssetCount, 1);
+  assert.strictEqual(sanityMedia.expectedAssetCount, 1);
+
+  const mediaPackage = await createEncryptedMediaPackage({
+    sanity: sanityMedia,
+    voicemails: [{ id: 'vm-01', sizeBytes: 500 }],
+    documents: [{ id: 'doc-01', sizeBytes: 1024 }],
+    cloudinary: { galleryEntries: [{ id: 'gp-01' }] }
+  }, testKey);
+
+  assert.ok(mediaPackage.backupId.startsWith('dcvc-media-backup-'));
+  assert.strictEqual(mediaPackage.manifest.backupType, 'media_and_assets');
+  assert.strictEqual(mediaPackage.manifest.mediaSummary.sanityAssetCount, 1);
+
+  const decryptedMedia = decryptPayload(mediaPackage.encryptedBuffer, testKey);
+  const parsedMedia = JSON.parse(decryptedMedia.toString('utf8'));
+  assert.strictEqual(parsedMedia.sanity.downloadedAssetCount, 1);
+  console.log(`[PASS] Media package verified! ${mediaPackage.backupId} decrypted with 100% fidelity.`);
+
   console.log('\n================================================================');
-  console.log('ALL DISASTER RECOVERY ISOLATION TESTS PASSED (7/7)');
+  console.log('ALL DISASTER RECOVERY ISOLATION TESTS PASSED (10/10)');
   console.log('Zero production impact confirmed. Non-production safety verified.');
   console.log('================================================================');
 }
