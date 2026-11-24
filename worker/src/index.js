@@ -1565,6 +1565,9 @@ export default {
             }
           });
         } catch (err) {
+          if (err?.message && err.message.includes('no such table')) {
+            return errorResponse('Gallery image not found.', 404, null, cors);
+          }
           return errorResponse(`Failed to stream gallery image: ${err.message}`, 500, null, cors);
         }
       }
