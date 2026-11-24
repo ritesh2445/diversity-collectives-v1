@@ -478,9 +478,6 @@ export default function Header() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="mobile-luna-title font-bold text-slate-900 group-hover:text-[#5A1E65] text-sm block">Ask Luna</span>
-                      <span className="mobile-luna-badge text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 shrink-0">
-                        Free AI Guide
-                      </span>
                     </div>
                     <span className="mobile-luna-desc text-[11px] text-slate-500 block truncate">Ask about testing, hours, youth circles & resources</span>
                   </div>
