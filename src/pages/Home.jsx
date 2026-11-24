@@ -997,15 +997,19 @@ export default function Home() {
       {/* ====================================================================
           HIGHLY EYE-CATCHING & BEAUTIFUL GIVING STUDIO (Streamlined & Re-optimized)
           ==================================================================== */}
-      <section id="giving" data-block-id="block-giving" style={getSectionStyle('zeffy_giving', 8)} className="py-10 sm:py-14 md:py-16 bg-gradient-to-b from-amber-100/30 via-purple-100/50 to-purple-950/25 border-b border-purple-200/60 relative overflow-hidden scroll-reveal">
+      <section id="giving" data-block-id="block-giving" style={getSectionStyle('zeffy_giving', 8)} className="py-10 sm:py-14 md:py-16 bg-gradient-to-br from-[#FCF5FF] via-[#F6ECFF] to-[#FFF6EB] border-b border-purple-200/70 relative overflow-hidden scroll-reveal">
         
         {/* Ambient Specular Backdrops */}
         <div 
-          className="absolute top-10 left-1/4 w-96 h-96 bg-purple-200/20 rounded-full blur-3xl pointer-events-none" 
+          className="absolute -top-16 left-1/4 w-96 h-96 bg-fuchsia-300/25 rounded-full blur-3xl pointer-events-none" 
           aria-hidden="true" 
         />
         <div 
-          className="absolute bottom-10 right-10 w-80 h-80 bg-amber-100/25 rounded-full blur-3xl pointer-events-none" 
+          className="absolute -bottom-16 right-10 w-80 h-80 bg-amber-200/35 rounded-full blur-3xl pointer-events-none" 
+          aria-hidden="true" 
+        />
+        <div 
+          className="absolute top-1/2 -left-16 w-72 h-72 bg-teal-200/25 rounded-full blur-3xl pointer-events-none" 
           aria-hidden="true" 
         />
 
@@ -1236,138 +1240,155 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Mobile/Tablet Streamlined Giving Studio Card */}
-          <div className="block lg:hidden max-w-3xl mx-auto rounded-3xl bg-white shadow-xl border border-purple-200/90 p-5 sm:p-7 overflow-hidden">
-            <div className="flex flex-col gap-4">
+          {/* Mobile/Tablet Streamlined Giving Studio Card with Edge Lights & Vibrant Accents */}
+          <div className="block lg:hidden max-w-3xl mx-auto p-[1.5px] rounded-3xl bg-gradient-to-br from-fuchsia-400/80 via-amber-300/80 to-indigo-400/80 shadow-[0_18px_45px_-12px_rgba(126,34,206,0.28)] hover:shadow-[0_22px_55px_-10px_rgba(168,85,247,0.38)] transition-all duration-300">
+            <div className="relative overflow-hidden rounded-[calc(1.5rem-1.5px)] bg-gradient-to-br from-white via-purple-50/45 to-amber-50/40 p-5 sm:p-7">
+              {/* Top Edge Light Rim */}
+              <div
+                className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-rose-400 via-amber-300 via-teal-300 to-purple-500"
+                aria-hidden="true"
+              />
+              {/* Subtle Corner Edge Glows */}
+              <div
+                className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-fuchsia-300/20 blur-3xl pointer-events-none"
+                aria-hidden="true"
+              />
+              <div
+                className="absolute -bottom-16 -left-16 w-48 h-48 rounded-full bg-amber-300/20 blur-3xl pointer-events-none"
+                aria-hidden="true"
+              />
 
-              {/* Tier Selection Pills */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-black text-slate-950 uppercase tracking-wider flex items-center gap-1.5">
-                    <Gift className="w-3.5 h-3.5 text-[#5A1E65]" />
-                    <span>Select Amount {donationFreq === 'monthly' ? '(Monthly)' : ''}</span>
-                  </span>
-                  <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60">
-                    100% Tax-Deductible
-                  </span>
-                </div>
+              <div className="relative z-10 flex flex-col gap-4 pt-1">
 
-                <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
-                  {donationTiers.map((tier) => {
-                    const isSelected = selectedDonationTier === tier.amount && !customDonation;
-                    return (
-                      <button
-                        key={tier.amount}
-                        type="button"
-                        onClick={(e) => {
-                          setCustomDonation('');
-                          handleSelectDonationTier(tier.amount, e);
-                        }}
-                        className={`py-2.5 px-2 rounded-xl font-bold transition-all border text-center cursor-pointer flex flex-col items-center justify-center relative ${
-                          isSelected
-                            ? 'bg-[#5A1E65] text-white border-[#5A1E65] shadow-md scale-102 ring-2 ring-purple-300'
-                            : 'bg-slate-50 hover:bg-purple-50 text-slate-800 border-slate-200 hover:border-purple-300'
-                        }`}
-                      >
-                        <span className="text-base sm:text-lg font-black leading-none">${tier.amount}</span>
-                        {tier.amount === 50 && (
-                          <span className={`text-[8px] font-extrabold uppercase mt-0.5 tracking-tight ${isSelected ? 'text-amber-300' : 'text-purple-700'}`}>
-                            Popular
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!customDonation) setCustomDonation('75');
-                    }}
-                    className={`py-2.5 px-2 rounded-xl font-bold transition-all border text-center cursor-pointer flex flex-col items-center justify-center col-span-4 sm:col-span-1 ${
-                      customDonation
-                        ? 'bg-[#5A1E65] text-white border-[#5A1E65] shadow-md ring-2 ring-purple-300'
-                        : 'bg-slate-50 hover:bg-purple-50 text-slate-800 border-slate-200 hover:border-purple-300'
-                    }`}
-                  >
-                    <span className="text-xs sm:text-sm font-black">Custom</span>
-                    <span className={`text-[8px] font-semibold ${customDonation ? 'text-purple-200' : 'text-slate-400'}`}>Any $</span>
-                  </button>
-                </div>
-              </div>
+                {/* Tier Selection Pills */}
+                <div>
+                  <div className="flex items-center justify-between mb-2.5">
+                    <span className="text-[11px] font-black text-slate-950 uppercase tracking-wider flex items-center gap-1.5">
+                      <Gift className="w-3.5 h-3.5 text-fuchsia-700" />
+                      <span>Select Amount {donationFreq === 'monthly' ? '(Monthly)' : ''}</span>
+                    </span>
+                    <span className="text-[10px] text-emerald-800 font-bold bg-gradient-to-r from-emerald-50 to-teal-50 px-2.5 py-0.5 rounded-full border border-emerald-200/80 shadow-2xs">
+                      100% Tax-Deductible
+                    </span>
+                  </div>
 
-              {/* Custom Input Field (shown if Custom selected or filled) */}
-              {customDonation && (
-                <div className="p-3 bg-purple-50/60 rounded-2xl border border-purple-200 animate-fadeIn">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-700 whitespace-nowrap">Custom Amount:</span>
-                    <div className="relative flex-1">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 font-black text-slate-400 text-sm">$</span>
-                      <input
-                        type="number"
-                        min="5"
-                        placeholder="Enter gift amount"
-                        value={customDonation}
-                        onChange={(e) => {
-                          setCustomDonation(e.target.value);
-                          if (e.target.value && Number(e.target.value) > 0) {
-                            setSelectedDonationTier(Number(e.target.value));
-                          }
-                        }}
-                        className="w-full pl-7 pr-3 py-1.5 rounded-xl border border-purple-300 bg-white text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-purple-400"
-                      />
-                    </div>
+                  <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
+                    {donationTiers.map((tier) => {
+                      const isSelected = selectedDonationTier === tier.amount && !customDonation;
+                      return (
+                        <button
+                          key={tier.amount}
+                          type="button"
+                          onClick={(e) => {
+                            setCustomDonation('');
+                            handleSelectDonationTier(tier.amount, e);
+                          }}
+                          className={`py-2.5 px-2 rounded-xl font-bold transition-all border text-center cursor-pointer flex flex-col items-center justify-center relative ${
+                            isSelected
+                              ? 'bg-gradient-to-br from-[#5A1E65] via-purple-700 to-fuchsia-600 text-white border-fuchsia-400/70 shadow-lg shadow-purple-500/25 scale-102 ring-2 ring-fuchsia-300/60'
+                              : 'bg-white/90 hover:bg-gradient-to-br hover:from-purple-50 hover:to-fuchsia-50 text-slate-800 border-purple-200/70 hover:border-purple-400 shadow-2xs'
+                          }`}
+                        >
+                          <span className="text-base sm:text-lg font-black leading-none">${tier.amount}</span>
+                          {tier.amount === 50 && (
+                            <span className={`text-[8px] font-extrabold uppercase mt-0.5 tracking-tight ${isSelected ? 'text-amber-300' : 'text-fuchsia-700'}`}>
+                              Popular
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!customDonation) setCustomDonation('75');
+                      }}
+                      className={`py-2.5 px-2 rounded-xl font-bold transition-all border text-center cursor-pointer flex flex-col items-center justify-center col-span-4 sm:col-span-1 ${
+                        customDonation
+                          ? 'bg-gradient-to-br from-[#5A1E65] via-purple-700 to-fuchsia-600 text-white border-fuchsia-400/70 shadow-lg shadow-purple-500/25 ring-2 ring-fuchsia-300/60'
+                          : 'bg-white/90 hover:bg-gradient-to-br hover:from-purple-50 hover:to-amber-50 text-slate-800 border-purple-200/70 hover:border-purple-400 shadow-2xs'
+                      }`}
+                    >
+                      <span className="text-xs sm:text-sm font-black">Custom</span>
+                      <span className={`text-[8px] font-semibold ${customDonation ? 'text-purple-100' : 'text-slate-500'}`}>Any $</span>
+                    </button>
                   </div>
                 </div>
-              )}
 
-              {/* Dynamic Impact Callout Banner */}
-              <div className="p-3 sm:p-3.5 rounded-2xl bg-gradient-to-r from-purple-50 via-fuchsia-50/40 to-amber-50/50 border border-purple-200/90 flex items-start gap-2.5 shadow-2xs">
-                <span className="w-6 h-6 rounded-lg bg-[#5A1E65] text-amber-300 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
-                  <Star className="w-3.5 h-3.5 fill-amber-300" />
-                </span>
-                <div className="min-w-0">
-                  <span className="text-xs font-black text-slate-900 block leading-tight">
-                    {customDonation ? `Custom Gift of $${customDonation}` : activeTierObj.title}
-                    {donationFreq === 'monthly' ? ' (GEM Membership)' : ''}
+                {/* Custom Input Field (shown if Custom selected or filled) */}
+                {customDonation && (
+                  <div className="p-3 bg-purple-50/70 rounded-2xl border border-purple-200/90 animate-fadeIn">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-slate-700 whitespace-nowrap">Custom Amount:</span>
+                      <div className="relative flex-1">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 font-black text-slate-400 text-sm">$</span>
+                        <input
+                          type="number"
+                          min="5"
+                          placeholder="Enter gift amount"
+                          value={customDonation}
+                          onChange={(e) => {
+                            setCustomDonation(e.target.value);
+                            if (e.target.value && Number(e.target.value) > 0) {
+                              setSelectedDonationTier(Number(e.target.value));
+                            }
+                          }}
+                          className="w-full pl-7 pr-3 py-1.5 rounded-xl border border-purple-300 bg-white text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-purple-400"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Dynamic Impact Callout Banner */}
+                <div className="p-3 sm:p-4 rounded-2xl bg-gradient-to-r from-purple-100/80 via-fuchsia-50/80 to-amber-100/70 border border-purple-300/70 flex items-start gap-3 shadow-xs">
+                  <span className="w-7 h-7 rounded-xl bg-gradient-to-br from-[#5A1E65] to-fuchsia-600 text-amber-300 flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+                    <Star className="w-3.5 h-3.5 fill-amber-300" />
                   </span>
-                  <p className="text-[11px] sm:text-xs text-slate-600 leading-snug mt-0.5">
-                    {customDonation
-                      ? `Your $${customDonation} gift provides flexible barrier-free support, hot meals for youth, and free health testing navigation across Ventura County.`
-                      : activeTierObj.impact}
-                  </p>
+                  <div className="min-w-0">
+                    <span className="text-xs font-black text-slate-950 block leading-tight">
+                      {customDonation ? `Custom Gift of $${customDonation}` : activeTierObj.title}
+                      {donationFreq === 'monthly' ? ' (GEM Membership)' : ''}
+                    </span>
+                    <p className="text-[11px] sm:text-xs text-slate-700 leading-snug mt-0.5 font-medium">
+                      {customDonation
+                        ? `Your $${customDonation} gift provides flexible barrier-free support, hot meals for youth, and free health testing navigation across Ventura County.`
+                        : activeTierObj.impact}
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              {/* Prominent Action Button with Confetti */}
-              <div className="flex flex-col gap-2 pt-1">
-                <Link
-                  to={`/donate?amount=${customDonation || selectedDonationTier}&frequency=${donationFreq === 'monthly' ? 'monthly' : 'once'}`}
-                  onClick={triggerMilestoneConfetti}
-                  className="w-full py-3 sm:py-3.5 px-4 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-400 text-slate-950 font-black text-xs sm:text-sm tracking-wide flex items-center justify-center gap-2 shadow-[0_8px_25px_-5px_rgba(245,158,11,0.45)] hover:shadow-[0_12px_30px_-5px_rgba(245,158,11,0.6)] hover:scale-101 transition-all cursor-pointer text-center"
-                >
-                  <Heart className="w-4 h-4 fill-current text-rose-700 animate-bounce shrink-0" />
-                  <span className="truncate max-w-[80%] text-center">
-                    Complete ${customDonation ? customDonation : selectedDonationTier} Gift Online {donationFreq === 'monthly' ? '/ Month' : ''}
-                  </span>
-                  <ArrowRight className="w-4 h-4 shrink-0" />
-                </Link>
+                {/* Prominent Action Button with Confetti */}
+                <div className="flex flex-col gap-2 pt-1">
+                  <Link
+                    to={`/donate?amount=${customDonation || selectedDonationTier}&frequency=${donationFreq === 'monthly' ? 'monthly' : 'once'}`}
+                    onClick={triggerMilestoneConfetti}
+                    className="w-full py-3 sm:py-3.5 px-4 rounded-2xl bg-gradient-to-r from-amber-300 via-amber-400 to-orange-400 hover:from-amber-200 hover:to-orange-300 !text-slate-950 font-black text-xs sm:text-sm tracking-wide flex items-center justify-center gap-2 shadow-[0_10px_28px_-5px_rgba(245,158,11,0.5)] hover:shadow-[0_14px_34px_-5px_rgba(245,158,11,0.65)] hover:-translate-y-0.5 transition-all cursor-pointer text-center"
+                  >
+                    <Heart className="w-4 h-4 fill-current text-rose-700 animate-bounce shrink-0" />
+                    <span className="truncate max-w-[80%] text-center">
+                      Complete ${customDonation ? customDonation : selectedDonationTier} Gift Online {donationFreq === 'monthly' ? '/ Month' : ''}
+                    </span>
+                    <ArrowRight className="w-4 h-4 shrink-0" />
+                  </Link>
 
-                {/* Trust and Non-profit Footnote in 1 line */}
-                <div className="flex items-center justify-center gap-2 text-[10px] sm:text-[11px] text-slate-500 flex-wrap text-center pt-1">
-                  <span className="flex items-center gap-1 font-semibold text-slate-700">
-                    <ShieldCheck className="w-3.5 h-3.5 text-[#5A1E65]" />
-                    <span>Official 501(c)(3)</span>
-                  </span>
-                  <span>·</span>
-                  <span>Tax ID (EIN): <strong className="text-slate-800">{orgInfo.ein}</strong></span>
-                  <span>·</span>
-                  <span className="flex items-center gap-1">
-                    <Lock className="w-3 h-3 text-slate-400" />
-                    <span>Bank-grade 256-bit encrypted donor portal</span>
-                  </span>
+                  {/* Trust and Non-profit Footnote in 1 line */}
+                  <div className="flex items-center justify-center gap-2 text-[10px] sm:text-[11px] text-slate-600 flex-wrap text-center pt-1">
+                    <span className="flex items-center gap-1 font-semibold text-slate-800">
+                      <ShieldCheck className="w-3.5 h-3.5 text-fuchsia-700" />
+                      <span>Official 501(c)(3)</span>
+                    </span>
+                    <span>·</span>
+                    <span>Tax ID (EIN): <strong className="text-slate-900">{orgInfo.ein}</strong></span>
+                    <span>·</span>
+                    <span className="flex items-center gap-1">
+                      <Lock className="w-3 h-3 text-slate-500" />
+                      <span>Bank-grade 256-bit encrypted donor portal</span>
+                    </span>
+                  </div>
                 </div>
-              </div>
 
+              </div>
             </div>
           </div>
 
