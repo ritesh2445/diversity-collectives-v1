@@ -2,6 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { cmsStore, INITIAL_CMS_DATA } from '../src/services/cmsStore.js';
 import { newsArticles } from '../src/data/dcvcData.js';
+import { readSiteState } from '../worker/src/siteStateService.js';
 
 describe('News Admin Live Sync & Multi-Article Accuracy', () => {
   it('1. assigns unique, distinct identifiers to all initial news articles', () => {
@@ -79,5 +80,36 @@ describe('News Admin Live Sync & Multi-Article Accuracy', () => {
     const storeAfterDelete = cmsStore.getNews();
     const found = storeAfterDelete.find(n => n.id === created.id || n.slug === created.slug);
     assert.equal(found, undefined, 'Deleted article must no longer exist in store');
+  });
+
+  it('5. strips fake seed news articles from Turso site_state while preserving real Admin-created articles', async () => {
+    const fakePlusRealState = {
+      cmsData: {
+        news: [
+          { id: 'ventura-county-pride-2026-announcement', slug: 'ventura-county-pride-2026-announcement', title: 'Fake Seed 1' },
+          { id: 'your-rights-in-california', slug: 'your-rights-in-california', title: 'Fake Seed 2' },
+          { id: 'real-dcvc-update-2026', slug: 'real-dcvc-update-2026', title: 'Real Admin Post' }
+        ],
+        deletedNews: []
+      }
+    };
+    let persistedJson = null;
+    const mockDb = {
+      execute: async ({ sql, args }) => {
+        if (sql.includes('SELECT payload_json')) {
+          return { rows: [{ payload_json: JSON.stringify(fakePlusRealState), version: 5, updated_by: 'admin', updated_at: '2026-11-25' }] };
+        }
+        if (sql.includes('UPDATE site_state')) {
+          persistedJson = JSON.parse(args[0]);
+        }
+        return { rows: [] };
+      }
+    };
+
+    const result = await readSiteState(mockDb);
+    assert.equal(result.state.cmsData.news.length, 1);
+    assert.equal(result.state.cmsData.news[0].slug, 'real-dcvc-update-2026');
+    assert.ok(result.state.cmsData.deletedNews.includes('ventura-county-pride-2026-announcement'));
+    assert.ok(persistedJson, 'Purged news state must be persisted back to Turso');
   });
 });

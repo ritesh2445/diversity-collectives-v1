@@ -37,6 +37,24 @@ const FAKE_SPONSORSHIP_DOC_IDS = new Set([
 ]);
 
 /**
+ * Fake placeholder news article slugs/IDs that were seeded during development.
+ * Strip these from live state so deleted fake/seed articles can never return.
+ */
+const FAKE_NEWS_IDS = new Set([
+  'ventura-county-pride-2026-announcement',
+  'diversity-shines-mobile-testing-expansion',
+  'youth-voices-reflections-on-affirming-spaces',
+  'your-rights-in-california',
+  'transgender-day-of-remembrance-tdor',
+  'have-a-sexual-health-emergency',
+  'cdc-declares-mpox-a-public-health-emergency',
+  'gsa-leadership-summit',
+  'pride-prom-2026',
+  'botanical-gardens-2026',
+  'surviving-the-holidays-tips-and-resources'
+]);
+
+/**
  * Fix stale CMS text that was saved with incorrect wording.
  * Replaces "Gatherings" with "Events" in any page block CTA text.
  */
@@ -82,6 +100,34 @@ function purgeFakeSponsorshipDocs(state) {
     return !FAKE_SPONSORSHIP_DOC_IDS.has(doc.id);
   });
   return state.cmsData.sponsorshipDocuments.length < before;
+}
+
+/**
+ * Strip fake seed news articles from a parsed state object and record them in deletedNews.
+ * Returns true when at least one fake article was removed.
+ */
+function purgeFakeNews(state) {
+  if (!state || !state.cmsData || !Array.isArray(state.cmsData.news)) return false;
+  const before = state.cmsData.news.length;
+  const purgedIds = [];
+  state.cmsData.news = state.cmsData.news.filter(art => {
+    if (!art || typeof art !== 'object') return false;
+    const id = String(art.id || '').trim().toLowerCase();
+    const slug = String(art.slug || '').trim().toLowerCase();
+    if (FAKE_NEWS_IDS.has(id) || FAKE_NEWS_IDS.has(slug)) {
+      if (id) purgedIds.push(id);
+      if (slug) purgedIds.push(slug);
+      return false;
+    }
+    return true;
+  });
+  if (purgedIds.length > 0) {
+    state.cmsData.deletedNews = Array.from(new Set([
+      ...(Array.isArray(state.cmsData.deletedNews) ? state.cmsData.deletedNews : []),
+      ...purgedIds
+    ]));
+  }
+  return state.cmsData.news.length < before;
 }
 
 const MAX_STATE_BYTES = 5 * 1024 * 1024; // 5 MB cap on serialized live state
@@ -421,9 +467,11 @@ export async function readSiteState(db) {
     const hadFakes = purgeFakePodcasts(parsed);
     // Strip any fake seed sponsorship documents that may have survived previous deploys
     const hadFakeSponsors = purgeFakeSponsorshipDocs(parsed);
+    // Strip any fake seed news articles that may have survived previous deploys
+    const hadFakeNews = purgeFakeNews(parsed);
     // Fix stale "Gatherings" CTA text saved before the rename
     const hadStaleText = fixStaleCtaText(parsed);
-    if (hadFakes || hadFakeSponsors || hadStaleText) {
+    if (hadFakes || hadFakeSponsors || hadFakeNews || hadStaleText) {
       // Persist the cleansed state back so the row is clean for future reads
       try {
         await db.execute({
@@ -458,6 +506,8 @@ export async function writeSiteStatePatch(db, patch, actorEmail = 'admin@diversi
   purgeFakePodcasts(nextState);
   // Always strip fake seed sponsorship documents from whatever is about to be persisted
   purgeFakeSponsorshipDocs(nextState);
+  // Always strip fake seed news articles from whatever is about to be persisted
+  purgeFakeNews(nextState);
   // Fix stale "Gatherings" CTA text
   fixStaleCtaText(nextState);
   const nextVersion = Number(current.version || 0) + 1;
