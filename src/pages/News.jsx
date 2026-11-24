@@ -21,12 +21,14 @@ export default function News() {
     canonicalPath: '/news'
   });
 
+  const PAGE_SIZE = 20;
   const [articles, setArticles] = useState(() => cmsStore.getNews());
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalArticles, setTotalArticles] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
     const unsubscribe = cmsStore.subscribe((data) => {
@@ -41,10 +43,11 @@ export default function News() {
 
   useEffect(() => {
     let active = true;
+    setLoadingMore(true);
     const apiBase = import.meta.env?.VITE_API_URL || import.meta.env?.VITE_API_BASE_URL || '/api';
     const params = new URLSearchParams({
       page: String(page),
-      limit: '12',
+      limit: String(PAGE_SIZE),
       ...(selectedCategory !== 'All' ? { category: selectedCategory } : {}),
       ...(searchQuery.trim() ? { search: searchQuery.trim() } : {})
     });
@@ -53,19 +56,27 @@ export default function News() {
       .then((data) => {
         if (!active || !data?.success) return;
         if (Array.isArray(data.articles) && (data.total > 0 || page > 1)) {
-          setArticles(data.articles);
+          setArticles((prev) => {
+            if (page === 1) return data.articles;
+            const seen = new Set(prev.map((a) => a.id || a.slug));
+            const next = data.articles.filter((a) => !seen.has(a.id || a.slug));
+            return [...prev, ...next];
+          });
           setTotalPages(Number(data.totalPages || 1));
           setTotalArticles(Number(data.total || data.articles.length));
         }
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => {
+        if (active) setLoadingMore(false);
+      });
     return () => { active = false; };
   }, [page, searchQuery, selectedCategory]);
 
   const categories = ['All', 'Community & Culture', 'Health & Wellness', 'Youth Empowerment', 'Advocacy & Business'];
 
   const filteredArticles = useMemo(() => {
-    return articles.filter((art) => {
+    const list = articles.filter((art) => {
       if (art.status === 'draft' || art.isDraft === true) return false;
       const matchesSearch = 
         (art.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -74,7 +85,17 @@ export default function News() {
       const matchesCat = selectedCategory === 'All' || art.category === selectedCategory;
       return matchesSearch && matchesCat;
     });
-  }, [articles, searchQuery, selectedCategory]);
+    // Unless user is searching or filtering, cap rendered batch to page * 20
+    if (totalArticles === 0 && !searchQuery.trim() && selectedCategory === 'All') {
+      return list.slice(0, page * PAGE_SIZE);
+    }
+    return list;
+  }, [articles, searchQuery, selectedCategory, page, totalArticles]);
+
+  const hasMoreArticles =
+    totalArticles > 0
+      ? page < totalPages
+      : !searchQuery.trim() && selectedCategory === 'All' && articles.filter((a) => a.status !== 'draft' && a.isDraft !== true).length > page * PAGE_SIZE;
 
   const featured = useMemo(() => {
     return articles.find(art => art.status !== 'draft' && art.isDraft !== true) || null;
@@ -244,27 +265,22 @@ export default function News() {
           </div>
         )}
 
-        {totalPages > 1 && (
-          <div className="mt-10 flex items-center justify-center gap-3">
+        {hasMoreArticles && (
+          <div className="mt-10 flex flex-col items-center justify-center gap-2">
             <button
               type="button"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-700 hover:bg-purple-50 disabled:opacity-40 cursor-pointer"
+              disabled={loadingMore}
+              onClick={() => setPage((p) => p + 1)}
+              className="btn-primary py-3 px-8 text-xs sm:text-sm font-extrabold inline-flex items-center gap-2 shadow-md cursor-pointer disabled:opacity-50"
             >
-              ← Previous
+              <span>{loadingMore ? 'Loading...' : 'View More'}</span>
+              <ArrowRight className="w-4 h-4" />
             </button>
-            <span className="text-xs font-bold text-slate-600">
-              Page {page} of {totalPages} ({totalArticles.toLocaleString()} articles)
-            </span>
-            <button
-              type="button"
-              disabled={page >= totalPages}
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-700 hover:bg-purple-50 disabled:opacity-40 cursor-pointer"
-            >
-              Next →
-            </button>
+            {totalArticles > 0 && (
+              <span className="text-[11px] font-semibold text-slate-500">
+                Showing {filteredArticles.length.toLocaleString()} of {totalArticles.toLocaleString()} articles
+              </span>
+            )}
           </div>
         )}
       </section>
