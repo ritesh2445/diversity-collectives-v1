@@ -267,29 +267,29 @@ export default function Programs() {
                   </div>
 
                   {/* Card Actions (Always Uniform Height Grid Pinned at Bottom) */}
-                  <div className="p-6 pt-0 mt-auto grid grid-cols-2 gap-2.5 w-full">
+                  <div className="px-4 sm:px-6 pb-5 sm:pb-6 pt-0 mt-auto grid grid-cols-2 gap-2 sm:gap-2.5 w-full">
                     <Link
                       to={`/programs/${prog.slug}`}
-                      className="btn-primary py-2.5 px-3 text-xs font-bold shadow-md hover:shadow-lg inline-flex items-center justify-center gap-1.5 text-center truncate"
+                      className="btn-primary !py-2.5 !px-2.5 sm:!px-3.5 !text-[11px] sm:!text-xs font-bold shadow-md hover:shadow-lg inline-flex items-center justify-center !gap-1 sm:!gap-1.5 text-center whitespace-nowrap min-w-0 w-full"
                     >
-                      <span className="truncate">Explore</span>
+                      <span>Explore</span>
                       <ArrowRight className="w-3.5 h-3.5 shrink-0" />
                     </Link>
                     {prog.slug === 'diversity-shines' ? (
                       <Link
                         to="/appointments"
-                        className="btn-secondary py-2.5 px-3 text-xs font-bold inline-flex items-center justify-center gap-1.5 text-center truncate"
+                        className="btn-secondary !py-2.5 !px-2.5 sm:!px-3.5 !text-[11px] sm:!text-xs font-bold inline-flex items-center justify-center !gap-1 sm:!gap-1.5 text-center whitespace-nowrap min-w-0 w-full"
                       >
                         <Heart className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-                        <span className="truncate">Screening</span>
+                        <span>Screening</span>
                       </Link>
                     ) : (
                       <Link
                         to="/contact"
-                        className="btn-secondary py-2.5 px-3 text-xs font-bold inline-flex items-center justify-center gap-1.5 text-center truncate"
+                        className="btn-secondary !py-2.5 !px-2.5 sm:!px-3.5 !text-[11px] sm:!text-xs font-bold inline-flex items-center justify-center !gap-1 sm:!gap-1.5 text-center whitespace-nowrap min-w-0 w-full"
                       >
                         <Heart className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-                        <span className="truncate">Connect</span>
+                        <span>Connect</span>
                       </Link>
                     )}
                   </div>
