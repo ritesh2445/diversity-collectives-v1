@@ -610,9 +610,10 @@ export default function Directory() {
               const cardContent = (
                 <CardSpotlight
                   key={biz.id}
-                  className={`p-6 sm:p-7 rounded-[23px] transition-all flex flex-col justify-between gap-5 group h-full w-full relative overflow-hidden ${
+                  className={`p-6 sm:p-7 rounded-[23px] transition-all flex flex-col justify-between gap-4 group h-full w-full relative overflow-hidden ${
                     isApproved ? '' : 'border-2'
                   }`}
+                  contentClassName="h-full w-full flex flex-col justify-between gap-4"
                   style={{
                     background: `linear-gradient(155deg, ${grad.from} 0%, ${grad.via} 48%, ${grad.to} 100%)`,
                     borderColor: isApproved ? 'transparent' : (grad.border || '#E2E8F0'),
@@ -668,12 +669,12 @@ export default function Directory() {
                       </div>
                     </div>
 
-                    <div>
+                    <div className="flex flex-col flex-1">
                       {/* Category, Price & City Bar */}
-                      <div className="flex items-center justify-between text-xs font-bold mb-1.5">
-                        <div className="flex items-center gap-1.5">
+                      <div className="flex items-center justify-between gap-2 text-xs font-bold mb-1.5 h-6">
+                        <div className="flex items-center gap-1.5 min-w-0">
                           <span
-                            className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider shadow-2xs"
+                            className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider shadow-2xs truncate"
                             style={{
                               backgroundColor: `${grad.accent}14`,
                               color: grad.accent,
@@ -682,21 +683,23 @@ export default function Directory() {
                           >
                             {biz.category}
                           </span>
-                          <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-white text-slate-700 border border-slate-200 shadow-2xs">
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-white text-slate-700 border border-slate-200 shadow-2xs shrink-0">
                             {stats.price}
                           </span>
                         </div>
-                        <span className="text-slate-600 font-bold">{biz.city}, CA</span>
+                        <span className="text-slate-600 font-bold whitespace-nowrap shrink-0">{biz.city}, CA</span>
                       </div>
 
-                      <h3 className="font-display text-xl sm:text-2xl font-black text-slate-950 tracking-tight group-hover:text-[#5A1E65] transition-colors leading-snug">
-                        <Link to={`/directory/${biz.slug}`}>
-                          {biz.name}
-                        </Link>
-                      </h3>
+                      <div className="h-[3.5rem] sm:h-[4rem] flex items-center">
+                        <h3 className="font-display text-lg sm:text-xl font-black text-slate-950 tracking-tight group-hover:text-[#5A1E65] transition-colors leading-snug line-clamp-2">
+                          <Link to={`/directory/${biz.slug}`}>
+                            {biz.name}
+                          </Link>
+                        </h3>
+                      </div>
 
                       {/* Yelp-Style Star Rating & Hype Action Bar */}
-                      <div className="flex items-center justify-between gap-2 mt-2 pt-1 border-t border-slate-200/50">
+                      <div className="flex items-center justify-between gap-2 mt-2 pt-1.5 border-t border-slate-200/50">
                         {/* Rating Pill */}
                         <button
                           type="button"
@@ -728,8 +731,8 @@ export default function Directory() {
                       </div>
 
                       {/* Real-time Open / Closed Status Badge */}
-                      <div className="flex items-center gap-2 mt-2 text-[11px]">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-bold ${
+                      <div className="flex items-center gap-2 mt-2 text-[11px] h-6 overflow-hidden">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-bold shrink-0 ${
                           openStatus.isOpen 
                             ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' 
                             : 'bg-rose-50 text-rose-800 border border-rose-200'
@@ -737,68 +740,64 @@ export default function Directory() {
                           <span className={`h-1.5 w-1.5 rounded-full ${openStatus.isOpen ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
                           <span>{openStatus.statusText}</span>
                         </span>
-                        <span className="text-slate-500 text-[10.5px]">
+                        <span className="text-slate-500 text-[10.5px] truncate">
                           {openStatus.detailText}
                         </span>
                       </div>
 
-                      {/* Owner / Launch Details */}
-                      {(biz.ownerName || biz.owner || biz.owner_name || biz.dateLaunched) && (
-                        <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500 font-medium mt-2">
-                          {(biz.ownerName || biz.owner || biz.owner_name) && (
-                            <span className="inline-flex items-center gap-1 text-slate-700 font-bold">
-                              <User className="w-3 h-3 text-[#5A1E65]" />
-                              <span>{biz.ownerName || biz.owner || biz.owner_name}</span>
-                            </span>
-                          )}
-                          {biz.dateLaunched && (
-                            <span className="inline-flex items-center gap-1 text-slate-500">
-                              <Calendar className="w-3 h-3 text-amber-600" />
-                              <span>Launched {biz.dateLaunched}</span>
-                            </span>
-                          )}
-                        </div>
-                      )}
+                      {/* Owner / Launch Details (uniform height slot) */}
+                      <div className="flex items-center gap-2 text-[11px] text-slate-500 font-medium mt-2 h-5 overflow-hidden">
+                        {(biz.ownerName || biz.owner || biz.owner_name) && (
+                          <span className="inline-flex items-center gap-1 text-slate-700 font-bold truncate">
+                            <User className="w-3 h-3 text-[#5A1E65] shrink-0" />
+                            <span className="truncate">{biz.ownerName || biz.owner || biz.owner_name}</span>
+                          </span>
+                        )}
+                        {biz.dateLaunched && (
+                          <span className="inline-flex items-center gap-1 text-slate-500 shrink-0">
+                            <Calendar className="w-3 h-3 text-amber-600" />
+                            <span>Launched {biz.dateLaunched}</span>
+                          </span>
+                        )}
+                      </div>
 
-                      {/* Description in refined card container */}
-                      <div className="mt-2.5 p-3.5 rounded-2xl bg-white/90 border border-slate-200/80 shadow-2xs">
+                      {/* Description in uniform-height refined card container */}
+                      <div className="mt-2.5 p-3.5 rounded-2xl bg-white/90 border border-slate-200/80 shadow-2xs h-[4.85rem] flex items-center overflow-hidden">
                         <p className="text-xs text-slate-700 leading-relaxed font-serif italic line-clamp-3">
                           &ldquo;{biz.description}&rdquo;
                         </p>
                       </div>
                     </div>
 
-                    {/* Tags */}
-                    {Array.isArray(biz.tags) && biz.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 pt-1">
-                        {biz.tags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="px-2.5 py-0.5 rounded-lg text-[10px] font-bold text-slate-700 bg-white/90 border border-slate-200/80 shadow-2xs"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
+                    {/* Tags (fixed single-row slot so tags never stretch cards unevenly) */}
+                    <div className="flex flex-nowrap items-center gap-1.5 pt-1 h-7 overflow-hidden">
+                      {(Array.isArray(biz.tags) ? biz.tags.slice(0, 3) : []).map((tag) => (
+                        <span
+                          key={tag}
+                          className="px-2.5 py-0.5 rounded-lg text-[10px] font-bold text-slate-700 bg-white/90 border border-slate-200/80 shadow-2xs whitespace-nowrap shrink-0"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
                   </div>
 
                   {/* Bottom Actions */}
-                  <div className="pt-4 border-t border-slate-200/80 flex items-center justify-between gap-2 text-xs font-bold mt-auto">
+                  <div className="pt-4 border-t border-slate-200/80 flex items-center justify-between gap-2 text-xs font-bold mt-auto shrink-0">
                     <Link
                       to={`/directory/${biz.slug}`}
-                      className="text-[#5A1E65] hover:underline inline-flex items-center gap-1 font-extrabold"
+                      className="text-[#5A1E65] hover:underline inline-flex items-center gap-1 font-extrabold whitespace-nowrap shrink-0"
                     >
                       <span>View Profile</span>
-                      <ExternalLink className="w-3.5 h-3.5" />
+                      <ExternalLink className="w-3.5 h-3.5 shrink-0" />
                     </Link>
 
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 shrink-0">
                       <a
                         href={directionsUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="p-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs text-slate-700 hover:text-[#5A1E65] transition-colors"
+                        className="p-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs text-slate-700 hover:text-[#5A1E65] transition-colors shrink-0"
                         title="Get Directions on Google Maps"
                       >
                         <Navigation className="w-3.5 h-3.5" />
@@ -814,11 +813,12 @@ export default function Directory() {
                         ) : (
                           <a
                             href={`tel:${biz.phone.replace(/[^0-9]/g, '')}`}
-                            className="text-slate-700 hover:text-slate-950 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs transition-colors"
+                            className="text-slate-700 hover:text-slate-950 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs transition-colors whitespace-nowrap"
                             title={biz.phone}
                           >
-                            <Phone className="w-3.5 h-3.5 text-[#5A1E65]" />
-                            <span className="font-bold">{biz.phone}</span>
+                            <Phone className="w-3.5 h-3.5 text-[#5A1E65] shrink-0" />
+                            <span className="font-bold hidden sm:inline">{biz.phone}</span>
+                            <span className="font-bold sm:hidden">Call</span>
                           </a>
                         )
                       )}
@@ -828,9 +828,9 @@ export default function Directory() {
                           href={biz.website}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-slate-700 hover:text-slate-950 inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs transition-colors font-bold"
+                          className="text-slate-700 hover:text-slate-950 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs transition-colors font-bold whitespace-nowrap"
                         >
-                          <Globe className="w-3.5 h-3.5 text-[#5A1E65]" />
+                          <Globe className="w-3.5 h-3.5 text-[#5A1E65] shrink-0" />
                           <span>Web</span>
                         </a>
                       )}
