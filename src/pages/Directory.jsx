@@ -352,15 +352,15 @@ export default function Directory() {
     <div className="w-full max-w-full overflow-x-clip pt-8 md:pt-14 pb-20 bg-transparent text-slate-800">
       
       {/* Header */}
-      <section className="container-clean pb-14 border-b border-slate-100 relative overflow-hidden">
+      <section className="container-clean pb-8 md:pb-10 border-b border-slate-100 relative overflow-hidden">
         <div 
           className="absolute -top-24 right-10 w-96 h-96 rounded-full bg-purple-200/25 blur-3xl pointer-events-none" 
           aria-hidden="true" 
         />
 
-        {/* Mobile-Friendly Action Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 relative z-10">
-          <div className="max-w-2xl flex flex-col gap-3">
+        {/* Responsive Fluid Header */}
+        <div className="flex flex-col gap-5 relative z-10">
+          <div className="max-w-4xl flex flex-col gap-3">
             <div className="flex flex-wrap items-center gap-2">
               <span className="glass-pill text-xs font-bold text-[#5A1E65] bg-purple-50 border-purple-200/90 shadow-xs">
                 VENTURA COUNTY AFFIRMING NETWORK
@@ -369,16 +369,16 @@ export default function Directory() {
                 100% Verified
               </span>
             </div>
-            <h1 className="font-display text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-slate-950 leading-[1.05]">
-              LGBTQ+ Business <br />
+            <h1 className="font-display text-[clamp(2rem,4.6vw,3.75rem)] font-extrabold tracking-tight text-slate-950 leading-[1.08]">
+              LGBTQ+ Business{' '}
               <span className="font-serif italic font-normal text-[#5A1E65]">Directory.</span>
             </h1>
-            <p className="font-serif italic text-lg sm:text-xl md:text-2xl text-slate-700 leading-relaxed pt-1">
+            <p className="font-serif italic text-[clamp(1rem,1.65vw,1.35rem)] text-slate-700 leading-relaxed">
               Discover verified welcoming spaces, healthcare providers, and local services across all 10 Ventura County cities.
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
             {/* View Mode Toggle: Grid vs Map */}
             <div className="inline-flex items-center gap-1 bg-white p-1 rounded-2xl border border-slate-200 shadow-xs">
               <button
@@ -409,16 +409,16 @@ export default function Directory() {
 
             <Link
               to="/directory/submit"
-              className="btn-primary py-3.5 px-6 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-purple-900/10 hover:shadow-purple-900/20 text-center"
+              className="btn-primary py-3 px-5 rounded-2xl text-xs font-bold inline-flex items-center justify-center gap-2 shadow-lg shadow-purple-900/10 hover:shadow-purple-900/20 text-center whitespace-nowrap"
             >
-              <PlusCircle className="w-4 h-4 text-amber-300" />
+              <PlusCircle className="w-4 h-4 text-amber-300 shrink-0" />
               <span>List Your Business</span>
             </Link>
           </div>
         </div>
 
         {/* Filter Toolbar & Yelp Search Bar */}
-        <div className="mt-8 pt-8 border-t border-slate-100 flex flex-col gap-5">
+        <div className="mt-6 pt-6 border-t border-slate-100 flex flex-col gap-4">
           {/* Main Search Input */}
           <form onSubmit={handleSearchSubmit} className="relative w-full">
             <Search className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
