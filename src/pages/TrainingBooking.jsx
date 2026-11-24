@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -18,15 +18,37 @@ import {
 import confetti from 'canvas-confetti';
 import { useLiveTrainings } from '../hooks/useCmsLive';
 import { submitTrainingBooking } from '../services/api';
+import { DEFAULT_FORM_SCHEMAS } from '../services/siteFeaturesStore';
 import TurnstileWidget from '../components/TurnstileWidget';
 import DcvcApprovedBadge from '../components/DcvcApprovedBadge';
+import DynamicSchemaFields, {
+  useLiveFormSchema,
+  buildInitialValues,
+  toggleCheckboxGroupValue,
+  validateSchemaFields,
+  formatCustomFieldsSummary
+} from '../components/DynamicSchemaFields';
 import { usePageMeta } from '../utils/seo';
+
+const STANDARD_TRAINING_FIELDS = [
+  'organizationName',
+  'contactName',
+  'email',
+  'phone',
+  'isSeekingDcvcApprovedStatus',
+  'courseSlug',
+  'estimatedAttendees',
+  'preferredFormat',
+  'requestedDate',
+  'notes'
+];
 
 export default function TrainingBooking() {
   const { slug } = useParams();
   const [searchParams] = useSearchParams();
   const trainingCourses = useLiveTrainings();
   const selectedCourse = slug ? trainingCourses.find(c => c.slug === slug) : null;
+  const schema = useLiveFormSchema('training');
 
   usePageMeta({
     title: 'Book P.R.I.D.E. Educational Training',
@@ -56,10 +78,10 @@ export default function TrainingBooking() {
 
   const mappedAttendeeRange = (() => {
     if (!paramSize) return '';
-    if (paramSize === '1-15') return 'Under 15';
-    if (paramSize === '16-50') return '15-30';
-    if (paramSize === '51-200') return '30-60';
-    if (paramSize === '201+') return '100+';
+    if (paramSize === '1-15') return 'Under 15 Participants';
+    if (paramSize === '16-50') return '15 – 30 Participants';
+    if (paramSize === '51-200') return '30 – 60 Participants';
+    if (paramSize === '201+') return '100+ Participants (Assembly or Conference)';
     return '';
   })();
 
@@ -67,23 +89,49 @@ export default function TrainingBooking() {
     slug === 'dcvc-affirming-business' || 
     Boolean(selectedCourse?.isBusinessAccreditation);
 
-  const [formData, setFormData] = useState({
-    organizationName: '',
-    contactName: '',
-    email: '',
-    phone: '',
-    courseSlug: selectedCourse ? selectedCourse.slug : (trainingCourses[0]?.slug || ''),
-    isSeekingDcvcApprovedStatus: initialAccreditation,
+  // Sync live curriculum options onto courseSlug when Admin hasn't manually overridden its options
+  const effectiveFields = useMemo(() => {
+    const defaultCourseOpts = DEFAULT_FORM_SCHEMAS.training?.fields?.find((f) => f.id === 'courseSlug')?.options || [];
+    return (schema?.fields || []).map((field) => {
+      if (field.id !== 'courseSlug' || field.type !== 'select' || !Array.isArray(trainingCourses) || trainingCourses.length === 0) {
+        return field;
+      }
+      const currentOpts = Array.isArray(field.options) ? field.options : [];
+      const isStillDefault =
+        currentOpts.length === defaultCourseOpts.length &&
+        currentOpts.every((val, i) => val === defaultCourseOpts[i]);
+      if (!isStillDefault) return field;
+      return {
+        ...field,
+        options: trainingCourses.map((c) => ({ value: c.slug, label: `${c.title} (${c.duration})` }))
+      };
+    });
+  }, [schema?.fields, trainingCourses]);
+
+  const [formData, setFormData] = useState(() => ({
+    ...buildInitialValues(effectiveFields, {
+      courseSlug: selectedCourse ? selectedCourse.slug : (trainingCourses[0]?.slug || ''),
+      isSeekingDcvcApprovedStatus: initialAccreditation,
+      estimatedAttendees: mappedAttendeeRange,
+      preferredFormat: 'In-Person at Our Facility'
+    }),
     storefrontAddress: '',
     storefrontCity: 'Ventura',
     businessCategory: mappedCategory,
-    estimatedAttendees: mappedAttendeeRange,
-    preferredFormat: 'In-Person at Our Facility',
-    requestedDate: '',
-    notes: '',
     termsConsent: false,
     turnstileToken: ''
-  });
+  }));
+
+  useEffect(() => {
+    setFormData((prev) => ({
+      ...buildInitialValues(effectiveFields, prev),
+      storefrontAddress: prev.storefrontAddress || '',
+      storefrontCity: prev.storefrontCity || 'Ventura',
+      businessCategory: prev.businessCategory || mappedCategory,
+      termsConsent: Boolean(prev.termsConsent),
+      turnstileToken: prev.turnstileToken || ''
+    }));
+  }, [effectiveFields, mappedCategory]);
 
   useEffect(() => {
     if (selectedCourse?.slug) {
@@ -95,12 +143,24 @@ export default function TrainingBooking() {
     }
   }, [selectedCourse]);
 
+  const handleFieldChange = (id, val) => {
+    setFormData((prev) => ({ ...prev, [id]: val }));
+  };
+
+  const handleOptionToggle = (id, optionLabel) => {
+    setFormData((prev) => ({
+      ...prev,
+      [id]: toggleCheckboxGroupValue(prev[id], optionLabel)
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.estimatedAttendees) {
+    const validationErr = validateSchemaFields(effectiveFields, formData);
+    if (validationErr) {
       setStatus('error');
-      setStatusMsg('Please select your estimated attendee count.');
+      setStatusMsg(validationErr);
       return;
     }
 
@@ -110,10 +170,14 @@ export default function TrainingBooking() {
       return;
     }
 
+    const extraFieldsNote = formatCustomFieldsSummary(effectiveFields, formData, STANDARD_TRAINING_FIELDS);
+    const composedNotes = [formData.notes || '', extraFieldsNote].filter(Boolean).join('\n\n');
+
     setStatus('loading');
-    const matchedCourse = trainingCourses.find(c => c.slug === formData.courseSlug);
+    const matchedCourse = trainingCourses.find(c => c.slug === formData.courseSlug || c.title === formData.courseSlug);
     const res = await submitTrainingBooking({
       ...formData,
+      notes: composedNotes,
       courseTitle: matchedCourse?.title || formData.courseSlug,
     });
 
@@ -158,10 +222,10 @@ export default function TrainingBooking() {
               WORKSHOP BOOKING & INQUIRY
             </span>
             <h1 className="font-display text-3xl sm:text-5xl font-black text-slate-950 tracking-tight">
-              Request a P.R.I.D.E. Workshop
+              {schema?.title || 'Request a P.R.I.D.E. Workshop'}
             </h1>
             <p className="text-sm sm:text-base text-slate-600 font-medium">
-              Equip your organization with actionable LGBTQ+ cultural competency grounded in Ventura County lived experience. Our training leads will review your inquiry and coordinate scheduling.
+              {schema?.description || 'Equip your organization with actionable LGBTQ+ cultural competency grounded in Ventura County lived experience. Our training leads will review your inquiry and coordinate scheduling.'}
             </p>
           </div>
 
@@ -195,244 +259,107 @@ export default function TrainingBooking() {
                 </div>
               )}
 
-              {/* Organization and Contact Info */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div className="space-y-1.5">
-                  <label htmlFor="orgName" className="text-xs font-bold uppercase tracking-wider text-slate-800 block">
-                    Organization or Agency Name <span className="text-rose-600">*</span>
-                  </label>
-                  <input
-                    id="orgName"
-                    type="text"
-                    required
-                    value={formData.organizationName}
-                    onChange={(e) => setFormData({ ...formData, organizationName: e.target.value })}
-                    placeholder="e.g. Ventura County Unified School District"
-                    className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none"
-                  />
-                </div>
+              {/* Live Admin-Synchronized Training Form Fields */}
+              <DynamicSchemaFields
+                formId="training"
+                fields={effectiveFields}
+                values={formData}
+                onChange={handleFieldChange}
+                onToggleOption={handleOptionToggle}
+                renderCustomField={(field) => {
+                  if (field.id !== 'isSeekingDcvcApprovedStatus' || field.type !== 'checkbox') return null;
+                  return (
+                    <div className="sm:col-span-2 p-6 rounded-2xl bg-gradient-to-r from-purple-50 via-white to-emerald-50/50 border-2 border-purple-200/90 space-y-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-3">
+                          <input
+                            id="businessAccreditationToggle"
+                            type="checkbox"
+                            required={Boolean(field.required)}
+                            checked={Boolean(formData.isSeekingDcvcApprovedStatus)}
+                            onChange={(e) => handleFieldChange('isSeekingDcvcApprovedStatus', e.target.checked)}
+                            className="mt-1 h-5 w-5 rounded border-purple-300 text-[#5A1E65] focus:ring-[#5A1E65] cursor-pointer"
+                          />
+                          <div>
+                            <label htmlFor="businessAccreditationToggle" className="font-display font-black text-sm text-slate-950 cursor-pointer block">
+                              {field.label} {field.required && <span className="text-rose-600">*</span>}
+                            </label>
+                            {field.helperText && (
+                              <p className="text-xs text-slate-600 font-medium mt-0.5">
+                                {field.helperText}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="hidden sm:block shrink-0">
+                          <DcvcApprovedBadge />
+                        </div>
+                      </div>
 
-                <div className="space-y-1.5">
-                  <label htmlFor="contactName" className="text-xs font-bold uppercase tracking-wider text-slate-800 block">
-                    Contact Person Name <span className="text-rose-600">*</span>
-                  </label>
-                  <input
-                    id="contactName"
-                    type="text"
-                    required
-                    value={formData.contactName}
-                    onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
-                    placeholder="e.g. Jordan Smith"
-                    className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none"
-                  />
-                </div>
-              </div>
+                      {formData.isSeekingDcvcApprovedStatus && (
+                        <div className="pt-4 border-t border-purple-100 grid grid-cols-1 sm:grid-cols-3 gap-4 animate-fadeIn">
+                          <div className="sm:col-span-1 space-y-1">
+                            <label htmlFor="businessCategory" className="text-[11px] font-black uppercase tracking-wider text-slate-700 block">
+                              Business Category
+                            </label>
+                            <select
+                              id="businessCategory"
+                              value={formData.businessCategory}
+                              onChange={(e) => setFormData({ ...formData, businessCategory: e.target.value })}
+                              className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:border-[#5A1E65] outline-none bg-white font-medium"
+                            >
+                              <option value="Retail & Dining">Retail & Dining</option>
+                              <option value="Healthcare & Medical">Healthcare & Medical</option>
+                              <option value="Corporate & Professional">Corporate & Professional</option>
+                              <option value="Wellness & Fitness">Wellness & Fitness</option>
+                              <option value="Education & Schools">Education & Schools</option>
+                              <option value="Hospitality & Tourism">Hospitality & Tourism</option>
+                              <option value="Nonprofit & Community">Nonprofit & Community</option>
+                              <option value="Other">Other</option>
+                            </select>
+                          </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div className="space-y-1.5">
-                  <label htmlFor="email" className="text-xs font-bold uppercase tracking-wider text-slate-800 block">
-                    Email Address <span className="text-rose-600">*</span>
-                  </label>
-                  <input
-                    id="email"
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="jordan@example.org"
-                    className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none"
-                  />
-                </div>
+                          <div className="sm:col-span-1 space-y-1">
+                            <label htmlFor="storefrontAddress" className="text-[11px] font-black uppercase tracking-wider text-slate-700 block">
+                              Storefront / Office Address
+                            </label>
+                            <input
+                              id="storefrontAddress"
+                              type="text"
+                              value={formData.storefrontAddress}
+                              onChange={(e) => setFormData({ ...formData, storefrontAddress: e.target.value })}
+                              placeholder="e.g. 555 E Main St"
+                              className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:border-[#5A1E65] outline-none"
+                            />
+                          </div>
 
-                <div className="space-y-1.5">
-                  <label htmlFor="phone" className="text-xs font-bold uppercase tracking-wider text-slate-800 block">
-                    Phone Number (Optional)
-                  </label>
-                  <input
-                    id="phone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="(805) 555-0199"
-                    className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* DCVC Approved Business Accreditation Enrollment Option */}
-              <div className="p-6 rounded-2xl bg-gradient-to-r from-purple-50 via-white to-emerald-50/50 border-2 border-purple-200/90 space-y-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-3">
-                    <input
-                      id="businessAccreditationToggle"
-                      type="checkbox"
-                      checked={formData.isSeekingDcvcApprovedStatus}
-                      onChange={(e) => setFormData({ ...formData, isSeekingDcvcApprovedStatus: e.target.checked })}
-                      className="mt-1 h-5 w-5 rounded border-purple-300 text-[#5A1E65] focus:ring-[#5A1E65] cursor-pointer"
-                    />
-                    <div>
-                      <label htmlFor="businessAccreditationToggle" className="font-display font-black text-sm text-slate-950 cursor-pointer block">
-                        Enroll Our Business in the DCVC Approved Partner Pathway ⭐
-                      </label>
-                      <p className="text-xs text-slate-600 font-medium mt-0.5">
-                        Check this box if your goal is to earn the official storefront window cling, framed certificate, and 3D verified badge in the Ventura County Business Directory.
-                      </p>
+                          <div className="sm:col-span-1 space-y-1">
+                            <label htmlFor="storefrontCity" className="text-[11px] font-black uppercase tracking-wider text-slate-700 block">
+                              Ventura County City
+                            </label>
+                            <select
+                              id="storefrontCity"
+                              value={formData.storefrontCity}
+                              onChange={(e) => setFormData({ ...formData, storefrontCity: e.target.value })}
+                              className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:border-[#5A1E65] outline-none bg-white font-medium"
+                            >
+                              <option value="Ventura">Ventura</option>
+                              <option value="Oxnard">Oxnard</option>
+                              <option value="Camarillo">Camarillo</option>
+                              <option value="Simi Valley">Simi Valley</option>
+                              <option value="Thousand Oaks">Thousand Oaks</option>
+                              <option value="Ojai">Ojai</option>
+                              <option value="Moorpark">Moorpark</option>
+                              <option value="Port Hueneme">Port Hueneme</option>
+                              <option value="Santa Paula">Santa Paula</option>
+                            </select>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                  <div className="hidden sm:block shrink-0">
-                    <DcvcApprovedBadge />
-                  </div>
-                </div>
-
-                {formData.isSeekingDcvcApprovedStatus && (
-                  <div className="pt-4 border-t border-purple-100 grid grid-cols-1 sm:grid-cols-3 gap-4 animate-fadeIn">
-                    <div className="sm:col-span-1 space-y-1">
-                      <label htmlFor="businessCategory" className="text-[11px] font-black uppercase tracking-wider text-slate-700 block">
-                        Business Category
-                      </label>
-                      <select
-                        id="businessCategory"
-                        value={formData.businessCategory}
-                        onChange={(e) => setFormData({ ...formData, businessCategory: e.target.value })}
-                        className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:border-[#5A1E65] outline-none bg-white font-medium"
-                      >
-                        <option value="Retail & Dining">Retail & Dining</option>
-                        <option value="Healthcare & Medical">Healthcare & Medical</option>
-                        <option value="Corporate & Professional">Corporate & Professional</option>
-                        <option value="Wellness & Fitness">Wellness & Fitness</option>
-                        <option value="Education & Schools">Education & Schools</option>
-                        <option value="Hospitality & Tourism">Hospitality & Tourism</option>
-                        <option value="Nonprofit & Community">Nonprofit & Community</option>
-                        <option value="Other">Other</option>
-                      </select>
-                    </div>
-
-                    <div className="sm:col-span-1 space-y-1">
-                      <label htmlFor="storefrontAddress" className="text-[11px] font-black uppercase tracking-wider text-slate-700 block">
-                        Storefront / Office Address
-                      </label>
-                      <input
-                        id="storefrontAddress"
-                        type="text"
-                        value={formData.storefrontAddress}
-                        onChange={(e) => setFormData({ ...formData, storefrontAddress: e.target.value })}
-                        placeholder="e.g. 555 E Main St"
-                        className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:border-[#5A1E65] outline-none"
-                      />
-                    </div>
-
-                    <div className="sm:col-span-1 space-y-1">
-                      <label htmlFor="storefrontCity" className="text-[11px] font-black uppercase tracking-wider text-slate-700 block">
-                        Ventura County City
-                      </label>
-                      <select
-                        id="storefrontCity"
-                        value={formData.storefrontCity}
-                        onChange={(e) => setFormData({ ...formData, storefrontCity: e.target.value })}
-                        className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:border-[#5A1E65] outline-none bg-white font-medium"
-                      >
-                        <option value="Ventura">Ventura</option>
-                        <option value="Oxnard">Oxnard</option>
-                        <option value="Camarillo">Camarillo</option>
-                        <option value="Simi Valley">Simi Valley</option>
-                        <option value="Thousand Oaks">Thousand Oaks</option>
-                        <option value="Ojai">Ojai</option>
-                        <option value="Moorpark">Moorpark</option>
-                        <option value="Port Hueneme">Port Hueneme</option>
-                        <option value="Santa Paula">Santa Paula</option>
-                      </select>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Module and Logistics */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div className="space-y-1.5">
-                  <label htmlFor="course" className="text-xs font-bold uppercase tracking-wider text-slate-800 block">
-                    Select Training Curriculum <span className="text-rose-600">*</span>
-                  </label>
-                  <select
-                    id="course"
-                    value={formData.courseSlug}
-                    onChange={(e) => setFormData({ ...formData, courseSlug: e.target.value })}
-                    className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none bg-white font-medium"
-                  >
-                    {trainingCourses.map((c) => (
-                      <option key={c.slug} value={c.slug}>
-                        {c.title} ({c.duration})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label htmlFor="attendees" className="text-xs font-bold uppercase tracking-wider text-slate-800 block">
-                    Estimated Attendee Count <span className="text-rose-600">*</span>
-                  </label>
-                  <select
-                    id="attendees"
-                    required
-                    value={formData.estimatedAttendees}
-                    onChange={(e) => setFormData({ ...formData, estimatedAttendees: e.target.value })}
-                    className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none bg-white font-medium"
-                  >
-                    <option value="">Select participant count...</option>
-                    <option value="Under 15">Under 15 Participants</option>
-                    <option value="15-30">15 – 30 Participants</option>
-                    <option value="30-60">30 – 60 Participants</option>
-                    <option value="60-100">60 – 100 Participants</option>
-                    <option value="100+">100+ Participants (Assembly or Conference)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div className="space-y-1.5">
-                  <label htmlFor="format" className="text-xs font-bold uppercase tracking-wider text-slate-800 block">
-                    Preferred Delivery Format <span className="text-rose-600">*</span>
-                  </label>
-                  <select
-                    id="format"
-                    value={formData.preferredFormat}
-                    onChange={(e) => setFormData({ ...formData, preferredFormat: e.target.value })}
-                    className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none bg-white font-medium"
-                  >
-                    <option value="In-Person at Our Facility">In-Person at Our Facility</option>
-                    <option value="In-Person at DCVC Center (Ventura)">In-Person at DCVC Center (Ventura)</option>
-                    <option value="Interactive Live Virtual (Zoom)">Interactive Live Virtual (Zoom)</option>
-                    <option value="Hybrid">Hybrid Delivery</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label htmlFor="requestedDate" className="text-xs font-bold uppercase tracking-wider text-slate-800 block">
-                    Target Date or Preferred Timeframe
-                  </label>
-                  <input
-                    id="requestedDate"
-                    type="text"
-                    value={formData.requestedDate}
-                    onChange={(e) => setFormData({ ...formData, requestedDate: e.target.value })}
-                    placeholder="e.g. November 2026 or Next Quarter"
-                    className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label htmlFor="notes" className="text-xs font-bold uppercase tracking-wider text-slate-800 block">
-                  Specific Organizational Goals or Questions
-                </label>
-                <textarea
-                  id="notes"
-                  rows={4}
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="Share details about your team's background, past training, or specific scenarios you wish to address..."
-                  className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none resize-none"
-                />
-              </div>
+                  );
+                }}
+              />
 
               {/* Consent */}
               <div className="flex items-start gap-3 p-4 bg-purple-50/60 rounded-xl border border-purple-100">
@@ -440,12 +367,16 @@ export default function TrainingBooking() {
                   id="terms"
                   type="checkbox"
                   required
-                  checked={formData.termsConsent}
+                  checked={Boolean(formData.termsConsent)}
                   onChange={(e) => setFormData({ ...formData, termsConsent: e.target.checked })}
                   className="mt-1 h-4 w-4 rounded border-slate-300 text-[#5A1E65] focus:ring-[#5A1E65]"
                 />
                 <label htmlFor="terms" className="text-xs text-slate-700 leading-relaxed font-medium">
-                  I consent to Diversity Collective Ventura County using my contact details to coordinate this educational workshop inquiry under our <Link to="/privacy" className="text-[#5A1E65] font-bold underline hover:text-purple-900">Privacy Policy</Link>. <span className="text-rose-600">*</span>
+                  {schema?.consentText || (
+                    <>
+                      I consent to Diversity Collective Ventura County using my contact details to coordinate this educational workshop inquiry under our <Link to="/privacy" className="text-[#5A1E65] font-bold underline hover:text-purple-900">Privacy Policy</Link>.
+                    </>
+                  )} <span className="text-rose-600">*</span>
                 </label>
               </div>
 
@@ -462,7 +393,7 @@ export default function TrainingBooking() {
                   className="w-full sm:w-auto py-4 px-10 rounded-2xl bg-gradient-to-r from-[#5A1E65] to-purple-800 text-white font-black text-sm tracking-wide shadow-lg hover:shadow-2xl hover:scale-102 transition-all inline-flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   <Send className="w-4 h-4 text-amber-300" />
-                  <span>{status === 'loading' ? 'Submitting Request...' : 'Send Booking Inquiry'}</span>
+                  <span>{status === 'loading' ? 'Submitting Request...' : (schema?.submitLabel || 'Send Booking Inquiry')}</span>
                 </button>
               </div>
 

@@ -136,23 +136,35 @@ export default function SiteFeaturesStudio({ initialSubTab = 'forms' }) {
   };
 
   const deleteFlexField = (idx) => {
+    const removed = (flexSchema.fields || [])[idx];
     const list = (flexSchema.fields || []).filter((_, i) => i !== idx);
-    updateFlexSchema({ fields: list }, 'Removed field from Flex form');
+    const nextDeleted = removed?.id
+      ? Array.from(new Set([...(flexSchema.deletedFieldIds || []), removed.id]))
+      : (flexSchema.deletedFieldIds || []);
+    updateFlexSchema({ fields: list, deletedFieldIds: nextDeleted }, 'Removed field from Flex form');
   };
 
   const handleAddField = () => {
     const label = newFieldLabel.trim();
     if (!label) return;
     const id = label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || `field_${Date.now()}`;
+    const hasOptions = newFieldType === 'select' || newFieldType === 'checkbox_group';
+    const newFieldId = `${id}_${Date.now().toString(36).slice(-4)}`;
     const newField = {
-      id: `${id}_${Date.now().toString(36).slice(-4)}`,
+      id: newFieldId,
       label,
       type: newFieldType,
       required: false,
-      placeholder: `Enter ${label.toLowerCase()}`,
-      ...(newFieldType === 'select' ? { options: ['Option 1', 'Option 2'] } : {})
+      grid: newFieldType === 'textarea' || newFieldType === 'checkbox_group' || newFieldType === 'checkbox' ? 'full' : 'half',
+      placeholder: newFieldType === 'checkbox' || newFieldType === 'checkbox_group' ? '' : `Enter ${label.toLowerCase()}`,
+      ...(hasOptions ? { options: ['Option 1', 'Option 2'] } : {})
     };
-    updateSchema({ fields: [...(activeSchema.fields || []), newField] }, `Added field "${label}"`);
+    const nextDeleted = (activeSchema.deletedFieldIds || []).filter((fid) => fid !== newFieldId);
+    updateSchema({
+      schemaVersion: activeSchema.schemaVersion || 3,
+      deletedFieldIds: nextDeleted,
+      fields: [...(activeSchema.fields || []), newField]
+    }, `Added field "${label}"`);
     setNewFieldLabel('');
   };
 
@@ -161,18 +173,38 @@ export default function SiteFeaturesStudio({ initialSubTab = 'forms' }) {
     const target = idx + dir;
     if (target < 0 || target >= list.length) return;
     [list[idx], list[target]] = [list[target], list[idx]];
-    updateSchema({ fields: list });
+    updateSchema({ schemaVersion: activeSchema.schemaVersion || 3, fields: list });
   };
 
   const updateField = (idx, patch) => {
     const list = [...(activeSchema.fields || [])];
     list[idx] = { ...list[idx], ...patch };
-    updateSchema({ fields: list });
+    updateSchema({ schemaVersion: activeSchema.schemaVersion || 3, fields: list });
   };
 
   const deleteField = (idx) => {
+    const removed = (activeSchema.fields || [])[idx];
     const list = (activeSchema.fields || []).filter((_, i) => i !== idx);
-    updateSchema({ fields: list });
+    const nextDeleted = removed?.id
+      ? Array.from(new Set([...(activeSchema.deletedFieldIds || []), removed.id]))
+      : (activeSchema.deletedFieldIds || []);
+    updateSchema({
+      schemaVersion: activeSchema.schemaVersion || 3,
+      deletedFieldIds: nextDeleted,
+      fields: list
+    }, removed?.label ? `Removed "${removed.label}" from live form` : 'Removed field');
+  };
+
+  const handleResetSelectedForm = () => {
+    const baseDefault = DEFAULT_FORM_SCHEMAS[selectedFormId];
+    if (!baseDefault) return;
+    updateFeatures((prev) => ({
+      ...prev,
+      formSchemas: {
+        ...prev.formSchemas,
+        [selectedFormId]: JSON.parse(JSON.stringify(baseDefault))
+      }
+    }), `Restored "${baseDefault.title}" to default fields`);
   };
 
   return (
@@ -236,6 +268,16 @@ export default function SiteFeaturesStudio({ initialSubTab = 'forms' }) {
                   );
                 })}
               </select>
+              {DEFAULT_FORM_SCHEMAS[selectedFormId] && (
+                <button
+                  type="button"
+                  onClick={handleResetSelectedForm}
+                  className="px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold cursor-pointer transition-colors"
+                  title="Restore this form back to default live site fields"
+                >
+                  Reset Defaults
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => {
@@ -310,14 +352,39 @@ export default function SiteFeaturesStudio({ initialSubTab = 'forms' }) {
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900"
               />
             </div>
+            <div className="md:col-span-2">
+              <label className="block text-xs font-bold text-slate-700 mb-1">Form Subtitle / Description</label>
+              <input
+                type="text"
+                value={activeSchema.description || ''}
+                onChange={(e) => updateSchema({ description: e.target.value })}
+                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs text-slate-800"
+                placeholder="Intro text shown under form heading on main site..."
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-xs font-bold text-slate-700 mb-1">Consent / Pledge Checkbox Text</label>
+              <input
+                type="text"
+                value={activeSchema.consentText || ''}
+                onChange={(e) => updateSchema({ consentText: e.target.value })}
+                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs text-slate-800"
+                placeholder="Privacy, pledge, or screening consent text..."
+              />
+            </div>
           </div>
 
           <div className="space-y-3">
-            <h4 className="text-xs font-black uppercase tracking-wider text-slate-600">
-              Form Fields ({activeSchema.fields?.length || 0})
-            </h4>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h4 className="text-xs font-black uppercase tracking-wider text-slate-600">
+                Form Fields ({activeSchema.fields?.length || 0}) — Synced Identically to Live Website
+              </h4>
+              <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                Instant Live Sync Active
+              </span>
+            </div>
             {(activeSchema.fields || []).map((field, idx) => (
-              <div key={field.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+              <div key={field.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">
                 <div className="flex flex-wrap items-center gap-2 justify-between">
                   <div className="flex items-center gap-2 flex-1 min-w-[200px]">
                     <input
@@ -329,7 +396,14 @@ export default function SiteFeaturesStudio({ initialSubTab = 'forms' }) {
                     />
                     <select
                       value={field.type}
-                      onChange={(e) => updateField(idx, { type: e.target.value })}
+                      onChange={(e) => {
+                        const nextType = e.target.value;
+                        const patch = { type: nextType };
+                        if ((nextType === 'select' || nextType === 'checkbox_group') && (!Array.isArray(field.options) || field.options.length === 0)) {
+                          patch.options = ['Option 1', 'Option 2'];
+                        }
+                        updateField(idx, patch);
+                      }}
                       className="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-semibold text-slate-800"
                     >
                       <option value="text">Text</option>
@@ -337,8 +411,20 @@ export default function SiteFeaturesStudio({ initialSubTab = 'forms' }) {
                       <option value="tel">Phone</option>
                       <option value="number">Number</option>
                       <option value="url">URL</option>
+                      <option value="date">Date</option>
                       <option value="textarea">Long Text</option>
                       <option value="select">Dropdown</option>
+                      <option value="checkbox">Single Checkbox</option>
+                      <option value="checkbox_group">Multi-Select Checkboxes</option>
+                    </select>
+                    <select
+                      value={field.grid || (field.type === 'textarea' || field.type === 'checkbox_group' || field.type === 'checkbox' ? 'full' : 'half')}
+                      onChange={(e) => updateField(idx, { grid: e.target.value })}
+                      className="px-2 py-1.5 rounded-lg border border-slate-300 bg-white text-[11px] font-semibold text-slate-700"
+                      title="Column width on desktop"
+                    >
+                      <option value="half">Half Width</option>
+                      <option value="full">Full Width</option>
                     </select>
                   </div>
 
@@ -364,15 +450,15 @@ export default function SiteFeaturesStudio({ initialSubTab = 'forms' }) {
                   </div>
                 </div>
 
-                {field.type === 'select' ? (
+                {field.type === 'select' || field.type === 'checkbox_group' ? (
                   <input
                     type="text"
                     value={(field.options || []).join(', ')}
                     onChange={(e) => updateField(idx, { options: e.target.value.split(',').map((s) => s.trim()).filter(Boolean) })}
                     className="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs text-slate-800"
-                    placeholder="Comma-separated dropdown options..."
+                    placeholder="Comma-separated options (e.g., Option A, Option B, Option C)..."
                   />
-                ) : (
+                ) : field.type !== 'checkbox' ? (
                   <input
                     type="text"
                     value={field.placeholder || ''}
@@ -380,7 +466,24 @@ export default function SiteFeaturesStudio({ initialSubTab = 'forms' }) {
                     className="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs text-slate-800"
                     placeholder="Placeholder hint text..."
                   />
-                )}
+                ) : null}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    value={field.helperText || ''}
+                    onChange={(e) => updateField(idx, { helperText: e.target.value })}
+                    className="w-full px-3 py-1 rounded-lg border border-slate-200 bg-white text-[11px] text-slate-700"
+                    placeholder="Optional helper note under label..."
+                  />
+                  <input
+                    type="text"
+                    value={field.badge || ''}
+                    onChange={(e) => updateField(idx, { badge: e.target.value })}
+                    className="w-full px-3 py-1 rounded-lg border border-slate-200 bg-white text-[11px] text-slate-700"
+                    placeholder="Optional badge pill (e.g., Affirming Info)..."
+                  />
+                </div>
               </div>
             ))}
           </div>
@@ -391,7 +494,7 @@ export default function SiteFeaturesStudio({ initialSubTab = 'forms' }) {
               type="text"
               value={newFieldLabel}
               onChange={(e) => setNewFieldLabel(e.target.value)}
-              placeholder="New field label (e.g., Preferred Pronouns)"
+              placeholder="New field label (e.g., T-Shirt Size or Dietary Needs)"
               className="flex-1 min-w-[200px] px-3.5 py-2 rounded-xl border border-purple-200 bg-white text-xs font-semibold text-slate-900"
             />
             <select
@@ -402,8 +505,13 @@ export default function SiteFeaturesStudio({ initialSubTab = 'forms' }) {
               <option value="text">Text</option>
               <option value="email">Email</option>
               <option value="tel">Phone</option>
+              <option value="number">Number</option>
+              <option value="url">URL</option>
+              <option value="date">Date</option>
               <option value="textarea">Long Text</option>
               <option value="select">Dropdown</option>
+              <option value="checkbox">Single Checkbox</option>
+              <option value="checkbox_group">Multi-Select Checkboxes</option>
             </select>
             <button
               type="button"

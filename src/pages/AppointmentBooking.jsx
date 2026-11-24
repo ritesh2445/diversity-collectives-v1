@@ -13,6 +13,7 @@ import confetti from 'canvas-confetti';
 import { submitInquiry } from '../services/api';
 import TurnstileWidget from '../components/TurnstileWidget';
 import { usePageMeta } from '../utils/seo';
+import DynamicSchemaFields from '../components/DynamicSchemaFields';
 import {
   getSiteFeatures,
   subscribeToSiteFeatures,
@@ -20,6 +21,7 @@ import {
   bookTimeSlot,
   DEFAULT_FORM_SCHEMAS
 } from '../services/siteFeaturesStore';
+import { fetchAndApplyLiveSiteState } from '../services/liveSync';
 import BookingCalendarPicker from '../components/BookingCalendarPicker';
 import {
   getTodayIso,
@@ -49,6 +51,7 @@ export default function AppointmentBooking() {
   const [statusMsg, setStatusMsg] = useState('');
 
   useEffect(() => {
+    fetchAndApplyLiveSiteState({ force: true }).catch(() => {});
     return subscribeToSiteFeatures((next) => setFeatures(next));
   }, []);
 
@@ -263,64 +266,19 @@ export default function AppointmentBooking() {
               </div>
 
               {/* Dynamic Minimal Necessary Fields (Editable from Admin Form Builder) */}
-              <div className="space-y-4">
-                {(schema?.fields || []).map((field) => (
-                  <div key={field.id}>
-                    <label className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-1.5">
-                      {field.label} {field.required ? '*' : ''}
-                    </label>
-                    {field.type === 'select' ? (
-                      (() => {
-                        const fallbackField = DEFAULT_FORM_SCHEMAS.hiv_screening?.fields?.find((f) => f.id === field.id);
-                        const rawOptions = (Array.isArray(field.options) && field.options.length > 0)
-                          ? field.options
-                          : (fallbackField?.options || []);
-                        const effectiveOptions = rawOptions
-                          .map((opt) => {
-                            if (typeof opt === 'object' && opt !== null) {
-                              const val = opt.value ?? opt.label ?? '';
-                              const lbl = opt.label ?? opt.value ?? '';
-                              return { value: String(val), label: String(lbl) };
-                            }
-                            return { value: String(opt || ''), label: String(opt || '') };
-                          })
-                          .filter((o) => o.value.trim().length > 0);
-                        return (
-                          <select
-                            required={field.required}
-                            value={fieldValues[field.id] || ''}
-                            onChange={(e) => setFieldValues((p) => ({ ...p, [field.id]: e.target.value }))}
-                            className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm font-medium text-slate-900 bg-white focus:ring-2 focus:ring-purple-600 outline-none"
-                          >
-                            <option value="">Select an option...</option>
-                            {effectiveOptions.map((opt) => (
-                              <option key={opt.value} value={opt.value}>{opt.label}</option>
-                            ))}
-                          </select>
-                        );
-                      })()
-                    ) : field.type === 'textarea' ? (
-                      <textarea
-                        rows={2}
-                        required={field.required}
-                        placeholder={field.placeholder || ''}
-                        value={fieldValues[field.id] || ''}
-                        onChange={(e) => setFieldValues((p) => ({ ...p, [field.id]: e.target.value }))}
-                        className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm text-slate-900 focus:ring-2 focus:ring-purple-600 outline-none"
-                      />
-                    ) : (
-                      <input
-                        type={field.type || 'text'}
-                        required={field.required}
-                        placeholder={field.placeholder || ''}
-                        value={fieldValues[field.id] || ''}
-                        onChange={(e) => setFieldValues((p) => ({ ...p, [field.id]: e.target.value }))}
-                        className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm text-slate-900 focus:ring-2 focus:ring-purple-600 outline-none"
-                      />
-                    )}
-                  </div>
-                ))}
-              </div>
+              <DynamicSchemaFields
+                formId="hiv_screening"
+                fields={(schema?.fields || []).map((field) => {
+                  if ((field.type === 'select' || field.type === 'checkbox_group') && (!Array.isArray(field.options) || field.options.length === 0)) {
+                    const fb = DEFAULT_FORM_SCHEMAS.hiv_screening?.fields?.find((f) => f.id === field.id);
+                    return { ...field, options: fb?.options || [] };
+                  }
+                  return field;
+                })}
+                values={fieldValues}
+                onChange={(id, val) => setFieldValues((p) => ({ ...p, [id]: val }))}
+                inputClassName="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm font-medium text-slate-900 bg-white focus:ring-2 focus:ring-purple-600 outline-none"
+              />
 
               <label className="flex items-start gap-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-200 cursor-pointer">
                 <input
@@ -330,7 +288,7 @@ export default function AppointmentBooking() {
                   className="mt-0.5 w-4 h-4 accent-[#5A1E65]"
                 />
                 <span className="text-xs text-slate-700 font-medium leading-relaxed">
-                  I understand this screening reservation is confidential and free of charge through Diversity SHINES.
+                  {schema?.consentText || 'I understand this screening reservation is confidential and free of charge through Diversity SHINES.'}
                 </span>
               </label>
 

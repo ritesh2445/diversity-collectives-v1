@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -17,19 +17,25 @@ import {
 import confetti from 'canvas-confetti';
 import { submitInquiry } from '../services/api';
 import TurnstileWidget from '../components/TurnstileWidget';
+import DynamicSchemaFields, {
+  useLiveFormSchema,
+  buildInitialValues,
+  toggleCheckboxGroupValue,
+  validateSchemaFields,
+  formatCustomFieldsSummary
+} from '../components/DynamicSchemaFields';
 import { usePageMeta } from '../utils/seo';
 
-const RESOURCE_CATEGORIES = [
-  'Healthcare & Mental Health',
-  'Youth & Family Services',
-  'Legal Aid & Advocacy',
-  'Crisis & Emergency Housing',
-  'Transgender & Non-Binary Care',
-  'HIV/STI Testing & Prevention',
-  'Seniors & Elder Care',
-  'Education & GSA Support',
-  'Faith & Affirming Communities',
-  'Other Affirming Community Resource'
+const STANDARD_RESOURCE_FIELDS = [
+  'organizationName',
+  'category',
+  'email',
+  'phone',
+  'website',
+  'city',
+  'description',
+  'spanishAvailable',
+  'freeOrSlidingScale'
 ];
 
 export default function ResourceSubmit() {
@@ -39,32 +45,56 @@ export default function ResourceSubmit() {
     canonicalPath: '/resources/submit'
   });
 
+  const schema = useLiveFormSchema('resource_submit');
   const [status, setStatus] = useState('idle'); // 'idle' | 'loading' | 'success' | 'error'
   const [statusMsg, setStatusMsg] = useState('');
-  const [formData, setFormData] = useState({
-    organizationName: '',
-    category: RESOURCE_CATEGORIES[0],
-    contactPerson: '',
-    email: '',
-    phone: '',
-    website: '',
-    address: '',
-    city: 'Ventura',
-    description: '',
-    spanishAvailable: false,
-    freeOrSlidingScale: false,
+  const [formData, setFormData] = useState(() => ({
+    ...buildInitialValues(schema.fields, {
+      category: 'Healthcare & Mental Health',
+      city: 'Ventura',
+      spanishAvailable: false,
+      freeOrSlidingScale: false
+    }),
     affirmingVerificationConsent: false,
     turnstileToken: ''
-  });
+  }));
+
+  useEffect(() => {
+    setFormData((prev) => ({
+      ...buildInitialValues(schema.fields, prev),
+      affirmingVerificationConsent: Boolean(prev.affirmingVerificationConsent),
+      turnstileToken: prev.turnstileToken || ''
+    }));
+  }, [schema.fields]);
+
+  const handleFieldChange = (id, val) => {
+    setFormData((prev) => ({ ...prev, [id]: val }));
+  };
+
+  const handleOptionToggle = (id, optionLabel) => {
+    setFormData((prev) => ({
+      ...prev,
+      [id]: toggleCheckboxGroupValue(prev[id], optionLabel)
+    }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const validationErr = validateSchemaFields(schema.fields, formData);
+    if (validationErr) {
+      setStatus('error');
+      setStatusMsg(validationErr);
+      return;
+    }
 
     if (!formData.affirmingVerificationConsent) {
       setStatus('error');
       setStatusMsg('Please verify that this resource is LGBTQ+ affirming and safe.');
       return;
     }
+
+    const extraFieldsNote = formatCustomFieldsSummary(schema.fields, formData, STANDARD_RESOURCE_FIELDS);
 
     setStatus('loading');
     const res = await submitInquiry({
@@ -73,18 +103,32 @@ export default function ResourceSubmit() {
       email: formData.email,
       phone: formData.phone,
       subject: `Resource Submission: ${formData.organizationName} (${formData.category})`,
-      message: `Organization: ${formData.organizationName}\nCategory: ${formData.category}\nCity: ${formData.city}\nAddress: ${formData.address}\nWebsite: ${formData.website}\nSpanish Available: ${formData.spanishAvailable ? 'Yes' : 'No'}\nSliding Scale / Free: ${formData.freeOrSlidingScale ? 'Yes' : 'No'}\nDescription: ${formData.description}`,
+      message: [
+        `Organization: ${formData.organizationName}`,
+        `Category: ${formData.category}`,
+        `City: ${formData.city}`,
+        formData.address ? `Address: ${formData.address}` : '',
+        `Website: ${formData.website}`,
+        `Spanish Available: ${formData.spanishAvailable ? 'Yes' : 'No'}`,
+        `Sliding Scale / Free: ${formData.freeOrSlidingScale ? 'Yes' : 'No'}`,
+        `Description: ${formData.description}`,
+        extraFieldsNote
+      ].filter(Boolean).join('\n'),
       turnstileToken: formData.turnstileToken
     });
 
     if (res.success) {
       setStatus('success');
       setStatusMsg('Thank you! Your resource submission has been received. Our community curation team will review and publish it.');
-      confetti({
-        particleCount: 70,
-        spread: 60,
-        origin: { y: 0.6 }
-      });
+      try {
+        confetti({
+          particleCount: 70,
+          spread: 60,
+          origin: { y: 0.6 }
+        });
+      } catch {
+        // Fallback
+      }
     } else {
       setStatus('error');
       setStatusMsg(res.error || 'Failed to submit resource. Please contact info@diversitycollective.org directly.');
@@ -110,11 +154,10 @@ export default function ResourceSubmit() {
             VENTURA COUNTY AFFIRMING NETWORK
           </span>
           <h1 className="font-display text-3xl sm:text-5xl font-black text-slate-950 tracking-tight leading-tight">
-            Submit a Community <br />
-            <span className="font-serif italic font-normal text-[#5A1E65]">Resource or Provider.</span>
+            {schema?.title || 'Submit a Community Resource or Provider'}
           </h1>
           <p className="font-serif italic text-base sm:text-lg text-slate-600 mt-3 leading-relaxed">
-            Help us expand Ventura County's network of vetted, LGBTQ+ affirming healthcare practitioners, social services, and grassroots programs.
+            {schema?.description || "Help us expand Ventura County's network of vetted, LGBTQ+ affirming healthcare practitioners, social services, and grassroots programs."}
           </p>
         </div>
 
@@ -156,142 +199,14 @@ export default function ResourceSubmit() {
                 </div>
               )}
 
-              {/* Organization & Category */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="res-org-name" className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-2">
-                    Organization or Provider Name *
-                  </label>
-                  <input
-                    id="res-org-name"
-                    type="text"
-                    required
-                    placeholder="e.g. Ventura Coast Wellness Center"
-                    value={formData.organizationName}
-                    onChange={(e) => setFormData({ ...formData, organizationName: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-purple-600"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="res-category" className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-2">
-                    Primary Category *
-                  </label>
-                  <select
-                    id="res-category"
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-600 bg-white"
-                  >
-                    {RESOURCE_CATEGORIES.map((c) => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Contact Information */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="res-email" className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-2">
-                    Contact Email *
-                  </label>
-                  <input
-                    id="res-email"
-                    type="email"
-                    required
-                    placeholder="contact@agency.org"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-purple-600"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="res-phone" className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-2">
-                    Phone Number
-                  </label>
-                  <input
-                    id="res-phone"
-                    type="tel"
-                    placeholder="(805) 555-0123"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-purple-600"
-                  />
-                </div>
-              </div>
-
-              {/* Website & Address */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="res-website" className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-2">
-                    Website URL
-                  </label>
-                  <input
-                    id="res-website"
-                    type="url"
-                    placeholder="https://example.org"
-                    value={formData.website}
-                    onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-purple-600"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="res-city" className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-2">
-                    City in Ventura County
-                  </label>
-                  <select
-                    id="res-city"
-                    value={formData.city}
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-600 bg-white"
-                  >
-                    {['Ventura', 'Oxnard', 'Camarillo', 'Ojai', 'Thousand Oaks', 'Simi Valley', 'Santa Paula', 'Moorpark', 'Port Hueneme', 'Fillmore', 'Countywide'].map(c => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Description */}
-              <div>
-                <label htmlFor="res-description" className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-2">
-                  Description of Services & LGBTQ+ Affirming Practices *
-                </label>
-                <textarea
-                  id="res-description"
-                  rows={4}
-                  required
-                  placeholder="Describe services offered, intake processes, languages spoken, insurance or low-cost options, and specific LGBTQ+ competency..."
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-purple-600"
-                />
-              </div>
-
-              {/* Checkboxes for Spanish and Low Cost */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                <label htmlFor="res-spanish" className="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 bg-slate-50/70 cursor-pointer select-none">
-                  <input
-                    id="res-spanish"
-                    type="checkbox"
-                    checked={formData.spanishAvailable}
-                    onChange={(e) => setFormData({ ...formData, spanishAvailable: e.target.checked })}
-                    className="w-4 h-4 text-purple-700 rounded border-slate-300"
-                  />
-                  <span className="text-xs font-semibold text-slate-800">Spanish Language Services Available</span>
-                </label>
-
-                <label htmlFor="res-sliding-scale" className="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 bg-slate-50/70 cursor-pointer select-none">
-                  <input
-                    id="res-sliding-scale"
-                    type="checkbox"
-                    checked={formData.freeOrSlidingScale}
-                    onChange={(e) => setFormData({ ...formData, freeOrSlidingScale: e.target.checked })}
-                    className="w-4 h-4 text-purple-700 rounded border-slate-300"
-                  />
-                  <span className="text-xs font-semibold text-slate-800">Free, Medi-Cal, or Sliding-Scale Accepted</span>
-                </label>
-              </div>
+              {/* Live Admin-Synchronized Resource Form Fields */}
+              <DynamicSchemaFields
+                formId="resource_submit"
+                fields={schema?.fields || []}
+                values={formData}
+                onChange={handleFieldChange}
+                onToggleOption={handleOptionToggle}
+              />
 
               {/* Verification Consent */}
               <label htmlFor="res-affirming-consent" className="flex items-start gap-3 cursor-pointer select-none pt-2">
@@ -299,18 +214,18 @@ export default function ResourceSubmit() {
                   id="res-affirming-consent"
                   type="checkbox"
                   required
-                  checked={formData.affirmingVerificationConsent}
+                  checked={Boolean(formData.affirmingVerificationConsent)}
                   onChange={(e) => setFormData({ ...formData, affirmingVerificationConsent: e.target.checked })}
                   className="mt-1 w-4 h-4 text-purple-700 rounded border-slate-300 focus:ring-purple-500 cursor-pointer"
                 />
                 <span className="text-xs text-slate-600 leading-normal">
-                  I confirm that this organization/provider maintains an actively affirming, safe, and non-discriminatory environment for all LGBTQIA+ individuals.
+                  {schema?.consentText || 'I confirm that this organization/provider maintains an actively affirming, safe, and non-discriminatory environment for all LGBTQIA+ individuals.'}
                 </span>
               </label>
 
               {/* Turnstile Bot Protection */}
               <TurnstileWidget 
-                onSuccess={(token) => setFormData({ ...formData, turnstileToken: token })}
+                onSuccess={(token) => setFormData(prev => ({ ...prev, turnstileToken: token }))}
                 action="resource_submission"
               />
 
@@ -328,7 +243,7 @@ export default function ResourceSubmit() {
                 ) : (
                   <>
                     <Send className="w-4 h-4" />
-                    <span>Submit Affirming Resource for Review</span>
+                    <span>{schema?.submitLabel || 'Submit Affirming Resource for Review'}</span>
                   </>
                 )}
               </button>

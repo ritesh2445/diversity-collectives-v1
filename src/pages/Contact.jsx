@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   MapPin, 
@@ -17,7 +17,16 @@ import CardSpotlight from '../components/CardSpotlight';
 import { submitContact } from '../services/api';
 import TurnstileWidget from '../components/TurnstileWidget';
 import VoicemailRecorder from '../components/VoicemailRecorder';
+import DynamicSchemaFields, {
+  useLiveFormSchema,
+  buildInitialValues,
+  toggleCheckboxGroupValue,
+  validateSchemaFields,
+  formatCustomFieldsSummary
+} from '../components/DynamicSchemaFields';
 import { usePageMeta } from '../utils/seo';
+
+const STANDARD_CONTACT_FIELDS = ['name', 'email', 'phone', 'topic', 'message'];
 
 export default function Contact() {
   const orgInfo = useLiveOrgInfo();
@@ -27,20 +36,43 @@ export default function Contact() {
     canonicalPath: '/contact'
   });
 
+  const schema = useLiveFormSchema('contact');
   const [formStatus, setFormStatus] = useState('idle'); // 'idle' | 'loading' | 'success' | 'error'
   const [statusMessage, setStatusMessage] = useState('');
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    topic: 'General Inquiry',
-    message: '',
+  const [formData, setFormData] = useState(() => ({
+    ...buildInitialValues(schema.fields, { topic: 'General Inquiry' }),
     consent: false,
     turnstileToken: ''
-  });
+  }));
+
+  useEffect(() => {
+    setFormData((prev) => ({
+      ...buildInitialValues(schema.fields, prev),
+      consent: Boolean(prev.consent),
+      turnstileToken: prev.turnstileToken || ''
+    }));
+  }, [schema.fields]);
+
+  const handleFieldChange = (id, val) => {
+    setFormData((prev) => ({ ...prev, [id]: val }));
+  };
+
+  const handleOptionToggle = (id, optionLabel) => {
+    setFormData((prev) => ({
+      ...prev,
+      [id]: toggleCheckboxGroupValue(prev[id], optionLabel)
+    }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const validationErr = validateSchemaFields(schema.fields, formData);
+    if (validationErr) {
+      setFormStatus('error');
+      setStatusMessage(validationErr);
+      return;
+    }
 
     if (!formData.consent) {
       setFormStatus('error');
@@ -48,8 +80,14 @@ export default function Contact() {
       return;
     }
 
+    const extraFieldsNote = formatCustomFieldsSummary(schema.fields, formData, STANDARD_CONTACT_FIELDS);
+    const composedMessage = [formData.message || '', extraFieldsNote].filter(Boolean).join('\n\n');
+
     setFormStatus('loading');
-    const res = await submitContact(formData);
+    const res = await submitContact({
+      ...formData,
+      message: composedMessage
+    });
 
     if (res.success) {
       setFormStatus('success');
@@ -195,10 +233,10 @@ export default function Contact() {
                 CONFIDENTIAL ONLINE INQUIRY
               </span>
               <h2 className="font-display text-2xl sm:text-3xl font-black text-slate-950 mb-2 tracking-tight">
-                Send Us a Message
+                {schema?.title || 'Send Us a Message'}
               </h2>
               <p className="text-xs sm:text-sm text-slate-600 mb-8 font-medium">
-                Messages are reviewed daily by our Community Resource Center team during weekday operating hours.
+                {schema?.description || 'Messages are reviewed daily by our Community Resource Center team during weekday operating hours.'}
               </p>
 
               {formStatus === 'success' ? (
@@ -215,7 +253,11 @@ export default function Contact() {
                   <button
                     onClick={() => {
                       setFormStatus('idle');
-                      setFormData({ name: '', email: '', phone: '', topic: 'General Inquiry', message: '', consent: false });
+                      setFormData({
+                        ...buildInitialValues(schema.fields, { topic: 'General Inquiry' }),
+                        consent: false,
+                        turnstileToken: ''
+                      });
                     }}
                     className="btn-primary py-2.5 px-6 text-xs font-bold mt-2 shadow-md cursor-pointer"
                   >
@@ -232,91 +274,14 @@ export default function Contact() {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <div className="space-y-1.5">
-                      <label htmlFor="name" className="text-xs font-bold uppercase tracking-wider text-slate-800 block">
-                        Your Full Name <span className="text-rose-600">*</span>
-                      </label>
-                      <input 
-                        id="name"
-                        type="text"
-                        required
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        placeholder="Alex Rivera"
-                        className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none transition-all"
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label htmlFor="email" className="text-xs font-bold uppercase tracking-wider text-slate-800 block">
-                        Email Address <span className="text-rose-600">*</span>
-                      </label>
-                      <input 
-                        id="email"
-                        type="email"
-                        required
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        placeholder="alex@example.com"
-                        className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <div className="space-y-1.5">
-                      <label htmlFor="phone" className="text-xs font-bold uppercase tracking-wider text-slate-800 block">
-                        Phone Number (Optional)
-                      </label>
-                      <input 
-                        id="phone"
-                        type="tel"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        placeholder="(805) 555-0123"
-                        className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none transition-all"
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label htmlFor="topic" className="text-xs font-bold uppercase tracking-wider text-slate-800 block">
-                        Topic of Inquiry <span className="text-rose-600">*</span>
-                      </label>
-                      <select 
-                        id="topic"
-                        value={formData.topic}
-                        onChange={(e) => setFormData({ ...formData, topic: e.target.value })}
-                        className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none transition-all bg-white"
-                      >
-                        <option value="General Inquiry">General Inquiry</option>
-                        <option value="Diversity SHINES Testing">Diversity SHINES Rapid Health Testing</option>
-                        <option value="Rainbow Umbrella Youth">Rainbow Umbrella (Youth 13–23)</option>
-                        <option value="Little Unicorns">Little Unicorns (Kids 9–13)</option>
-                        <option value="P.R.I.D.E. Training">P.R.I.D.E. Training & Education</option>
-                        <option value="Volunteering">Volunteering Opportunities</option>
-                        <option value="Donations & Sponsorship">Donations & Corporate Sponsorship</option>
-                        <option value="In-Kind Donations">In-Kind Donations (Equipment, Supplies, Services)</option>
-                        <option value="Community Space Rental">Hosting a Meeting at the Center</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label htmlFor="message" className="text-xs font-bold uppercase tracking-wider text-slate-800 block">
-                      Your Message <span className="text-rose-600">*</span>
-                    </label>
-                    <textarea 
-                      id="message"
-                      rows={5}
-                      required
-                      minLength={10}
-                      value={formData.message}
-                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                      placeholder="Tell us how we can best assist or welcome you..."
-                      className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none transition-all resize-none"
-                    />
-                  </div>
+                  {/* Live Admin-Synchronized Contact Form Fields */}
+                  <DynamicSchemaFields
+                    formId="contact"
+                    fields={schema?.fields || []}
+                    values={formData}
+                    onChange={handleFieldChange}
+                    onToggleOption={handleOptionToggle}
+                  />
 
                   {/* Consent Checkbox */}
                   <div className="flex items-start gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200">
@@ -324,12 +289,16 @@ export default function Contact() {
                       id="consent"
                       type="checkbox"
                       required
-                      checked={formData.consent}
+                      checked={Boolean(formData.consent)}
                       onChange={(e) => setFormData({ ...formData, consent: e.target.checked })}
                       className="mt-1 h-4 w-4 rounded border-slate-300 text-[#5A1E65] focus:ring-[#5A1E65]"
                     />
                     <label htmlFor="consent" className="text-xs text-slate-700 leading-relaxed font-medium">
-                      I consent to Diversity Collective Ventura County securely processing and storing my contact details to reply to this inquiry in accordance with our <Link to="/privacy" className="text-[#5A1E65] font-bold underline hover:text-purple-900">Privacy Policy</Link>. Information will never be sold or shared. <span className="text-rose-600">*</span>
+                      {schema?.consentText || (
+                        <>
+                          I consent to Diversity Collective Ventura County securely processing and storing my contact details to reply to this inquiry in accordance with our <Link to="/privacy" className="text-[#5A1E65] font-bold underline hover:text-purple-900">Privacy Policy</Link>. Information will never be sold or shared.
+                        </>
+                      )} <span className="text-rose-600">*</span>
                     </label>
                   </div>
 
@@ -346,7 +315,7 @@ export default function Contact() {
                       className="w-full sm:w-auto py-4 px-10 rounded-2xl bg-gradient-to-r from-[#5A1E65] to-purple-800 text-white font-black text-sm tracking-wide shadow-lg hover:shadow-2xl hover:scale-102 transition-all inline-flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                     >
                       <Send className="w-4 h-4 text-amber-300" />
-                      <span>{formStatus === 'loading' ? 'Transmitting Note...' : 'Send Confidential Message'}</span>
+                      <span>{formStatus === 'loading' ? 'Transmitting Note...' : (schema?.submitLabel || 'Send Confidential Message')}</span>
                     </button>
                   </div>
 

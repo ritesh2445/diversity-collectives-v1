@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -13,7 +13,27 @@ import {
 import confetti from 'canvas-confetti';
 import { submitBusiness } from '../services/api';
 import TurnstileWidget from '../components/TurnstileWidget';
+import DynamicSchemaFields, {
+  useLiveFormSchema,
+  buildInitialValues,
+  toggleCheckboxGroupValue,
+  validateSchemaFields,
+  formatCustomFieldsSummary
+} from '../components/DynamicSchemaFields';
 import { usePageMeta } from '../utils/seo';
+
+const STANDARD_DIRECTORY_FIELDS = [
+  'businessName',
+  'category',
+  'city',
+  'address',
+  'website',
+  'phone',
+  'description',
+  'isLGBTQOwned',
+  'ownerName',
+  'ownerEmail'
+];
 
 export default function DirectorySubmit() {
   usePageMeta({
@@ -22,50 +42,47 @@ export default function DirectorySubmit() {
     canonicalPath: '/directory/submit'
   });
 
+  const schema = useLiveFormSchema('directory_submit');
   const [status, setStatus] = useState('idle'); // 'idle' | 'loading' | 'success' | 'error'
   const [statusMsg, setStatusMsg] = useState('');
-  const [formData, setFormData] = useState({
-    businessName: '',
-    category: 'Dining & Coffee',
-    city: 'Ventura',
-    address: '',
-    website: '',
-    phone: '',
-    email: '',
-    description: '',
-    ownerName: '',
-    ownerEmail: '',
-    isLGBTQOwned: false,
+  const [formData, setFormData] = useState(() => ({
+    ...buildInitialValues(schema.fields, {
+      category: 'Dining & Coffee',
+      city: 'Ventura',
+      isLGBTQOwned: false
+    }),
     termsConsent: false,
     turnstileToken: ''
-  });
+  }));
 
-  const categories = [
-    'Dining & Coffee',
-    'Health & Wellness',
-    'Legal & Financial',
-    'Retail & Gifts',
-    'Fitness & Recreation',
-    'Professional Services',
-    'Arts & Creative',
-    'Community Organization'
-  ];
+  useEffect(() => {
+    setFormData((prev) => ({
+      ...buildInitialValues(schema.fields, prev),
+      termsConsent: Boolean(prev.termsConsent),
+      turnstileToken: prev.turnstileToken || ''
+    }));
+  }, [schema.fields]);
 
-  const cities = [
-    'Ventura',
-    'Oxnard',
-    'Camarillo',
-    'Ojai',
-    'Thousand Oaks',
-    'Simi Valley',
-    'Moorpark',
-    'Santa Paula',
-    'Port Hueneme',
-    'Fillmore'
-  ];
+  const handleFieldChange = (id, val) => {
+    setFormData((prev) => ({ ...prev, [id]: val }));
+  };
+
+  const handleOptionToggle = (id, optionLabel) => {
+    setFormData((prev) => ({
+      ...prev,
+      [id]: toggleCheckboxGroupValue(prev[id], optionLabel)
+    }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const validationErr = validateSchemaFields(schema.fields, formData);
+    if (validationErr) {
+      setStatus('error');
+      setStatusMsg(validationErr);
+      return;
+    }
 
     if (!formData.termsConsent) {
       setStatus('error');
@@ -73,8 +90,15 @@ export default function DirectorySubmit() {
       return;
     }
 
+    const extraFieldsNote = formatCustomFieldsSummary(schema.fields, formData, STANDARD_DIRECTORY_FIELDS);
+    const composedDesc = [formData.description || '', extraFieldsNote].filter(Boolean).join('\n\n');
+
     setStatus('loading');
-    const res = await submitBusiness(formData);
+    const res = await submitBusiness({
+      ...formData,
+      email: formData.email || formData.ownerEmail || '',
+      description: composedDesc
+    });
 
     if (res.success) {
       setStatus('success');
@@ -117,10 +141,10 @@ export default function DirectorySubmit() {
               DIRECTORY INCLUSION
             </span>
             <h1 className="font-display text-3xl sm:text-5xl font-black text-slate-950 tracking-tight">
-              Submit Your Business
+              {schema?.title || 'Submit Your Business'}
             </h1>
             <p className="text-sm sm:text-base text-slate-600 font-medium">
-              Join the official Ventura County LGBTQ+ Affirming Directory. All submissions are moderated by DCVC staff before public listing to ensure safe, inclusive spaces for our community.
+              {schema?.description || 'Join the official Ventura County LGBTQ+ Affirming Directory. All submissions are moderated by DCVC staff before public listing to ensure safe, inclusive spaces for our community.'}
             </p>
           </div>
 
@@ -154,172 +178,14 @@ export default function DirectorySubmit() {
                 </div>
               )}
 
-              {/* Business Basics */}
-              <div className="space-y-4">
-                <h3 className="font-display text-lg font-bold text-slate-900 border-b border-slate-100 pb-2">
-                  1. Business Information
-                </h3>
-
-                <div className="space-y-1.5">
-                  <label htmlFor="bizName" className="text-xs font-bold uppercase tracking-wider text-slate-800 block">
-                    Business or Enterprise Name <span className="text-rose-600">*</span>
-                  </label>
-                  <input
-                    id="bizName"
-                    type="text"
-                    required
-                    value={formData.businessName}
-                    onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
-                    placeholder="e.g. Coastal Sol Cafe"
-                    className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <div className="space-y-1.5">
-                    <label htmlFor="cat" className="text-xs font-bold uppercase tracking-wider text-slate-800 block">
-                      Primary Category <span className="text-rose-600">*</span>
-                    </label>
-                    <select
-                      id="cat"
-                      value={formData.category}
-                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                      className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none bg-white font-medium"
-                    >
-                      {categories.map((c) => (
-                        <option key={c} value={c}>{c}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label htmlFor="city" className="text-xs font-bold uppercase tracking-wider text-slate-800 block">
-                      Ventura County City <span className="text-rose-600">*</span>
-                    </label>
-                    <select
-                      id="city"
-                      value={formData.city}
-                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                      className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none bg-white font-medium"
-                    >
-                      {cities.map((city) => (
-                        <option key={city} value={city}>{city}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label htmlFor="address" className="text-xs font-bold uppercase tracking-wider text-slate-800 block">
-                    Physical Street Address
-                  </label>
-                  <input
-                    id="address"
-                    type="text"
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    placeholder="e.g. 123 Main St, Ventura, CA 93001"
-                    className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <div className="space-y-1.5">
-                    <label htmlFor="website" className="text-xs font-bold uppercase tracking-wider text-slate-800 block">
-                      Website URL
-                    </label>
-                    <input
-                      id="website"
-                      type="url"
-                      value={formData.website}
-                      onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                      placeholder="https://example.com"
-                      className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label htmlFor="phone" className="text-xs font-bold uppercase tracking-wider text-slate-800 block">
-                      Public Phone Number
-                    </label>
-                    <input
-                      id="phone"
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      placeholder="(805) 555-0100"
-                      className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label htmlFor="desc" className="text-xs font-bold uppercase tracking-wider text-slate-800 block">
-                    Business Description & Community Mission <span className="text-rose-600">*</span>
-                  </label>
-                  <textarea
-                    id="desc"
-                    rows={4}
-                    required
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="Tell patrons about your products, services, welcoming culture, and why your business is an affirming space..."
-                    className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none resize-none"
-                  />
-                </div>
-
-                <div className="flex items-center gap-3 p-3.5 bg-slate-50 rounded-xl border border-slate-200">
-                  <input
-                    id="lgbtqOwned"
-                    type="checkbox"
-                    checked={formData.isLGBTQOwned}
-                    onChange={(e) => setFormData({ ...formData, isLGBTQOwned: e.target.checked })}
-                    className="h-4 w-4 rounded border-slate-300 text-[#5A1E65] focus:ring-[#5A1E65]"
-                  />
-                  <label htmlFor="lgbtqOwned" className="text-xs font-bold text-slate-800 cursor-pointer">
-                    🌈 This is an LGBTQ+ Owned Business (51%+ queer / trans ownership)
-                  </label>
-                </div>
-              </div>
-
-              {/* Submitter & Verification */}
-              <div className="space-y-4 pt-4">
-                <h3 className="font-display text-lg font-bold text-slate-900 border-b border-slate-100 pb-2">
-                  2. Submitter & Verification Details (Private to DCVC Staff)
-                </h3>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <div className="space-y-1.5">
-                    <label htmlFor="ownerName" className="text-xs font-bold uppercase tracking-wider text-slate-800 block">
-                      Your Name & Title <span className="text-rose-600">*</span>
-                    </label>
-                    <input
-                      id="ownerName"
-                      type="text"
-                      required
-                      value={formData.ownerName}
-                      onChange={(e) => setFormData({ ...formData, ownerName: e.target.value })}
-                      placeholder="e.g. Maria Gonzalez, Owner"
-                      className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label htmlFor="ownerEmail" className="text-xs font-bold uppercase tracking-wider text-slate-800 block">
-                      Verification Email <span className="text-rose-600">*</span>
-                    </label>
-                    <input
-                      id="ownerEmail"
-                      type="email"
-                      required
-                      value={formData.ownerEmail}
-                      onChange={(e) => setFormData({ ...formData, ownerEmail: e.target.value })}
-                      placeholder="maria@example.com"
-                      className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none"
-                    />
-                  </div>
-                </div>
-              </div>
+              {/* Live Admin-Synchronized Directory Form Fields */}
+              <DynamicSchemaFields
+                formId="directory_submit"
+                fields={schema?.fields || []}
+                values={formData}
+                onChange={handleFieldChange}
+                onToggleOption={handleOptionToggle}
+              />
 
               {/* Affirming Pledge Consent */}
               <div className="flex items-start gap-3 p-4 bg-purple-50/60 rounded-xl border border-purple-200">
@@ -327,12 +193,16 @@ export default function DirectorySubmit() {
                   id="consentPledge"
                   type="checkbox"
                   required
-                  checked={formData.termsConsent}
+                  checked={Boolean(formData.termsConsent)}
                   onChange={(e) => setFormData({ ...formData, termsConsent: e.target.checked })}
                   className="mt-1 h-4 w-4 rounded border-slate-300 text-[#5A1E65] focus:ring-[#5A1E65]"
                 />
                 <label htmlFor="consentPledge" className="text-xs text-slate-700 leading-relaxed font-medium">
-                  <strong>Community Affirming Pledge:</strong> I confirm this business adheres to strict non-discrimination, respects pronouns, provides a safe environment for all gender identities and expressions, and consents to DCVC staff verification under our <Link to="/privacy" className="text-[#5A1E65] font-bold underline hover:text-purple-900">Privacy Policy</Link>. <span className="text-rose-600">*</span>
+                  {schema?.consentText || (
+                    <>
+                      <strong>Community Affirming Pledge:</strong> I confirm this business adheres to strict non-discrimination, respects pronouns, provides a safe environment for all gender identities and expressions, and consents to DCVC staff verification under our <Link to="/privacy" className="text-[#5A1E65] font-bold underline hover:text-purple-900">Privacy Policy</Link>.
+                    </>
+                  )} <span className="text-rose-600">*</span>
                 </label>
               </div>
 
@@ -349,7 +219,7 @@ export default function DirectorySubmit() {
                   className="w-full sm:w-auto py-4 px-10 rounded-2xl bg-gradient-to-r from-[#5A1E65] to-purple-800 text-white font-black text-sm tracking-wide shadow-lg hover:shadow-2xl hover:scale-102 transition-all inline-flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   <Send className="w-4 h-4 text-amber-300" />
-                  <span>{status === 'loading' ? 'Transmitting Listing...' : 'Submit Business for Staff Approval'}</span>
+                  <span>{status === 'loading' ? 'Transmitting Listing...' : (schema?.submitLabel || 'Submit Business for Staff Approval')}</span>
                 </button>
               </div>
 

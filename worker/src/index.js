@@ -6719,7 +6719,7 @@ export default {
           const active = countRes.rows[0]?.active || 0;
 
           const listRes = await db.execute({
-            sql: `SELECT id, email, source, is_active, consent_timestamp, created_at, unsubscribed_at FROM newsletter_subscribers ORDER BY created_at DESC LIMIT 100`,
+            sql: `SELECT id, email, source, is_active, consent_timestamp, created_at, unsubscribed_at FROM newsletter_subscribers ORDER BY created_at DESC LIMIT 500`,
             args: []
           });
 
@@ -6751,6 +6751,148 @@ export default {
             });
           }
           return jsonResponse({ success: true, message: `Subscriber ${email} successfully recorded!` }, 201, cors);
+        }
+
+        // 15.15B-BULK Admin Bulk Import Subscribers (POST /api/admin/newsletter/subscribers/import)
+        if (pathname === '/api/admin/newsletter/subscribers/import' && request.method === 'POST') {
+          if (!requireSectionAccess(authUser, 'inquiries', ['admin', 'editor'])) {
+            return errorResponse('Forbidden: Newsletter access required.', 403, null, cors);
+          }
+          const body = await request.json().catch(() => ({}));
+          const defaultSource = String(body.source || 'admin_bulk_import').trim().slice(0, 64) || 'admin_bulk_import';
+          const emailPattern = /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9-]+(?:\.[a-z0-9-]+)+$/i;
+
+          // Normalize incoming candidates from { subscribers }, { emails }, or { rawText }
+          const rawCandidates = [];
+          if (Array.isArray(body.subscribers)) {
+            for (const item of body.subscribers) {
+              if (typeof item === 'string') {
+                rawCandidates.push({ email: item, source: defaultSource });
+              } else if (item && typeof item === 'object') {
+                rawCandidates.push({
+                  email: String(item.email || ''),
+                  source: String(item.source || defaultSource).trim().slice(0, 64) || defaultSource
+                });
+              }
+            }
+          } else if (Array.isArray(body.emails)) {
+            for (const item of body.emails) {
+              rawCandidates.push({ email: String(item || ''), source: defaultSource });
+            }
+          } else if (typeof body.rawText === 'string') {
+            for (const token of body.rawText.split(/[\r\n,;]+/)) {
+              if (token.trim()) rawCandidates.push({ email: token, source: defaultSource });
+            }
+          }
+
+          const uniqueMap = new Map();
+          let invalidCount = 0;
+          let duplicateInInput = 0;
+
+          for (const candidate of rawCandidates) {
+            const cleaned = String(candidate.email || '').trim().replace(/^["'<]+|["'>]+$/g, '').toLowerCase();
+            if (!cleaned) continue;
+            if (!emailPattern.test(cleaned)) {
+              invalidCount += 1;
+              continue;
+            }
+            if (uniqueMap.has(cleaned)) {
+              duplicateInInput += 1;
+              continue;
+            }
+            uniqueMap.set(cleaned, candidate.source || defaultSource);
+          }
+
+          if (uniqueMap.size === 0) {
+            return errorResponse(
+              invalidCount > 0
+                ? `No valid email addresses found (${invalidCount} invalid entries skipped).`
+                : 'Please provide at least one valid email address to import.',
+              400,
+              null,
+              cors
+            );
+          }
+
+          if (uniqueMap.size > 1000) {
+            return errorResponse('Batch size exceeds limit of 1,000 unique emails per import.', 400, null, cors);
+          }
+
+          const entries = Array.from(uniqueMap.entries()); // [email, source]
+          let imported = 0;
+          let reactivated = 0;
+          let alreadyActive = 0;
+
+          const db = getDb(env);
+          if (db) {
+            const existingStatus = new Map();
+            const CHUNK_SIZE = 100;
+
+            for (let i = 0; i < entries.length; i += CHUNK_SIZE) {
+              const slice = entries.slice(i, i + CHUNK_SIZE);
+              const placeholders = slice.map(() => '?').join(', ');
+              const lookupRes = await db.execute({
+                sql: `SELECT lower(email) AS email, is_active FROM newsletter_subscribers WHERE lower(email) IN (${placeholders})`,
+                args: slice.map(([em]) => em)
+              });
+              for (const row of lookupRes.rows || []) {
+                existingStatus.set(String(row.email || '').toLowerCase(), Number(row.is_active || 0));
+              }
+            }
+
+            const writeStatements = [];
+            for (const [em, src] of entries) {
+              if (!existingStatus.has(em)) {
+                imported += 1;
+                writeStatements.push({
+                  sql: `INSERT INTO newsletter_subscribers (id, email, source, is_active, consent_timestamp, created_at)
+                        VALUES (?, ?, ?, 1, datetime('now'), datetime('now'))
+                        ON CONFLICT(email) DO UPDATE SET is_active = 1, unsubscribed_at = NULL`,
+                  args: [crypto.randomUUID(), em, src]
+                });
+              } else if (existingStatus.get(em) !== 1) {
+                reactivated += 1;
+                writeStatements.push({
+                  sql: `UPDATE newsletter_subscribers SET is_active = 1, unsubscribed_at = NULL WHERE lower(email) = ?`,
+                  args: [em]
+                });
+              } else {
+                alreadyActive += 1;
+              }
+            }
+
+            for (let i = 0; i < writeStatements.length; i += CHUNK_SIZE) {
+              await db.batch(writeStatements.slice(i, i + CHUNK_SIZE), 'write');
+            }
+
+            const clientIp = request.headers.get('cf-connecting-ip') || '';
+            ctx.waitUntil(
+              db.execute({
+                sql: `INSERT INTO admin_audit_logs (id, user_id, user_email, action, target_type, target_id, details, ip_address)
+                      VALUES (?, ?, ?, 'import_newsletter_subscribers', 'newsletter', 'bulk_import', ?, ?)`,
+                args: [
+                  crypto.randomUUID(),
+                  authUser.userId || null,
+                  authUser.email || null,
+                  JSON.stringify({ imported, reactivated, alreadyActive, invalidCount, source: defaultSource }),
+                  clientIp
+                ]
+              }).catch(() => {})
+            );
+          } else {
+            imported = entries.length;
+          }
+
+          return jsonResponse({
+            success: true,
+            imported,
+            reactivated,
+            alreadyActive,
+            duplicateInInput,
+            invalidCount,
+            totalProcessed: entries.length,
+            message: `Import complete: ${imported} added, ${reactivated} reactivated, ${alreadyActive} already active${invalidCount > 0 ? `, ${invalidCount} invalid skipped` : ''}.`
+          }, 201, cors);
         }
 
         // 15.15C Admin Toggle Subscriber Status (POST /api/admin/newsletter/subscribers/toggle)

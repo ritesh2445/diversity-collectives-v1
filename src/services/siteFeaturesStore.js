@@ -53,82 +53,175 @@ export const DEFAULT_FORM_SCHEMAS = {
   },
   contact: {
     id: 'contact',
-    title: 'General Contact & Inquiry Form',
-    description: 'Reach DCVC staff for support, press, partnerships, or general questions.',
-    submitLabel: 'Send Inquiry',
+    schemaVersion: 3,
+    title: 'Send Us a Message',
+    description: 'Messages are reviewed daily by our Community Resource Center team during weekday operating hours.',
+    consentText: 'I consent to Diversity Collective Ventura County securely processing and storing my contact details to reply to this inquiry in accordance with our Privacy Policy. Information will never be sold or shared.',
+    submitLabel: 'Send Confidential Message',
     fields: [
-      { id: 'name', label: 'Full Name', type: 'text', required: true, placeholder: 'Your name' },
-      { id: 'email', label: 'Email Address', type: 'email', required: true, placeholder: 'you@example.org' },
-      { id: 'phone', label: 'Phone (Optional)', type: 'tel', required: false, placeholder: '(805) 555-0199' },
-      { id: 'topic', label: 'Inquiry Topic', type: 'select', required: true, options: [
-        'General Question & Resource Center',
-        'Peer Support & Youth Programs',
-        'HIV/STI Testing & Diversity SHINES',
-        'Media, Press & Partnerships',
-        'Volunteer & Internship Opportunities'
+      { id: 'name', label: 'Your Full Name', type: 'text', required: true, grid: 'half', placeholder: 'Alex Rivera' },
+      { id: 'email', label: 'Email Address', type: 'email', required: true, grid: 'half', placeholder: 'alex@example.com' },
+      { id: 'phone', label: 'Phone Number (Optional)', type: 'tel', required: false, grid: 'half', placeholder: '(805) 555-0123' },
+      { id: 'topic', label: 'Topic of Inquiry', type: 'select', required: true, grid: 'half', defaultValue: 'General Inquiry', options: [
+        'General Inquiry',
+        'Diversity SHINES Rapid Health Testing',
+        'Rainbow Umbrella (Youth 13–23)',
+        'Little Unicorns (Kids 9–13)',
+        'P.R.I.D.E. Training & Education',
+        'Volunteering Opportunities',
+        'Donations & Corporate Sponsorship',
+        'In-Kind Donations (Equipment, Supplies, Services)',
+        'Hosting a Meeting at the Center'
       ] },
-      { id: 'message', label: 'Message', type: 'textarea', required: true, placeholder: 'How can our team support you?' }
+      { id: 'message', label: 'Your Message', type: 'textarea', required: true, grid: 'full', placeholder: 'Tell us how we can best assist or welcome you...' }
     ]
   },
   volunteer: {
     id: 'volunteer',
+    schemaVersion: 3,
     title: 'Volunteer Application Form',
-    description: 'Join DCVC volunteers supporting the Center, Pride, and Youth circles.',
+    description: 'Please share your background, availability, and areas of passion. Our volunteer coordinator conducts monthly orientation sessions.',
+    consentText: 'Volunteer Safety & Vetting Consent: Because Diversity Collective provides safe spaces for minor youth and vulnerable adults, I agree to comply with our Code of Conduct and standard volunteer vetting policies under our Privacy Policy.',
     submitLabel: 'Submit Volunteer Application',
     fields: [
-      { id: 'name', label: 'Full Name', type: 'text', required: true, placeholder: 'Your full name' },
-      { id: 'email', label: 'Email Address', type: 'email', required: true, placeholder: 'you@example.org' },
-      { id: 'phone', label: 'Phone Number', type: 'tel', required: true, placeholder: '(805) 555-0199' },
-      { id: 'role', label: 'Preferred Volunteer Role', type: 'select', required: true, options: [
-        'Center Greeter & Drop-In Host',
-        'Event & Pride Logistics',
-        'Rainbow Umbrella Youth Mentor (21+)',
-        'Diversity SHINES Health Outreach'
+      { id: 'preferredName', label: 'Preferred Name', type: 'text', required: true, grid: 'half', badge: 'Primary Communication', placeholder: 'Jordan', helperText: 'The name our team, mentors, and community will use to address you.' },
+      { id: 'pronouns', label: 'Pronouns', type: 'text', required: false, grid: 'half', badge: 'Optional', placeholder: 'e.g. they/them, she/her, he/him', helperText: 'Helps us foster an affirming and respectful team environment.' },
+      { id: 'fullName', label: 'Full Legal Name', type: 'text', required: true, grid: 'half', badge: 'Confidential', placeholder: 'Legal First and Last Name', helperText: 'Preserved confidentially for background verification and safety records.' },
+      { id: 'email', label: 'Email Address', type: 'email', required: true, grid: 'half', placeholder: 'jordan@example.com', helperText: "Where we'll send orientation details and scheduling confirmations." },
+      { id: 'phone', label: 'Phone Number (Optional)', type: 'tel', required: false, grid: 'half', placeholder: '(805) 555-0144' },
+      { id: 'availability', label: 'General Availability', type: 'select', required: true, grid: 'half', defaultValue: 'Weekdays (Afternoons 1:00 – 5:00 PM)', options: [
+        'Weekdays (Afternoons 1:00 – 5:00 PM)',
+        'Friday Evenings (Youth Circles 5:00 – 8:00 PM)',
+        'Weekends (Special Events & Festivals)',
+        'Flexible / As Needed'
       ] },
-      { id: 'availability', label: 'Weekly Availability', type: 'textarea', required: false, placeholder: 'Days and times you are available' }
+      { id: 'areasOfInterest', label: 'Select Areas of Interest (Check all that apply)', type: 'checkbox_group', required: false, grid: 'full', options: [
+        'Community Resource Center Hospitality & Reception',
+        'Youth Programs (Rainbow Umbrella & Little Unicorns)',
+        'Diversity SHINES Outreach & Safer-Sex Kit Packing',
+        'Ventura County Pride Festival & Gala Event Logistics',
+        'Social Media, Photography & Community Outreach',
+        'Lending Library & Archive Curation'
+      ] },
+      { id: 'message', label: 'Why do you wish to volunteer with Diversity Collective?', type: 'textarea', required: false, grid: 'full', placeholder: 'Share a little about yourself, your hobbies, or any past volunteer experience...' }
     ]
   },
   training: {
     id: 'training',
-    title: 'P.R.I.D.E. Educational Training Request',
-    description: 'Request LGBTQ+ cultural competency workshops for schools, clinics, or workplaces.',
-    submitLabel: 'Request Training Proposal',
+    schemaVersion: 3,
+    title: 'Request a P.R.I.D.E. Workshop',
+    description: 'Equip your organization with actionable LGBTQ+ cultural competency grounded in Ventura County lived experience. Our training leads will review your inquiry and coordinate scheduling.',
+    consentText: 'I consent to Diversity Collective Ventura County using my contact details to coordinate this educational workshop inquiry under our Privacy Policy.',
+    submitLabel: 'Send Booking Inquiry',
     fields: [
-      { id: 'organization', label: 'Organization / School Name', type: 'text', required: true, placeholder: 'Organization name' },
-      { id: 'contactName', label: 'Primary Contact Name', type: 'text', required: true, placeholder: 'Your name' },
-      { id: 'email', label: 'Work Email', type: 'email', required: true, placeholder: 'name@organization.org' },
-      { id: 'headcount', label: 'Estimated Participants', type: 'number', required: false, placeholder: '25' },
-      { id: 'notes', label: 'Workshop Goals & Preferred Dates', type: 'textarea', required: false, placeholder: 'Tell us about your team' }
+      { id: 'organizationName', label: 'Organization or Agency Name', type: 'text', required: true, grid: 'half', placeholder: 'e.g. Ventura County Unified School District' },
+      { id: 'contactName', label: 'Contact Person Name', type: 'text', required: true, grid: 'half', placeholder: 'e.g. Jordan Smith' },
+      { id: 'email', label: 'Email Address', type: 'email', required: true, grid: 'half', placeholder: 'jordan@example.org' },
+      { id: 'phone', label: 'Phone Number (Optional)', type: 'tel', required: false, grid: 'half', placeholder: '(805) 555-0199' },
+      { id: 'isSeekingDcvcApprovedStatus', label: 'Enroll Our Business in the DCVC Approved Partner Pathway ⭐', type: 'checkbox', required: false, grid: 'full', helperText: 'Check this box if your goal is to earn the official storefront window cling, framed certificate, and 3D verified badge in the Ventura County Business Directory.' },
+      { id: 'courseSlug', label: 'Select Training Curriculum', type: 'select', required: true, grid: 'half', options: [
+        'LGBTQ+ Cultural Competency Foundations',
+        'Affirming Healthcare & Patient Care Standards',
+        'Safe Schools & Youth Allyship',
+        'DCVC Approved Affirming Business Accreditation'
+      ] },
+      { id: 'estimatedAttendees', label: 'Estimated Attendee Count', type: 'select', required: true, grid: 'half', options: [
+        'Under 15 Participants',
+        '15 – 30 Participants',
+        '30 – 60 Participants',
+        '60 – 100 Participants',
+        '100+ Participants (Assembly or Conference)'
+      ] },
+      { id: 'preferredFormat', label: 'Preferred Delivery Format', type: 'select', required: true, grid: 'half', defaultValue: 'In-Person at Our Facility', options: [
+        'In-Person at Our Facility',
+        'In-Person at DCVC Center (Ventura)',
+        'Interactive Live Virtual (Zoom)',
+        'Hybrid Delivery'
+      ] },
+      { id: 'requestedDate', label: 'Target Date or Preferred Timeframe', type: 'text', required: false, grid: 'half', placeholder: 'e.g. November 2026 or Next Quarter' },
+      { id: 'notes', label: 'Specific Organizational Goals or Questions', type: 'textarea', required: false, grid: 'full', placeholder: "Share details about your team's background, past training, or specific scenarios you wish to address..." }
     ]
   },
   directory_submit: {
     id: 'directory_submit',
-    title: 'Affirming Business Directory Submission',
-    description: 'Apply to list your LGBTQ+ owned or affirming Ventura County business.',
-    submitLabel: 'Submit Business Listing',
+    schemaVersion: 3,
+    title: 'Submit Your Business',
+    description: 'Join the official Ventura County LGBTQ+ Affirming Directory. All submissions are moderated by DCVC staff before public listing to ensure safe, inclusive spaces for our community.',
+    consentText: 'Community Affirming Pledge: I confirm this business adheres to strict non-discrimination, respects pronouns, provides a safe environment for all gender identities and expressions, and consents to DCVC staff verification under our Privacy Policy.',
+    submitLabel: 'Submit Business for Staff Approval',
     fields: [
-      { id: 'businessName', label: 'Business Name', type: 'text', required: true, placeholder: 'Business or practice name' },
-      { id: 'category', label: 'Category', type: 'select', required: true, options: [
-        'Healthcare & Wellness', 'Food & Hospitality', 'Legal & Financial', 'Retail & Creative', 'Home & Auto Services', 'Other'
+      { id: 'businessName', label: 'Business or Enterprise Name', type: 'text', required: true, grid: 'full', placeholder: 'e.g. Coastal Sol Cafe' },
+      { id: 'category', label: 'Primary Category', type: 'select', required: true, grid: 'half', defaultValue: 'Dining & Coffee', options: [
+        'Dining & Coffee',
+        'Health & Wellness',
+        'Legal & Financial',
+        'Retail & Gifts',
+        'Fitness & Recreation',
+        'Professional Services',
+        'Arts & Creative',
+        'Community Organization'
       ] },
-      { id: 'city', label: 'Ventura County City', type: 'text', required: true, placeholder: 'Ventura, Oxnard, Thousand Oaks...' },
-      { id: 'email', label: 'Contact Email', type: 'email', required: true, placeholder: 'owner@business.com' },
-      { id: 'website', label: 'Website URL', type: 'url', required: false, placeholder: 'https://...' }
+      { id: 'city', label: 'Ventura County City', type: 'select', required: true, grid: 'half', defaultValue: 'Ventura', options: [
+        'Ventura',
+        'Oxnard',
+        'Camarillo',
+        'Ojai',
+        'Thousand Oaks',
+        'Simi Valley',
+        'Moorpark',
+        'Santa Paula',
+        'Port Hueneme',
+        'Fillmore'
+      ] },
+      { id: 'address', label: 'Physical Street Address', type: 'text', required: false, grid: 'full', placeholder: 'e.g. 123 Main St, Ventura, CA 93001' },
+      { id: 'website', label: 'Website URL', type: 'url', required: false, grid: 'half', placeholder: 'https://example.com' },
+      { id: 'phone', label: 'Public Phone Number', type: 'tel', required: false, grid: 'half', placeholder: '(805) 555-0100' },
+      { id: 'description', label: 'Business Description & Community Mission', type: 'textarea', required: true, grid: 'full', placeholder: 'Tell patrons about your products, services, welcoming culture, and why your business is an affirming space...' },
+      { id: 'isLGBTQOwned', label: '🌈 This is an LGBTQ+ Owned Business (51%+ queer / trans ownership)', type: 'checkbox', required: false, grid: 'full' },
+      { id: 'ownerName', label: 'Your Name & Title', type: 'text', required: true, grid: 'half', badge: 'Private to DCVC Staff', placeholder: 'e.g. Maria Gonzalez, Owner' },
+      { id: 'ownerEmail', label: 'Verification Email', type: 'email', required: true, grid: 'half', badge: 'Private to DCVC Staff', placeholder: 'maria@example.com' }
     ]
   },
   resource_submit: {
     id: 'resource_submit',
-    title: 'Community Resource Recommendation',
-    description: 'Suggest a verified affirming community resource for Ventura County.',
-    submitLabel: 'Submit Resource',
+    schemaVersion: 3,
+    title: 'Submit a Community Resource or Provider',
+    description: "Help us expand Ventura County's network of vetted, LGBTQ+ affirming healthcare practitioners, social services, and grassroots programs.",
+    consentText: 'I confirm that this organization/provider maintains an actively affirming, safe, and non-discriminatory environment for all LGBTQIA+ individuals.',
+    submitLabel: 'Submit Affirming Resource for Review',
     fields: [
-      { id: 'title', label: 'Resource / Organization Name', type: 'text', required: true, placeholder: 'Organization name' },
-      { id: 'category', label: 'Category', type: 'select', required: true, options: [
-        'Crisis & Helplines', 'Health & Wellness', 'Youth & Family', 'Housing & Food', 'Legal & Advocacy'
+      { id: 'organizationName', label: 'Organization or Provider Name', type: 'text', required: true, grid: 'half', placeholder: 'e.g. Ventura Coast Wellness Center' },
+      { id: 'category', label: 'Primary Category', type: 'select', required: true, grid: 'half', defaultValue: 'Healthcare & Mental Health', options: [
+        'Healthcare & Mental Health',
+        'Youth & Family Services',
+        'Legal Aid & Advocacy',
+        'Crisis & Emergency Housing',
+        'Transgender & Non-Binary Care',
+        'HIV/STI Testing & Prevention',
+        'Seniors & Elder Care',
+        'Education & GSA Support',
+        'Faith & Affirming Communities',
+        'Other Affirming Community Resource'
       ] },
-      { id: 'phone', label: 'Phone Number', type: 'tel', required: false, placeholder: '(805) 555-0100' },
-      { id: 'website', label: 'Website', type: 'url', required: false, placeholder: 'https://...' },
-      { id: 'description', label: 'Description', type: 'textarea', required: true, placeholder: 'Services provided and eligibility' }
+      { id: 'email', label: 'Contact Email', type: 'email', required: true, grid: 'half', placeholder: 'contact@agency.org' },
+      { id: 'phone', label: 'Phone Number', type: 'tel', required: false, grid: 'half', placeholder: '(805) 555-0123' },
+      { id: 'website', label: 'Website URL', type: 'url', required: false, grid: 'half', placeholder: 'https://example.org' },
+      { id: 'city', label: 'City in Ventura County', type: 'select', required: false, grid: 'half', defaultValue: 'Ventura', options: [
+        'Ventura',
+        'Oxnard',
+        'Camarillo',
+        'Ojai',
+        'Thousand Oaks',
+        'Simi Valley',
+        'Santa Paula',
+        'Moorpark',
+        'Port Hueneme',
+        'Fillmore',
+        'Countywide'
+      ] },
+      { id: 'description', label: 'Description of Services & LGBTQ+ Affirming Practices', type: 'textarea', required: true, grid: 'full', placeholder: 'Describe services offered, intake processes, languages spoken, insurance or low-cost options, and specific LGBTQ+ competency...' },
+      { id: 'spanishAvailable', label: 'Spanish Language Services Available', type: 'checkbox', required: false, grid: 'half' },
+      { id: 'freeOrSlidingScale', label: 'Free, Medi-Cal, or Sliding-Scale Accepted', type: 'checkbox', required: false, grid: 'half' }
     ]
   }
 };
@@ -208,33 +301,60 @@ function mergeFeatures(raw) {
     },
     formSchemas: (() => {
       const merged = { ...base.formSchemas };
+      const V1_DEFAULT_IDS = {
+        contact: new Set(['name', 'email', 'phone', 'topic', 'message']),
+        volunteer: new Set(['name', 'email', 'phone', 'role', 'availability']),
+        training: new Set(['organization', 'contactName', 'email', 'headcount', 'notes']),
+        directory_submit: new Set(['businessName', 'category', 'city', 'email', 'website']),
+        resource_submit: new Set(['title', 'category', 'phone', 'website', 'description'])
+      };
+
       if (raw.formSchemas && typeof raw.formSchemas === 'object') {
         for (const [formId, rawSchema] of Object.entries(raw.formSchemas)) {
           if (!rawSchema || typeof rawSchema !== 'object') continue;
           const baseSchema = base.formSchemas[formId] || {};
           const baseFields = Array.isArray(baseSchema.fields) ? baseSchema.fields : [];
           const rawFields = Array.isArray(rawSchema.fields) ? rawSchema.fields : [];
+          const baseVersion = Number(baseSchema.schemaVersion || 1);
+          const rawVersion = Number(rawSchema.schemaVersion || 1);
 
+          // Automatically upgrade legacy v1 schemas to v2 full synchronized forms while preserving custom fields added by Admins
+          if (baseVersion >= 2 && rawVersion < baseVersion) {
+            const v1Ids = V1_DEFAULT_IDS[formId] || new Set();
+            const baseFieldIds = new Set(baseFields.map((bf) => bf.id));
+            const customFields = rawFields.filter((rf) => rf && rf.id && !v1Ids.has(rf.id) && !baseFieldIds.has(rf.id));
+            merged[formId] = {
+              ...baseSchema,
+              schemaVersion: baseVersion,
+              fields: [...baseFields, ...customFields]
+            };
+            continue;
+          }
+
+          const deletedSet = new Set(Array.isArray(rawSchema.deletedFieldIds) ? rawSchema.deletedFieldIds : []);
           const mergedFields = rawFields.length > 0
             ? rawFields.map((rf) => {
                 const bf = baseFields.find((b) => b.id === rf.id);
-                if (rf.type === 'select' && (!Array.isArray(rf.options) || rf.options.length === 0)) {
+                if ((rf.type === 'select' || rf.type === 'checkbox_group') && (!Array.isArray(rf.options) || rf.options.length === 0)) {
                   return { ...rf, options: bf?.options || [] };
                 }
                 return rf;
               })
-            : baseFields;
+            : (rawVersion >= 2 ? [] : baseFields);
 
-          // Retain any default fields from baseSchema that are missing from rawFields
-          for (const bf of baseFields) {
-            if (!mergedFields.some((mf) => mf.id === bf.id)) {
-              mergedFields.push(bf);
+          // Only backfill undeleted baseFields for unversioned schemas (such as hiv_screening/flex_space legacy data)
+          if (rawVersion < 2) {
+            for (const bf of baseFields) {
+              if (!deletedSet.has(bf.id) && !mergedFields.some((mf) => mf.id === bf.id)) {
+                mergedFields.push(bf);
+              }
             }
           }
 
           merged[formId] = {
             ...baseSchema,
             ...rawSchema,
+            ...(baseVersion >= 2 ? { schemaVersion: Math.max(baseVersion, rawVersion) } : {}),
             fields: mergedFields
           };
         }
@@ -301,7 +421,7 @@ export function saveSiteFeatures(updater) {
 
 export function subscribeToSiteFeatures(listener) {
   if (typeof window === 'undefined') return () => {};
-  const onCustom = (e) => listener(e.detail || getSiteFeatures());
+  const onCustom = (e) => listener(e.detail ? mergeFeatures(e.detail) : getSiteFeatures());
   const onStorage = (e) => {
     if (e.key === FEATURES_STORAGE_KEY) listener(getSiteFeatures());
   };
@@ -310,7 +430,7 @@ export function subscribeToSiteFeatures(listener) {
     try {
       ch = new BroadcastChannel(CHANNEL_NAME);
       ch.onmessage = (e) => {
-        if (e.data?.type === FEATURES_EVENT) listener(e.data.payload || getSiteFeatures());
+        if (e.data?.type === FEATURES_EVENT) listener(e.data.payload ? mergeFeatures(e.data.payload) : getSiteFeatures());
       };
     } catch {
       ch = null;
@@ -324,6 +444,8 @@ export function subscribeToSiteFeatures(listener) {
     if (ch) ch.close();
   };
 }
+
+export { mergeFeatures as normalizeSiteFeatures };
 
 function parseTimeMinutes(hhmm = '13:00') {
   const [h, m] = String(hhmm).split(':').map(Number);

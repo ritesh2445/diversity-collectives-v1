@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Calendar, Clock, CheckCircle2, MapPin, AlertCircle, Users } from 'lucide-react';
+import DynamicSchemaFields from './DynamicSchemaFields';
 import {
   getSiteFeatures,
   subscribeToSiteFeatures,
@@ -7,6 +8,7 @@ import {
   getSlotAvailability,
   bookTimeSlot
 } from '../services/siteFeaturesStore';
+import { fetchAndApplyLiveSiteState } from '../services/liveSync';
 import { submitInquiry } from '../services/api';
 import BookingCalendarPicker from './BookingCalendarPicker';
 import {
@@ -33,6 +35,7 @@ export default function FlexSpaceBookingSection({ props = {}, style = {} }) {
   const [statusMsg, setStatusMsg] = useState(null);
 
   useEffect(() => {
+    fetchAndApplyLiveSiteState({ force: true }).catch(() => {});
     return subscribeToSiteFeatures((next) => setFeatures(next));
   }, []);
 
@@ -217,49 +220,14 @@ export default function FlexSpaceBookingSection({ props = {}, style = {} }) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                {(schema?.fields || []).map((field) => (
-                  <div key={field.id} className={field.type === 'textarea' ? 'sm:col-span-2' : ''}>
-                    <label htmlFor={`flex-field-${field.id}`} className="block text-xs font-bold text-slate-800 mb-1">
-                      {field.label} {field.required ? '*' : ''}
-                    </label>
-                    {field.type === 'select' ? (
-                      <select
-                        id={`flex-field-${field.id}`}
-                        required={field.required}
-                        value={formValues[field.id] || ''}
-                        onChange={(e) => handleFieldChange(field.id, e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 bg-white focus:border-[#5A1E65] outline-none"
-                      >
-                        <option value="">Select...</option>
-                        {(field.options || []).map((opt) => (
-                          <option key={opt} value={opt}>{opt}</option>
-                        ))}
-                      </select>
-                    ) : field.type === 'textarea' ? (
-                      <textarea
-                        id={`flex-field-${field.id}`}
-                        rows={2}
-                        required={field.required}
-                        placeholder={field.placeholder || ''}
-                        value={formValues[field.id] || ''}
-                        onChange={(e) => handleFieldChange(field.id, e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 focus:border-[#5A1E65] outline-none"
-                      />
-                    ) : (
-                      <input
-                        id={`flex-field-${field.id}`}
-                        type={field.type || 'text'}
-                        required={field.required}
-                        placeholder={field.placeholder || ''}
-                        value={formValues[field.id] || ''}
-                        onChange={(e) => handleFieldChange(field.id, e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 focus:border-[#5A1E65] outline-none"
-                      />
-                    )}
-                  </div>
-                ))}
-              </div>
+              <DynamicSchemaFields
+                formId="flex_space"
+                fields={schema?.fields || []}
+                values={formValues}
+                onChange={handleFieldChange}
+                inputClassName="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 bg-white focus:border-[#5A1E65] outline-none"
+                labelClassName="block text-xs font-bold text-slate-800"
+              />
 
               <button
                 type="submit"

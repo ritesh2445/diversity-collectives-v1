@@ -562,6 +562,10 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
   const [newSubEmail, setNewSubEmail] = useState('');
   const [addingSub, setAddingSub] = useState(false);
   const [subActionMsg, setSubActionMsg] = useState(null);
+  const [showImportSubs, setShowImportSubs] = useState(false);
+  const [importSubText, setImportSubText] = useState('');
+  const [importSubSource, setImportSubSource] = useState('admin_bulk_import');
+  const [importingSubs, setImportingSubs] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [sendStatus, setSendStatus] = useState(null); // { success: boolean, message: string }
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -1746,6 +1750,112 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
       }
     } catch (err) {
       console.warn('Failed to toggle subscriber status:', err);
+    }
+  };
+
+  const parseImportSubscribersPreview = (rawText) => {
+    const emailRegex = /[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9-]+(?:\.[a-z0-9-]+)+/ig;
+    const seen = new Set();
+    const valid = [];
+    let duplicateCount = 0;
+
+    if (!rawText || !rawText.trim()) {
+      return { valid: [], duplicateCount: 0, invalidLines: 0 };
+    }
+
+    const trimmed = rawText.trim();
+    // Handle JSON array or { subscribers } export files cleanly
+    if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        const list = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.subscribers) ? parsed.subscribers : []);
+        for (const item of list) {
+          const rawEmail = typeof item === 'string' ? item : (item?.email || item?.Email || '');
+          const clean = String(rawEmail).trim().toLowerCase();
+          if (clean && /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9-]+(?:\.[a-z0-9-]+)+$/i.test(clean)) {
+            if (seen.has(clean)) duplicateCount += 1;
+            else {
+              seen.add(clean);
+              valid.push(clean);
+            }
+          }
+        }
+        if (valid.length > 0) {
+          return { valid, duplicateCount, invalidLines: 0 };
+        }
+      } catch (_) {}
+    }
+
+    const lines = trimmed.split(/[\r\n]+/);
+    let invalidLines = 0;
+    for (const line of lines) {
+      const stripped = line.trim();
+      if (!stripped) continue;
+      // Skip common CSV header rows silently
+      if (/^(email|e-mail|subscriber|address)\b/i.test(stripped) && !stripped.includes('@')) continue;
+      const matches = stripped.match(emailRegex);
+      if (!matches || matches.length === 0) {
+        invalidLines += 1;
+        continue;
+      }
+      for (const m of matches) {
+        const em = m.toLowerCase().trim();
+        if (seen.has(em)) duplicateCount += 1;
+        else {
+          seen.add(em);
+          valid.push(em);
+        }
+      }
+    }
+    return { valid, duplicateCount, invalidLines };
+  };
+
+  const handleImportSubscribersFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      setImportSubText((prev) => (prev.trim() ? `${prev.trim()}\n${text}` : text));
+    } catch (err) {
+      setSubActionMsg({ success: false, message: `Could not read file: ${err.message}` });
+    } finally {
+      e.target.value = '';
+    }
+  };
+
+  const handleImportSubscribers = async (e) => {
+    e.preventDefault();
+    const { valid } = parseImportSubscribersPreview(importSubText);
+    if (valid.length === 0) {
+      setSubActionMsg({ success: false, message: 'No valid email addresses detected in your import list.' });
+      return;
+    }
+    setImportingSubs(true);
+    setSubActionMsg(null);
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/newsletter/subscribers/import`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({
+          emails: valid,
+          source: importSubSource || 'admin_bulk_import'
+        })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
+        setSubActionMsg({ success: true, message: data.message });
+        setImportSubText('');
+        setShowImportSubs(false);
+        fetchSubscriberStats();
+      } else {
+        setSubActionMsg({ success: false, message: data.error || data.message || 'Bulk import failed' });
+      }
+    } catch (err) {
+      setSubActionMsg({ success: false, message: err.message || 'Bulk import request failed' });
+    } finally {
+      setImportingSubs(false);
+      setTimeout(() => setSubActionMsg(null), 6000);
     }
   };
 
@@ -4126,6 +4236,21 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                     )}
                   </div>
 
+                  {/* Import Subscribers Button */}
+                  <button
+                    type="button"
+                    onClick={() => setShowImportSubs((prev) => !prev)}
+                    className={`py-1.5 px-3 rounded-xl border text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors ${
+                      showImportSubs
+                        ? 'bg-[#5A1E65] text-white border-[#5A1E65]'
+                        : 'border-purple-200 bg-purple-50/70 hover:bg-purple-100 text-purple-900'
+                    }`}
+                    title="Bulk import subscribers from CSV, TXT, JSON, or pasted emails"
+                  >
+                    <UploadCloud className="w-3.5 h-3.5" />
+                    <span>Import Subscribers</span>
+                  </button>
+
                   {/* Export Subscribers CSV */}
                   <button
                     type="button"
@@ -4146,6 +4271,114 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                   </button>
                 </div>
               </div>
+
+              {/* Bulk Import Subscribers Panel */}
+              {showImportSubs && (() => {
+                const preview = parseImportSubscribersPreview(importSubText);
+                return (
+                  <form
+                    onSubmit={handleImportSubscribers}
+                    className="p-4 rounded-2xl bg-gradient-to-br from-purple-50 via-white to-indigo-50/60 border border-purple-200 shadow-xs space-y-3"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <h4 className="text-xs font-black uppercase tracking-wider text-purple-950 flex items-center gap-1.5">
+                          <UploadCloud className="w-4 h-4 text-[#5A1E65]" />
+                          Bulk Import Newsletter Subscribers
+                        </h4>
+                        <p className="text-[11px] text-slate-600 mt-0.5">
+                          Upload a CSV/TXT/JSON file or paste email addresses (one per line, comma-separated, or exported spreadsheet rows). Existing unsubscribed contacts are reactivated cleanly and duplicates are skipped automatically.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowImportSubs(false)}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
+                        title="Close import panel"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <label className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border-2 border-dashed border-purple-300 bg-white hover:bg-purple-50/60 cursor-pointer text-xs font-bold text-purple-900 transition-colors">
+                        <FileText className="w-4 h-4 text-[#5A1E65]" />
+                        <span>Choose CSV, TXT, or JSON File</span>
+                        <input
+                          type="file"
+                          accept=".csv,.txt,.json,text/csv,text/plain,application/json"
+                          onChange={handleImportSubscribersFile}
+                          className="sr-only"
+                        />
+                      </label>
+
+                      <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-slate-200">
+                        <label htmlFor="bulk-sub-source" className="text-[11px] font-bold text-slate-600 whitespace-nowrap">
+                          Source Tag:
+                        </label>
+                        <input
+                          id="bulk-sub-source"
+                          type="text"
+                          value={importSubSource}
+                          onChange={(e) => setImportSubSource(e.target.value)}
+                          placeholder="admin_bulk_import"
+                          className="w-full text-xs text-slate-800 bg-transparent focus:outline-none font-medium"
+                        />
+                      </div>
+                    </div>
+
+                    <textarea
+                      rows={4}
+                      value={importSubText}
+                      onChange={(e) => setImportSubText(e.target.value)}
+                      placeholder={"alex@example.com\nsam.rivera@venturacounty.org, jordan@community.net\n\"Taylor Lee <taylor@example.org>\""}
+                      className="w-full px-3.5 py-2.5 text-xs font-mono rounded-xl border border-purple-200 bg-white focus:outline-none focus:ring-2 focus:ring-purple-400/40 text-slate-800"
+                    />
+
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                        <span className={`px-2.5 py-1 rounded-full font-bold border ${
+                          preview.valid.length > 0
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                            : 'bg-slate-100 text-slate-500 border-slate-200'
+                        }`}>
+                          {preview.valid.length} valid unique email{preview.valid.length === 1 ? '' : 's'} ready
+                        </span>
+                        {preview.duplicateCount > 0 && (
+                          <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 font-semibold">
+                            {preview.duplicateCount} duplicate{preview.duplicateCount === 1 ? '' : 's'} collapsed
+                          </span>
+                        )}
+                        {preview.invalidLines > 0 && (
+                          <span className="px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-semibold">
+                            {preview.invalidLines} line{preview.invalidLines === 1 ? '' : 's'} without valid email skipped
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {importSubText && (
+                          <button
+                            type="button"
+                            onClick={() => setImportSubText('')}
+                            className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold text-slate-600 cursor-pointer"
+                          >
+                            Clear
+                          </button>
+                        )}
+                        <button
+                          type="submit"
+                          disabled={importingSubs || preview.valid.length === 0}
+                          className="px-4 py-1.5 rounded-xl bg-[#5A1E65] hover:bg-purple-900 text-white text-xs font-extrabold disabled:opacity-50 cursor-pointer shadow-xs flex items-center gap-1.5"
+                        >
+                          <UploadCloud className="w-3.5 h-3.5" />
+                          <span>{importingSubs ? 'Importing...' : `Import ${preview.valid.length || ''} Subscriber${preview.valid.length === 1 ? '' : 's'}`}</span>
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                );
+              })()}
 
               {/* Add In-Person / Event Sign-Up Quick Form */}
               <form onSubmit={handleAddSubscriber} className="p-3 rounded-2xl bg-purple-50/60 border border-purple-200/80 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">

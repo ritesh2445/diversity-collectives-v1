@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Users, 
@@ -14,8 +14,26 @@ import confetti from 'canvas-confetti';
 import { submitVolunteer } from '../services/api';
 import TurnstileWidget from '../components/TurnstileWidget';
 import MobileCarousel from '../components/MobileCarousel';
+import DynamicSchemaFields, {
+  useLiveFormSchema,
+  buildInitialValues,
+  toggleCheckboxGroupValue,
+  validateSchemaFields,
+  formatCustomFieldsSummary
+} from '../components/DynamicSchemaFields';
 import { orgInfo } from '../data/dcvcData';
 import { usePageMeta } from '../utils/seo';
+
+const STANDARD_VOLUNTEER_FIELDS = [
+  'preferredName',
+  'pronouns',
+  'fullName',
+  'email',
+  'phone',
+  'availability',
+  'areasOfInterest',
+  'message'
+];
 
 export default function Volunteer() {
   usePageMeta({
@@ -24,54 +42,44 @@ export default function Volunteer() {
     canonicalPath: '/volunteer'
   });
 
+  const schema = useLiveFormSchema('volunteer');
   const [status, setStatus] = useState('idle'); // 'idle' | 'loading' | 'success' | 'error'
   const [statusMsg, setStatusMsg] = useState('');
-  const [formData, setFormData] = useState({
-    preferredName: '',
-    pronouns: '',
-    fullName: '',
-    email: '',
-    phone: '',
-    areasOfInterest: [],
-    availability: 'Weekdays (Afternoons)',
-    message: '',
+  const [formData, setFormData] = useState(() => ({
+    ...buildInitialValues(schema.fields, {
+      availability: 'Weekdays (Afternoons 1:00 – 5:00 PM)',
+      areasOfInterest: []
+    }),
     backgroundCheckConsent: false,
     turnstileToken: ''
-  });
+  }));
 
-  const interestOptions = [
-    { id: 'center', label: 'Community Resource Center Hospitality & Reception' },
-    { id: 'youth', label: 'Youth Programs (Rainbow Umbrella & Little Unicorns)' },
-    { id: 'health', label: 'Diversity SHINES Outreach & Safer-Sex Kit Packing' },
-    { id: 'events', label: 'Ventura County Pride Festival & Gala Event Logistics' },
-    { id: 'marketing', label: 'Social Media, Photography & Community Outreach' },
-    { id: 'library', label: 'Lending Library & Archive Curation' }
-  ];
+  useEffect(() => {
+    setFormData((prev) => ({
+      ...buildInitialValues(schema.fields, prev),
+      backgroundCheckConsent: Boolean(prev.backgroundCheckConsent),
+      turnstileToken: prev.turnstileToken || ''
+    }));
+  }, [schema.fields]);
 
-  const handleInterestToggle = (id) => {
-    setFormData(prev => {
-      const exists = prev.areasOfInterest.includes(id);
-      return {
-        ...prev,
-        areasOfInterest: exists
-          ? prev.areasOfInterest.filter(x => x !== id)
-          : [...prev.areasOfInterest, id]
-      };
-    });
+  const handleFieldChange = (id, val) => {
+    setFormData((prev) => ({ ...prev, [id]: val }));
+  };
+
+  const handleOptionToggle = (id, optionLabel) => {
+    setFormData((prev) => ({
+      ...prev,
+      [id]: toggleCheckboxGroupValue(prev[id], optionLabel)
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.preferredName?.trim()) {
+    const validationErr = validateSchemaFields(schema.fields, formData);
+    if (validationErr) {
       setStatus('error');
-      setStatusMsg('Please provide your preferred name.');
-      return;
-    }
-
-    if (!formData.fullName?.trim()) {
-      setStatus('error');
-      setStatusMsg('Please provide your legal name for confidential records and verification.');
+      setStatusMsg(validationErr);
       return;
     }
 
@@ -81,15 +89,23 @@ export default function Volunteer() {
       return;
     }
 
+    const extraFieldsNote = formatCustomFieldsSummary(schema.fields, formData, STANDARD_VOLUNTEER_FIELDS);
+    const composedMessage = [formData.message || '', extraFieldsNote].filter(Boolean).join('\n\n');
+
     setStatus('loading');
-    const res = await submitVolunteer(formData);
+    const res = await submitVolunteer({
+      ...formData,
+      preferredName: formData.preferredName || formData.fullName || formData.name,
+      fullName: formData.fullName || formData.name || formData.preferredName,
+      message: composedMessage
+    });
 
     if (res.success) {
       setStatus('success');
-      const confirmationGreeting = formData.preferredName || formData.fullName;
+      const confirmationGreeting = formData.preferredName || formData.fullName || formData.name;
       setStatusMsg(
         res.message ||
-        `Thank you, ${confirmationGreeting}! Your volunteer application has been received. Our volunteer coordinator will reach out to schedule an orientation.`
+        `Thank you, ${confirmationGreeting || 'Friend'}! Your volunteer application has been received. Our volunteer coordinator will reach out to schedule an orientation.`
       );
       try {
         confetti({
@@ -166,10 +182,10 @@ export default function Volunteer() {
               JOIN THE TEAM
             </span>
             <h2 className="font-display text-2xl sm:text-4xl font-black text-slate-950">
-              Volunteer Application Form
+              {schema?.title || 'Volunteer Application Form'}
             </h2>
             <p className="text-xs sm:text-sm text-slate-600 font-medium">
-              Please share your background, availability, and areas of passion. Our volunteer coordinator conducts monthly orientation sessions.
+              {schema?.description || 'Please share your background, availability, and areas of passion. Our volunteer coordinator conducts monthly orientation sessions.'}
             </p>
           </div>
 
@@ -200,159 +216,14 @@ export default function Volunteer() {
                 </div>
               )}
 
-              {/* Identity & Preferred Communication */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div className="space-y-1.5">
-                  <label htmlFor="preferredName" className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center justify-between">
-                    <span>Preferred Name <span className="text-rose-600">*</span></span>
-                    <span className="text-[10px] text-purple-700 font-semibold normal-case">Primary Communication</span>
-                  </label>
-                  <input
-                    id="preferredName"
-                    type="text"
-                    required
-                    value={formData.preferredName}
-                    onChange={(e) => setFormData({ ...formData, preferredName: e.target.value })}
-                    placeholder="Jordan"
-                    className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none"
-                  />
-                  <p className="text-[11px] text-slate-500">
-                    The name our team, mentors, and community will use to address you.
-                  </p>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label htmlFor="pronouns" className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center justify-between">
-                    <span>Pronouns</span>
-                    <span className="text-[10px] text-slate-400 normal-case font-normal">Optional</span>
-                  </label>
-                  <input
-                    id="pronouns"
-                    type="text"
-                    value={formData.pronouns}
-                    onChange={(e) => setFormData({ ...formData, pronouns: e.target.value })}
-                    placeholder="e.g. they/them, she/her, he/him"
-                    className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none"
-                  />
-                  <p className="text-[11px] text-slate-500">
-                    Helps us foster an affirming and respectful team environment.
-                  </p>
-                </div>
-              </div>
-
-              {/* Confidential Legal Records & Contact */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div className="space-y-1.5">
-                  <label htmlFor="name" className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center justify-between">
-                    <span>Full Legal Name <span className="text-rose-600">*</span></span>
-                    <span className="text-[10px] text-amber-700 font-semibold normal-case">Confidential</span>
-                  </label>
-                  <input
-                    id="name"
-                    type="text"
-                    required
-                    value={formData.fullName}
-                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                    placeholder="Legal First and Last Name"
-                    className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none"
-                  />
-                  <p className="text-[11px] text-slate-500">
-                    Preserved confidentially for background verification and safety records.
-                  </p>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label htmlFor="email" className="text-xs font-bold uppercase tracking-wider text-slate-800 block">
-                    Email Address <span className="text-rose-600">*</span>
-                  </label>
-                  <input
-                    id="email"
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="jordan@example.com"
-                    className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none"
-                  />
-                  <p className="text-[11px] text-slate-500">
-                    Where we'll send orientation details and scheduling confirmations.
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div className="space-y-1.5">
-                  <label htmlFor="phone" className="text-xs font-bold uppercase tracking-wider text-slate-800 block">
-                    Phone Number (Optional)
-                  </label>
-                  <input
-                    id="phone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="(805) 555-0144"
-                    className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label htmlFor="avail" className="text-xs font-bold uppercase tracking-wider text-slate-800 block">
-                    General Availability <span className="text-rose-600">*</span>
-                  </label>
-                  <select
-                    id="avail"
-                    value={formData.availability}
-                    onChange={(e) => setFormData({ ...formData, availability: e.target.value })}
-                    className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none bg-white font-medium"
-                  >
-                    <option value="Weekdays (Afternoons 1-5 PM)">Weekdays (Afternoons 1:00 – 5:00 PM)</option>
-                    <option value="Friday Evenings (Youth Circles 5-8 PM)">Friday Evenings (Youth Circles 5:00 – 8:00 PM)</option>
-                    <option value="Weekends (Special Events & Festivals)">Weekends (Special Events & Festivals)</option>
-                    <option value="Flexible / As Needed">Flexible / As Needed</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Areas of Interest Checkboxes */}
-              <div className="space-y-2 pt-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-800 block">
-                  Select Areas of Interest (Check all that apply):
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  {interestOptions.map((opt) => (
-                    <label
-                      key={opt.id}
-                      className={`p-3 rounded-xl border text-xs font-medium cursor-pointer transition-all flex items-start gap-2.5 ${
-                        formData.areasOfInterest.includes(opt.id)
-                          ? 'border-[#5A1E65] bg-purple-50 text-[#5A1E65] font-bold'
-                          : 'border-slate-200 bg-slate-50 hover:bg-white text-slate-700'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={formData.areasOfInterest.includes(opt.id)}
-                        onChange={() => handleInterestToggle(opt.id)}
-                        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#5A1E65] focus:ring-[#5A1E65]"
-                      />
-                      <span>{opt.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label htmlFor="msg" className="text-xs font-bold uppercase tracking-wider text-slate-800 block">
-                  Why do you wish to volunteer with Diversity Collective?
-                </label>
-                <textarea
-                  id="msg"
-                  rows={4}
-                  value={formData.message}
-                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                  placeholder="Share a little about yourself, your hobbies, or any past volunteer experience..."
-                  className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:border-[#5A1E65] focus:ring-2 focus:ring-purple-200 outline-none resize-none"
-                />
-              </div>
+              {/* Live Admin-Synchronized Volunteer Form Fields */}
+              <DynamicSchemaFields
+                formId="volunteer"
+                fields={schema?.fields || []}
+                values={formData}
+                onChange={handleFieldChange}
+                onToggleOption={handleOptionToggle}
+              />
 
               {/* Vetting & Background Check Consent */}
               <div className="flex items-start gap-3 p-4 bg-emerald-50/70 rounded-xl border border-emerald-200">
@@ -360,12 +231,16 @@ export default function Volunteer() {
                   id="bgCheck"
                   type="checkbox"
                   required
-                  checked={formData.backgroundCheckConsent}
+                  checked={Boolean(formData.backgroundCheckConsent)}
                   onChange={(e) => setFormData({ ...formData, backgroundCheckConsent: e.target.checked })}
                   className="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-700 focus:ring-emerald-600"
                 />
                 <label htmlFor="bgCheck" className="text-xs text-slate-700 leading-relaxed font-medium">
-                  <strong>Volunteer Safety & Vetting Consent:</strong> Because Diversity Collective provides safe spaces for minor youth and vulnerable adults, I agree to comply with our <Link to="/terms" className="text-emerald-700 font-bold underline hover:text-emerald-900">Code of Conduct</Link> and standard volunteer vetting policies under our <Link to="/privacy" className="text-emerald-700 font-bold underline hover:text-emerald-900">Privacy Policy</Link>. <span className="text-rose-600">*</span>
+                  {schema?.consentText || (
+                    <>
+                      <strong>Volunteer Safety & Vetting Consent:</strong> Because Diversity Collective provides safe spaces for minor youth and vulnerable adults, I agree to comply with our <Link to="/terms" className="text-emerald-700 font-bold underline hover:text-emerald-900">Code of Conduct</Link> and standard volunteer vetting policies under our <Link to="/privacy" className="text-emerald-700 font-bold underline hover:text-emerald-900">Privacy Policy</Link>.
+                    </>
+                  )} <span className="text-rose-600">*</span>
                 </label>
               </div>
 
@@ -382,7 +257,7 @@ export default function Volunteer() {
                   className="w-full sm:w-auto py-4 px-10 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-700 text-white font-black text-sm tracking-wide shadow-lg hover:shadow-2xl hover:scale-102 transition-all inline-flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   <Send className="w-4 h-4 text-amber-300" />
-                  <span>{status === 'loading' ? 'Submitting Application...' : 'Submit Volunteer Application'}</span>
+                  <span>{status === 'loading' ? 'Submitting Application...' : (schema?.submitLabel || 'Submit Volunteer Application')}</span>
                 </button>
               </div>
 
