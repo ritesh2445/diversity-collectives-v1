@@ -7,6 +7,7 @@
 
 import { DEFAULT_SITE_THEME, normalizePageLayoutBlocks, upgradeOrNormalizePageLayout } from '../data/siteDefaults.js';
 import { normalizeCmsEventList } from '../utils/eventDates.js';
+import { getStoredToken } from '../admin/services/adminClient.js';
 
 export const STORAGE_KEYS = {
   HERO_THEME: 'dcvc_active_hero_theme',
@@ -507,13 +508,15 @@ export async function fetchAndApplyLiveSiteState({ force = false } = {}) {
 }
 
 function getAdminSessionToken() {
+  // Always purge any tokens that may have been accidentally written to storage (security hardening)
   if (typeof window !== 'undefined') {
     try {
       sessionStorage.removeItem('dcvc_admin_token');
       localStorage.removeItem('dcvc_admin_token');
     } catch {}
   }
-  return null;
+  // Use the in-memory token managed by adminClient.js (set via setStoredToken on login)
+  return getStoredToken() || null;
 }
 
 export async function publishAdminSitePatch(patch) {

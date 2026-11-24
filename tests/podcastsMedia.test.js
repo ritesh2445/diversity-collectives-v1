@@ -5,15 +5,13 @@ import { podcastsSeed } from '../src/data/dcvcData.js';
 import { lunaLearningEngine } from '../src/services/lunaLearningEngine.js';
 
 describe('Podcasts & Community Media Engine', () => {
-  test('initializes default podcasts seed database with authentic DCVC episodes', () => {
+  test('initializes podcasts as an empty array when no real episodes are published', () => {
     const podcasts = cmsStore.getPodcasts();
     assert.ok(Array.isArray(podcasts), 'Podcasts should be an array');
-    assert.ok(podcasts.length >= 4, 'Should contain at least 4 default seed episodes');
-
-    const ep1 = podcasts.find(p => p.slug === 'decade-of-resilience-founding-story');
-    assert.ok(ep1, 'Episode 1 should exist');
-    assert.strictEqual(ep1.episodeNumber, 1);
-    assert.ok(ep1.link.includes('http'), 'Link should be a valid URL');
+    // The seed is intentionally empty — real episodes are managed via the Admin Panel.
+    // This verifies the store returns a clean array (not null/undefined) with no fake placeholders.
+    assert.ok(podcasts.every(p => !['pod-1','pod-2','pod-3','pod-4'].includes(p.id)),
+      'No fake seed episodes (pod-1 through pod-4) should appear in the store');
   });
 
   test('creates, updates, and deletes podcast episodes via cmsStore', () => {

@@ -71,6 +71,7 @@ import VoicemailItemRow from '../components/VoicemailItemRow.jsx';
 import { getSiteStateMeta, SYNC_EVENTS, fetchAndApplyLiveSiteState } from '../services/liveSync.js';
 import { cmsStore } from '../services/cmsStore.js';
 import { getMediaSuggestions, updateMediaSuggestion, deleteMediaSuggestion } from '../admin/services/cmsClient.js';
+import { setStoredToken } from '../admin/services/adminClient.js';
 
 const API_BASE_URL = typeof window !== 'undefined' && window.location.origin
   ? (import.meta.env?.VITE_API_URL || import.meta.env?.VITE_API_BASE_URL || '/api')
@@ -1091,7 +1092,10 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
         ch.close();
       } catch {}
     }
-    if (authToken) setToken(authToken); // In-memory only for this tab turn
+    if (authToken) {
+      setToken(authToken); // In-memory only for this tab turn
+      setStoredToken(authToken); // Sync to adminClient so liveSync can include Authorization header
+    }
     if (authUser) setUser(authUser);
   };
 
@@ -1107,6 +1111,7 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
         ch.close();
       } catch {}
     }
+    setStoredToken(null); // Clear the shared in-memory token used by liveSync
     setToken('');
     setUser(null);
     setPending2fa(null);

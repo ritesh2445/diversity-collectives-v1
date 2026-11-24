@@ -12,6 +12,34 @@ const SAFE_FONT_NAME_RE = /^[A-Za-z0-9 _-]{1,64}$/;
 const SAFE_COLOR_RE = /^(#[0-9a-f]{3,8}|rgba?\([^;{}<>]+\)|linear-gradient\([^;{}<>]+\))$/i;
 const SAFE_UNIT_RE = /^\d+(?:\.\d+)?(px|rem|em|%)?$/i;
 
+/**
+ * Fake placeholder podcast IDs/slugs that were seeded during development.
+ * Any episode matching these identifiers must be stripped from the live state
+ * regardless of how they entered the database — they must never return after
+ * an admin deletes them.
+ */
+const FAKE_PODCAST_IDS = new Set([
+  'pod-1', 'pod-2', 'pod-3', 'pod-4',
+  'decade-of-resilience-founding-story',
+  'rainbow-umbrella-youth-voices',
+  'diversity-shines-healthcare-equity',
+  'affirming-business-network-allies-in-action'
+]);
+
+/**
+ * Strip fake seed podcasts from a parsed state object (mutates state.cmsData.podcasts in-place).
+ * Returns true when at least one fake episode was removed (caller may want to re-persist).
+ */
+function purgeFakePodcasts(state) {
+  if (!state || !state.cmsData || !Array.isArray(state.cmsData.podcasts)) return false;
+  const before = state.cmsData.podcasts.length;
+  state.cmsData.podcasts = state.cmsData.podcasts.filter(ep => {
+    if (!ep || typeof ep !== 'object') return false;
+    return !FAKE_PODCAST_IDS.has(ep.id) && !FAKE_PODCAST_IDS.has(ep.slug);
+  });
+  return state.cmsData.podcasts.length < before;
+}
+
 const MAX_STATE_BYTES = 5 * 1024 * 1024; // 5 MB cap on serialized live state
 
 export function sanitizePublicUrl(value, fallback = '') {
@@ -345,6 +373,20 @@ export async function readSiteState(db) {
     } catch {
       parsed = {};
     }
+    // Strip any fake seed podcast episodes that may have survived previous deploys
+    const hadFakes = purgeFakePodcasts(parsed);
+    if (hadFakes) {
+      // Persist the cleansed state back so the row is clean for future reads
+      try {
+        await db.execute({
+          sql: `UPDATE site_state SET payload_json = ?, updated_at = datetime('now') WHERE state_key = 'live'`,
+          args: [JSON.stringify(parsed)]
+        });
+        console.info('[SiteState] Purged fake placeholder podcasts from Turso state.');
+      } catch (writeErr) {
+        console.warn('[SiteState] Could not persist podcast purge:', writeErr.message);
+      }
+    }
     return {
       version: Number(row.version || 1),
       updatedAt: row.updated_at || null,
@@ -364,6 +406,8 @@ export async function writeSiteStatePatch(db, patch, actorEmail = 'admin@diversi
   await ensureSiteStateTable(db);
   const current = await readSiteState(db);
   const nextState = sanitizeSiteStatePatch(patch, current.state);
+  // Always strip fake seed podcasts from whatever is about to be persisted
+  purgeFakePodcasts(nextState);
   const nextVersion = Number(current.version || 0) + 1;
   const nowIso = new Date().toISOString();
 
