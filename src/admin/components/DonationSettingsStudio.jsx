@@ -23,7 +23,8 @@ import {
   Plus,
   Search,
   X,
-  FileText
+  FileText,
+  Trash2
 } from 'lucide-react';
 import { 
   getDonationEmailTemplate, 
@@ -31,6 +32,8 @@ import {
   sendTestDonationEmail, 
   getRecentDonations, 
   resendDonorEmail,
+  deleteDonation,
+  deleteAllDonations,
   recordManualDonation,
   exportDataCsv
 } from '../services/adminClient';
@@ -115,6 +118,9 @@ export default function DonationSettingsStudio({ currentUser }) {
   const [donations, setDonations] = useState([]);
   const [resendingId, setResendingId] = useState(null);
   const [resendStatus, setResendStatus] = useState({});
+  const [deletingId, setDeletingId] = useState(null);
+  const [deletingAll, setDeletingAll] = useState(false);
+  const [donationActionMsg, setDonationActionMsg] = useState(null);
   const [focusedField, setFocusedField] = useState('bodyText');
 
   useEffect(() => {
@@ -341,6 +347,53 @@ export default function DonationSettingsStudio({ currentUser }) {
         [focusedField]: currentVal + (currentVal.endsWith(' ') || currentVal === '' ? '' : ' ') + tag
       };
     });
+  };
+
+  const handleDeleteDonation = async (d) => {
+    const label = d.donor_display_name || 'Anonymous';
+    const amt = `$${((d.amount_cents || 0) / 100).toFixed(2)}`;
+    if (!window.confirm(`Delete contribution from "${label}" (${amt})? This permanently removes the record and keepsake card.`)) {
+      return;
+    }
+    setDeletingId(d.id);
+    setDonationActionMsg(null);
+    try {
+      const res = await deleteDonation(d.id);
+      if (res.success) {
+        setDonations((prev) => prev.filter((item) => item.id !== d.id));
+        setDonationActionMsg({ success: true, message: res.message || `Deleted contribution from ${label}.` });
+      } else {
+        setDonationActionMsg({ success: false, message: res.error || 'Failed to delete contribution.' });
+      }
+    } catch (err) {
+      setDonationActionMsg({ success: false, message: err.message });
+    } finally {
+      setDeletingId(null);
+      setTimeout(() => setDonationActionMsg(null), 4000);
+    }
+  };
+
+  const handleDeleteAllDonations = async () => {
+    if (donations.length === 0) return;
+    if (!window.confirm(`Are you sure you want to delete ALL ${donations.length} contribution records and keepsake cards? This cannot be undone.`)) {
+      return;
+    }
+    setDeletingAll(true);
+    setDonationActionMsg(null);
+    try {
+      const res = await deleteAllDonations();
+      if (res.success) {
+        setDonations([]);
+        setDonationActionMsg({ success: true, message: res.message || 'All contribution records deleted.' });
+      } else {
+        setDonationActionMsg({ success: false, message: res.error || 'Failed to delete all contributions.' });
+      }
+    } catch (err) {
+      setDonationActionMsg({ success: false, message: err.message });
+    } finally {
+      setDeletingAll(false);
+      setTimeout(() => setDonationActionMsg(null), 5000);
+    }
   };
 
   // Compile live preview using sample donor values
@@ -1120,6 +1173,20 @@ export default function DonationSettingsStudio({ currentUser }) {
                 <span>{exportingCsv ? 'Exporting...' : 'Export CSV'}</span>
               </button>
 
+              {/* Delete All Contributions */}
+              {donations.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleDeleteAllDonations}
+                  disabled={deletingAll}
+                  className="py-2 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50 transition-colors"
+                  title="Delete all contribution records"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>{deletingAll ? 'Deleting...' : `Delete All (${donations.length})`}</span>
+                </button>
+              )}
+
               {/* Refresh */}
               <button
                 type="button"
@@ -1131,6 +1198,21 @@ export default function DonationSettingsStudio({ currentUser }) {
               </button>
             </div>
           </div>
+
+          {donationActionMsg && (
+            <div className={`p-3 rounded-xl text-xs font-bold flex items-center gap-2 border ${
+              donationActionMsg.success
+                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                : 'bg-rose-50 text-rose-800 border-rose-200'
+            }`}>
+              {donationActionMsg.success ? (
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+              ) : (
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+              )}
+              <span>{donationActionMsg.message}</span>
+            </div>
+          )}
 
           {donations.length === 0 ? (
             <div className="p-12 text-center text-slate-400 space-y-2">
@@ -1151,7 +1233,7 @@ export default function DonationSettingsStudio({ currentUser }) {
                     <th className="pb-3">Tier Unlocked</th>
                     <th className="pb-3">Date</th>
                     <th className="pb-3">Card Link</th>
-                    <th className="pb-3 pr-2 text-right">Email Actions</th>
+                    <th className="pb-3 pr-2 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
@@ -1203,14 +1285,26 @@ export default function DonationSettingsStudio({ currentUser }) {
                           </a>
                         </td>
                         <td className="py-3.5 pr-2 text-right">
-                          <button
-                            type="button"
-                            onClick={() => handleResend(d)}
-                            disabled={resendingId === d.id}
-                            className="px-2.5 py-1 rounded-lg border border-slate-200 hover:border-purple-300 hover:bg-purple-50 text-[11px] font-bold text-purple-900 transition-colors cursor-pointer disabled:opacity-50"
-                          >
-                            {resendingId === d.id ? 'Sending...' : 'Resend Email'}
-                          </button>
+                          <div className="inline-flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleResend(d)}
+                              disabled={resendingId === d.id || deletingId === d.id}
+                              className="px-2.5 py-1 rounded-lg border border-slate-200 hover:border-purple-300 hover:bg-purple-50 text-[11px] font-bold text-purple-900 transition-colors cursor-pointer disabled:opacity-50"
+                            >
+                              {resendingId === d.id ? 'Sending...' : 'Resend Email'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteDonation(d)}
+                              disabled={deletingId === d.id || deletingAll}
+                              className="px-2.5 py-1 rounded-lg border border-rose-200 bg-rose-50/70 hover:bg-rose-100 text-[11px] font-bold text-rose-700 inline-flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-50"
+                              title="Delete this contribution"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                              <span>{deletingId === d.id ? 'Deleting...' : 'Delete'}</span>
+                            </button>
+                          </div>
                           {resendStatus[d.id] && (
                             <span className="block text-[10px] text-emerald-600 font-bold mt-0.5">
                               {resendStatus[d.id]}

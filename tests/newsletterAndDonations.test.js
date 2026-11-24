@@ -1,5 +1,9 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
+import fs from 'node:fs';
+import path from 'node:path';
+import { generateAuthToken } from '../worker/src/adminApi.js';
+import worker from '../worker/src/index.js';
 import {
   templateNewsletterWelcome,
   templateNewsletterBroadcast,
@@ -117,6 +121,64 @@ describe('Newsletter & Automated Donor Appreciation Suite', () => {
     assert.strictEqual(donRow[4], '$500.00');
     assert.strictEqual(donRow[5], 'monthly');
     assert.strictEqual(donRow[6], 'Visionary Benefactor');
+  });
+
+  it('6. enforces donations RBAC & supports DELETE /api/admin/donations/:id and DELETE /api/admin/donations', async () => {
+    const secret = 'test_donations_delete_jwt_secret_12345';
+    const adminToken = await generateAuthToken(
+      { userId: 'u_admin', email: 'admin@diversitycollective.org', role: 'admin', name: 'Admin', allowedSections: null },
+      secret
+    );
+    const eventsOnlyToken = await generateAuthToken(
+      { userId: 'u_events', email: 'events@diversitycollective.org', role: 'editor', name: 'Events', allowedSections: ['events'] },
+      secret
+    );
+    const env = { ADMIN_JWT_SECRET: secret };
+    const ctx = { waitUntil: () => {} };
+
+    const unauth = await worker.fetch(
+      new Request('https://dcvc-api.diversity-collective-vc.workers.dev/api/admin/donations/card-1', { method: 'DELETE' }),
+      env,
+      ctx
+    );
+    assert.strictEqual(unauth.status, 401);
+
+    const forbidden = await worker.fetch(
+      new Request('https://dcvc-api.diversity-collective-vc.workers.dev/api/admin/donations', {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${eventsOnlyToken}` }
+      }),
+      env,
+      ctx
+    );
+    assert.strictEqual(forbidden.status, 403);
+
+    const delSingle = await worker.fetch(
+      new Request('https://dcvc-api.diversity-collective-vc.workers.dev/api/admin/donations/card-1', {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${adminToken}` }
+      }),
+      env,
+      ctx
+    );
+    assert.strictEqual(delSingle.status, 200);
+    const singleData = await delSingle.json();
+    assert.strictEqual(singleData.success, true);
+
+    const delAll = await worker.fetch(
+      new Request('https://dcvc-api.diversity-collective-vc.workers.dev/api/admin/donations', {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${adminToken}` }
+      }),
+      env,
+      ctx
+    );
+    assert.strictEqual(delAll.status, 200);
+    const allData = await delAll.json();
+    assert.strictEqual(allData.success, true);
+
+    const studioSrc = fs.readFileSync(path.resolve(process.cwd(), 'src/admin/components/DonationSettingsStudio.jsx'), 'utf8');
+    assert.ok(studioSrc.includes('handleDeleteAllDonations') && studioSrc.includes('handleDeleteDonation'));
   });
 
 });

@@ -7315,6 +7315,75 @@ export default {
           }, 200, adminCors);
         }
 
+        // 15.19B Delete All Contribution Records (DELETE /api/admin/donations)
+        if (pathname === '/api/admin/donations' && request.method === 'DELETE') {
+          if (!requireSectionAccess(authUser, 'donations', ['admin', 'approver', 'editor'])) {
+            return errorResponse('Forbidden: Donations access required to delete contributions.', 403, null, adminCors);
+          }
+          const db = getDb(env);
+          let deletedCount = 0;
+          if (db) {
+            const countRes = await db.execute({
+              sql: `SELECT COUNT(*) AS total FROM donation_appreciation_cards`,
+              args: []
+            }).catch(() => ({ rows: [] }));
+            deletedCount = Number(countRes.rows?.[0]?.total || 0);
+            await db.execute({
+              sql: `DELETE FROM donation_appreciation_cards`,
+              args: []
+            });
+            await logAdminAction(db, {
+              userId: authUser.id || authUser.userId,
+              userEmail: authUser.email,
+              action: 'admin_delete_all_donations',
+              targetType: 'donations',
+              targetId: 'all',
+              details: { deletedCount },
+              ip: clientIp
+            }).catch(() => {});
+          }
+          return jsonResponse({
+            success: true,
+            deletedCount,
+            message: `Deleted ${deletedCount} contribution record${deletedCount === 1 ? '' : 's'}.`
+          }, 200, adminCors);
+        }
+
+        // 15.19C Delete Single Contribution Record (DELETE /api/admin/donations/:id)
+        if (
+          pathname.startsWith('/api/admin/donations/') &&
+          !pathname.endsWith('/resend-email') &&
+          request.method === 'DELETE'
+        ) {
+          if (!requireSectionAccess(authUser, 'donations', ['admin', 'approver', 'editor'])) {
+            return errorResponse('Forbidden: Donations access required to delete contributions.', 403, null, adminCors);
+          }
+          const donationId = decodeURIComponent(pathname.replace('/api/admin/donations/', '')).trim();
+          if (!donationId || donationId === 'template' || donationId === 'manual') {
+            return errorResponse('Valid contribution ID is required.', 400, null, adminCors);
+          }
+          const db = getDb(env);
+          if (db) {
+            await db.execute({
+              sql: `DELETE FROM donation_appreciation_cards WHERE id = ? OR card_token = ?`,
+              args: [donationId, donationId]
+            });
+            await logAdminAction(db, {
+              userId: authUser.id || authUser.userId,
+              userEmail: authUser.email,
+              action: 'admin_delete_donation',
+              targetType: 'donations',
+              targetId: donationId,
+              ip: clientIp
+            }).catch(() => {});
+          }
+          return jsonResponse({
+            success: true,
+            deletedId: donationId,
+            message: 'Contribution deleted successfully.'
+          }, 200, adminCors);
+        }
+
         // 15.20 Resend Donor Appreciation Email (POST /api/admin/donations/:id/resend-email)
         if (pathname.startsWith('/api/admin/donations/') && pathname.endsWith('/resend-email') && request.method === 'POST') {
           if (!requireSectionAccess(authUser, 'donations', ['admin', 'approver', 'editor'])) {

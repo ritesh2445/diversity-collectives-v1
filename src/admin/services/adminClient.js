@@ -1556,6 +1556,45 @@ export async function resendDonorEmail(donationId) {
   }
 }
 
+export async function deleteDonation(donationId) {
+  try {
+    const res = await fetchWithAuth(`/admin/donations/${encodeURIComponent(donationId)}`, {
+      method: 'DELETE'
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.success) {
+      try {
+        const stored = JSON.parse(localStorage.getItem('dcvc_local_donations') || '[]');
+        if (Array.isArray(stored)) {
+          localStorage.setItem('dcvc_local_donations', JSON.stringify(stored.filter((d) => d.id !== donationId && d.card_token !== donationId)));
+        }
+      } catch {}
+      return data;
+    }
+    return { success: false, error: data.error || 'Failed to delete contribution' };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function deleteAllDonations() {
+  try {
+    const res = await fetchWithAuth('/admin/donations', {
+      method: 'DELETE'
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.success) {
+      try {
+        localStorage.removeItem('dcvc_local_donations');
+      } catch {}
+      return data;
+    }
+    return { success: false, error: data.error || 'Failed to delete all contributions' };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
 export async function recordManualDonation(payload) {
   try {
     const res = await fetchWithAuth('/admin/donations/manual', {
