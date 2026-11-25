@@ -176,7 +176,7 @@ export const programsList = [
     contactEmail: "info@diversitycollective.org",
     contactPhone: "(805) 644-5428",
     ctaText: "Request Training",
-    ctaLink: "/contact"
+    ctaLink: "/training/book"
   },
   {
     slug: "narcotics-anonymous",

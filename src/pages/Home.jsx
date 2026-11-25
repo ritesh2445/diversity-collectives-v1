@@ -776,7 +776,7 @@ export default function Home() {
                       </a>
                     ) : (
                       <Link 
-                        to={program.ctaLink || `/programs/${program.slug}`}
+                        to={`/programs/${program.slug}`}
                         className="btn-primary py-2.5 px-4 text-xs font-bold shadow-md hover:shadow-lg inline-flex items-center justify-center gap-1.5 text-center group"
                       >
                         <span>{program.programGroup === 'signature' ? 'Read Program Details' : 'Explore Program & Times'}</span>
