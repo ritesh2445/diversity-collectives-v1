@@ -232,12 +232,18 @@ export default function Community() {
                 key={group.id || group.slug || group.name}
                 className="bg-white rounded-3xl border border-slate-200/90 hover:border-purple-300 shadow-xs hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 flex flex-col h-full w-full overflow-hidden group"
               >
-                {/* Featured Picture with edge-to-edge 16:10 aspect ratio */}
-                <div className="relative w-full aspect-[16/10] overflow-hidden bg-slate-900 shrink-0">
+                {/* Featured Picture: adapts cleanly inside 16:10 frame without unintended cropping */}
+                <div className="relative w-full aspect-[16/10] overflow-hidden bg-slate-900 shrink-0 flex items-center justify-center">
+                  <img
+                    src={groupImg}
+                    alt=""
+                    aria-hidden="true"
+                    className="absolute inset-0 w-full h-full object-cover blur-xl opacity-35 scale-125 pointer-events-none"
+                  />
                   <img
                     src={groupImg}
                     alt={group.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="relative z-[1] w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
                     onError={(e) => {
                       e.currentTarget.src = '/images/community-gathering.jpg';
                     }}
