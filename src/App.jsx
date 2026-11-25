@@ -96,6 +96,7 @@ const SubmissionError = lazyWithRetry(() => import('./pages/SubmissionError'));
 const NotFound = lazyWithRetry(() => import('./pages/NotFound'));
 const Admin = lazyWithRetry(() => import('./pages/Admin'));
 const AppointmentBooking = lazyWithRetry(() => import('./pages/AppointmentBooking'));
+const FlexSpaceBooking = lazyWithRetry(() => import('./pages/FlexSpaceBooking'));
 const ResourceSubmit = lazyWithRetry(() => import('./pages/ResourceSubmit'));
 import GeneralError, { ErrorBoundary } from './pages/GeneralError';
 
@@ -281,6 +282,7 @@ function AppLayout() {
               <Route path="/resources" element={<Resources />} />
               <Route path="/resources/submit" element={<ResourceSubmit />} />
               <Route path="/appointments" element={<AppointmentBooking />} />
+              <Route path="/flex-space" element={<FlexSpaceBooking />} />
 
               {/* Events */}
               <Route path="/events" element={<Events />} />

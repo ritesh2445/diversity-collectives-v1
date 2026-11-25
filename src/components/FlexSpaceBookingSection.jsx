@@ -1,128 +1,65 @@
-import React, { useEffect, useState, useMemo } from 'react';
-import { Calendar, Clock, CheckCircle2, MapPin, AlertCircle, Users } from 'lucide-react';
-import DynamicSchemaFields from './DynamicSchemaFields';
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Clock, MapPin, ArrowRight, CheckCircle2, AlertCircle, Wifi, ShieldCheck } from 'lucide-react';
 import {
   getSiteFeatures,
   subscribeToSiteFeatures,
-  computeFlexSpaceStatus,
-  getSlotAvailability,
-  bookTimeSlot
+  computeFlexSpaceStatus
 } from '../services/siteFeaturesStore';
 import { fetchAndApplyLiveSiteState } from '../services/liveSync';
-import { submitInquiry } from '../services/api';
-import BookingCalendarPicker from './BookingCalendarPicker';
-import {
-  getTodayIso,
-  isDateAllowedForFlex,
-  getUpcomingFlexSpaceDates
-} from '../utils/calendarBooking.js';
 
 /**
- * Section #11: Flex Space (replaces workspace segment)
- * Live status + automated timings + full slot booking system + Admin-configurable form fields.
+ * Section #11: Flex Space Overview Card (Home Page)
+ * Compact info + live availability status; clicking Book Slot opens dedicated /flex-space page.
  */
 export default function FlexSpaceBookingSection({ props = {}, style = {} }) {
   const [features, setFeatures] = useState(getSiteFeatures);
-  const flexCfg = features.flexSpace;
-  const initialDate = useMemo(() => {
-    const list = getUpcomingFlexSpaceDates(30, flexCfg?.allowedDates, flexCfg?.blockedDates);
-    return list[0] || getTodayIso();
-  }, [flexCfg]);
-
-  const [selectedDate, setSelectedDate] = useState(initialDate);
-  const [selectedSlot, setSelectedSlot] = useState('');
-  const [formValues, setFormValues] = useState({});
-  const [statusMsg, setStatusMsg] = useState(null);
 
   useEffect(() => {
     fetchAndApplyLiveSiteState({ force: true }).catch(() => {});
     return subscribeToSiteFeatures((next) => setFeatures(next));
   }, []);
 
-  const schema = features.formSchemas?.flex_space;
+  const flexCfg = features.flexSpace;
   const liveStatus = computeFlexSpaceStatus(flexCfg);
   const isManuallyClosed = flexCfg?.manualStatus === 'closed';
-  const slots = getSlotAvailability('flex', selectedDate, features);
-
-  const handleFieldChange = (id, val) => {
-    setFormValues((prev) => ({ ...prev, [id]: val }));
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setStatusMsg(null);
-
-    if (isManuallyClosed) {
-      setStatusMsg({ ok: false, text: 'Bookings are currently unavailable while Flex Space is closed.' });
-      return;
-    }
-
-    const check = isDateAllowedForFlex(selectedDate, flexCfg);
-    if (!check.allowed) {
-      setStatusMsg({ ok: false, text: check.reason });
-      return;
-    }
-
-    if (!selectedSlot) {
-      setStatusMsg({ ok: false, text: 'Please select an available Flex Space time slot.' });
-      return;
-    }
-
-    const res = bookTimeSlot('flex', {
-      date: selectedDate,
-      slot: selectedSlot,
-      name: formValues.name || '',
-      email: formValues.email || '',
-      phone: formValues.phone || '',
-      purpose: formValues.purpose || '',
-      notes: JSON.stringify(formValues)
-    });
-
-    if (!res.ok) {
-      setStatusMsg({ ok: false, text: res.error });
-      return;
-    }
-
-    submitInquiry({
-      type: 'flex_space',
-      name: formValues.name || 'Flex Space Visitor',
-      email: formValues.email || 'info@diversitycollective.org',
-      phone: formValues.phone || '',
-      subject: `Community Flex Space Booking: ${selectedDate} (${selectedSlot})`,
-      message: `Reserved slot: ${selectedDate} @ ${selectedSlot}\nPurpose: ${formValues.purpose || 'Community session'}\nDetails: ${JSON.stringify(formValues, null, 2)}`
-    }).catch(() => {});
-
-    setStatusMsg({
-      ok: true,
-      text: `Flex Space reserved for ${selectedDate} (${selectedSlot}). Confirmation logged with DCVC!`
-    });
-    setSelectedSlot('');
-    setFormValues({});
-  };
 
   return (
     <section
       id="flex-space"
       style={style}
-      className="py-14 md:py-20 bg-gradient-to-b from-slate-50 via-purple-50/40 to-white border-b border-purple-200/60 relative overflow-hidden"
+      className="py-12 md:py-16 bg-gradient-to-b from-slate-50 via-purple-50/40 to-white border-b border-purple-200/60 relative overflow-hidden"
     >
       <div className="container-clean">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Left: Live Status & Automated Timings */}
-          <div className="lg:col-span-5 space-y-5">
-            <span className="glass-pill">
+        <div className="rounded-3xl bg-white border border-purple-200/80 shadow-md p-6 sm:p-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          {/* Left: Flex Space Overview */}
+          <div className="lg:col-span-7 space-y-4">
+            <span className="glass-pill w-fit">
               {props.eyebrow || 'FLEX SPACE · SLOT BOOKING'}
             </span>
             <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-black text-slate-950 leading-tight">
-              {flexCfg?.title || props.headline || 'Community Flex Space at 2471 Portola Rd'}
+              {flexCfg?.title || props.headline || 'Community Flex Space'}
             </h2>
-            <p className="text-slate-700 text-sm sm:text-base font-medium leading-relaxed">
-              {flexCfg?.description || props.description}
+            <p className="text-slate-700 text-sm sm:text-base font-medium leading-relaxed max-w-2xl">
+              {flexCfg?.description || props.description || 'Need a quiet, affirming space for peer support, telehealth, study, or community organizing? Check real-time availability and reserve a Flex Space time slot.'}
             </p>
+            <div className="flex flex-wrap items-center gap-3 pt-1 text-xs font-semibold text-slate-700">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-50 border border-purple-200/80 text-[#5A1E65]">
+                <ShieldCheck className="w-3.5 h-3.5" /> Quiet &amp; Affirming
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 border border-slate-200">
+                <Wifi className="w-3.5 h-3.5 text-emerald-600" /> Free Wi-Fi
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 border border-slate-200">
+                <CheckCircle2 className="w-3.5 h-3.5 text-purple-700" /> Telehealth &amp; Study Ready
+              </span>
+            </div>
+          </div>
 
-            {/* Live Availability Badge */}
+          {/* Right: Live Status & Dedicated Booking Page CTA */}
+          <div className="lg:col-span-5 flex flex-col gap-4 p-5 sm:p-6 rounded-2xl bg-slate-50/90 border border-slate-200/90">
             <div
-              className={`p-4 rounded-2xl border flex items-start gap-3 ${
+              className={`p-4 rounded-xl border flex items-start gap-3 ${
                 liveStatus.isAvailable
                   ? 'bg-emerald-50 border-emerald-300 text-emerald-950'
                   : 'bg-amber-50 border-amber-300 text-amber-950'
@@ -133,147 +70,37 @@ export default function FlexSpaceBookingSection({ props = {}, style = {} }) {
                   liveStatus.isAvailable ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
                 }`}
               />
-              <div className="space-y-1">
+              <div className="space-y-1 min-w-0">
                 <p className="font-extrabold text-sm">{liveStatus.label}</p>
                 <p className="text-xs font-medium opacity-90 flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5" />
-                  Automated Hours: {flexCfg.autoHours?.openTime || '13:00'} – {flexCfg.autoHours?.closeTime || '17:00'} (Mon–Fri)
+                  <Clock className="w-3.5 h-3.5 shrink-0" />
+                  <span>Hours: {flexCfg?.autoHours?.openTime || '13:00'} – {flexCfg?.autoHours?.closeTime || '17:00'} (Mon–Fri)</span>
                 </p>
                 <p className="text-xs font-medium opacity-90 flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5" />
-                  2471 Portola Road, Suite 100, Ventura
+                  <MapPin className="w-3.5 h-3.5 shrink-0" />
+                  <span>2471 Portola Road, Suite 100, Ventura</span>
                 </p>
               </div>
             </div>
-          </div>
 
-          {/* Right: Interactive Slot Picker & Booking Form */}
-          <div className="lg:col-span-7 bg-white rounded-3xl border border-purple-200/80 shadow-md p-4 sm:p-8 space-y-5 min-w-0 max-w-full">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
-              <div>
-                <h3 className="font-display text-xl font-black text-slate-950">
-                  {schema?.title || 'Reserve a Flex Space Slot'}
-                </h3>
-                <p className="text-xs text-slate-600 font-medium">
-                  {isManuallyClosed
-                    ? 'Flex Space reservations are currently paused by staff.'
-                    : 'Select a date and available time window below.'}
-                </p>
-              </div>
-              {isManuallyClosed ? (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-800 border border-rose-200">
-                  <AlertCircle className="w-3.5 h-3.5" /> Bookings Unavailable
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-50 text-[#5A1E65] border border-purple-200">
-                  <Users className="w-3.5 h-3.5" /> Real-Time Slots
-                </span>
-              )}
-            </div>
-
-            {isManuallyClosed && (
-              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-300 text-amber-950 text-xs flex items-start gap-3">
-                <AlertCircle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
-                <div className="space-y-0.5">
-                  <span className="font-extrabold block">Bookings Currently Unavailable — Flex Space Closed</span>
-                  <p className="text-amber-900/90 leading-relaxed">
-                    Online Flex Space slot reservations are temporarily closed. Please check back soon or contact DCVC staff for assistance.
-                  </p>
-                </div>
-              </div>
+            {isManuallyClosed ? (
+              <Link
+                to="/flex-space"
+                className="w-full py-3.5 px-5 rounded-xl bg-slate-200 hover:bg-slate-300/80 text-slate-800 border border-slate-300 font-extrabold text-xs sm:text-sm inline-flex items-center justify-center gap-2 transition-colors"
+              >
+                <AlertCircle className="w-4 h-4 text-amber-700 shrink-0" />
+                <span>Bookings Unavailable · View Schedule</span>
+                <ArrowRight className="w-4 h-4 shrink-0" />
+              </Link>
+            ) : (
+              <Link
+                to="/flex-space"
+                className="btn-primary w-full py-3.5 px-5 rounded-xl font-extrabold text-xs sm:text-sm inline-flex items-center justify-center gap-2 shadow-md"
+              >
+                <span>{props.ctaText || 'Book Flex Space Slot'}</span>
+                <ArrowRight className="w-4 h-4 shrink-0" />
+              </Link>
             )}
-
-            {statusMsg && (
-              <div
-                className={`p-3.5 rounded-2xl border text-xs font-bold flex items-start gap-2.5 ${
-                  statusMsg.ok
-                    ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
-                    : 'bg-rose-50 border-rose-300 text-rose-900'
-                }`}
-              >
-                {statusMsg.ok ? <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" /> : <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />}
-                <span>{statusMsg.text}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <fieldset
-                disabled={isManuallyClosed}
-                className={isManuallyClosed ? 'space-y-4 opacity-50 pointer-events-none select-none' : 'space-y-4'}
-              >
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-800 mb-1.5 flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-[#5A1E65]" /> 1. Select Available Weekday (Mon–Fri, 1–5 PM) *
-                    </label>
-                    <BookingCalendarPicker
-                      selectedDate={selectedDate}
-                      onSelectDate={(newDate) => {
-                        setSelectedDate(newDate);
-                        setSelectedSlot('');
-                      }}
-                      mode="flex"
-                      config={flexCfg}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-800 mb-1.5 flex items-center justify-between">
-                      <span className="flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 text-[#5A1E65]" /> 2. Available Time Slots *
-                      </span>
-                      <span className="text-[11px] text-purple-900 font-semibold lowercase">
-                        (1:00 PM – 5:00 PM)
-                      </span>
-                    </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {slots.map((s) => (
-                        <button
-                          key={s.slot}
-                          type="button"
-                          disabled={isManuallyClosed || s.isFull}
-                          onClick={() => setSelectedSlot(s.slot)}
-                          className={`px-3 py-2.5 rounded-xl border text-left text-xs font-bold transition-all cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed ${
-                            selectedSlot === s.slot
-                              ? 'bg-[#5A1E65] text-white border-[#5A1E65] shadow-sm'
-                              : s.isFull
-                                ? 'bg-slate-100 text-slate-400 border-slate-200'
-                                : 'bg-white text-slate-800 border-slate-300 hover:border-purple-400'
-                          }`}
-                        >
-                          <div className="truncate font-extrabold text-xs sm:text-sm">{s.slot}</div>
-                          <div className={`text-[10px] font-semibold mt-0.5 ${selectedSlot === s.slot ? 'text-amber-200' : s.isFull ? 'text-rose-600' : 'text-emerald-700'}`}>
-                            {isManuallyClosed ? 'Unavailable' : s.isFull ? 'Booked' : `${s.remaining} slot left`}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <DynamicSchemaFields
-                  formId="flex_space"
-                  fields={schema?.fields || []}
-                  values={formValues}
-                  onChange={handleFieldChange}
-                  inputClassName="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 bg-white focus:border-[#5A1E65] outline-none"
-                  labelClassName="block text-xs font-bold text-slate-800"
-                />
-              </fieldset>
-
-              <button
-                type="submit"
-                disabled={isManuallyClosed}
-                className={`w-full py-3.5 rounded-xl font-extrabold text-sm transition-all ${
-                  isManuallyClosed
-                    ? 'bg-slate-200 text-slate-600 border border-slate-300 cursor-not-allowed shadow-none'
-                    : 'bg-gradient-to-r from-[#5A1E65] to-purple-800 text-white shadow-md hover:shadow-lg cursor-pointer'
-                }`}
-              >
-                {isManuallyClosed
-                  ? 'Bookings Unavailable (Flex Space Closed)'
-                  : (schema?.submitLabel || props.ctaText || 'Book Flex Space Slot')}
-              </button>
-            </form>
           </div>
         </div>
       </div>
