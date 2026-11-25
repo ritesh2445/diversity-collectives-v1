@@ -222,38 +222,30 @@ function AppLayout() {
   }
 
 
-  if (isAdminPreview) {
-    return (
-      <div className="bg-transparent text-slate-900 min-h-screen flex flex-col font-sans selection:bg-[#5A1E65] selection:text-white w-full max-w-full overflow-x-clip" data-admin-preview="true">
-        <Header />
-        <main id="main-content" tabIndex="-1" className="editorial-main-content flex-grow focus:outline-none w-full max-w-full overflow-x-clip">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="*" element={<Home />} />
-          </Routes>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
   return (
     <>
-      {/* WCAG 2.4.1 Skip Navigation Links */}
-      <SkipNavigation />
+      {!isAdminPreview && (
+        <>
+          {/* WCAG 2.4.1 Skip Navigation Links */}
+          <SkipNavigation />
 
-      {/* Native DCVC Accessibility Companion Suite (Instant 0ms Launch) */}
-      <ReciteLauncher />
-      <ReciteReadingAids />
-      <ReciteToolbar />
+          {/* Native DCVC Accessibility Companion Suite (Instant 0ms Launch) */}
+          <ReciteLauncher />
+          <ReciteReadingAids />
+          <ReciteToolbar />
 
-      <WelcomeCurtain />
-      <ScrollToTop />
-      <ScrollProgress />
-      <AskDcvcChatbot />
-      <AutoBroadcastPopup />
+          <WelcomeCurtain />
+          <ScrollToTop />
+          <ScrollProgress />
+          <AskDcvcChatbot />
+          <AutoBroadcastPopup />
+        </>
+      )}
 
-      <div className="bg-transparent text-slate-900 min-h-screen flex flex-col font-sans selection:bg-[#5A1E65] selection:text-white w-full max-w-full overflow-x-clip">
+      <div
+        className="bg-transparent text-slate-900 min-h-screen flex flex-col font-sans selection:bg-[#5A1E65] selection:text-white w-full max-w-full overflow-x-clip"
+        data-admin-preview={isAdminPreview ? 'true' : undefined}
+      >
         <Header />
 
         <main id="main-content" tabIndex="-1" className="editorial-main-content flex-grow focus:outline-none w-full max-w-full overflow-x-clip">
