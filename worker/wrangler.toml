@@ -29,7 +29,7 @@ GITHUB_BRANCH = "main"
 # Auth0 OIDC / PKCE Single Sign-On (Admin Panel)
 AUTH0_DOMAIN = "dev-ekslx0d2qyju2u1v.us.auth0.com"
 AUTH0_CLIENT_ID = "tgdziPMdxjoHh6LrNrJ82NI3MidPHaLC"
-AUTH0_AUDIENCE = "https://api.diversitycollective.org"
+AUTH0_AUDIENCE = ""
 AUTH0_ENFORCE_SSO = "false"
 
 

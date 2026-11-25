@@ -1420,7 +1420,7 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
           authorizationParams: {
             connection: 'google-oauth2',
             redirect_uri: `${window.location.origin}/admin`,
-            prompt: 'select_account login'
+            prompt: 'select_account'
           }
         });
         return;
