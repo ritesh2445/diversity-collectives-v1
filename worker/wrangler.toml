@@ -21,6 +21,11 @@ FRONTEND_BASE_URL = "https://diversitycollective.org"
 DCVC_STAFF_EMAIL = "info@diversitycollective.org"
 RESEND_FROM_EMAIL = "Diversity Collective <noreply@diversitycollective.org>"
 
+# GitHub Repository + jsDelivr CDN Media Storage
+GITHUB_OWNER = "ritesh2445"
+GITHUB_REPO = "diversity-collectives-v1"
+GITHUB_BRANCH = "main"
+
 # Auth0 OIDC / PKCE Single Sign-On (Admin Panel)
 AUTH0_DOMAIN = "dev-ekslx0d2qyju2u1v.us.auth0.com"
 AUTH0_CLIENT_ID = "tgdziPMdxjoHh6LrNrJ82NI3MidPHaLC"

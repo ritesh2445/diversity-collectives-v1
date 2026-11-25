@@ -3023,7 +3023,7 @@ export default {
       }
 
       // =======================================================================
-      // 14. Media Storage & Delivery (Turso Persistent Binary + Optional GitHub CDN)
+      // 14. Media Storage & Delivery (GitHub Repo + jsDelivr CDN, Metadata in Turso)
       // =======================================================================
       if (pathname === '/api/media/upload' && request.method === 'POST') {
         const body = await request.json().catch(() => ({}));
@@ -3044,38 +3044,11 @@ export default {
         const folderSlug = String(folder || 'media').toLowerCase().replace(/[^a-z0-9_-]/g, '-').replace(/-+/g, '-');
         const gitPath = `public/images/${folderSlug}/${cleanName}`;
 
-        let storedInDb = false;
-        const db = getDb(env);
-        if (db) {
-          try {
-            await db.execute({
-              sql: `CREATE TABLE IF NOT EXISTS media_assets (
-                id TEXT PRIMARY KEY,
-                filename TEXT,
-                mime_type TEXT NOT NULL DEFAULT 'image/jpeg',
-                file_data_base64 TEXT NOT NULL,
-                file_size_bytes INTEGER DEFAULT 0,
-                folder TEXT,
-                created_at TEXT DEFAULT (datetime('now'))
-              )`,
-              args: []
-            });
-
-            await db.execute({
-              sql: `INSERT OR REPLACE INTO media_assets (id, filename, mime_type, file_data_base64, file_size_bytes, folder)
-                    VALUES (?, ?, ?, ?, ?, ?)`,
-              args: [mediaId, cleanName, detectedMimeType, cleanBase64, calculatedSizeBytes, folderSlug]
-            });
-            storedInDb = true;
-          } catch (dbErr) {
-            console.warn('[MediaUpload] DB binary storage notice:', dbErr.message);
-          }
-        }
-
-        const ghOwner = env.GITHUB_OWNER || '';
-        const ghRepo = env.GITHUB_REPO || '';
+        const ghOwner = env.GITHUB_OWNER || 'ritesh2445';
+        const ghRepo = env.GITHUB_REPO || 'diversity-collectives-v1';
         const ghBranch = env.GITHUB_BRANCH || 'main';
         let githubSha = null;
+        let githubError = null;
         if (env.GITHUB_TOKEN && ghOwner && ghRepo) {
           const ghRes = await uploadToGitHub({
             githubToken: env.GITHUB_TOKEN,
@@ -3088,32 +3061,99 @@ export default {
           });
           if (ghRes.success) {
             githubSha = ghRes.sha;
+          } else {
+            githubError = ghRes.error || 'GitHub upload failed';
+            console.warn('[MediaUpload] GitHub upload notice:', githubError);
           }
         }
 
-        if (!storedInDb && !githubSha) {
-          return errorResponse('Media storage is unavailable on the server right now.', 503, null, cors);
-        }
-
+        const cdnUrl = buildJsDelivrUrl({
+          owner: ghOwner,
+          repo: ghRepo,
+          branch: ghBranch,
+          path: gitPath
+        });
         const workerOrigin = new URL(request.url).origin;
         const directMediaUrl = `${workerOrigin}/api/media/${encodeURIComponent(mediaId)}`;
-        const cdnUrl = (githubSha && ghOwner && ghRepo)
-          ? buildJsDelivrUrl({
-              owner: ghOwner,
-              repo: ghRepo,
-              branch: ghBranch,
-              path: gitPath
-            })
-          : directMediaUrl;
+
+        let storedMetadataInDb = false;
+        let storedBinaryFallbackInDb = false;
+        const db = getDb(env);
+        if (db) {
+          try {
+            await db.execute({
+              sql: `CREATE TABLE IF NOT EXISTS media_metadata (
+                id TEXT PRIMARY KEY,
+                filename TEXT,
+                mime_type TEXT NOT NULL DEFAULT 'image/jpeg',
+                file_size_bytes INTEGER DEFAULT 0,
+                folder TEXT,
+                github_path TEXT,
+                github_sha TEXT,
+                cdn_url TEXT,
+                created_at TEXT DEFAULT (datetime('now'))
+              )`,
+              args: []
+            });
+
+            await db.execute({
+              sql: `INSERT OR REPLACE INTO media_metadata (id, filename, mime_type, file_size_bytes, folder, github_path, github_sha, cdn_url)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+              args: [mediaId, cleanName, detectedMimeType, calculatedSizeBytes, folderSlug, githubSha ? gitPath : null, githubSha, githubSha ? cdnUrl : directMediaUrl]
+            });
+            storedMetadataInDb = true;
+          } catch (metaErr) {
+            console.warn('[MediaUpload] DB metadata storage notice:', metaErr.message);
+          }
+
+          // Fallback binary storage in Turso only if GitHub upload didn't succeed
+          if (!githubSha) {
+            try {
+              await db.execute({
+                sql: `CREATE TABLE IF NOT EXISTS media_assets (
+                  id TEXT PRIMARY KEY,
+                  filename TEXT,
+                  mime_type TEXT NOT NULL DEFAULT 'image/jpeg',
+                  file_data_base64 TEXT NOT NULL,
+                  file_size_bytes INTEGER DEFAULT 0,
+                  folder TEXT,
+                  created_at TEXT DEFAULT (datetime('now'))
+                )`,
+                args: []
+              });
+
+              await db.execute({
+                sql: `INSERT OR REPLACE INTO media_assets (id, filename, mime_type, file_data_base64, file_size_bytes, folder)
+                      VALUES (?, ?, ?, ?, ?, ?)`,
+                args: [mediaId, cleanName, detectedMimeType, cleanBase64, calculatedSizeBytes, folderSlug]
+              });
+              storedBinaryFallbackInDb = true;
+            } catch (dbErr) {
+              console.warn('[MediaUpload] DB binary fallback notice:', dbErr.message);
+            }
+          }
+        }
+
+        if (!githubSha && !storedBinaryFallbackInDb) {
+          return errorResponse(
+            githubError || 'Media storage is unavailable: GITHUB_TOKEN is missing and DB fallback failed.',
+            503,
+            null,
+            cors
+          );
+        }
+
+        const primaryUrl = githubSha ? cdnUrl : directMediaUrl;
 
         return jsonResponse({
           success: true,
           id: mediaId,
-          url: storedInDb ? directMediaUrl : cdnUrl,
-          cdnUrl,
+          url: primaryUrl,
+          cdnUrl: githubSha ? cdnUrl : directMediaUrl,
           path: gitPath,
           githubSha,
-          provider: storedInDb ? 'turso_media' : 'jsdelivr'
+          metadataStored: storedMetadataInDb,
+          provider: githubSha ? 'jsdelivr' : 'turso_media'
         }, 200, cors);
       }
 
@@ -5463,8 +5503,8 @@ export default {
             }).catch((err) => console.warn('[GalleryUpload] DB binary storage notice:', err.message));
           }
 
-          const ghOwner = env.GITHUB_OWNER || '';
-          const ghRepo = env.GITHUB_REPO || '';
+          const ghOwner = env.GITHUB_OWNER || 'ritesh2445';
+          const ghRepo = env.GITHUB_REPO || 'diversity-collectives-v1';
           const ghBranch = env.GITHUB_BRANCH || 'main';
 
           let githubSha = null;
@@ -5578,8 +5618,8 @@ export default {
             }).catch((err) => console.warn('[DocUpload] DB storage notice:', err.message));
           }
 
-          const ghOwner = env.GITHUB_OWNER || '';
-          const ghRepo = env.GITHUB_REPO || '';
+          const ghOwner = env.GITHUB_OWNER || 'ritesh2445';
+          const ghRepo = env.GITHUB_REPO || 'diversity-collectives-v1';
           const ghBranch = env.GITHUB_BRANCH || 'main';
 
           let githubSha = null;

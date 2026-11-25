@@ -23,7 +23,7 @@ export const DCVC_IMAGE_LIBRARY = [
  * Get GitHub storage credentials from localStorage or environment
  */
 export function getGitHubStorageConfig() {
-  const envOwner = (typeof window !== 'undefined' ? import.meta.env?.VITE_GITHUB_OWNER : (typeof process !== 'undefined' ? process?.env?.VITE_GITHUB_OWNER : '')) || 'diversity-collective';
+  const envOwner = (typeof window !== 'undefined' ? import.meta.env?.VITE_GITHUB_OWNER : (typeof process !== 'undefined' ? process?.env?.VITE_GITHUB_OWNER : '')) || 'ritesh2445';
   const envRepo = (typeof window !== 'undefined' ? import.meta.env?.VITE_GITHUB_REPO : (typeof process !== 'undefined' ? process?.env?.VITE_GITHUB_REPO : '')) || 'diversity-collectives-v1';
   const envBranch = (typeof window !== 'undefined' ? import.meta.env?.VITE_GITHUB_BRANCH : (typeof process !== 'undefined' ? process?.env?.VITE_GITHUB_BRANCH : '')) || 'main';
   const envToken = (typeof window !== 'undefined' ? import.meta.env?.VITE_GITHUB_TOKEN : (typeof process !== 'undefined' ? process?.env?.VITE_GITHUB_TOKEN : '')) || '';
