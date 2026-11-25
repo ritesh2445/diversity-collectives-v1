@@ -126,8 +126,9 @@ export default function NewsWritingPad({
   // Sync editor innerHTML when switching back to compose mode
   useEffect(() => {
     if (viewMode === 'compose' && editorRef.current) {
-      if (editorRef.current.innerHTML !== htmlContent) {
-        editorRef.current.innerHTML = htmlContent;
+      const safeHtml = sanitizeHtml(htmlContent);
+      if (editorRef.current.innerHTML !== safeHtml) {
+        editorRef.current.innerHTML = safeHtml;
       }
     }
   }, [viewMode, htmlContent]);

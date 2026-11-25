@@ -1564,12 +1564,17 @@ export default {
             bytes[i] = binaryString.charCodeAt(i);
           }
 
+          const safeMime = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(media.mime_type)
+            ? media.mime_type
+            : 'image/jpeg';
+
           return new Response(bytes.buffer, {
             status: 200,
             headers: {
               ...cors,
-              'Content-Type': media.mime_type || 'image/jpeg',
-              'Content-Disposition': `inline; filename="${media.filename || 'gallery-image.jpg'}"`,
+              'Content-Type': safeMime,
+              'X-Content-Type-Options': 'nosniff',
+              'Content-Disposition': `inline; filename="${sanitizeFilename(media.filename || 'gallery-image.jpg')}"`,
               'Cache-Control': 'public, max-age=31536000, immutable'
             }
           });
@@ -1619,12 +1624,17 @@ export default {
             bytes[i] = binaryString.charCodeAt(i);
           }
 
+          const safeMediaMime = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(media.mime_type)
+            ? media.mime_type
+            : 'image/jpeg';
+
           return new Response(bytes.buffer, {
             status: 200,
             headers: {
               ...cors,
-              'Content-Type': media.mime_type || 'image/jpeg',
-              'Content-Disposition': `inline; filename="${media.filename || 'media-image.jpg'}"`,
+              'Content-Type': safeMediaMime,
+              'X-Content-Type-Options': 'nosniff',
+              'Content-Disposition': `inline; filename="${sanitizeFilename(media.filename || 'media-image.jpg')}"`,
               'Cache-Control': 'public, max-age=31536000, immutable'
             }
           });
@@ -3023,9 +3033,18 @@ export default {
       }
 
       // =======================================================================
-      // 14. Media Storage & Delivery (GitHub Repo + jsDelivr CDN, Metadata in Turso)
+      // 14. Media Storage & Delivery (Admin-Authenticated GitHub + jsDelivr + Turso Metadata)
       // =======================================================================
       if (pathname === '/api/media/upload' && request.method === 'POST') {
+        const jwtSecret = getAdminJwtSecret(env);
+        if (!jwtSecret) {
+          return errorResponse('Administrative signing secret is not configured on the server.', 500, null, cors);
+        }
+        const authUser = await authenticateAdminRequest(request, jwtSecret, getDb(env));
+        if (!authUser) {
+          return errorResponse('Unauthorized: Administrative authentication required to upload media.', 401, null, cors);
+        }
+
         const body = await request.json().catch(() => ({}));
         const { folder = 'media', fileData, fileName, mimeType } = body;
         if (!fileData) {
@@ -3035,10 +3054,20 @@ export default {
         const dataUriMatch = String(fileData).match(/^data:([^;]+);base64,(.+)$/i);
         const cleanBase64 = (dataUriMatch ? dataUriMatch[2] : String(fileData)).replace(/\s+/g, '');
         const cleanName = sanitizeFilename(fileName || `media-${Date.now()}.webp`);
-        const detectedMimeType = mimeType
+        const detectedMimeType = String(
+          mimeType
           || (dataUriMatch && dataUriMatch[1])
-          || (cleanName.endsWith('.png') ? 'image/png' : cleanName.endsWith('.webp') ? 'image/webp' : cleanName.endsWith('.gif') ? 'image/gif' : 'image/jpeg');
+          || (cleanName.endsWith('.png') ? 'image/png' : cleanName.endsWith('.webp') ? 'image/webp' : cleanName.endsWith('.gif') ? 'image/gif' : 'image/jpeg')
+        ).toLowerCase().trim();
+
+        if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(detectedMimeType)) {
+          return errorResponse('Unsupported image format. Allowed: JPEG, PNG, WebP, GIF.', 400, null, cors);
+        }
+
         const calculatedSizeBytes = Math.floor((cleanBase64.length * 3) / 4);
+        if (calculatedSizeBytes <= 0 || calculatedSizeBytes > 10 * 1024 * 1024) {
+          return errorResponse('Image file exceeds the 10 MB upload limit.', 413, null, cors);
+        }
 
         const mediaId = `media-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
         const folderSlug = String(folder || 'media').toLowerCase().replace(/[^a-z0-9_-]/g, '-').replace(/-+/g, '-');
@@ -3159,6 +3188,15 @@ export default {
       }
 
       if (pathname === '/api/media/sign-upload' && request.method === 'POST') {
+        const jwtSecret = getAdminJwtSecret(env);
+        if (!jwtSecret) {
+          return errorResponse('Administrative signing secret is not configured on the server.', 500, null, cors);
+        }
+        const authUser = await authenticateAdminRequest(request, jwtSecret, getDb(env));
+        if (!authUser) {
+          return errorResponse('Unauthorized: Administrative authentication required.', 401, null, cors);
+        }
+
         const body = await request.json().catch(() => ({}));
         const signedParams = await createSignedUploadParameters({
           folder: body.folder || 'directory',
