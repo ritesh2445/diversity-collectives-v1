@@ -3463,11 +3463,10 @@ export default {
             return errorResponse('Valid staff email address is required.', 400, null, adminCors);
           }
 
-          const isDevAdmin = email === 'admin@diversitycollective.org';
-
-          // Turnstile check
-          if (env.TURNSTILE_SECRET_KEY && !isDevAdmin && body.turnstileToken) {
-            const turnstile = await verifyTurnstile(body.turnstileToken, env.TURNSTILE_SECRET_KEY, clientIp, env, { strict: false });
+          // Turnstile check (strict in production whenever TURNSTILE_SECRET_KEY is configured)
+          const isProdOtp = String(env.ENVIRONMENT || '').toLowerCase() === 'production';
+          if (env.TURNSTILE_SECRET_KEY && (isProdOtp || body.turnstileToken)) {
+            const turnstile = await verifyTurnstile(body.turnstileToken, env.TURNSTILE_SECRET_KEY, clientIp, env, { strict: isProdOtp });
             if (!turnstile.success) {
               return errorResponse('Security verification failed. Please complete the Cloudflare Turnstile check.', 400, turnstile.error, adminCors);
             }
@@ -3503,13 +3502,9 @@ export default {
           const allowedExtra = String(env.ADMIN_ALLOWED_EMAILS || env.ADMIN_EMAIL || '')
             .split(',')
             .map(e => e.trim().toLowerCase())
-            .filter(Boolean);
+            .filter(e => e && e !== '*');
 
-          const isAllowedEmail = isDevAdmin ||
-            allowedExtra.includes(email) ||
-            allowedExtra.includes('*') ||
-            email.endsWith('@diversitycollective.org') ||
-            Boolean(userRow);
+          const isAllowedEmail = allowedExtra.includes(email) || Boolean(userRow);
 
           if (!isAllowedEmail) {
             if (db) await recordPersistentFailure(db, ipRateKey);
@@ -3520,10 +3515,10 @@ export default {
             return errorResponse('This administrative account is deactivated.', 403, null, adminCors);
           }
 
-          // Provision user if not yet in database
+          // Provision explicitly allowlisted user if not yet in database
           if (!userRow) {
-            const newAdminId = isDevAdmin ? 'adm-1' : 'adm-' + crypto.randomUUID();
-            const defaultName = isDevAdmin ? 'Admin (DCVC)' : email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+            const newAdminId = 'adm-' + crypto.randomUUID();
+            const defaultName = email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
             if (db) {
               await db.execute({
                 sql: `INSERT OR IGNORE INTO admin_users (id, email, name, role, password_hash, salt, is_active, must_change_password, token_version)
@@ -3592,18 +3587,6 @@ export default {
           }
 
           const maskedEmail = maskEmailForDisplay(userRow.email);
-          const originHeader = request.headers.get('origin') || '';
-          const hostHeader = request.headers.get('host') || '';
-          const refererHeader = request.headers.get('referer') || '';
-          const isDevMode = isDevAdmin ||
-            !env.RESEND_API_KEY ||
-            String(env.ENVIRONMENT || '').toLowerCase() !== 'production' ||
-            originHeader.includes('pages.dev') ||
-            originHeader.includes('localhost') ||
-            originHeader.includes('127.0.0.1') ||
-            hostHeader.includes('pages.dev') ||
-            hostHeader.includes('localhost') ||
-            refererHeader.includes('pages.dev');
 
           return jsonResponse({
             success: true,
@@ -3715,14 +3698,8 @@ export default {
             ]);
           }
 
-          // Get fresh user details
-          let userRow = {
-            id: tempPayload.userId,
-            email: tempPayload.email,
-            name: tempPayload.name,
-            role: tempPayload.role || 'admin',
-            token_version: tempPayload.tv || 1
-          };
+          // Get fresh user details from database (fail-closed if user no longer exists)
+          let userRow = null;
           if (db) {
             try {
               const freshRes = await db.execute({
@@ -3731,11 +3708,16 @@ export default {
               });
               if (freshRes.rows.length > 0) {
                 userRow = freshRes.rows[0];
-                if (!userRow.is_active) {
-                  return errorResponse('Account is deactivated.', 403, null, adminCors);
-                }
               }
-            } catch {}
+            } catch {
+              return errorResponse('Authentication service temporarily unavailable.', 503, null, adminCors);
+            }
+          }
+          if (!userRow) {
+            return errorResponse('Administrative account not found or not authorized.', 403, null, adminCors);
+          }
+          if (!userRow.is_active) {
+            return errorResponse('Account is deactivated.', 403, null, adminCors);
           }
 
           const otpAllowedSections = userRow.role === 'admin' ? null : parseAllowedSections(userRow.allowed_sections);
@@ -3913,11 +3895,9 @@ export default {
             return errorResponse('Email and password are required', 400, null, adminCors);
           }
 
-          const isDevAdmin = email === 'admin@diversitycollective.org' && (password === 'DCVC-Admin-2026!' || !env.ENVIRONMENT || env.ENVIRONMENT !== 'production');
-
           const ipRateKey = `login:ip:${clientIp || 'unknown'}`;
           const emailRateKey = `login:email:${email}`;
-          if (db && !isDevAdmin) {
+          if (db) {
             const ipRateCheck = await checkPersistentRateLimit(db, ipRateKey);
             if (!ipRateCheck.allowed) {
               return errorResponse(`Too many failed login attempts. Please try again in ${ipRateCheck.remainingMins} minutes.`, 429, null, adminCors);
@@ -3928,9 +3908,10 @@ export default {
             }
           }
 
-          // Strict Turnstile verification whenever secret key is configured (bypass only for dev admin or when token omitted in dev)
-          if (env.TURNSTILE_SECRET_KEY && !isDevAdmin && body.turnstileToken) {
-            const turnstile = await verifyTurnstile(body.turnstileToken, env.TURNSTILE_SECRET_KEY, clientIp, env, { strict: false });
+          // Strict Turnstile verification whenever secret key is configured in production
+          const isProdLogin = String(env.ENVIRONMENT || '').toLowerCase() === 'production';
+          if (env.TURNSTILE_SECRET_KEY && (isProdLogin || body.turnstileToken)) {
+            const turnstile = await verifyTurnstile(body.turnstileToken, env.TURNSTILE_SECRET_KEY, clientIp, env, { strict: isProdLogin });
             if (!turnstile.success) {
               return errorResponse('Security verification failed. Please complete the Cloudflare Turnstile check.', 400, turnstile.error, adminCors);
             }
@@ -3949,64 +3930,7 @@ export default {
               }
             } catch (err) {
               console.error('Admin user lookup failed:', err.message);
-            }
-          }
-
-          // If baseline admin is missing, auto-seed it on demand so staff are never locked out
-          if (!userRow && email === 'admin@diversitycollective.org') {
-            const defaultSalt = 'dcvc_salt_2026';
-            const defaultHash = '7b50f4cc95a9d7b234780c529e9f5c330da5a3ca8114eafb003ccd47c11e4dd5';
-            if (db) {
-              await db.execute({
-                sql: `INSERT OR IGNORE INTO admin_users (id, email, name, role, password_hash, salt, is_active, must_change_password, token_version)
-                      VALUES ('adm-1', 'admin@diversitycollective.org', 'Admin (DCVC)', 'admin', ?, ?, 1, 0, 1)`,
-                args: [defaultHash, defaultSalt]
-              }).catch(() => {});
-            }
-            userRow = {
-              id: 'adm-1',
-              email: 'admin@diversitycollective.org',
-              name: 'Admin (DCVC)',
-              role: 'admin',
-              password_hash: defaultHash,
-              salt: defaultSalt,
-              is_active: 1,
-              token_version: 1,
-              must_change_password: 0,
-              mfa_enabled: 0
-            };
-          }
-
-          if (!userRow) {
-            const allowedExtra = String(env.ADMIN_ALLOWED_EMAILS || env.ADMIN_EMAIL || '')
-              .split(',')
-              .map(e => e.trim().toLowerCase())
-              .filter(Boolean);
-
-            if (allowedExtra.includes(email) || allowedExtra.includes('*') || email.endsWith('@diversitycollective.org')) {
-              const newAdminId = 'adm-' + crypto.randomUUID();
-              const defaultName = email.split('@')[0];
-              const defaultSalt = generateRandomSalt(16);
-              const initialHash = await hashPassword(password, defaultSalt);
-              if (db) {
-                await db.execute({
-                  sql: `INSERT OR IGNORE INTO admin_users (id, email, name, role, password_hash, salt, is_active, must_change_password, token_version)
-                        VALUES (?, ?, ?, 'admin', ?, ?, 1, 0, 1)`,
-                  args: [newAdminId, email, defaultName, initialHash, defaultSalt]
-                }).catch(() => {});
-              }
-              userRow = {
-                id: newAdminId,
-                email,
-                name: defaultName,
-                role: 'admin',
-                password_hash: initialHash,
-                salt: defaultSalt,
-                is_active: 1,
-                token_version: 1,
-                must_change_password: 0,
-                mfa_enabled: 0
-              };
+              return errorResponse('Authentication service temporarily unavailable.', 503, null, adminCors);
             }
           }
 
@@ -4025,7 +3949,7 @@ export default {
           }
 
           const pwdCheck = await verifyPasswordHash(password, userRow.salt, userRow.password_hash);
-          const isPasswordValid = pwdCheck.valid || (isDevAdmin && password === 'DCVC-Admin-2026!');
+          const isPasswordValid = pwdCheck.valid;
 
           // Opportunistic Upgrade: If verified using legacy iterations, seamlessly rehash to OWASP standard (600,000 iterations)
           if (pwdCheck.valid && pwdCheck.needsUpgrade && db) {
@@ -4079,8 +4003,6 @@ export default {
             } else if (userRow.mfa_secret) {
               const totpRes = await verifyTotpCode(userRow.mfa_secret, passedMfa);
               if (totpRes.valid) directMfaOk = true;
-            } else if (isDevAdmin) {
-              directMfaOk = true;
             }
 
             const directAllowedSections = userRow.role === 'admin' ? null : parseAllowedSections(userRow.allowed_sections);

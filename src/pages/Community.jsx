@@ -29,6 +29,7 @@ import CardSpotlight from '../components/CardSpotlight';
 import MobileCarousel from '../components/MobileCarousel';
 import { useScrollLock } from '../utils/scrollLock';
 import { cmsStore } from '../services/cmsStore';
+import { sanitizeHtml } from '../utils/sanitizeHtml';
 
 export default function Community() {
   const communityGroups = useLiveCommunityGroups();
@@ -599,7 +600,7 @@ export default function Community() {
                         {post.content?.includes('<') ? (
                           <div 
                             className="prose prose-sm text-xs text-slate-700 leading-relaxed font-medium space-y-2"
-                            dangerouslySetInnerHTML={{ __html: post.content }}
+                            dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.content) }}
                           />
                         ) : (
                           <p className="text-xs text-slate-700 leading-relaxed font-medium whitespace-pre-line">

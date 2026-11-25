@@ -87,19 +87,6 @@ export async function adminLogin(email, password, mfaCode = '') {
     }
     return { success: false, error: data.error || 'Authentication failed' };
   } catch {
-    // Development offline fallback
-    if (email === 'admin@diversitycollective.org' && password === 'DCVC-Admin-2026!') {
-      const mockUser = {
-        id: 'adm-dev-1',
-        email: 'admin@diversitycollective.org',
-        name: 'Tess Allen (Executive Director)',
-        role: 'admin'
-      };
-      const mockToken = 'mock_dev_admin_token_' + Date.now();
-      setStoredToken(mockToken);
-      setStoredUser(mockUser);
-      return { success: true, user: mockUser, token: mockToken };
-    }
     return { success: false, error: 'Network error or invalid credentials.' };
   }
 }
@@ -113,13 +100,10 @@ export async function adminLoginWithOtpSend(email) {
     });
     const data = await res.json();
     if (res.ok && data.success) {
-      return { success: true, tempToken: data.tempToken, email: data.email, devCode: data.devCode, message: data.message };
+      return { success: true, tempToken: data.tempToken, email: data.email, message: data.message };
     }
     return { success: false, error: data.error || 'Failed to dispatch verification code.' };
   } catch {
-    if (email === 'admin@diversitycollective.org') {
-      return { success: true, tempToken: 'mock_temp_otp_token', email: 'admin@diversitycollective.org', devCode: '123456' };
-    }
     return { success: false, error: 'Network error communicating with verification service.' };
   }
 }
@@ -139,13 +123,6 @@ export async function adminLoginWithOtpVerify(tempToken, code, email) {
     }
     return { success: false, error: data.error || 'Invalid or expired verification code.' };
   } catch {
-    if (email === 'admin@diversitycollective.org' && code === '123456') {
-      const mockUser = { id: 'adm-dev-1', email: 'admin@diversitycollective.org', name: 'Tess Allen', role: 'admin' };
-      const mockToken = 'mock_otp_token_' + Date.now();
-      setStoredToken(mockToken);
-      setStoredUser(mockUser);
-      return { success: true, user: mockUser, token: mockToken };
-    }
     return { success: false, error: 'Network verification failure.' };
   }
 }
@@ -155,7 +132,7 @@ export async function adminLoginWithGoogle(options = {}) {
     const res = await fetch(`${API_BASE}/admin/auth/google`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ isDevDemo: true, email: 'admin@diversitycollective.org', ...options })
+      body: JSON.stringify(options)
     });
     const data = await res.json();
     if (res.ok && data.success) {
@@ -163,17 +140,9 @@ export async function adminLoginWithGoogle(options = {}) {
       setStoredUser(data.user);
       return { success: true, user: data.user, token: data.token };
     }
-    const mockUser = { id: 'adm-google-dev', email: 'admin@diversitycollective.org', name: 'Admin (DCVC Google)', role: 'admin' };
-    const mockToken = 'mock_google_token_' + Date.now();
-    setStoredToken(mockToken);
-    setStoredUser(mockUser);
-    return { success: true, user: mockUser, token: mockToken };
+    return { success: false, error: data.error || 'Google authentication failed.' };
   } catch {
-    const mockUser = { id: 'adm-google-dev', email: 'admin@diversitycollective.org', name: 'Admin (DCVC Google)', role: 'admin' };
-    const mockToken = 'mock_google_token_' + Date.now();
-    setStoredToken(mockToken);
-    setStoredUser(mockUser);
-    return { success: true, user: mockUser, token: mockToken };
+    return { success: false, error: 'Network error during Google authentication.' };
   }
 }
 

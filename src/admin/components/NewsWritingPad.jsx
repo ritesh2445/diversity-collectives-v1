@@ -30,6 +30,7 @@ import {
   FolderOpen
 } from 'lucide-react';
 import ImagePicker from './ImagePicker';
+import { sanitizeHtml } from '../../utils/sanitizeHtml';
 
 const BRAND_COLORS = [
   { name: 'Charcoal', hex: '#0F172A' },
@@ -605,7 +606,7 @@ export default function NewsWritingPad({
               </span>
               <div 
                 className="mt-6 prose prose-lg max-w-none text-slate-700 leading-relaxed font-medium space-y-4"
-                dangerouslySetInnerHTML={{ __html: htmlContent }}
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(htmlContent) }}
               />
             </div>
           </div>

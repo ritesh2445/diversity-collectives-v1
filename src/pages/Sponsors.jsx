@@ -107,7 +107,13 @@ export default function Sponsors() {
                       className="max-h-full max-w-[80%] object-contain group-hover:scale-105 transition-transform"
                       onError={(e) => {
                         e.target.style.display = 'none';
-                        e.target.parentElement.innerHTML = `<span class="text-sm font-bold text-slate-800">${sponsor.name}</span>`;
+                        const parent = e.target.parentElement;
+                        if (parent && !parent.querySelector('.sponsor-fallback-name')) {
+                          const span = document.createElement('span');
+                          span.className = 'sponsor-fallback-name text-sm font-bold text-slate-800';
+                          span.textContent = sponsor.name || '';
+                          parent.appendChild(span);
+                        }
                       }}
                     />
                   </div>

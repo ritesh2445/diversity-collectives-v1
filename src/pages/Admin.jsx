@@ -1439,11 +1439,9 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
     setAuthError('');
     setTwoFactorSuccessMsg('');
 
-    const isDevCredentials = loginEmail === 'admin@diversitycollective.org' && loginPassword === 'DCVC-Admin-2026!';
     const effectiveToken = turnstileToken || (isPreviewHost ? 'cf-preview-bypass-token' : '');
 
-    // Turnstile required only when not using dev fallback credentials
-    if (!effectiveToken && !isDevCredentials) {
+    if (!effectiveToken) {
       setAuthError('Please complete the security verification check before signing in.');
       return;
     }
@@ -1476,21 +1474,7 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
       } else {
         setAuthError(data.error || 'Invalid credentials. Please verify your email and password.');
       }
-    } catch (err) {
-      // Development offline fallback — allows admin sign-in when worker API is unreachable
-      if (isDevCredentials) {
-        const mockUser = {
-          id: 'adm-dev-1',
-          email: 'admin@diversitycollective.org',
-          name: 'Tess Allen (Executive Director)',
-          role: 'admin'
-        };
-        const mockToken = 'mock_dev_admin_token_' + Date.now();
-        setClientSession(mockToken, mockUser);
-        setPending2fa(null);
-        setAuthError('');
-        return;
-      }
+    } catch {
       setAuthError('Connection failure reaching administrative endpoint. Please retry.');
     } finally {
       setAuthLoading(false);

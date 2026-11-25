@@ -3,6 +3,7 @@ import { useParams, Link, Navigate } from 'react-router-dom';
 import { ArrowLeft, Calendar, Clock, User, Share2, Check, ArrowRight } from 'lucide-react';
 import { newsArticles } from '../data/dcvcData';
 import { cmsStore } from '../services/cmsStore';
+import { sanitizeHtml } from '../utils/sanitizeHtml';
 import { usePageMeta } from '../utils/seo';
 
 export default function NewsArticle() {
@@ -141,7 +142,7 @@ export default function NewsArticle() {
         {typeof articleBody === 'string' ? (
           <div 
             className="prose prose-lg max-w-none text-slate-700 leading-relaxed font-medium news-rich-content"
-            dangerouslySetInnerHTML={{ __html: articleBody }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(articleBody) }}
           />
         ) : (
           <div className="prose prose-lg max-w-none text-slate-700 space-y-6 leading-relaxed font-medium">
