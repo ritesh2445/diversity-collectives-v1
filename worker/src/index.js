@@ -3040,9 +3040,20 @@ export default {
         if (!jwtSecret) {
           return errorResponse('Administrative signing secret is not configured on the server.', 500, null, cors);
         }
-        const authUser = await authenticateAdminRequest(request, jwtSecret, getDb(env));
+        const token = resolveRequestAdminToken(request);
+        const authUser = await verifyAuthToken(token, jwtSecret);
         if (!authUser) {
           return errorResponse('Unauthorized: Administrative authentication required to upload media.', 401, null, cors);
+        }
+        const mediaDb = getDb(env);
+        if (mediaDb) {
+          const activeRes = await mediaDb.execute({
+            sql: `SELECT is_active, COALESCE(token_version, 1) AS token_version FROM admin_users WHERE id = ? LIMIT 1`,
+            args: [authUser.id || authUser.userId]
+          }).catch(() => ({ rows: [] }));
+          if (activeRes.rows.length === 0 || !activeRes.rows[0].is_active || Number(activeRes.rows[0].token_version || 1) !== Number(authUser.tv || 1)) {
+            return errorResponse('Unauthorized: Administrative session is inactive or revoked.', 401, null, cors);
+          }
         }
 
         const body = await request.json().catch(() => ({}));
@@ -3192,7 +3203,8 @@ export default {
         if (!jwtSecret) {
           return errorResponse('Administrative signing secret is not configured on the server.', 500, null, cors);
         }
-        const authUser = await authenticateAdminRequest(request, jwtSecret, getDb(env));
+        const token = resolveRequestAdminToken(request);
+        const authUser = await verifyAuthToken(token, jwtSecret);
         if (!authUser) {
           return errorResponse('Unauthorized: Administrative authentication required.', 401, null, cors);
         }
