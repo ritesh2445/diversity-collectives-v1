@@ -3,22 +3,26 @@ import { Link } from 'react-router-dom';
 import { 
   FileText, 
   Download, 
-  ExternalLink, 
   Eye, 
   ShieldCheck, 
   HeartHandshake, 
   Mail, 
   Phone, 
   MapPin, 
-  Sparkles, 
-  Calendar, 
   ArrowRight,
   Search,
-  Filter,
   CheckCircle2,
-  Info
+  Info,
+  Award,
+  Users,
+  Globe,
+  Building2,
+  Gift,
+  Check,
+  Minus,
+  Layers
 } from 'lucide-react';
-import { cmsStore, DEFAULT_SPONSORSHIP_PAGE_CONTENT } from '../services/cmsStore';
+import { cmsStore } from '../services/cmsStore';
 import { fetchAndApplyLiveSiteState, getFallbackApiBase } from '../services/liveSync';
 import { usePageMeta } from '../utils/seo';
 
@@ -28,6 +32,159 @@ const CATEGORY_COLORS = {
   'Strategic Proposal': 'bg-emerald-50 text-emerald-800 border-emerald-200',
   'Other': 'bg-slate-100 text-slate-700 border-slate-200'
 };
+
+const SPONSORSHIP_TIERS_2027 = [
+  {
+    id: 'premier-corporate',
+    number: '01',
+    name: 'Premier Corporate Partner',
+    price: '$25,000+',
+    cadence: 'Annual Title Partnership',
+    badge: 'Flagship Tier',
+    featured: true,
+    accentBar: 'from-[#5A1E65] via-fuchsia-600 to-amber-400',
+    badgeClass: 'bg-amber-100 text-amber-900 border-amber-300',
+    borderClass: 'border-[#5A1E65] ring-2 ring-[#5A1E65]/15 shadow-xl',
+    summary: 'Top-tier title alignment across Ventura County Pride, Health & Wellness Fairs, and year-round Community Resource Center recognition.',
+    benefits: [
+      'Title alignment at Ventura County Pride & Health & Wellness Fairs',
+      'Year-round Community Resource Center naming recognition',
+      'VIP executive gala passes & prime banner placement',
+      'Dedicated social spotlights to 25,000+ followers'
+    ]
+  },
+  {
+    id: 'major-community',
+    number: '02',
+    name: 'Major Community Sponsor',
+    price: '$10,000 – $24,999',
+    cadence: 'Program Track Sponsor',
+    badge: 'High Impact',
+    featured: false,
+    accentBar: 'from-indigo-600 to-purple-600',
+    badgeClass: 'bg-indigo-50 text-indigo-800 border-indigo-200',
+    borderClass: 'border-indigo-200 hover:border-indigo-400 shadow-md',
+    summary: 'Official sponsor of key program tracks—Youth Safe Sanctuaries or Diversity SHINES clinical suites—with prominent stage presence.',
+    benefits: [
+      'Sponsor of Youth Safe Sanctuaries or Diversity SHINES suites',
+      'Prominent stage recognition at signature DCVC events',
+      'Premium festival exhibition booth placement',
+      'Feature spotlight in quarterly DCVC newsletters'
+    ]
+  },
+  {
+    id: 'specialty-event',
+    number: '03',
+    name: 'Specialty & Event Partner',
+    price: '$5,000 – $9,999',
+    cadence: 'Signature Program Activation',
+    badge: 'Event Focus',
+    featured: false,
+    accentBar: 'from-rose-500 to-amber-500',
+    badgeClass: 'bg-rose-50 text-rose-800 border-rose-200',
+    borderClass: 'border-rose-200 hover:border-rose-400 shadow-md',
+    summary: 'Targeted activation sponsorship for signature DCVC programs such as Pride Prom, AIDS Walk Ventura, or Diversity Toastmasters.',
+    benefits: [
+      'Targeted sponsorship of Pride Prom, AIDS Walk, or Toastmasters',
+      'Co-branded event signage across activation zones',
+      'Employee volunteer engagement packages'
+    ]
+  },
+  {
+    id: 'community-ally',
+    number: '04',
+    name: 'Community Ally',
+    price: '$1,500 – $4,999',
+    cadence: 'Local Business & Storefront',
+    badge: 'Local Ally',
+    featured: false,
+    accentBar: 'from-emerald-500 to-teal-500',
+    badgeClass: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+    borderClass: 'border-emerald-200 hover:border-emerald-400 shadow-sm',
+    summary: 'Storefront and local business sponsorship connecting neighborhood allies with Ventura County’s LGBTQ+ community.',
+    benefits: [
+      'Official DCVC Approved badge accreditation',
+      'Community partner directory listing',
+      'Recognition in official event digital guides'
+    ]
+  },
+  {
+    id: 'in-kind',
+    number: '05',
+    name: 'In-Kind Partnership',
+    price: 'Valued Gift-in-Kind',
+    cadence: 'Goods, Tech & Pro-Bono',
+    badge: 'Operational Support',
+    featured: false,
+    accentBar: 'from-amber-500 to-orange-500',
+    badgeClass: 'bg-amber-50 text-amber-900 border-amber-200',
+    borderClass: 'border-amber-200 hover:border-amber-400 shadow-sm',
+    summary: 'Essential hardware, clinic supplies, event hospitality, and professional services that directly power DCVC operations.',
+    benefits: [
+      'Hardware, technology workstations & clinic supplies',
+      'Event catering & hospitality support',
+      'Professional pro-bono services & media production'
+    ]
+  }
+];
+
+const COMPARISON_ROWS = [
+  {
+    feature: '2027 Investment Level',
+    values: ['$25,000+', '$10,000 – $24,999', '$5,000 – $9,999', '$1,500 – $4,999']
+  },
+  {
+    feature: 'Title & Program Track Alignment',
+    values: ['Pride & Wellness Fairs Title', 'Youth or SHINES Track', 'Signature Event Activation', 'Storefront & Ally']
+  },
+  {
+    feature: 'Resource Center & Stage Recognition',
+    values: ['Year-Round Center Naming', 'Prominent Stage Billing', 'Event Zone Signage', false]
+  },
+  {
+    feature: 'Festival Booth & Exhibition',
+    values: ['Prime Placement & Banners', 'Premium Exhibition Booth', 'Program Activation Booth', false]
+  },
+  {
+    feature: 'Digital, Newsletter & Social Reach',
+    values: ['Spotlights (25,000+ Reach)', 'Quarterly Newsletter Feature', 'Event Digital Recognition', 'Directory & Digital Guide']
+  },
+  {
+    feature: 'VIP Passes & Team Engagement',
+    values: ['VIP Executive Gala Passes', 'VIP Event Access', 'Employee Volunteer Package', 'DCVC Approved Badge']
+  }
+];
+
+const IMPACT_METRICS = [
+  {
+    value: '20,000+',
+    label: 'Annual Community Reach',
+    detail: 'Individuals engaged across Ventura, Oxnard, Camarillo, Thousand Oaks, Simi Valley, Ojai & Moorpark.',
+    icon: Users,
+    accent: 'text-[#5A1E65] bg-purple-50 border-purple-200'
+  },
+  {
+    value: '25,000+',
+    label: 'Digital Audience',
+    detail: 'Followers and regional subscribers reached through partner spotlights and campaign storytelling.',
+    icon: Globe,
+    accent: 'text-indigo-700 bg-indigo-50 border-indigo-200'
+  },
+  {
+    value: '10 Cities',
+    label: 'Countywide Footprint',
+    detail: 'Sole 501(c)(3) operating a physical LGBTQ+ Community Resource Center across Ventura County.',
+    icon: Building2,
+    accent: 'text-rose-700 bg-rose-50 border-rose-200'
+  },
+  {
+    value: '501(c)(3)',
+    label: 'EIN 46-5312131',
+    detail: '100% local tax-deductible investment powering free HIV/STI screenings and Rainbow Umbrella youth spaces.',
+    icon: ShieldCheck,
+    accent: 'text-emerald-700 bg-emerald-50 border-emerald-200'
+  }
+];
 
 export default function Sponsorships() {
   usePageMeta({
@@ -85,6 +242,8 @@ export default function Sponsorships() {
     });
   }, [documents, activeCategory, searchQuery]);
 
+  const contactEmail = pageContent.contactEmail || 'info@diversitycollective.org';
+
   return (
     <div className="w-full max-w-full overflow-x-clip pt-8 md:pt-14 pb-24 bg-transparent text-slate-800">
 
@@ -105,6 +264,9 @@ export default function Sponsorships() {
               <HeartHandshake className="w-3.5 h-3.5 text-[#5A1E65]" />
               {pageContent.heroEyebrow || "PARTNER WITH DIVERSITY COLLECTIVE"}
             </span>
+            <span className="text-xs font-bold px-3 py-1 rounded-full bg-[#5A1E65] text-white shadow-xs">
+              2027 Sponsorship Campaign
+            </span>
             <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-50 text-amber-900 border border-amber-200">
               Official Document Library
             </span>
@@ -121,6 +283,24 @@ export default function Sponsorships() {
           <p className="text-sm sm:text-base md:text-lg text-slate-700 leading-relaxed max-w-3xl">
             {pageContent.introduction || "Diversity Collective Ventura County welcomes corporate sponsors, civic foundations, regional employers, and community partners committed to making a lasting impact. Your partnership directly champions our four foundational pillars: Community Advocacy, Cultural Visibility, Safe Peer Sanctuaries, and Equitable Public Health Access across all ten cities of Ventura County."}
           </p>
+
+          {/* Quick Jump CTAs */}
+          <div className="flex flex-wrap items-center gap-3 pt-1">
+            <a
+              href="#tiers-2027"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#5A1E65] hover:bg-purple-900 text-white text-xs sm:text-sm font-bold shadow-sm transition-colors"
+            >
+              <span>Explore 2027 Tiers</span>
+              <ArrowRight className="w-4 h-4" />
+            </a>
+            <a
+              href="#document-library"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white hover:bg-purple-50 text-[#5A1E65] border border-purple-200 text-xs sm:text-sm font-bold transition-colors"
+            >
+              <FileText className="w-4 h-4" />
+              <span>2027 Packets &amp; PDFs</span>
+            </a>
+          </div>
 
           {/* 4 Core Pillars of DCVC Sponsorship */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 pt-4">
@@ -178,8 +358,258 @@ export default function Sponsorships() {
         </div>
       </section>
 
+      {/* 2027 Sponsorship Investment Tiers */}
+      <section id="tiers-2027" className="container-clean py-14 space-y-10 border-b border-purple-100/80">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-200 pb-5">
+          <div>
+            <span className="text-xs font-bold text-[#5A1E65] uppercase tracking-wider flex items-center gap-1.5">
+              <Award className="w-3.5 h-3.5 text-amber-500" />
+              2027 SPONSORSHIP OPPORTUNITIES
+            </span>
+            <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-950 mt-1">
+              2027 Sponsorship Tiers &amp; Partner Benefits
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-2xl">
+              Structured investment levels designed for meaningful brand alignment, premier recognition at major regional events, and direct community impact.
+            </p>
+          </div>
+          <a
+            href="#tier-comparison"
+            className="text-xs font-bold text-[#5A1E65] hover:underline flex items-center gap-1 shrink-0"
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>Compare all tiers below</span>
+          </a>
+        </div>
+
+        {/* Tier Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+          {SPONSORSHIP_TIERS_2027.map((tier) => (
+            <article
+              key={tier.id}
+              className={`group relative overflow-hidden rounded-3xl bg-white/95 backdrop-blur-sm border-2 p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${tier.borderClass} ${
+                tier.featured ? 'md:col-span-2 lg:col-span-1' : ''
+              }`}
+            >
+              {/* PDF-inspired top accent bar */}
+              <div className={`absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r ${tier.accentBar}`} aria-hidden="true" />
+
+              <div className="space-y-4 pt-1">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-black font-mono uppercase tracking-wider text-slate-400">
+                    TIER {tier.number} · {tier.cadence}
+                  </span>
+                  <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${tier.badgeClass}`}>
+                    {tier.badge}
+                  </span>
+                </div>
+
+                <div>
+                  <h3 className="font-display text-xl sm:text-2xl font-extrabold text-slate-950 leading-tight">
+                    {tier.name}
+                  </h3>
+                  <div className="mt-2 font-display text-2xl sm:text-3xl font-black text-[#5A1E65]">
+                    {tier.price}
+                  </div>
+                </div>
+
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                  {tier.summary}
+                </p>
+
+                <ul className="space-y-2.5 pt-3 border-t border-slate-100">
+                  {tier.benefits.map((benefit) => (
+                    <li key={benefit} className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-700">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                      <span>{benefit}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="pt-6 mt-6 border-t border-slate-100">
+                <a
+                  href={`mailto:${contactEmail}?subject=${encodeURIComponent(`DCVC 2027 ${tier.name} (${tier.price}) Sponsorship Inquiry`)}`}
+                  className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors ${
+                    tier.featured
+                      ? 'bg-[#5A1E65] hover:bg-purple-900 text-white shadow-sm'
+                      : 'bg-purple-50 hover:bg-[#5A1E65] text-[#5A1E65] hover:text-white border border-purple-200'
+                  }`}
+                >
+                  <span>Inquire for {tier.name}</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </a>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        {/* Structured Tier Comparison Table */}
+        <div id="tier-comparison" className="pt-4 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h3 className="font-display text-xl sm:text-2xl font-extrabold text-slate-950">
+                2027 Tier Benefits Comparison
+              </h3>
+              <p className="text-xs text-slate-600">
+                Side-by-side overview of monetary sponsorship tiers. Looking for goods or pro-bono services? See our{' '}
+                <span className="font-bold text-amber-800">In-Kind Partnership</span> tier above.
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-purple-200/80 bg-white/95 shadow-sm overflow-hidden">
+            {/* PDF-style header bar */}
+            <div className="bg-[#5A1E65] text-white px-5 py-3 border-b-4 border-amber-400 flex items-center justify-between gap-4">
+              <span className="text-xs font-extrabold uppercase tracking-wider">
+                DCVC 2027 Corporate Sponsorship Matrix
+              </span>
+              <span className="text-[11px] text-purple-200 hidden sm:inline">
+                Scroll horizontally on mobile if needed
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[680px] text-left border-collapse">
+                <thead>
+                  <tr className="bg-purple-50/70 border-b border-purple-100 text-xs font-extrabold text-slate-900">
+                    <th scope="col" className="py-3.5 px-4 sm:px-5 w-52">
+                      Benefit &amp; Alignment
+                    </th>
+                    <th scope="col" className="py-3.5 px-4 text-[#5A1E65]">
+                      Premier Corporate
+                      <span className="block text-[11px] font-bold text-amber-700">$25,000+</span>
+                    </th>
+                    <th scope="col" className="py-3.5 px-4">
+                      Major Community
+                      <span className="block text-[11px] font-semibold text-slate-500">$10,000 – $24,999</span>
+                    </th>
+                    <th scope="col" className="py-3.5 px-4">
+                      Specialty &amp; Event
+                      <span className="block text-[11px] font-semibold text-slate-500">$5,000 – $9,999</span>
+                    </th>
+                    <th scope="col" className="py-3.5 px-4">
+                      Community Ally
+                      <span className="block text-[11px] font-semibold text-slate-500">$1,500 – $4,999</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-xs">
+                  {COMPARISON_ROWS.map((row, idx) => (
+                    <tr
+                      key={row.feature}
+                      className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/60'}
+                    >
+                      <th scope="row" className="py-3.5 px-4 sm:px-5 font-bold text-slate-900 align-top">
+                        {row.feature}
+                      </th>
+                      {row.values.map((val, colIdx) => (
+                        <td key={`${row.feature}-${colIdx}`} className="py-3.5 px-4 text-slate-700 align-top">
+                          {val === false ? (
+                            <span className="inline-flex items-center text-slate-300" aria-label="Not included">
+                              <Minus className="w-4 h-4" />
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-start gap-1.5">
+                              <Check className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${colIdx === 0 ? 'text-[#5A1E65]' : 'text-emerald-600'}`} />
+                              <span className={colIdx === 0 ? 'font-semibold text-slate-900' : ''}>{val}</span>
+                            </span>
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 2027 Community Impact & Partnership Pathways */}
+      <section id="impact-2027" className="container-clean py-14 space-y-8 border-b border-purple-100/80">
+        <div className="max-w-3xl">
+          <span className="text-xs font-bold text-[#5A1E65] uppercase tracking-wider flex items-center gap-1.5">
+            <Users className="w-3.5 h-3.5" />
+            REGIONAL IMPACT &amp; ACTIVATIONS
+          </span>
+          <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-950 mt-1">
+            Measurable Community Impact Across Ventura County
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-600 mt-1.5 leading-relaxed">
+            Your 2027 sponsorship directly funds free confidential HIV/STI screenings, Rainbow Umbrella youth drop-in sanctuaries, transgender support circles, and countywide Pride programming.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {IMPACT_METRICS.map((metric) => {
+            const Icon = metric.icon;
+            return (
+              <div
+                key={metric.label}
+                className="p-5 rounded-2xl bg-white/95 border border-slate-200/90 shadow-xs flex flex-col gap-2.5"
+              >
+                <span className={`w-9 h-9 rounded-xl border flex items-center justify-center ${metric.accent}`}>
+                  <Icon className="w-4 h-4" />
+                </span>
+                <div className="font-display text-2xl sm:text-3xl font-black text-slate-950">
+                  {metric.value}
+                </div>
+                <div className="text-xs font-bold uppercase tracking-wider text-[#5A1E65]">
+                  {metric.label}
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  {metric.detail}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Custom Partnership Activations */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[
+            {
+              title: 'Employee DEI & Volunteering',
+              desc: 'Engage your workforce with tailored DEI workshops, corporate volunteer days, and Pride mobilization.',
+              icon: HeartHandshake
+            },
+            {
+              title: 'Signature Program Underwriting',
+              desc: 'Align directly with Rainbow Umbrella youth mentorship, Diversity SHINES clinical care, or Pride Prom.',
+              icon: Award
+            },
+            {
+              title: 'Multi-Year Strategic Alliances',
+              desc: 'Co-create custom multi-year agreements aligned with your CSR goals, foundation guidelines, and regional footprint.',
+              icon: Gift
+            }
+          ].map((pathway) => {
+            const Icon = pathway.icon;
+            return (
+              <div
+                key={pathway.title}
+                className="p-5 rounded-2xl bg-gradient-to-br from-purple-50/70 via-white to-amber-50/40 border border-purple-100 flex items-start gap-3.5"
+              >
+                <span className="p-2 rounded-xl bg-white border border-purple-200 text-[#5A1E65] shrink-0 shadow-2xs">
+                  <Icon className="w-4 h-4" />
+                </span>
+                <div>
+                  <h3 className="font-display text-sm font-extrabold text-slate-950">
+                    {pathway.title}
+                  </h3>
+                  <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                    {pathway.desc}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
       {/* Document Library Section */}
-      <section className="container-clean py-14 space-y-8">
+      <section id="document-library" className="container-clean py-14 space-y-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-200 pb-5">
           <div>
             <span className="text-xs font-bold text-[#5A1E65] uppercase tracking-wider flex items-center gap-1.5">
