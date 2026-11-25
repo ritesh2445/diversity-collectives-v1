@@ -55,7 +55,10 @@ export default function Events() {
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get('search') || '');
   const [searchInput, setSearchInput] = useState(() => searchParams.get('search') || '');
   const [selectedCategory, setSelectedCategory] = useState(() => searchParams.get('category') || 'All');
-  const [viewMode, setViewMode] = useState(() => searchParams.get('view') === 'calendar' ? 'calendar' : 'list'); // 'list' | 'calendar'
+  const [viewMode, setViewMode] = useState(() => {
+    const v = searchParams.get('view');
+    return v === 'list' || v === 'weekly' ? v : 'calendar';
+  }); // 'calendar' | 'list' | 'weekly'
   const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') === 'past' ? 'past' : 'upcoming'); // 'upcoming' | 'past'
 
   useEffect(() => {
