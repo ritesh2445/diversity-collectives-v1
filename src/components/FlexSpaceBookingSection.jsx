@@ -148,19 +148,19 @@ export default function FlexSpaceBookingSection({ props = {}, style = {} }) {
               {isManuallyClosed ? (
                 <Link
                   to="/flex-space"
-                  className="w-full py-3.5 px-5 rounded-xl bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 hover:from-slate-700 hover:to-slate-600 text-white border border-cyan-300/35 font-extrabold text-xs sm:text-sm inline-flex items-center justify-center gap-2 transition-all shadow-[0_5px_0_0_#0f172a,0_10px_20px_rgba(14,165,233,0.2)] active:translate-y-0.5"
+                  className="w-full py-3.5 px-5 rounded-xl bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 hover:from-slate-700 hover:to-slate-600 !text-white border border-cyan-300/35 font-extrabold text-xs sm:text-sm inline-flex items-center justify-center gap-2 transition-all shadow-[0_5px_0_0_#0f172a,0_10px_20px_rgba(14,165,233,0.2)] active:translate-y-0.5"
                 >
                   <AlertCircle className="w-4 h-4 text-amber-300 shrink-0" />
-                  <span>Bookings Unavailable · View Schedule</span>
+                  <span className="text-white">Bookings Unavailable · View Schedule</span>
                   <ArrowRight className="w-4 h-4 text-cyan-300 shrink-0" />
                 </Link>
               ) : (
                 <Link
                   to="/flex-space"
-                  className="w-full py-3.5 px-5 rounded-xl bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:via-blue-500 hover:to-indigo-500 text-white border border-cyan-300/50 font-extrabold text-xs sm:text-sm inline-flex items-center justify-center gap-2 transition-all shadow-[0_5px_0_0_#1e3a8a,0_12px_26px_rgba(0,212,255,0.4)] active:translate-y-0.5"
+                  className="w-full py-3.5 px-5 rounded-xl bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:via-blue-500 hover:to-indigo-500 !text-white border border-cyan-300/50 font-extrabold text-xs sm:text-sm inline-flex items-center justify-center gap-2 transition-all shadow-[0_5px_0_0_#1e3a8a,0_12px_26px_rgba(0,212,255,0.4)] active:translate-y-0.5"
                 >
-                  <span>{props.ctaText || 'Book Flex Space Slot'}</span>
-                  <ArrowRight className="w-4 h-4 shrink-0" />
+                  <span className="text-white">{props.ctaText || 'Book Flex Space Slot'}</span>
+                  <ArrowRight className="w-4 h-4 text-white shrink-0" />
                 </Link>
               )}
             </div>
