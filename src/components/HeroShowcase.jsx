@@ -425,11 +425,22 @@ export default function HeroShowcase({
   const themeStyle = getHeroContainerStyle(resolvedId, activeThemeObj);
   const isDark = themeStyle.dark;
 
-  const statusHeadline = centerStatus?.headline || (centerStatus?.isOpenNow
-    ? 'Center Open Now'
-    : merged.statusHeadline || 'Center Open Today');
-  const statusSchedule = liveOrg?.hours || merged.statusSchedule || 'Mon–Fri 1:00 PM – 5:00 PM';
+  const hasCustomHeadline =
+    Boolean(merged.statusPillUseCustom) ||
+    (Boolean(merged.statusHeadline) && merged.statusHeadline !== 'Center Open Today');
+  const hasCustomSchedule =
+    Boolean(merged.statusPillUseCustom) ||
+    (Boolean(merged.statusSchedule) && merged.statusSchedule !== 'Mon–Fri 1:00 PM – 5:00 PM');
+  const statusHeadline = hasCustomHeadline
+    ? merged.statusHeadline || 'Center Open Today'
+    : centerStatus?.headline ||
+      (centerStatus?.isOpenNow ? 'Center Open Now' : merged.statusHeadline || 'Center Open Today');
+  const statusSchedule = hasCustomSchedule
+    ? merged.statusSchedule || 'Mon–Fri 1:00 PM – 5:00 PM'
+    : liveOrg?.hours || merged.statusSchedule || 'Mon–Fri 1:00 PM – 5:00 PM';
   const statusTag = merged.statusTag || 'HIV/STI Screenings 1st Mon 3–7 PM';
+  const statusPillLink = merged.statusPillLink || '/programs/community-resource-center';
+  const hideStatusPill = Boolean(merged.hideStatusPill);
   const mobileMaxChars = Math.max(16, Math.min(80, Number(merged.statusMobileMaxChars) || 36));
   const desktopMaxChars = Math.max(30, Math.min(140, Number(merged.statusDesktopMaxChars) || 72));
   const truncateByChars = (str, limit) => {
@@ -653,12 +664,12 @@ export default function HeroShowcase({
                 </div>
               )}
             </div>
-          ) : (
+          ) : !hideStatusPill ? (
             <div className="flex items-center justify-start w-full max-w-full min-w-0">
               <SafeNav
                 previewMode={previewMode}
                 data-no-autofit="true"
-                to="/programs/community-resource-center"
+                to={statusPillLink}
                 className={`hero-status-pill group inline-flex items-center justify-between gap-2.5 sm:gap-3 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full border-2 shadow-md transition-all cursor-pointer w-fit max-w-full overflow-hidden ${
                   isDark
                     ? 'bg-white/10 hover:bg-white/15 border-white/25 text-white'
@@ -709,7 +720,7 @@ export default function HeroShowcase({
                 </div>
               </SafeNav>
             </div>
-          )
+          ) : null
         )}
 
         {/* ================================================================

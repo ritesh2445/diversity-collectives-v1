@@ -918,36 +918,85 @@ export default function DesignEditor({ onPublishSuccess }) {
               <div className="space-y-3">
                 <div className="p-2.5 rounded-xl bg-purple-50/70 border border-purple-200 space-y-2">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-[10px] font-black uppercase tracking-wider text-[#5A1E65]">
-                      Top Center Bar
-                    </p>
-                    <span className="text-[10px] font-semibold text-slate-500">
-                      Instant Live Sync
-                    </span>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-wider text-[#5A1E65]">
+                        Hero Status Pill (Open Now • Hours)
+                      </p>
+                      <p className="text-[10px] text-slate-500">
+                        Floating status pill above the Hero headline
+                      </p>
+                    </div>
+                    <label className="inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-700 cursor-pointer shrink-0">
+                      <input
+                        type="checkbox"
+                        checked={!selectedBlock.props?.hideStatusPill}
+                        onChange={(e) => updateSelectedBlockProps('hideStatusPill', !e.target.checked)}
+                        className="rounded border-slate-300 text-[#5A1E65] focus:ring-[#5A1E65]"
+                      />
+                      <span>Visible</span>
+                    </label>
+                  </div>
+                  <label className="flex items-center gap-1.5 text-[10px] font-bold text-slate-700 cursor-pointer bg-white/80 px-2 py-1 rounded-lg border border-purple-100">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(selectedBlock.props?.statusPillUseCustom)}
+                      onChange={(e) => updateSelectedBlockProps('statusPillUseCustom', e.target.checked)}
+                      className="rounded border-slate-300 text-[#5A1E65] focus:ring-[#5A1E65]"
+                    />
+                    <span>Override live auto-status &amp; org hours with custom text below</span>
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 mb-0.5">
+                        Status Headline
+                      </label>
+                      <input
+                        type="text"
+                        value={selectedBlock.props?.statusHeadline || ''}
+                        onChange={(e) => updateSelectedBlockProps('statusHeadline', e.target.value)}
+                        placeholder="Center Open Today"
+                        className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-[11px] bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 mb-0.5">
+                        Hours / Schedule
+                      </label>
+                      <input
+                        type="text"
+                        value={selectedBlock.props?.statusSchedule || ''}
+                        onChange={(e) => updateSelectedBlockProps('statusSchedule', e.target.value)}
+                        placeholder="Mon–Fri 1:00 PM – 5:00 PM"
+                        className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-[11px] bg-white"
+                      />
+                    </div>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    <input
-                      type="text"
-                      value={selectedBlock.props?.statusHeadline || ''}
-                      onChange={(e) => updateSelectedBlockProps('statusHeadline', e.target.value)}
-                      placeholder="Center Open Today"
-                      className="px-2.5 py-1.5 rounded-lg border border-slate-300 text-[11px] bg-white"
-                    />
-                    <input
-                      type="text"
-                      value={selectedBlock.props?.statusSchedule || ''}
-                      onChange={(e) => updateSelectedBlockProps('statusSchedule', e.target.value)}
-                      placeholder="Mon–Fri 1:00 PM – 5:00 PM"
-                      className="px-2.5 py-1.5 rounded-lg border border-slate-300 text-[11px] bg-white"
-                    />
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 mb-0.5">
+                        Highlight Tag
+                      </label>
+                      <input
+                        type="text"
+                        value={selectedBlock.props?.statusTag || ''}
+                        onChange={(e) => updateSelectedBlockProps('statusTag', e.target.value)}
+                        placeholder="HIV/STI Screenings 1st Mon 3–7 PM"
+                        className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-[11px] bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 mb-0.5">
+                        Pill Click Link
+                      </label>
+                      <input
+                        type="text"
+                        value={selectedBlock.props?.statusPillLink || '/programs/community-resource-center'}
+                        onChange={(e) => updateSelectedBlockProps('statusPillLink', e.target.value)}
+                        placeholder="/programs/community-resource-center"
+                        className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-[11px] bg-white"
+                      />
+                    </div>
                   </div>
-                  <input
-                    type="text"
-                    value={selectedBlock.props?.statusTag || ''}
-                    onChange={(e) => updateSelectedBlockProps('statusTag', e.target.value)}
-                    placeholder="Free HIV/STI Screenings"
-                    className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-[11px] bg-white"
-                  />
                   <div className="grid grid-cols-2 gap-2 pt-1 border-t border-purple-200/70">
                     <div>
                       <label className="block text-[10px] font-bold text-slate-600 mb-0.5">
