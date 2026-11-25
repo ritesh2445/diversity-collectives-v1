@@ -177,7 +177,7 @@ export default function TurnstileWidget({
   // If verified, display reassuring completion badge
   if (isVerified) {
     return (
-      <div className={`turnstile-verified my-2.5 px-3.5 py-2.5 rounded-xl bg-emerald-50/90 border border-emerald-200 text-xs font-bold text-emerald-950 flex items-center justify-between gap-3 shadow-xs transition-all animate-fadeIn ${className}`}>
+      <div className={`turnstile-verified w-full max-w-full my-2.5 px-3.5 py-2.5 rounded-xl bg-emerald-50/90 border border-emerald-200 text-xs font-bold text-emerald-950 flex items-center justify-between gap-3 shadow-xs transition-all animate-fadeIn ${className}`}>
         <div className="flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
           <span>Security Verification Complete</span>
@@ -192,7 +192,7 @@ export default function TurnstileWidget({
   // If Turnstile triggers a domain mismatch or script error, show interactive fallback
   if (hasError) {
     return (
-      <div className={`turnstile-fallback my-3 p-3 rounded-xl border border-purple-200 bg-purple-50/70 text-slate-800 text-xs flex items-center justify-between gap-3 ${className}`}>
+      <div className={`turnstile-fallback w-full max-w-full my-3 p-3 rounded-xl border border-purple-200 bg-purple-50/70 text-slate-800 text-xs flex items-center justify-between gap-3 ${className}`}>
         <button
           type="button"
           onClick={handleToggleFallback}
@@ -218,8 +218,12 @@ export default function TurnstileWidget({
   }
 
   return (
-    <div className={`turnstile-container my-3 min-h-[65px] flex items-center justify-center ${className}`}>
-      <div ref={containerRef} aria-label="Security Verification" />
+    <div className={`turnstile-container w-full max-w-full overflow-hidden my-3 min-h-[65px] flex items-center justify-center ${className}`}>
+      <div
+        ref={containerRef}
+        aria-label="Security Verification"
+        className="w-full max-w-full flex justify-center [&>iframe]:max-w-full [&>div]:max-w-full"
+      />
     </div>
   );
 }
