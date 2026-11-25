@@ -1041,14 +1041,17 @@ a[class*="to-purple-"]:not([class*="to-purple-50"]):not([class*="to-purple-100"]
   -webkit-overflow-scrolling: touch !important;
 }
 
-/* Ensure text elements inside dark containers inherit light text color instead of default --text-body */
-.bg-slate-900 p,
-.bg-slate-950 p,
-.bg-purple-950 p,
-[class*="bg-slate-900"] p,
-[class*="bg-slate-950"] p,
-[class*="bg-purple-950"] p {
-  color: inherit;
+/* Ensure text elements inside dark containers inherit light text color instead of default --text-body,
+   without overriding explicit Tailwind text-* classes or white modals/cards inside dark backdrops */
+@layer base {
+  .bg-slate-900 p:not([class*="text-"]),
+  .bg-slate-950 p:not([class*="text-"]),
+  .bg-purple-950 p:not([class*="text-"]),
+  [class*="bg-slate-900"] p:not([class*="text-"]),
+  [class*="bg-slate-950"] p:not([class*="text-"]),
+  [class*="bg-purple-950"] p:not([class*="text-"]) {
+    color: inherit;
+  }
 }
 
 /* Focus States */

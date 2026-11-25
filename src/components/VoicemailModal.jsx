@@ -22,7 +22,7 @@ export default function VoicemailModal({ isOpen, onClose, defaultSubject = '' })
       aria-modal="true"
       aria-labelledby="voicemail-modal-title"
     >
-      <div className="bg-white rounded-3xl max-w-lg w-full border border-slate-200 shadow-2xl p-6 sm:p-7 space-y-4 my-8 relative">
+      <div className="bg-white text-slate-900 rounded-3xl max-w-lg w-full border border-slate-200 shadow-2xl p-6 sm:p-7 space-y-4 my-8 relative">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-purple-50 text-[#5A1E65] flex items-center justify-center border border-purple-100">
