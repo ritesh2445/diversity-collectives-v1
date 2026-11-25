@@ -245,7 +245,7 @@ export default function Header() {
             </Link>
 
             {/* Desktop Center Navigation - Clean 5 Pillars + "More" Dropdown to Guarantee Zero Collision */}
-            <nav id="main-navigation" className="hidden xl:flex items-center gap-1 xl:gap-1.5 2xl:gap-2 flex-shrink min-w-0 mr-2 lg:mr-4" aria-label="Main Navigation">
+            <nav id="main-navigation" className="hidden xl:flex flex-1 flex-wrap items-center justify-center gap-x-1 gap-y-1 xl:gap-x-1.5 2xl:gap-x-2 min-w-0 mx-2 lg:mx-3" aria-label="Main Navigation">
               {/* Primary Pillars */}
               {primaryNavItems.map((item) => {
                 const isActive = location.pathname === item.to ||
@@ -254,7 +254,7 @@ export default function Header() {
                   <Link
                     key={item.to}
                     to={item.to}
-                    className={`nav-bar-btn px-2.5 2xl:px-3 py-1.5 2xl:py-2 text-xs 2xl:text-sm font-bold rounded-full transition-all whitespace-nowrap inline-block ${isActive
+                    className={`nav-bar-btn shrink-0 px-2 2xl:px-3 py-1.5 2xl:py-2 text-xs 2xl:text-sm font-bold rounded-full transition-all whitespace-nowrap inline-block ${isActive
                         ? 'nav-bar-btn-active shadow-md shadow-purple-500/20'
                         : ''
                       }`}
@@ -265,7 +265,7 @@ export default function Header() {
               })}
 
               {/* "More" Dropdown on desktop (Directory, Training, News, Gallery, Podcasts & Media, Get in Touch) */}
-              <div className="relative" ref={moreDropdownRef} data-no-autofit="true">
+              <div className="relative shrink-0" ref={moreDropdownRef} data-no-autofit="true">
                 <button
                   type="button"
                   data-no-autofit="true"
@@ -273,7 +273,7 @@ export default function Header() {
                   onMouseEnter={() => setMoreOpen(true)}
                   aria-expanded={moreOpen}
                   aria-haspopup="true"
-                  className={`nav-bar-btn px-2.5 py-1.5 text-xs font-bold rounded-full transition-colors duration-150 whitespace-nowrap inline-flex items-center gap-1 cursor-pointer ${isSecondaryActive || moreOpen
+                  className={`nav-bar-btn shrink-0 px-2 2xl:px-2.5 py-1.5 text-xs 2xl:text-sm font-bold rounded-full transition-colors duration-150 whitespace-nowrap inline-flex items-center gap-1 cursor-pointer ${isSecondaryActive || moreOpen
                       ? 'nav-bar-btn-active shadow-md shadow-purple-500/20'
                       : ''
                     }`}
@@ -321,7 +321,7 @@ export default function Header() {
             </nav>
 
             {/* Right CTAs - Guaranteed zero cropping */}
-            <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 shrink min-w-0 max-w-[50vw] sm:max-w-none justify-end">
+            <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 shrink-0 min-w-0 max-w-[50vw] sm:max-w-none justify-end">
               {/* Smart Sitewide Search Trigger (Desktop & Tablet) */}
               <button
                 type="button"
