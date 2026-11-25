@@ -1414,67 +1414,21 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
     setGoogleLoading(true);
 
     try {
-      // 1. Direct Google Auth Endpoint to Cloudflare Worker
-      const res = await fetch(`${API_BASE_URL}/admin/auth/google`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: 'admin@diversitycollective.org',
-          isDevDemo: true
-        })
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success && data.token) {
-          setClientSession(data.token, data.user);
-          setPending2fa(null);
-          setGoogleLoading(false);
-          return;
-        }
-      }
-
-      // 2. If direct auth endpoint is unconfigured and Auth0 has Google SSO configured, try Auth0
       if (auth0.enabled && auth0.loginWithRedirect) {
-        try {
-          await auth0.loginWithRedirect({
-            authorizationParams: {
-              connection: 'google-oauth2',
-              redirect_uri: `${window.location.origin}/admin`,
-              prompt: 'login'
-            }
-          });
-          return;
-        } catch (err) {
-          console.warn('Auth0 Google redirect failed, falling back to local admin session:', err);
-        }
+        auth0AttemptedSubRef.current = '';
+        await auth0.loginWithRedirect({
+          authorizationParams: {
+            connection: 'google-oauth2',
+            redirect_uri: `${window.location.origin}/admin`,
+            prompt: 'select_account login'
+          }
+        });
+        return;
       }
 
-      // 3. Resilient fallback session for admin@diversitycollective.org
-      const mockUser = {
-        id: 'adm-google-dev',
-        email: 'admin@diversitycollective.org',
-        name: 'Admin (DCVC Google)',
-        role: 'admin',
-        mustChangePassword: false,
-        authProvider: 'google'
-      };
-      const mockToken = 'mock_google_admin_token_' + Date.now();
-      setClientSession(mockToken, mockUser);
-      setPending2fa(null);
-    } catch {
-      const mockUser = {
-        id: 'adm-google-dev',
-        email: 'admin@diversitycollective.org',
-        name: 'Admin (DCVC Google)',
-        role: 'admin',
-        mustChangePassword: false,
-        authProvider: 'google'
-      };
-      const mockToken = 'mock_google_admin_token_' + Date.now();
-      setClientSession(mockToken, mockUser);
-      setPending2fa(null);
+      setAuthError('Google Single Sign-On is not configured on this environment. Please sign in with your authorized Email OTP or Password.');
+    } catch (err) {
+      setAuthError(err?.message || 'Unable to start Google Single Sign-On. Please try again or use Email OTP.');
     } finally {
       setGoogleLoading(false);
     }

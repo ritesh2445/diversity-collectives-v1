@@ -3359,9 +3359,9 @@ export default {
             const allowedExtra = String(env.ADMIN_ALLOWED_EMAILS || env.ADMIN_EMAIL || '')
               .split(',')
               .map(e => e.trim().toLowerCase())
-              .filter(Boolean);
+              .filter(e => e && e !== '*');
 
-            if (allowedExtra.includes(verifiedEmail) || allowedExtra.includes('*') || verifiedEmail.endsWith('@diversitycollective.org')) {
+            if (allowedExtra.includes(verifiedEmail)) {
               const newAdminId = 'adm-' + crypto.randomUUID();
               await db.execute({
                 sql: `INSERT OR IGNORE INTO admin_users (id, email, name, role, password_hash, salt, is_active, must_change_password, token_version)
@@ -3781,53 +3781,20 @@ export default {
         // 15.0e Google Authentication (POST /api/admin/auth/google)
         if (pathname === '/api/admin/auth/google' && request.method === 'POST') {
           const body = await request.json().catch(() => ({}));
-          const { idToken, credential, accessToken, isDevDemo } = body;
+          const { idToken, credential, accessToken } = body;
           const tokenToVerify = idToken || credential || '';
-          const reqEmail = String(body.email || '').toLowerCase().trim();
 
-          let googleUser = null;
-          if (tokenToVerify || accessToken) {
-            googleUser = await verifyGoogleToken({
-              idToken: tokenToVerify,
-              accessToken,
-              clientId: env.GOOGLE_CLIENT_ID || env.VITE_GOOGLE_CLIENT_ID || ''
-            });
+          if (!tokenToVerify && !accessToken) {
+            return errorResponse('Google authentication failed: a verified Google token is required.', 401, null, adminCors);
           }
 
-          // Safe extraction from JWT payload if tokeninfo verification is pending or clientId unconfigured
-          let tokenEmail = '';
-          let tokenName = '';
-          let tokenSub = '';
-          let tokenPic = '';
-          if (tokenToVerify && typeof tokenToVerify === 'string' && tokenToVerify.includes('.')) {
-            try {
-              const parts = tokenToVerify.split('.');
-              if (parts[1]) {
-                const b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-                const decodedStr = atob(b64);
-                const tokenData = JSON.parse(decodedStr);
-                if (tokenData?.email) tokenEmail = String(tokenData.email).toLowerCase().trim();
-                if (tokenData?.name) tokenName = tokenData.name;
-                if (tokenData?.sub) tokenSub = tokenData.sub;
-                if (tokenData?.picture) tokenPic = tokenData.picture;
-              }
-            } catch {}
-          }
+          const googleUser = await verifyGoogleToken({
+            idToken: tokenToVerify,
+            accessToken,
+            clientId: env.GOOGLE_CLIENT_ID || env.VITE_GOOGLE_CLIENT_ID || ''
+          });
 
-          const effectiveEmail = (reqEmail || tokenEmail || (googleUser?.email) || '').toLowerCase().trim();
-
-          if (!googleUser && (effectiveEmail === 'admin@diversitycollective.org' || effectiveEmail.endsWith('@diversitycollective.org') || isDevDemo || String(env.ENVIRONMENT || '').toLowerCase() !== 'production')) {
-            // Authorized DCVC Admin Google sign-in
-            googleUser = {
-              email: effectiveEmail || 'admin@diversitycollective.org',
-              name: tokenName || body.name || 'Admin (DCVC Google)',
-              sub: tokenSub || body.sub || 'google-admin-dcvc',
-              picture: tokenPic || body.picture || '',
-              emailVerified: true
-            };
-          }
-
-          if (!googleUser || !googleUser.email) {
+          if (!googleUser || !googleUser.email || !googleUser.emailVerified) {
             return errorResponse('Google authentication failed: invalid or unverified token.', 401, null, adminCors);
           }
 
@@ -3841,46 +3808,52 @@ export default {
               });
               if (uRes.rows.length > 0) userRow = uRes.rows[0];
             } catch (err) {
-              console.warn('Google auth DB lookup warning:', err.message);
+              console.error('Google auth DB lookup failed:', err.message);
+              return errorResponse('Authentication service temporarily unavailable.', 503, null, adminCors);
             }
-          }
-
-          const allowedExtra = String(env.ADMIN_ALLOWED_EMAILS || env.ADMIN_EMAIL || '')
-            .split(',')
-            .map(e => e.trim().toLowerCase())
-            .filter(Boolean);
-
-          const isAllowed = verifiedEmail === 'admin@diversitycollective.org' ||
-            allowedExtra.includes(verifiedEmail) ||
-            allowedExtra.includes('*') ||
-            verifiedEmail.endsWith('@diversitycollective.org') ||
-            Boolean(userRow);
-
-          if (!isAllowed) {
-            return errorResponse(`Signed in as Google account ${verifiedEmail}, but this email is not authorized for DCVC Staff Access.`, 403, null, adminCors);
-          }
-
-          if (userRow && !userRow.is_active && verifiedEmail !== 'admin@diversitycollective.org') {
-            return errorResponse('Administrative account is deactivated.', 403, null, adminCors);
           }
 
           if (!userRow) {
-            const newAdminId = verifiedEmail === 'admin@diversitycollective.org' ? 'adm-1' : 'adm-' + crypto.randomUUID();
+            const allowedExtra = String(env.ADMIN_ALLOWED_EMAILS || env.ADMIN_EMAIL || '')
+              .split(',')
+              .map(e => e.trim().toLowerCase())
+              .filter(e => e && e !== '*');
+
+            if (allowedExtra.includes(verifiedEmail)) {
+              const newAdminId = 'adm-' + crypto.randomUUID();
+              if (db) {
+                await db.execute({
+                  sql: `INSERT OR IGNORE INTO admin_users (id, email, name, role, password_hash, salt, is_active, must_change_password, token_version)
+                        VALUES (?, ?, ?, 'admin', 'google-oauth-account', ?, 1, 0, 1)`,
+                  args: [newAdminId, verifiedEmail, googleUser.name || verifiedEmail.split('@')[0], generateRandomSalt(16)]
+                }).catch(() => {});
+              }
+              userRow = {
+                id: newAdminId,
+                email: verifiedEmail,
+                name: googleUser.name || verifiedEmail.split('@')[0],
+                role: 'admin',
+                is_active: 1,
+                token_version: 1
+              };
+            }
+          }
+
+          if (!userRow) {
             if (db) {
-              await db.execute({
-                sql: `INSERT OR IGNORE INTO admin_users (id, email, name, role, password_hash, salt, is_active, must_change_password, token_version)
-                      VALUES (?, ?, ?, 'admin', 'google-oauth-account', ?, 1, 0, 1)`,
-                args: [newAdminId, verifiedEmail, googleUser.name || verifiedEmail.split('@')[0], generateRandomSalt(16)]
+              await logAdminAction(db, {
+                userEmail: verifiedEmail,
+                action: 'admin_google_unauthorized_email',
+                targetType: 'auth',
+                details: { sub: googleUser.sub },
+                ip: clientIp
               }).catch(() => {});
             }
-            userRow = {
-              id: newAdminId,
-              email: verifiedEmail,
-              name: googleUser.name || verifiedEmail.split('@')[0],
-              role: 'admin',
-              is_active: 1,
-              token_version: 1
-            };
+            return errorResponse(`Signed in as Google account ${verifiedEmail}, but this email is not authorized for DCVC Staff Access.`, 403, null, adminCors);
+          }
+
+          if (!userRow.is_active) {
+            return errorResponse('Administrative account is deactivated.', 403, null, adminCors);
           }
 
           const googleAllowedSections = userRow.role === 'admin' ? null : parseAllowedSections(userRow.allowed_sections);
