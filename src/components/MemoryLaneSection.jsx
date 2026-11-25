@@ -450,25 +450,6 @@ export default function MemoryLaneSection({ className = '' }) {
             aria-hidden="true"
           />
 
-          {/* Floating Navigation Chevrons on Left and Right edges */}
-          <button
-            type="button"
-            onClick={handlePrevMilestone}
-            className="absolute left-1.5 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-13 sm:h-13 rounded-full bg-white text-[#5A1E65] border-2 border-purple-300 shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all cursor-pointer hover:bg-purple-50 group hover:border-[#5A1E65]"
-            aria-label="Scroll to Previous Milestone"
-          >
-            <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 group-hover:-translate-x-0.5 transition-transform" />
-          </button>
-
-          <button
-            type="button"
-            onClick={handleNextMilestone}
-            className="absolute right-1.5 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-13 sm:h-13 rounded-full bg-white text-[#5A1E65] border-2 border-purple-300 shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all cursor-pointer hover:bg-purple-50 group hover:border-[#5A1E65]"
-            aria-label="Scroll to Next Milestone"
-          >
-            <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-x-0.5 transition-transform" />
-          </button>
-
           {/* The Continuous Scrollable Stream */}
           <div
             ref={laneScrollRef}
@@ -696,13 +677,31 @@ export default function MemoryLaneSection({ className = '' }) {
             })}
           </div>
 
-          {/* Scroll/Swipe Directional Guidance */}
-          <div className="text-center pt-2">
-            <p className="text-xs font-bold text-slate-400 flex items-center justify-center gap-2">
+          {/* In-Flow Navigation Controls & Scroll/Swipe Guidance (Zero Card Overlap) */}
+          <div className="flex items-center justify-center gap-3 sm:gap-5 pt-2 px-4 relative z-20">
+            <button
+              type="button"
+              onClick={handlePrevMilestone}
+              className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white text-[#5A1E65] border-2 border-purple-300 shadow-md flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer hover:bg-purple-50 group hover:border-[#5A1E65] shrink-0"
+              aria-label="Scroll to Previous Milestone"
+            >
+              <ChevronLeft className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
+            </button>
+
+            <p className="text-xs font-bold text-slate-500 flex items-center justify-center gap-2 text-center">
               <span>⚡</span>
               <span>Scroll or swipe along the electric wire lane to explore each milestone</span>
               <span>⚡</span>
             </p>
+
+            <button
+              type="button"
+              onClick={handleNextMilestone}
+              className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white text-[#5A1E65] border-2 border-purple-300 shadow-md flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer hover:bg-purple-50 group hover:border-[#5A1E65] shrink-0"
+              aria-label="Scroll to Next Milestone"
+            >
+              <ChevronRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
+            </button>
           </div>
 
         </div>
