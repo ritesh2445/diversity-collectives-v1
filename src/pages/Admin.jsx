@@ -240,7 +240,7 @@ export default function Admin() {
             enabled: Boolean(data.auth0.enabled || hasEnvAuth0),
             domain: data.auth0.domain || envDomain || '',
             clientId: data.auth0.clientId || envClientId || '',
-            audience: data.auth0.audience || envAudience || '',
+            audience: data.auth0.audience !== undefined ? data.auth0.audience : (envAudience || ''),
             enforceSso: Boolean(data.auth0.enforceSso)
           };
           setAuth0Config((prev) => {
