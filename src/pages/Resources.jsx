@@ -16,7 +16,6 @@ import { resourcesDirectory } from '../data/dcvcData';
 import { cmsStore } from '../services/cmsStore';
 import { useLiveOrgInfo } from '../hooks/useCmsLive';
 import { getResourceCardTheme, subscribeToCardThemes } from '../services/cardThemeStore.js';
-import SendVoicemailButton from '../components/SendVoicemailButton';
 import CardSpotlight from '../components/CardSpotlight';
 import MobileCarousel from '../components/MobileCarousel';
 
@@ -262,30 +261,20 @@ export default function Resources() {
                           >
                             {/* Prominent High-Contrast Phone Number */}
                             {item.phone ? (
-                              (item.voicemailOnly || liveOrg.voicemailOnly) ? (
-                                <SendVoicemailButton
-                                  label="Send Voice Message"
-                                  subject={`Resource Inquiry: ${item.name}`}
-                                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 border-2 text-slate-900 font-bold text-xs sm:text-sm shadow-xs transition-all cursor-pointer"
-                                  style={{ borderColor: theme.accentColor || '#5A1E65' }}
-                                  compact
-                                />
-                              ) : (
-                                <a
-                                  href={`tel:${item.phone.replace(/[^0-9+]/g, '')}`}
-                                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 border-2 shadow-xs transition-all hover:scale-[1.02] cursor-pointer"
-                                  style={{
-                                    borderColor: theme.accentColor || '#5A1E65',
-                                    color: '#0F172A'
-                                  }}
-                                  title={`Call ${item.phone}`}
-                                >
-                                  <Phone className="w-4 h-4 shrink-0" style={{ color: theme.accentColor || '#5A1E65' }} />
-                                  <span className="font-bold text-slate-900 text-xs sm:text-sm tracking-wide">
-                                    {item.phone}
-                                  </span>
-                                </a>
-                              )
+                              <a
+                                href={`tel:${item.phone.replace(/[^0-9+]/g, '')}`}
+                                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 border-2 shadow-xs transition-all hover:scale-[1.02] cursor-pointer"
+                                style={{
+                                  borderColor: theme.accentColor || '#5A1E65',
+                                  color: '#0F172A'
+                                }}
+                                title={`Call ${item.phone}`}
+                              >
+                                <Phone className="w-4 h-4 shrink-0" style={{ color: theme.accentColor || '#5A1E65' }} />
+                                <span className="font-bold text-slate-900 text-xs sm:text-sm tracking-wide">
+                                  {item.phone}
+                                </span>
+                              </a>
                             ) : (
                               <div
                                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/90 border-2 text-slate-700 font-bold text-xs sm:text-sm shadow-2xs"
