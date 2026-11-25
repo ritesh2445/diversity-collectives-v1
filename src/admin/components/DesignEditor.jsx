@@ -321,6 +321,10 @@ export default function DesignEditor({ onPublishSuccess }) {
     setIsPublishing(true);
     try {
       setActiveHeroTheme(targetTheme);
+      try { localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(siteThemeState)); } catch {}
+      applySiteThemeToDOM(siteThemeState);
+      await publishAdminSitePatch({ siteTheme: siteThemeState }).catch(() => {});
+      saveCmsSettings(cmsSettings);
       const res = await savePageLayout(blocks, targetTheme);
       setPublishedHeroTheme(targetTheme);
       setHasUnsavedChanges(false);
@@ -528,10 +532,8 @@ export default function DesignEditor({ onPublishSuccess }) {
                   onClick={() => {
                     const nextScale = Math.max(0.85, Number(((Number(siteThemeState.fontScale) || 1) - 0.05).toFixed(2)));
                     const updated = { ...siteThemeState, fontScale: nextScale };
-                    try { localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(updated)); } catch {}
                     setSiteThemeState(updated);
-                    applySiteThemeToDOM(updated);
-                    publishAdminSitePatch({ siteTheme: updated }).catch(() => {});
+                    setHasUnsavedChanges(true);
                   }}
                   className="px-2 py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-purple-50 text-[11px] font-black text-slate-700 cursor-pointer"
                   title="Decrease Website Font Size"
@@ -546,10 +548,8 @@ export default function DesignEditor({ onPublishSuccess }) {
                   onClick={() => {
                     const nextScale = Math.min(1.2, Number(((Number(siteThemeState.fontScale) || 1) + 0.05).toFixed(2)));
                     const updated = { ...siteThemeState, fontScale: nextScale };
-                    try { localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(updated)); } catch {}
                     setSiteThemeState(updated);
-                    applySiteThemeToDOM(updated);
-                    publishAdminSitePatch({ siteTheme: updated }).catch(() => {});
+                    setHasUnsavedChanges(true);
                   }}
                   className="px-2 py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-purple-50 text-[11px] font-black text-slate-700 cursor-pointer"
                   title="Increase Website Font Size"
@@ -569,10 +569,8 @@ export default function DesignEditor({ onPublishSuccess }) {
                       btnPrimaryBgGradient: e.target.value,
                       navBtnActiveBg: e.target.value
                     };
-                    try { localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(updated)); } catch {}
                     setSiteThemeState(updated);
-                    applySiteThemeToDOM(updated);
-                    publishAdminSitePatch({ siteTheme: updated }).catch(() => {});
+                    setHasUnsavedChanges(true);
                   }}
                   className="w-6 h-6 rounded-md border border-slate-300 cursor-pointer p-0"
                   title="Primary Brand Color"
@@ -597,10 +595,11 @@ export default function DesignEditor({ onPublishSuccess }) {
                   }
                 };
                 setCmsSettings(nextSettings);
-                cmsStore.saveSettings(nextSettings);
+                setHasUnsavedChanges(true);
               };
               const publishPageCopy = async () => {
                 saveCmsSettings(cmsSettings);
+                setHasUnsavedChanges(false);
                 setSaveToast({ type: 'success', text: `Published ${activePg.label} live!` });
                 setTimeout(() => setSaveToast(null), 3500);
                 if (iframeRef.current?.contentWindow) {
