@@ -822,7 +822,7 @@ export default function Sponsorships() {
                   <MapPin className="w-4 h-4 text-amber-300 shrink-0 mt-0.5" />
                   <div>
                     <p className="font-semibold text-white">Community Resource Center</p>
-                    <p>{pageContent.contactAddress || '2471 Portola Road, Suite 100, Ventura, CA 93003'}</p>
+                    <p className="text-purple-100">{pageContent.contactAddress || '2471 Portola Road, Suite 100, Ventura, CA 93003'}</p>
                   </div>
                 </div>
               </div>

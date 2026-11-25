@@ -56,6 +56,7 @@ export default function AppointmentBooking() {
   }, []);
 
   const schema = features.formSchemas?.hiv_screening || DEFAULT_FORM_SCHEMAS.hiv_screening;
+  const isBookingClosed = features.hivScreening?.bookingStatus === 'closed';
   const slots = getSlotAvailability('hiv', selectedDate, features);
   const totalOpenSlots = slots.reduce((sum, s) => sum + s.remaining, 0);
   const totalCapacity = slots.reduce((sum, s) => sum + s.capacity, 0);
@@ -176,13 +177,36 @@ export default function AppointmentBooking() {
               </p>
             </div>
           </div>
-          <span className="px-3 py-1.5 rounded-full text-xs font-black bg-white border border-purple-200 text-[#5A1E65] shadow-2xs">
-            {totalOpenSlots} of {totalCapacity} slots open on {selectedDate}
+          <span className={`px-3 py-1.5 rounded-full text-xs font-black border shadow-2xs ${
+            isBookingClosed
+              ? 'bg-rose-50 border-rose-200 text-rose-800'
+              : 'bg-white border-purple-200 text-[#5A1E65]'
+          }`}>
+            {isBookingClosed
+              ? 'Online Slot Booking Currently Closed'
+              : `${totalOpenSlots} of ${totalCapacity} slots open on ${selectedDate}`}
           </span>
         </div>
 
         <div className="p-6 sm:p-10 rounded-3xl bg-white border-2 border-slate-200 shadow-xl">
-          {status === 'success' ? (
+          {isBookingClosed ? (
+            <div className="text-center py-10 space-y-4">
+              <div className="w-16 h-16 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto shadow-inner">
+                <Lock className="w-8 h-8" />
+              </div>
+              <h2 className="font-display text-2xl font-black text-slate-900">
+                Screening Slot Booking Temporarily Closed
+              </h2>
+              <p className="text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
+                {features.hivScreening?.closedMessage || 'Online HIV/STI screening bookings are currently closed by clinic administration. Please call (805) 644-5428 for assistance.'}
+              </p>
+              <div className="pt-2">
+                <Link to="/programs" className="btn-primary py-2.5 px-6 text-xs font-bold inline-flex items-center gap-2">
+                  Explore Other Programs
+                </Link>
+              </div>
+            </div>
+          ) : status === 'success' ? (
             <div className="text-center py-8 space-y-4">
               <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-inner">
                 <CheckCircle2 className="w-8 h-8" />
@@ -245,19 +269,19 @@ export default function AppointmentBooking() {
                       <button
                         key={s.slot}
                         type="button"
-                        disabled={s.isFull}
+                        disabled={s.isFull || s.isClosed}
                         onClick={() => setSelectedSlot(s.slot)}
                         className={`p-3 rounded-xl border text-left text-xs font-bold transition-all cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed ${
                           selectedSlot === s.slot
                             ? 'bg-[#5A1E65] text-white border-[#5A1E65] shadow-sm'
-                            : s.isFull
+                            : (s.isFull || s.isClosed)
                               ? 'bg-slate-100 text-slate-400 border-slate-200'
                               : 'bg-white text-slate-800 border-slate-300 hover:border-purple-400'
                         }`}
                       >
                         <div className="font-extrabold text-sm">{s.slot}</div>
-                        <div className={`text-[11px] font-semibold mt-0.5 ${selectedSlot === s.slot ? 'text-amber-200' : s.isFull ? 'text-rose-600' : 'text-emerald-700'}`}>
-                          {s.isFull ? 'Slot Full' : `${s.remaining} of ${s.capacity} slots left`}
+                        <div className={`text-[11px] font-semibold mt-0.5 ${selectedSlot === s.slot ? 'text-amber-200' : (s.isFull || s.isClosed) ? 'text-rose-600' : 'text-emerald-700'}`}>
+                          {s.isClosed ? 'Slot Closed' : s.isFull ? 'Slot Full' : `${s.remaining} of ${s.capacity} slots left`}
                         </div>
                       </button>
                     ))}

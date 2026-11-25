@@ -248,6 +248,8 @@ export const DEFAULT_SITE_FEATURES = {
     bookings: []
   },
   hivScreening: {
+    bookingStatus: 'open', // 'open' | 'closed'
+    closedMessage: 'Online HIV/STI screening bookings are currently closed by clinic administration. Please call (805) 644-5428 for assistance.',
     slotCapacity: 4,
     slots: [
       '3:00 PM – 4:00 PM',
@@ -255,6 +257,9 @@ export const DEFAULT_SITE_FEATURES = {
       '5:00 PM – 6:00 PM',
       '6:00 PM – 7:00 PM'
     ],
+    closedSlots: [],
+    allowedDates: [],
+    blockedDates: [],
     bookings: []
   },
   broadcastPopup: {
@@ -293,6 +298,9 @@ function mergeFeatures(raw) {
       ...base.hivScreening,
       ...(raw.hivScreening || {}),
       slots: Array.isArray(raw.hivScreening?.slots) && raw.hivScreening.slots.length > 0 ? raw.hivScreening.slots : base.hivScreening.slots,
+      closedSlots: Array.isArray(raw.hivScreening?.closedSlots) ? raw.hivScreening.closedSlots : [],
+      allowedDates: Array.isArray(raw.hivScreening?.allowedDates) ? raw.hivScreening.allowedDates : [],
+      blockedDates: Array.isArray(raw.hivScreening?.blockedDates) ? raw.hivScreening.blockedDates : [],
       bookings: Array.isArray(raw.hivScreening?.bookings) ? raw.hivScreening.bookings : []
     },
     broadcastPopup: {
@@ -484,22 +492,29 @@ export function getSlotAvailability(kind, dateStr, features = getSiteFeatures())
   const cfg = kind === 'hiv' ? features.hivScreening : features.flexSpace;
   const capacity = Math.max(1, Number(cfg.slotCapacity || 1));
   const bookings = Array.isArray(cfg.bookings) ? cfg.bookings : [];
+  const closedSlots = new Set(Array.isArray(cfg.closedSlots) ? cfg.closedSlots : []);
+  const isGloballyClosed = kind === 'hiv'
+    ? cfg.bookingStatus === 'closed'
+    : cfg.manualStatus === 'closed';
+
   return (cfg.slots || []).map((slot) => {
     const bookedCount = dateStr
-      ? bookings.filter((b) => b.date === dateStr && b.slot === slot).length
+      ? bookings.filter((b) => b.date === dateStr && b.slot === slot && b.status !== 'cancelled').length
       : 0;
-    const remaining = Math.max(0, capacity - bookedCount);
+    const isClosed = isGloballyClosed || closedSlots.has(slot);
+    const remaining = isClosed ? 0 : Math.max(0, capacity - bookedCount);
     return {
       slot,
       capacity,
       bookedCount,
       remaining,
+      isClosed,
       isFull: remaining === 0
     };
   });
 }
 
-export function bookTimeSlot(kind, { date, slot, name, contact, email, phone, purpose, service, notes, validateDate = false }) {
+export function bookTimeSlot(kind, { date, slot, name, contact, email, phone, purpose, service, preferredLanguage, notes, validateDate = false }) {
   if (!date || !slot) {
     return { ok: false, error: 'Please choose both a date and an available time slot.' };
   }
@@ -507,6 +522,12 @@ export function bookTimeSlot(kind, { date, slot, name, contact, email, phone, pu
 
   if (kind === 'flex' && features.flexSpace?.manualStatus === 'closed') {
     return { ok: false, error: 'Bookings are currently unavailable because Flex Space is closed.' };
+  }
+  if (kind === 'hiv' && features.hivScreening?.bookingStatus === 'closed') {
+    return {
+      ok: false,
+      error: features.hivScreening?.closedMessage || 'HIV/STI screening slot booking is currently closed by clinic administration.'
+    };
   }
 
   // Strict date validation by service kind when enabled
@@ -525,7 +546,13 @@ export function bookTimeSlot(kind, { date, slot, name, contact, email, phone, pu
   }
 
   const avail = getSlotAvailability(kind, date, features).find((s) => s.slot === slot);
-  if (!avail || avail.remaining <= 0) {
+  if (!avail) {
+    return { ok: false, error: `The "${slot}" slot is not available.` };
+  }
+  if (avail.isClosed) {
+    return { ok: false, error: `The "${slot}" slot is currently closed by clinic administration. Please select another slot.` };
+  }
+  if (avail.remaining <= 0) {
     return { ok: false, error: `Sorry, the "${slot}" slot on ${date} is now full. Please select another slot.` };
   }
   const booking = {
@@ -538,7 +565,9 @@ export function bookTimeSlot(kind, { date, slot, name, contact, email, phone, pu
     phone: String(phone || '').trim(),
     purpose: String(purpose || '').trim(),
     service: String(service || '').trim(),
+    preferredLanguage: String(preferredLanguage || '').trim(),
     notes: String(notes || '').trim(),
+    status: 'confirmed',
     createdAt: new Date().toISOString()
   };
 

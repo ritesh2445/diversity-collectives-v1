@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   FileText,
   CalendarClock,
@@ -9,7 +9,14 @@ import {
   Trash2,
   ArrowUp,
   ArrowDown,
-  CheckCircle2
+  CheckCircle2,
+  Download,
+  Lock,
+  Unlock,
+  Search,
+  Calendar,
+  Clock,
+  Eye
 } from 'lucide-react';
 import LunaLearningStudio from './LunaLearningStudio.jsx';
 import {
@@ -17,8 +24,10 @@ import {
   saveSiteFeatures,
   subscribeToSiteFeatures,
   computeFlexSpaceStatus,
+  getSlotAvailability,
   DEFAULT_FORM_SCHEMAS
 } from '../../services/siteFeaturesStore';
+import { getUpcomingHivClinicDates, getTodayIso } from '../../utils/calendarBooking.js';
 
 const FORM_OPTIONS = [
   { id: 'hiv_screening', label: 'HIV Screening (Limited Slots)' },
@@ -51,6 +60,20 @@ export default function SiteFeaturesStudio({ initialSubTab = 'forms' }) {
   const [newFlexFieldLabel, setNewFlexFieldLabel] = useState('');
   const [newFlexFieldType, setNewFlexFieldType] = useState('text');
   const [savedBanner, setSavedBanner] = useState('');
+
+  // HIV Screening Admin Controls State
+  const [hivSearchQuery, setHivSearchQuery] = useState('');
+  const [hivDateFilter, setHivDateFilter] = useState('all');
+  const [hivSlotFilter, setHivSlotFilter] = useState('all');
+  const [hivStatusFilter, setHivStatusFilter] = useState('all');
+  const [hivExtraDateInput, setHivExtraDateInput] = useState('');
+  const [hivBlockedDateInput, setHivBlockedDateInput] = useState('');
+  const [expandedBookingId, setExpandedBookingId] = useState(null);
+  const upcomingHivDates = useMemo(
+    () => getUpcomingHivClinicDates(6, features?.hivScreening?.allowedDates, features?.hivScreening?.blockedDates),
+    [features?.hivScreening?.allowedDates, features?.hivScreening?.blockedDates]
+  );
+  const [hivPreviewDate, setHivPreviewDate] = useState(() => upcomingHivDates[0] || getTodayIso());
 
   useEffect(() => {
     return subscribeToSiteFeatures((next) => setFeatures(next));
@@ -1016,123 +1039,675 @@ export default function SiteFeaturesStudio({ initialSubTab = 'forms' }) {
         </div>
       )}
 
-      {/* 3. HIV SCREENING SLOT QUOTAS */}
-      {subTab === 'hiv' && (
-        <div className="bg-white rounded-3xl border border-slate-200 p-6 space-y-6 shadow-xs">
-          <div className="border-b border-slate-100 pb-4">
-            <h3 className="font-display text-xl font-black text-slate-950">HIV Screening Limited-Slot Control</h3>
-            <p className="text-xs text-slate-600 font-medium">
-              Set maximum appointments per time window and manage confidential slot reservations.
-            </p>
-          </div>
+      {/* 3. HIV SCREENING SLOT QUOTAS & FULL ADMIN CONTROL */}
+      {subTab === 'hiv' && (() => {
+        const hivCfg = features.hivScreening || {};
+        const hivBookings = Array.isArray(hivCfg.bookings) ? hivCfg.bookings : [];
+        const hivSlots = Array.isArray(hivCfg.slots) ? hivCfg.slots : [];
+        const closedSlotsSet = new Set(Array.isArray(hivCfg.closedSlots) ? hivCfg.closedSlots : []);
+        const isGloballyClosed = hivCfg.bookingStatus === 'closed';
+        const allowedDates = Array.isArray(hivCfg.allowedDates) ? hivCfg.allowedDates : [];
+        const blockedDates = Array.isArray(hivCfg.blockedDates) ? hivCfg.blockedDates : [];
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Max Slots Per Time Window</label>
-              <input
-                type="number"
-                min={1}
-                max={25}
-                value={features.hivScreening.slotCapacity || 3}
-                onChange={(e) => updateFeatures((p) => ({
-                  ...p,
-                  hivScreening: { ...p.hivScreening, slotCapacity: Math.max(1, Number(e.target.value || 1)) }
-                }))}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-bold text-slate-900"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Add Time Window</label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={newSlotText}
-                  onChange={(e) => setNewSlotText(e.target.value)}
-                  placeholder="e.g., 5:00 PM – 6:00 PM"
-                  className="flex-1 px-3.5 py-2 rounded-xl border border-slate-300 text-xs text-slate-900"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!newSlotText.trim()) return;
-                    updateFeatures((p) => ({
-                      ...p,
-                      hivScreening: { ...p.hivScreening, slots: [...(p.hivScreening.slots || []), newSlotText.trim()] }
-                    }));
-                    setNewSlotText('');
-                  }}
-                  className="px-3.5 py-2 rounded-xl bg-[#5A1E65] text-white text-xs font-bold cursor-pointer"
-                >
-                  Add
-                </button>
-              </div>
-            </div>
-          </div>
+        const bookingDates = Array.from(new Set(hivBookings.map((b) => b.date).filter(Boolean))).sort();
+        const filteredHivBookings = hivBookings.filter((b) => {
+          const matchesDate = hivDateFilter === 'all' || b.date === hivDateFilter;
+          const matchesSlot = hivSlotFilter === 'all' || b.slot === hivSlotFilter;
+          const bStatus = b.status || 'confirmed';
+          const matchesStatus = hivStatusFilter === 'all' || bStatus === hivStatusFilter;
+          const q = hivSearchQuery.trim().toLowerCase();
+          const matchesSearch = !q || [
+            b.name,
+            b.contact,
+            b.email,
+            b.phone,
+            b.service,
+            b.notes,
+            b.date,
+            b.slot,
+            b.id
+          ].some((v) => String(v || '').toLowerCase().includes(q));
+          return matchesDate && matchesSlot && matchesStatus && matchesSearch;
+        });
 
-          <div className="flex flex-wrap gap-2">
-            {(features.hivScreening.slots || []).map((slot) => (
-              <span key={slot} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-50 border border-purple-200 text-xs font-bold text-[#5A1E65]">
-                {slot}
-                <button
-                  type="button"
-                  onClick={() => updateFeatures((p) => ({
-                    ...p,
-                    hivScreening: { ...p.hivScreening, slots: p.hivScreening.slots.filter((s) => s !== slot) }
-                  }))}
-                  className="text-rose-600 hover:text-rose-800 cursor-pointer"
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-          </div>
+        const previewAvailability = getSlotAvailability('hiv', hivPreviewDate, features);
 
-          {/* Confidential Screening Reservations List */}
-          <div className="pt-4 border-t border-slate-100">
-            <h4 className="font-display text-sm font-bold text-slate-900 mb-2">
-              Confidential Slot Reservations ({features.hivScreening.bookings?.length || 0})
-            </h4>
-            {(!features.hivScreening.bookings || features.hivScreening.bookings.length === 0) ? (
-              <p className="text-xs text-slate-500 py-3 text-center bg-slate-50 rounded-xl">
-                No HIV / STI screening reservations recorded yet.
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {features.hivScreening.bookings.map((b) => (
-                  <div
-                    key={b.id}
-                    className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs"
+        const handleExportHivCsv = () => {
+          const rowsToExport = filteredHivBookings;
+          const escapeCsv = (val) => {
+            const str = String(val ?? '');
+            return /[",\n\r]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+          };
+          const headers = [
+            'Booking ID',
+            'Date',
+            'Time Slot',
+            'Client Name',
+            'Contact',
+            'Service',
+            'Preferred Language',
+            'Notes',
+            'Status',
+            'Booked At'
+          ];
+          const csvLines = [
+            headers.map(escapeCsv).join(','),
+            ...rowsToExport.map((b) => [
+              b.id || '',
+              b.date || '',
+              b.slot || '',
+              b.name || 'Confidential Client',
+              b.contact || b.email || b.phone || '',
+              b.service || 'HIV/STI Screening',
+              b.preferredLanguage || '',
+              b.notes || '',
+              b.status || 'confirmed',
+              b.createdAt || ''
+            ].map(escapeCsv).join(','))
+          ];
+          const blob = new Blob([csvLines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `dcvc-hiv-screening-slots-${getTodayIso()}.csv`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+          setSavedBanner(`Exported ${rowsToExport.length} HIV screening slot(s) to CSV`);
+          setTimeout(() => setSavedBanner(''), 3000);
+        };
+
+        return (
+          <div className="space-y-6">
+            {/* Card 1: Global Booking Status & Slot Capacity */}
+            <div className="bg-white rounded-3xl border border-slate-200 p-6 space-y-6 shadow-xs">
+              <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 pb-4">
+                <div>
+                  <h3 className="font-display text-xl font-black text-slate-950">HIV Screening Limited-Slot Control</h3>
+                  <p className="text-xs text-slate-600 font-medium">
+                    Full control over appointment capacity, time window open/close status, clinic dates, CSV export, and confidential reservations.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className={`px-3 py-1.5 rounded-full text-xs font-extrabold border inline-flex items-center gap-1.5 ${
+                    isGloballyClosed
+                      ? 'bg-rose-50 text-rose-800 border-rose-200'
+                      : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                  }`}>
+                    {isGloballyClosed ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+                    {isGloballyClosed ? 'Bookings Closed' : 'Bookings Open'}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      updateFeatures((p) => ({
+                        ...p,
+                        hivScreening: {
+                          ...p.hivScreening,
+                          bookingStatus: isGloballyClosed ? 'open' : 'closed'
+                        }
+                      }), isGloballyClosed ? 'Reopened HIV screening slot bookings' : 'Closed all HIV screening slot bookings')
+                    }
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors ${
+                      isGloballyClosed
+                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                        : 'bg-rose-600 hover:bg-rose-700 text-white'
+                    }`}
                   >
-                    <div>
-                      <span className="font-black text-slate-900">
-                        {b.date} · {b.slot}
-                      </span>
-                      <span className="text-slate-600 ml-2">
-                        — {b.name} ({b.contact || b.email || b.phone || 'Confidential'}) · {b.service || 'HIV/STI Screening'}
-                      </span>
-                    </div>
+                    {isGloballyClosed ? <Unlock className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+                    <span>{isGloballyClosed ? 'Reopen Bookings' : 'Close All Slots'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {isGloballyClosed && (
+                <div className="p-4 rounded-2xl bg-rose-50/70 border border-rose-200 space-y-2">
+                  <label className="block text-xs font-bold text-rose-900">
+                    Public Notice Shown When Bookings Are Closed
+                  </label>
+                  <input
+                    type="text"
+                    value={hivCfg.closedMessage || ''}
+                    onChange={(e) =>
+                      updateFeatures((p) => ({
+                        ...p,
+                        hivScreening: { ...p.hivScreening, closedMessage: e.target.value }
+                      }))
+                    }
+                    placeholder="Online HIV/STI screening bookings are currently closed..."
+                    className="w-full px-3.5 py-2 rounded-xl border border-rose-200 bg-white text-xs text-slate-900"
+                  />
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Max Slots Per Time Window</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={25}
+                    value={hivCfg.slotCapacity || 4}
+                    onChange={(e) => updateFeatures((p) => ({
+                      ...p,
+                      hivScreening: { ...p.hivScreening, slotCapacity: Math.max(1, Number(e.target.value || 1)) }
+                    }))}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-bold text-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Add Time Window</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newSlotText}
+                      onChange={(e) => setNewSlotText(e.target.value)}
+                      placeholder="e.g., 5:00 PM – 6:00 PM"
+                      className="flex-1 px-3.5 py-2 rounded-xl border border-slate-300 text-xs text-slate-900"
+                    />
                     <button
                       type="button"
-                      onClick={() =>
+                      onClick={() => {
+                        const val = newSlotText.trim();
+                        if (!val || hivSlots.includes(val)) return;
+                        updateFeatures((p) => ({
+                          ...p,
+                          hivScreening: { ...p.hivScreening, slots: [...(p.hivScreening.slots || []), val] }
+                        }), `Added time window ${val}`);
+                        setNewSlotText('');
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-[#5A1E65] text-white text-xs font-bold cursor-pointer"
+                    >
+                      Add
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Time Windows with individual Open / Close toggle */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-slate-700">
+                  Time Windows (Toggle Individual Window Open / Closed or Remove)
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {hivSlots.map((slot) => {
+                    const isSlotClosed = closedSlotsSet.has(slot);
+                    return (
+                      <div
+                        key={slot}
+                        className={`px-3.5 py-2.5 rounded-2xl border flex items-center justify-between gap-2 text-xs font-bold ${
+                          isSlotClosed
+                            ? 'bg-rose-50/60 border-rose-200 text-rose-900'
+                            : 'bg-purple-50/70 border-purple-200 text-[#5A1E65]'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Clock className="w-3.5 h-3.5 shrink-0" />
+                          <span className="truncate">{slot}</span>
+                          {isSlotClosed && (
+                            <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 text-[10px] font-black uppercase">
+                              Closed
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              updateFeatures((p) => {
+                                const currentClosed = Array.isArray(p.hivScreening.closedSlots) ? p.hivScreening.closedSlots : [];
+                                const nextClosed = currentClosed.includes(slot)
+                                  ? currentClosed.filter((s) => s !== slot)
+                                  : [...currentClosed, slot];
+                                return {
+                                  ...p,
+                                  hivScreening: { ...p.hivScreening, closedSlots: nextClosed }
+                                };
+                              }, isSlotClosed ? `Opened slot ${slot}` : `Closed slot ${slot}`)
+                            }
+                            className={`px-2 py-1 rounded-lg text-[11px] font-bold border cursor-pointer transition-colors ${
+                              isSlotClosed
+                                ? 'bg-white border-emerald-300 text-emerald-700 hover:bg-emerald-50'
+                                : 'bg-white border-rose-200 text-rose-700 hover:bg-rose-50'
+                            }`}
+                          >
+                            {isSlotClosed ? 'Open' : 'Close'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (!window.confirm(`Remove time window "${slot}"?`)) return;
+                              updateFeatures((p) => ({
+                                ...p,
+                                hivScreening: {
+                                  ...p.hivScreening,
+                                  slots: (p.hivScreening.slots || []).filter((s) => s !== slot),
+                                  closedSlots: (p.hivScreening.closedSlots || []).filter((s) => s !== slot)
+                                }
+                              }), `Removed time window ${slot}`);
+                            }}
+                            title={`Remove ${slot}`}
+                            className="p-1 text-rose-600 hover:text-rose-800 cursor-pointer"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Card 2: Clinic Date Overrides & Live Slot Capacity Overview */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Date Overrides */}
+              <div className="bg-white rounded-3xl border border-slate-200 p-6 space-y-4 shadow-xs">
+                <div>
+                  <h4 className="font-display text-base font-black text-slate-950 flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-[#5A1E65]" />
+                    Clinic Date Overrides
+                  </h4>
+                  <p className="text-xs text-slate-600">
+                    Default schedule is the 1st Monday of each month. Open extra clinic dates or block specific dates.
+                  </p>
+                </div>
+
+                {/* Extra Open Dates */}
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold text-slate-700">Open Extra Clinic Date</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="date"
+                      value={hivExtraDateInput}
+                      onChange={(e) => setHivExtraDateInput(e.target.value)}
+                      className="flex-1 px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-900"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!hivExtraDateInput || allowedDates.includes(hivExtraDateInput)) return;
                         updateFeatures((p) => ({
                           ...p,
                           hivScreening: {
                             ...p.hivScreening,
-                            bookings: p.hivScreening.bookings.filter((x) => x.id !== b.id)
+                            allowedDates: [...(p.hivScreening.allowedDates || []), hivExtraDateInput].sort(),
+                            blockedDates: (p.hivScreening.blockedDates || []).filter((d) => d !== hivExtraDateInput)
                           }
-                        }), `Released screening slot ${b.date} (${b.slot})`)
-                      }
-                      className="text-rose-700 font-bold hover:underline cursor-pointer"
+                        }), `Opened extra clinic date ${hivExtraDateInput}`);
+                        setHivExtraDateInput('');
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer"
                     >
-                      Release Slot
+                      Open Date
                     </button>
                   </div>
-                ))}
+                  {allowedDates.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {allowedDates.map((d) => (
+                        <span key={d} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[11px] font-bold text-emerald-800">
+                          {d}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              updateFeatures((p) => ({
+                                ...p,
+                                hivScreening: {
+                                  ...p.hivScreening,
+                                  allowedDates: (p.hivScreening.allowedDates || []).filter((x) => x !== d)
+                                }
+                              }))
+                            }
+                            className="text-emerald-700 hover:text-rose-700 cursor-pointer"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Block Specific Dates */}
+                <div className="space-y-2 pt-2 border-t border-slate-100">
+                  <label className="block text-xs font-bold text-slate-700">Block / Close Specific Date</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="date"
+                      value={hivBlockedDateInput}
+                      onChange={(e) => setHivBlockedDateInput(e.target.value)}
+                      className="flex-1 px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-900"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!hivBlockedDateInput || blockedDates.includes(hivBlockedDateInput)) return;
+                        updateFeatures((p) => ({
+                          ...p,
+                          hivScreening: {
+                            ...p.hivScreening,
+                            blockedDates: [...(p.hivScreening.blockedDates || []), hivBlockedDateInput].sort(),
+                            allowedDates: (p.hivScreening.allowedDates || []).filter((d) => d !== hivBlockedDateInput)
+                          }
+                        }), `Blocked clinic date ${hivBlockedDateInput}`);
+                        setHivBlockedDateInput('');
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold cursor-pointer"
+                    >
+                      Block Date
+                    </button>
+                  </div>
+                  {blockedDates.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {blockedDates.map((d) => (
+                        <span key={d} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-50 border border-rose-200 text-[11px] font-bold text-rose-800">
+                          {d}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              updateFeatures((p) => ({
+                                ...p,
+                                hivScreening: {
+                                  ...p.hivScreening,
+                                  blockedDates: (p.hivScreening.blockedDates || []).filter((x) => x !== d)
+                                }
+                              }))
+                            }
+                            className="text-rose-700 hover:text-slate-900 cursor-pointer"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
+
+              {/* Live Slot Availability Breakdown */}
+              <div className="bg-white rounded-3xl border border-slate-200 p-6 space-y-4 shadow-xs">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <h4 className="font-display text-base font-black text-slate-950">Live Slot Capacity Overview</h4>
+                    <p className="text-xs text-slate-600">Inspect remaining capacity for any clinic date.</p>
+                  </div>
+                  <input
+                    type="date"
+                    value={hivPreviewDate}
+                    onChange={(e) => setHivPreviewDate(e.target.value)}
+                    className="px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-900"
+                  />
+                </div>
+
+                {upcomingHivDates.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {upcomingHivDates.slice(0, 4).map((d) => (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => setHivPreviewDate(d)}
+                        className={`px-2.5 py-1 rounded-full text-[11px] font-bold border cursor-pointer ${
+                          hivPreviewDate === d
+                            ? 'bg-[#5A1E65] text-white border-[#5A1E65]'
+                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-purple-50'
+                        }`}
+                      >
+                        {d}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  {previewAvailability.map((s) => (
+                    <div
+                      key={s.slot}
+                      className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs"
+                    >
+                      <span className="font-bold text-slate-900">{s.slot}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-slate-600 font-semibold">
+                          {s.bookedCount} / {s.capacity} booked
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                          s.isClosed
+                            ? 'bg-rose-100 text-rose-800'
+                            : s.isFull
+                              ? 'bg-amber-100 text-amber-900'
+                              : 'bg-emerald-100 text-emerald-800'
+                        }`}>
+                          {s.isClosed ? 'Closed' : s.isFull ? 'Full' : `${s.remaining} left`}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Card 3: Detailed View of Confidential Slot Reservations + Export CSV */}
+            <div className="bg-white rounded-3xl border border-slate-200 p-6 space-y-4 shadow-xs">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                <div>
+                  <h4 className="font-display text-lg font-black text-slate-950">
+                    Confidential Slot Reservations ({filteredHivBookings.length} of {hivBookings.length})
+                  </h4>
+                  <p className="text-xs text-slate-600">
+                    Inspect full client details, update appointment status, release slots, or export to CSV.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleExportHivCsv}
+                    disabled={filteredHivBookings.length === 0}
+                    className="px-3.5 py-2 rounded-xl bg-[#5A1E65] hover:bg-purple-900 disabled:opacity-45 text-white text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Export CSV ({filteredHivBookings.length})</span>
+                  </button>
+
+                  {hivBookings.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!window.confirm(`Delete all ${hivBookings.length} HIV screening reservations? This cannot be undone.`)) return;
+                        updateFeatures((p) => ({
+                          ...p,
+                          hivScreening: { ...p.hivScreening, bookings: [] }
+                        }), 'Cleared all HIV screening reservations');
+                      }}
+                      className="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Clear All</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Search & Filter Controls */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={hivSearchQuery}
+                    onChange={(e) => setHivSearchQuery(e.target.value)}
+                    placeholder="Search name, contact, service..."
+                    className="w-full pl-8 pr-3 py-2 rounded-xl border border-slate-200 text-xs text-slate-900"
+                  />
+                </div>
+
+                <select
+                  value={hivDateFilter}
+                  onChange={(e) => setHivDateFilter(e.target.value)}
+                  className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 bg-white"
+                >
+                  <option value="all">All Dates ({bookingDates.length})</option>
+                  {bookingDates.map((d) => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+
+                <select
+                  value={hivSlotFilter}
+                  onChange={(e) => setHivSlotFilter(e.target.value)}
+                  className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 bg-white"
+                >
+                  <option value="all">All Time Windows</option>
+                  {hivSlots.map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+
+                <select
+                  value={hivStatusFilter}
+                  onChange={(e) => setHivStatusFilter(e.target.value)}
+                  className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 bg-white"
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="confirmed">Confirmed</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+
+              {filteredHivBookings.length === 0 ? (
+                <p className="text-xs text-slate-500 py-6 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                  {hivBookings.length === 0
+                    ? 'No HIV / STI screening reservations recorded yet.'
+                    : 'No reservations match your current search or filters.'}
+                </p>
+              ) : (
+                <div className="space-y-2.5">
+                  {filteredHivBookings.map((b) => {
+                    const isExpanded = expandedBookingId === b.id;
+                    const bStatus = b.status || 'confirmed';
+                    const statusBadge =
+                      bStatus === 'completed'
+                        ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                        : bStatus === 'cancelled'
+                          ? 'bg-slate-200 text-slate-700 border-slate-300'
+                          : 'bg-purple-100 text-[#5A1E65] border-purple-200';
+
+                    return (
+                      <div
+                        key={b.id}
+                        className="rounded-2xl bg-slate-50/80 border border-slate-200 overflow-hidden transition-all"
+                      >
+                        <div className="p-3.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+                          <div className="space-y-0.5 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-black text-slate-950">
+                                {b.date} · {b.slot}
+                              </span>
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase border ${statusBadge}`}>
+                                {bStatus}
+                              </span>
+                            </div>
+                            <div className="text-slate-700 font-medium truncate">
+                              {b.name || 'Confidential Client'} ({b.contact || b.email || b.phone || 'Confidential'}) · {b.service || 'HIV/STI Screening'}
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-2 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => setExpandedBookingId(isExpanded ? null : b.id)}
+                              className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-purple-50 border border-slate-200 text-[#5A1E65] font-bold inline-flex items-center gap-1 cursor-pointer"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>{isExpanded ? 'Hide Details' : 'Details'}</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (!window.confirm(`Release screening slot for ${b.name || 'Confidential Client'} on ${b.date} (${b.slot})?`)) return;
+                                updateFeatures((p) => ({
+                                  ...p,
+                                  hivScreening: {
+                                    ...p.hivScreening,
+                                    bookings: (p.hivScreening.bookings || []).filter((x) => x.id !== b.id)
+                                  }
+                                }), `Released screening slot ${b.date} (${b.slot})`);
+                              }}
+                              className="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 font-bold inline-flex items-center gap-1 cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>Release Slot</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {isExpanded && (
+                          <div className="px-4 py-3.5 bg-white border-t border-slate-200 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+                            <div>
+                              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">Client Name</span>
+                              <span className="font-bold text-slate-900">{b.name || 'Confidential Client'}</span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">Contact Info</span>
+                              <span className="font-semibold text-slate-800">{b.contact || b.email || b.phone || 'Confidential'}</span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">Requested Service</span>
+                              <span className="font-semibold text-slate-800">{b.service || 'HIV/STI Screening'}</span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">Preferred Language</span>
+                              <span className="font-semibold text-slate-800">{b.preferredLanguage || 'English / Not specified'}</span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">Booked At</span>
+                              <span className="font-mono text-[11px] text-slate-700">
+                                {b.createdAt ? new Date(b.createdAt).toLocaleString() : 'N/A'}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">Appointment Status</span>
+                              <select
+                                value={bStatus}
+                                onChange={(e) => {
+                                  const nextStatus = e.target.value;
+                                  updateFeatures((p) => ({
+                                    ...p,
+                                    hivScreening: {
+                                      ...p.hivScreening,
+                                      bookings: (p.hivScreening.bookings || []).map((x) =>
+                                        x.id === b.id ? { ...x, status: nextStatus } : x
+                                      )
+                                    }
+                                  }), `Updated slot status to ${nextStatus}`);
+                                }}
+                                className="px-2.5 py-1 rounded-lg border border-slate-300 text-xs font-bold text-slate-900 bg-white"
+                              >
+                                <option value="confirmed">Confirmed</option>
+                                <option value="completed">Completed</option>
+                                <option value="cancelled">Cancelled (frees slot)</option>
+                              </select>
+                            </div>
+                            <div className="sm:col-span-2 lg:col-span-3">
+                              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">Notes &amp; Booking ID</span>
+                              <p className="text-slate-700 mt-0.5">{b.notes || 'No additional notes provided.'}</p>
+                              <p className="text-[10px] font-mono text-slate-400 mt-1">ID: {b.id}</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* 4. AUTO BROADCAST POPUPS */}
       {subTab === 'broadcast' && (
