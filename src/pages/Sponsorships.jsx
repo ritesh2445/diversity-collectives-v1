@@ -19,6 +19,7 @@ import {
   Info
 } from 'lucide-react';
 import { cmsStore, DEFAULT_SPONSORSHIP_PAGE_CONTENT } from '../services/cmsStore';
+import { fetchAndApplyLiveSiteState, getFallbackApiBase } from '../services/liveSync';
 import { usePageMeta } from '../utils/seo';
 
 const CATEGORY_COLORS = {
@@ -41,11 +42,21 @@ export default function Sponsorships() {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
+    fetchAndApplyLiveSiteState({ force: true }).catch(() => {});
     return cmsStore.subscribe(() => {
       setPageContent(cmsStore.getSponsorshipPageContent());
       setDocuments(cmsStore.getPublishedSponsorshipDocuments());
     });
   }, []);
+
+  const resolveDocUrl = (url) => {
+    if (!url) return '#';
+    if (url.startsWith('/api/')) {
+      const workerBase = getFallbackApiBase().replace(/\/api\/?$/, '');
+      return `${workerBase}${url}`;
+    }
+    return url;
+  };
 
   // Category counts based on published documents
   const categories = useMemo(() => {
@@ -299,7 +310,7 @@ export default function Sponsorships() {
                     <div className="grid grid-cols-2 gap-2 pt-1">
                       {/* View Action */}
                       <a
-                        href={doc.fileUrl || '#'}
+                        href={resolveDocUrl(doc.fileUrl)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="btn-outline py-2 px-3 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 text-[#5A1E65] border-purple-200 hover:bg-purple-50 transition-colors"
@@ -311,7 +322,7 @@ export default function Sponsorships() {
 
                       {/* Download Action */}
                       <a
-                        href={doc.fileUrl || '#'}
+                        href={resolveDocUrl(doc.fileUrl)}
                         download={doc.fileName || `${doc.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf`}
                         className="py-2 px-3 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 bg-[#5A1E65] text-white hover:bg-purple-900 shadow-sm transition-colors"
                         title={`Download ${doc.title}`}

@@ -5598,7 +5598,8 @@ export default {
             branch: ghBranch,
             path: gitPath
           });
-          const directServeUrl = `/api/documents/download/${encodeURIComponent(cleanFileName)}`;
+          const workerOrigin = new URL(request.url).origin;
+          const directServeUrl = `${workerOrigin}/api/documents/download/${encodeURIComponent(cleanFileName)}`;
 
           if (db) {
             await logAdminAction(db, {
