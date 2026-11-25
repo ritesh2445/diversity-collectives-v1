@@ -3152,6 +3152,7 @@ export default {
           cdnUrl: githubSha ? cdnUrl : directMediaUrl,
           path: gitPath,
           githubSha,
+          githubError: githubSha ? undefined : githubError,
           metadataStored: storedMetadataInDb,
           provider: githubSha ? 'jsdelivr' : 'turso_media'
         }, 200, cors);

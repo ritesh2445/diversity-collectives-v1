@@ -55,7 +55,8 @@ export async function uploadToGitHub({
   contentBase64,
   commitMessage
 }) {
-  if (!githubToken) {
+  const cleanToken = String(githubToken || '').trim();
+  if (!cleanToken) {
     return {
       success: false,
       error: 'GitHub Personal Access Token (GITHUB_TOKEN) is not configured.'
@@ -87,7 +88,7 @@ export async function uploadToGitHub({
     const res = await fetch(url, {
       method: 'PUT',
       headers: {
-        'Authorization': `Bearer ${githubToken}`,
+        'Authorization': `Bearer ${cleanToken}`,
         'User-Agent': 'DCVC-Gallery-Engine/1.0',
         'Accept': 'application/vnd.github.v3+json',
         'Content-Type': 'application/json'
@@ -142,7 +143,7 @@ export async function deleteFromGitHub({
     const res = await fetch(url, {
       method: 'DELETE',
       headers: {
-        'Authorization': `Bearer ${githubToken}`,
+        'Authorization': `Bearer ${cleanToken}`,
         'User-Agent': 'DCVC-Gallery-Engine/1.0',
         'Accept': 'application/vnd.github.v3+json',
         'Content-Type': 'application/json'
