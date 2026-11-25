@@ -210,7 +210,8 @@ function isCrossOriginRequest(request) {
 
 // Helper: Cloudflare Turnstile Verification (fail-closed for strict admin login, graceful fallback for public community forms)
 async function verifyTurnstile(token, secretKey, remoteIp, env = {}, { strict = false } = {}) {
-  const isPreviewFallbackAllowed = (
+  const isNonProd = String(env?.ENVIRONMENT || '').toLowerCase() !== 'production';
+  const isPreviewFallbackAllowed = !strict && isNonProd && (
     token === 'cf-preview-bypass-token' ||
     (typeof token === 'string' && token.startsWith('cf-preview-'))
   );
