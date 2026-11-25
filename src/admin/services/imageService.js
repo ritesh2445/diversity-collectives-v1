@@ -110,8 +110,8 @@ export async function optimizeImageFile(file, options = {}) {
     if (typeof actualFile === 'string' && (actualFile.startsWith('data:image/') || actualFile.startsWith('blob:'))) {
       const img = new Image();
       img.onload = () => {
-        let width = img.width;
-        let height = img.height;
+        let width = img.width || 800;
+        let height = img.height || 600;
         if (width > maxWidth || height > maxHeight) {
           if (width / height > maxWidth / maxHeight) {
             height = Math.round((height * maxWidth) / width);
@@ -186,8 +186,8 @@ export async function optimizeImageFile(file, options = {}) {
       const img = new Image();
       img.onerror = () => reject(new Error('Failed to load image into memory.'));
       img.onload = () => {
-        let width = img.width;
-        let height = img.height;
+        let width = img.width || 800;
+        let height = img.height || 600;
 
         // Scale while maintaining aspect ratio
         if (width > maxWidth || height > maxHeight) {
@@ -256,8 +256,9 @@ export async function optimizeImageFile(file, options = {}) {
 }
 
 /**
- * Upload Image: Commits directly to GitHub repository if configured,
- * or saves to local persistent storage.
+ * Upload Image: Persists to Cloudflare Worker + Turso (/api/media/upload) first,
+ * then optionally commits to GitHub repository if configured,
+ * or falls back to compact client-optimized data URL when offline.
  */
 export async function uploadAndStoreImage(file, category = 'media') {
   const isPortrait = category === 'avatar' || category === 'staff' || category === 'board';
@@ -265,12 +266,70 @@ export async function uploadAndStoreImage(file, category = 'media') {
     ? { maxWidth: 480, maxHeight: 480, quality: 0.80 }
     : { maxWidth: 960, maxHeight: 720, quality: 0.82 };
   const optimized = await optimizeImageFile(file, options);
+
+  // If already a remote HTTP(S) or static /images/ URL, return directly
+  if (!optimized.dataUrl?.startsWith('data:')) {
+    return {
+      url: optimized.url || optimized.dataUrl,
+      filename: optimized.filename,
+      provider: 'external_url',
+      sizeBytes: optimized.sizeBytes || 0
+    };
+  }
+
+  const base64Content = optimized.dataUrl.split(',')[1];
+
+  if (typeof window !== 'undefined') {
+    const apiBases = [];
+    const envBase = typeof import.meta !== 'undefined' && import.meta.env
+      ? (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '')
+      : '';
+    if (envBase) apiBases.push(envBase);
+    apiBases.push('/api', 'https://dcvc-api.diversity-collective-vc.workers.dev/api');
+
+    const uniqueBases = [...new Set(apiBases)];
+    const token = typeof localStorage !== 'undefined'
+      ? (localStorage.getItem('dcvc_admin_token') || sessionStorage.getItem('dcvc_admin_token') || '')
+      : '';
+
+    for (const base of uniqueBases) {
+      try {
+        const res = await fetch(`${base}/media/upload`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({
+            folder: category,
+            fileName: optimized.filename,
+            mimeType: optimized.mimeType,
+            fileData: base64Content
+          })
+        });
+        if (res.ok) {
+          const data = await res.json().catch(() => null);
+          if (data?.success && data?.url) {
+            return {
+              url: data.url,
+              filename: optimized.filename,
+              provider: data.provider || 'turso_media',
+              sizeBytes: optimized.sizeBytes
+            };
+          }
+        }
+      } catch (err) {
+        console.warn(`[ImageService] Worker upload failed for ${base}:`, err.message);
+      }
+    }
+  }
+
   const config = getGitHubStorageConfig();
 
   // If a GitHub token is configured, push directly to GitHub repo
   if (config.token && config.owner && config.repo) {
     try {
-      const base64Content = optimized.dataUrl.split(',')[1];
       const targetPath = `public/images/${optimized.filename}`;
       const url = `https://api.github.com/repos/${config.owner}/${config.repo}/contents/${targetPath}`;
 
@@ -309,13 +368,13 @@ export async function uploadAndStoreImage(file, category = 'media') {
   }
 
   // Local / Client Persistent Fallback:
-  // Store the optimized dataUrl in localStorage or return relative /images/ reference
+  // Store the optimized dataUrl if server upload is unreachable
   return {
     url: optimized.dataUrl,
     filename: optimized.filename,
     provider: 'local_optimized',
     sizeBytes: optimized.sizeBytes,
-    note: 'Optimized and saved locally. Set GitHub token in Settings for direct repo commits.'
+    note: 'Optimized and saved locally. Server media storage was unreachable.'
   };
 }
 

@@ -33,6 +33,7 @@ import DcvcApprovedBadge from '../components/DcvcApprovedBadge';
 import AirDropPulseWaves from '../components/AirDropPulseWaves';
 import DirectoryRateModal from '../components/DirectoryRateModal';
 import DirectoryClaimModal from '../components/DirectoryClaimModal';
+import { cmsStore } from '../services/cmsStore';
 import DirectoryMapView from '../components/DirectoryMapView';
 import { directoryService } from '../services/directoryService';
 import { usePageMeta } from '../utils/seo';

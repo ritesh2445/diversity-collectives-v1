@@ -25,6 +25,7 @@ import DynamicSchemaFields, {
   formatCustomFieldsSummary
 } from '../components/DynamicSchemaFields';
 import { usePageMeta } from '../utils/seo';
+import { cmsStore } from '../services/cmsStore';
 
 const STANDARD_CONTACT_FIELDS = ['name', 'email', 'phone', 'topic', 'message'];
 

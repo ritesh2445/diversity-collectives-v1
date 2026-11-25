@@ -28,6 +28,7 @@ import { submitInquiry } from '../services/api';
 import CardSpotlight from '../components/CardSpotlight';
 import MobileCarousel from '../components/MobileCarousel';
 import { useScrollLock } from '../utils/scrollLock';
+import { cmsStore } from '../services/cmsStore';
 
 export default function Community() {
   const communityGroups = useLiveCommunityGroups();

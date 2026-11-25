@@ -16,6 +16,7 @@ import confetti from 'canvas-confetti';
 import { useLiveOrgInfo } from '../hooks/useCmsLive';
 import SendVoicemailButton from '../components/SendVoicemailButton';
 import CardSpotlight from '../components/CardSpotlight';
+import { cmsStore } from '../services/cmsStore';
 
 export default function GetInvolved() {
   const orgInfo = useLiveOrgInfo();

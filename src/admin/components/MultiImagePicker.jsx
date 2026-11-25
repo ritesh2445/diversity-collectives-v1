@@ -163,7 +163,7 @@ export default function MultiImagePicker({
       setTimeout(() => setStatusMsg(''), 4000);
     } catch (err) {
       console.warn('[MultiImagePicker] Save notice:', err);
-      if (previewUrl) {
+      if (previewUrl && !String(previewUrl).startsWith('blob:')) {
         if (targetIdx !== null && targetIdx >= 0 && targetIdx < normalizedImages.length) {
           const updated = [...normalizedImages];
           updated[targetIdx] = previewUrl;
@@ -171,6 +171,8 @@ export default function MultiImagePicker({
         } else {
           updateImages([...normalizedImages, previewUrl]);
         }
+      } else {
+        alert('Upload failed: ' + (err?.message || 'Unable to process image'));
       }
     } finally {
       setIsUploading(false);

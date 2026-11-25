@@ -96,7 +96,11 @@ export default function ImagePicker({
       setTimeout(() => setOptimizeStatus(''), 4000);
     } catch (err) {
       console.warn('[ImagePicker] Cropper upload notice:', err);
-      if (previewUrl) onChange(previewUrl);
+      if (previewUrl && !String(previewUrl).startsWith('blob:')) {
+        onChange(previewUrl);
+      } else {
+        alert('Upload failed: ' + (err?.message || 'Unable to process image'));
+      }
       setOptimizeStatus('');
     } finally {
       setIsOptimizing(false);

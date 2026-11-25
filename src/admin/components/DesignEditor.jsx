@@ -53,6 +53,7 @@ import { cmsStore } from '../../services/cmsStore';
 import { saveCmsSettings } from '../services/cmsClient.js';
 import HeroShowcase from '../../components/HeroShowcase';
 import DevicePreviewFrame, { VIEWPORT_WIDTHS } from './DevicePreviewFrame';
+import { uploadAndStoreImage } from '../services/imageService';
 
 const SITE_PAGES_CONFIG = [
   { key: 'home', label: 'Homepage (Drag & Drop)', path: '/' },
@@ -1157,28 +1158,19 @@ export default function DesignEditor({ onPublishSuccess }) {
                       type="file"
                       accept="image/*"
                       className="hidden"
-                      onChange={(e) => {
+                      onChange={async (e) => {
                         const file = e.target.files?.[0];
-                        if (!file) return;
-                        const reader = new FileReader();
-                        reader.onload = () => {
-                          const img = new Image();
-                          img.onload = () => {
-                            const maxW = 1400;
-                            const scale = img.width > maxW ? maxW / img.width : 1;
-                            const canvas = document.createElement('canvas');
-                            canvas.width = Math.round(img.width * scale);
-                            canvas.height = Math.round(img.height * scale);
-                            const ctx = canvas.getContext('2d');
-                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-                            updateSelectedBlockProps('photoUrl', dataUrl);
-                            updateSelectedBlockProps('spotlightImage', dataUrl);
-                          };
-                          img.src = String(reader.result || '');
-                        };
-                        reader.readAsDataURL(file);
                         e.target.value = '';
+                        if (!file) return;
+                        try {
+                          const result = await uploadAndStoreImage(file, 'hero');
+                          if (result?.url) {
+                            updateSelectedBlockProps('photoUrl', result.url);
+                            updateSelectedBlockProps('spotlightImage', result.url);
+                          }
+                        } catch (err) {
+                          alert('Photo upload failed: ' + (err?.message || 'Unknown error'));
+                        }
                       }}
                     />
                   </label>
