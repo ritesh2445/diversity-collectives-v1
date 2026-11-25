@@ -213,7 +213,7 @@ export default function Admin() {
     }
     const domain = envDomain || cached?.domain || '';
     const clientId = envClientId || cached?.clientId || '';
-    const audience = envAudience || cached?.audience || '';
+    const audience = envAudience || '';
     const enabled = Boolean(hasEnvAuth0 || (cached?.enabled && domain && clientId));
     return {
       enabled,
@@ -275,6 +275,7 @@ export default function Admin() {
     const redirectUri = typeof window !== 'undefined' ? `${window.location.origin}/admin` : '/admin';
     return (
       <Auth0Provider
+        key={`${auth0Config.domain}:${auth0Config.clientId}:${auth0Config.audience}`}
         domain={auth0Config.domain}
         clientId={auth0Config.clientId}
         cacheLocation="memory"
