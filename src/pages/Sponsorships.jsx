@@ -458,13 +458,13 @@ export default function Sponsorships() {
             </div>
           </div>
 
-          <div className="rounded-3xl border border-purple-200/80 bg-white/95 shadow-sm overflow-hidden">
+          <div className="rounded-3xl border border-purple-200/90 bg-white/95 shadow-md overflow-hidden">
             {/* PDF-style header bar */}
-            <div className="bg-[#5A1E65] text-white px-5 py-3 border-b-4 border-amber-400 flex items-center justify-between gap-4">
+            <div className="bg-gradient-to-r from-[#5A1E65] via-purple-800 to-indigo-900 text-white px-5 py-3.5 border-b-4 border-amber-400 flex items-center justify-between gap-4">
               <span className="text-xs font-extrabold uppercase tracking-wider">
                 DCVC 2027 Corporate Sponsorship Matrix
               </span>
-              <span className="text-[11px] text-purple-200 hidden sm:inline">
+              <span className="text-[11px] text-amber-200 font-semibold hidden sm:inline">
                 Scroll horizontally on mobile if needed
               </span>
             </div>
@@ -472,53 +472,66 @@ export default function Sponsorships() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[680px] text-left border-collapse">
                 <thead>
-                  <tr className="bg-purple-50/70 border-b border-purple-100 text-xs font-extrabold text-slate-900">
-                    <th scope="col" className="py-3.5 px-4 sm:px-5 w-52">
+                  <tr className="border-b border-slate-200 text-xs font-extrabold text-slate-900">
+                    <th scope="col" className="py-4 px-4 sm:px-5 w-52 bg-slate-50/90 border-b-2 border-slate-300">
                       Benefit &amp; Alignment
                     </th>
-                    <th scope="col" className="py-3.5 px-4 text-[#5A1E65]">
+                    <th scope="col" className="py-4 px-4 bg-purple-100/80 text-[#5A1E65] border-b-2 border-[#5A1E65]">
                       Premier Corporate
-                      <span className="block text-[11px] font-bold text-amber-700">$25,000+</span>
+                      <span className="block text-[11px] font-bold text-amber-700 mt-0.5">$25,000+</span>
                     </th>
-                    <th scope="col" className="py-3.5 px-4">
+                    <th scope="col" className="py-4 px-4 bg-indigo-50/90 text-indigo-950 border-b-2 border-indigo-400">
                       Major Community
-                      <span className="block text-[11px] font-semibold text-slate-500">$10,000 – $24,999</span>
+                      <span className="block text-[11px] font-bold text-indigo-700 mt-0.5">$10,000 – $24,999</span>
                     </th>
-                    <th scope="col" className="py-3.5 px-4">
+                    <th scope="col" className="py-4 px-4 bg-rose-50/90 text-rose-950 border-b-2 border-rose-400">
                       Specialty &amp; Event
-                      <span className="block text-[11px] font-semibold text-slate-500">$5,000 – $9,999</span>
+                      <span className="block text-[11px] font-bold text-rose-700 mt-0.5">$5,000 – $9,999</span>
                     </th>
-                    <th scope="col" className="py-3.5 px-4">
+                    <th scope="col" className="py-4 px-4 bg-emerald-50/90 text-emerald-950 border-b-2 border-emerald-400">
                       Community Ally
-                      <span className="block text-[11px] font-semibold text-slate-500">$1,500 – $4,999</span>
+                      <span className="block text-[11px] font-bold text-emerald-700 mt-0.5">$1,500 – $4,999</span>
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs">
-                  {COMPARISON_ROWS.map((row, idx) => (
-                    <tr
-                      key={row.feature}
-                      className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/60'}
-                    >
-                      <th scope="row" className="py-3.5 px-4 sm:px-5 font-bold text-slate-900 align-top">
-                        {row.feature}
-                      </th>
-                      {row.values.map((val, colIdx) => (
-                        <td key={`${row.feature}-${colIdx}`} className="py-3.5 px-4 text-slate-700 align-top">
-                          {val === false ? (
-                            <span className="inline-flex items-center text-slate-300" aria-label="Not included">
-                              <Minus className="w-4 h-4" />
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-start gap-1.5">
-                              <Check className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${colIdx === 0 ? 'text-[#5A1E65]' : 'text-emerald-600'}`} />
-                              <span className={colIdx === 0 ? 'font-semibold text-slate-900' : ''}>{val}</span>
-                            </span>
-                          )}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
+                  {COMPARISON_ROWS.map((row, idx) => {
+                    const colBg = [
+                      idx % 2 === 0 ? 'bg-purple-50/45' : 'bg-purple-50/75',
+                      idx % 2 === 0 ? 'bg-indigo-50/20' : 'bg-indigo-50/40',
+                      idx % 2 === 0 ? 'bg-rose-50/20' : 'bg-rose-50/40',
+                      idx % 2 === 0 ? 'bg-emerald-50/20' : 'bg-emerald-50/40'
+                    ];
+                    const checkColors = ['text-[#5A1E65]', 'text-indigo-600', 'text-rose-600', 'text-emerald-600'];
+
+                    return (
+                      <tr
+                        key={row.feature}
+                        className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/60'}
+                      >
+                        <th scope="row" className="py-3.5 px-4 sm:px-5 font-bold text-slate-900 align-top">
+                          {row.feature}
+                        </th>
+                        {row.values.map((val, colIdx) => (
+                          <td
+                            key={`${row.feature}-${colIdx}`}
+                            className={`py-3.5 px-4 text-slate-800 align-top ${colBg[colIdx] || ''}`}
+                          >
+                            {val === false ? (
+                              <span className="inline-flex items-center text-slate-300" aria-label="Not included">
+                                <Minus className="w-4 h-4" />
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-start gap-1.5">
+                                <Check className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${checkColors[colIdx] || 'text-emerald-600'}`} />
+                                <span className={colIdx === 0 ? 'font-semibold text-slate-950' : ''}>{val}</span>
+                              </span>
+                            )}
+                          </td>
+                        ))}
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
