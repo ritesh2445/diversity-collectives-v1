@@ -243,7 +243,18 @@ export default function Admin() {
             audience: data.auth0.audience || envAudience || '',
             enforceSso: Boolean(data.auth0.enforceSso)
           };
-          setAuth0Config(merged);
+          setAuth0Config((prev) => {
+            if (
+              prev.enabled === merged.enabled &&
+              prev.domain === merged.domain &&
+              prev.clientId === merged.clientId &&
+              prev.audience === merged.audience &&
+              prev.enforceSso === merged.enforceSso
+            ) {
+              return prev;
+            }
+            return merged;
+          });
           try {
             if (typeof localStorage !== 'undefined') {
               localStorage.setItem('dcvc_auth0_config', JSON.stringify(merged));
@@ -275,7 +286,7 @@ export default function Admin() {
     const redirectUri = typeof window !== 'undefined' ? `${window.location.origin}/admin` : '/admin';
     return (
       <Auth0Provider
-        key={`${auth0Config.domain}:${auth0Config.clientId}:${auth0Config.audience}`}
+        key={`${auth0Config.domain}:${auth0Config.clientId}`}
         domain={auth0Config.domain}
         clientId={auth0Config.clientId}
         cacheLocation="memory"
@@ -360,7 +371,20 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
     return { status: meta.version > 0 ? 'synced' : 'idle', version: meta.version || 0 };
   });
   const auth0AttemptedSubRef = useRef('');
-  const displayedAuthError = authError || (auth0.enabled ? auth0.error?.message : '') || '';
+  const rawAuth0Error = auth0.enabled ? (auth0.error?.message || '') : '';
+  const friendlyAuth0Error = /invalid state/i.test(rawAuth0Error)
+    ? 'Sign-in session expired or state mismatch. Please click "Sign In with Google" again.'
+    : rawAuth0Error;
+  const displayedAuthError = authError || friendlyAuth0Error || '';
+
+  // Clean stale Auth0 callback query params (?code=...&state=...&error=...) if Auth0 reports an error
+  useEffect(() => {
+    if (auth0.enabled && auth0.error && typeof window !== 'undefined') {
+      if (/(?:^|[?&])(?:code|state|error)=/.test(window.location.search)) {
+        window.history.replaceState({}, document.title, '/admin');
+      }
+    }
+  }, [auth0.enabled, auth0.error]);
 
   useEffect(() => {
     // Immediately fetch latest authoritative server state when Admin mounts
