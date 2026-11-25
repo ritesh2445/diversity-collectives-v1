@@ -215,7 +215,10 @@ export default function DesignEditor({ onPublishSuccess }) {
     setSidebarTab('content');
   };
 
-  const postPreviewSync = useCallback(() => {
+  const postPreviewSync = useCallback((pageKey) => {
+    // Only sync homepage blocks/theme — non-home pages load their own content
+    const effectivePage = pageKey ?? selectedPageKey;
+    if (effectivePage !== 'home') return;
     const payload = {
       type: 'DCVC_PREVIEW_SYNC',
       themeId: heroTheme,
@@ -228,7 +231,7 @@ export default function DesignEditor({ onPublishSuccess }) {
     try {
       fullScreenIframeRef.current?.contentWindow?.postMessage(payload, '*');
     } catch {}
-  }, [heroTheme, blocks, viewport]);
+  }, [heroTheme, blocks, viewport, selectedPageKey]);
 
   useEffect(() => {
     postPreviewSync();
@@ -1485,11 +1488,12 @@ export default function DesignEditor({ onPublishSuccess }) {
             }}
           >
             <DevicePreviewFrame
+              key={selectedPageKey}
               viewport={viewport}
               title="Admin Live Website Preview"
               previewUrl={`${(SITE_PAGES_CONFIG.find((p) => p.key === selectedPageKey)?.path || '/')}?admin_preview=1`}
               iframeRef={iframeRef}
-              onIframeLoad={postPreviewSync}
+              onIframeLoad={() => postPreviewSync(selectedPageKey)}
             />
           </div>
         </div>
@@ -1612,11 +1616,12 @@ export default function DesignEditor({ onPublishSuccess }) {
               }}
             >
               <DevicePreviewFrame
+                key={`fullscreen-${selectedPageKey}`}
                 viewport={viewport}
                 title="Full-Screen Device Preview"
-                previewUrl="/?admin_preview=1"
+                previewUrl={`${(SITE_PAGES_CONFIG.find((p) => p.key === selectedPageKey)?.path || '/')}?admin_preview=1`}
                 iframeRef={fullScreenIframeRef}
-                onIframeLoad={postPreviewSync}
+                onIframeLoad={() => postPreviewSync(selectedPageKey)}
               />
             </div>
           </div>
