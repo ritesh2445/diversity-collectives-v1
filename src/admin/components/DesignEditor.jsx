@@ -301,9 +301,11 @@ export default function DesignEditor({ onPublishSuccess }) {
   };
 
   const updateSelectedBlockProps = (propKey, value) => {
-    setBlocks(
-      blocks.map((b) =>
-        b.id === selectedBlock.id
+    const targetId = selectedBlock?.id;
+    if (!targetId) return;
+    setBlocks((prev) =>
+      prev.map((b) =>
+        b.id === targetId
           ? { ...b, props: { ...(b.props || {}), [propKey]: value } }
           : b
       )
@@ -1162,13 +1164,17 @@ export default function DesignEditor({ onPublishSuccess }) {
                         e.target.value = '';
                         if (!file) return;
                         try {
+                          setSaveToast({ type: 'success', text: 'Uploading hero photo...' });
                           const result = await uploadAndStoreImage(file, 'hero');
                           if (result?.url) {
                             updateSelectedBlockProps('photoUrl', result.url);
                             updateSelectedBlockProps('spotlightImage', result.url);
+                            setSaveToast({ type: 'success', text: 'Hero photo uploaded! Click Publish Live to Website to save.' });
+                            setTimeout(() => setSaveToast(null), 4000);
                           }
                         } catch (err) {
-                          alert('Photo upload failed: ' + (err?.message || 'Unknown error'));
+                          setSaveToast({ type: 'warn', text: 'Photo upload failed: ' + (err?.message || 'Unknown error') });
+                          setTimeout(() => setSaveToast(null), 5000);
                         }
                       }}
                     />
