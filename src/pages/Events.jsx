@@ -51,6 +51,8 @@ export default function Events() {
   }, []);
 
   const [events, setEvents] = useState(() => cmsStore.getEvents());
+  const sigScrollRef = React.useRef(null);
+  const [sigPageIdx, setSigPageIdx] = useState(0);
   const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get('search') || '');
   const [searchInput, setSearchInput] = useState(() => searchParams.get('search') || '');
@@ -684,52 +686,122 @@ export default function Events() {
               Throughout the year, DCVC convenes our county for premier celebratory milestones — including Ventura County Pride, the Diversity Gala, AIDS Walk Ventura, Pride Prom, and Transgender Day of Remembrance.
             </p>
 
-            <MobileCarousel
-              cols={3}
-              autoScrollMs={0}
-              className="pt-2 sm:pt-4 items-stretch"
-              cardClassName="h-full flex flex-col"
-            >
-              {(() => {
-                const cmsSignatureEvents = (events || [])
-                  .filter((e) => e.featured === true || e.category === 'Signature Event')
-                  .map((e) => ({
-                    id: e.id || e.slug,
-                    title: e.title,
-                    season: e.category || 'Signature Event',
-                    description: e.description,
-                    schedule: e.date || (e.month && e.day ? `${e.month} ${e.day}, ${e.year || ''}` : 'Signature Event'),
-                    link: e.slug ? `/events/${e.slug}` : '/events'
-                  }));
+            {(() => {
+              const cmsSignatureEvents = (events || [])
+                .filter((e) => e.featured === true || e.category === 'Signature Event')
+                .map((e) => ({
+                  id: e.id || e.slug,
+                  title: e.title,
+                  season: e.category || 'Signature Event',
+                  description: e.description,
+                  schedule: e.date || (e.month && e.day ? `${e.month} ${e.day}, ${e.year || ''}` : 'Signature Event'),
+                  link: e.slug ? `/events/${e.slug}` : '/events'
+                }));
 
-                const seenTitles = new Set(cmsSignatureEvents.map((s) => (s.title || '').toLowerCase().trim()));
-                const mergedSignatureEvents = [
-                  ...cmsSignatureEvents,
-                  ...annualSignatureEvents.filter((sig) => !seenTitles.has((sig.title || '').toLowerCase().trim()))
-                ];
+              const seenTitles = new Set(cmsSignatureEvents.map((s) => (s.title || '').toLowerCase().trim()));
+              const mergedSignatureEvents = [
+                ...cmsSignatureEvents,
+                ...annualSignatureEvents.filter((sig) => !seenTitles.has((sig.title || '').toLowerCase().trim()))
+              ];
 
-                return mergedSignatureEvents.map((sig) => {
-                  const targetLink = sig.link && !sig.link.startsWith('http') ? sig.link : '/events';
-                  return (
-                    <Link
-                      key={sig.id || sig.title}
-                      to={targetLink}
-                      className="p-4 sm:p-6 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 hover:border-amber-300 transition-all hover:scale-102 flex flex-col justify-between group cursor-pointer flex-1 h-full gap-3"
-                    >
-                      <div className="space-y-1.5 flex-1">
-                        <span className="text-[11px] font-black uppercase tracking-wider text-amber-300 block">{sig.season || 'Annual'}</span>
-                        <h4 className="font-display text-base sm:text-xl font-bold text-white group-hover:text-amber-200 transition-colors flex items-start justify-between gap-2">
-                          <span className="line-clamp-2">{sig.title}</span>
-                          <ArrowUpRight className="w-4 h-4 text-amber-300 shrink-0 mt-0.5" />
-                        </h4>
-                        <p className="text-xs text-purple-100 leading-relaxed line-clamp-3">{sig.description}</p>
+              const pageSize = 6;
+              const sigPages = [];
+              for (let i = 0; i < mergedSignatureEvents.length; i += pageSize) {
+                sigPages.push(mergedSignatureEvents.slice(i, i + pageSize));
+              }
+
+              const goToSigPage = (pageIndex) => {
+                const container = sigScrollRef.current;
+                if (!container) return;
+                const clamped = Math.max(0, Math.min(pageIndex, sigPages.length - 1));
+                setSigPageIdx(clamped);
+                container.scrollTo({ left: clamped * container.clientWidth, behavior: 'smooth' });
+              };
+
+              return (
+                <div className="space-y-4 pt-2 sm:pt-4">
+                  <div
+                    ref={sigScrollRef}
+                    onScroll={(e) => {
+                      const el = e.currentTarget;
+                      if (!el.clientWidth) return;
+                      const idx = Math.round(el.scrollLeft / el.clientWidth);
+                      setSigPageIdx(Math.max(0, Math.min(idx, sigPages.length - 1)));
+                    }}
+                    className="flex overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar"
+                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', touchAction: 'pan-y pan-x', overscrollBehaviorX: 'contain' }}
+                  >
+                    {sigPages.map((pageItems, pIdx) => (
+                      <div
+                        key={`sig-page-${pIdx}`}
+                        className="w-full shrink-0 snap-center grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 items-stretch"
+                      >
+                        {pageItems.map((sig) => {
+                          const targetLink = sig.link && !sig.link.startsWith('http') ? sig.link : '/events';
+                          return (
+                            <Link
+                              key={sig.id || sig.title}
+                              to={targetLink}
+                              className="p-4 sm:p-6 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 hover:border-amber-300 transition-all hover:scale-[1.01] flex flex-col justify-between group cursor-pointer h-full gap-3"
+                            >
+                              <div className="space-y-1.5 flex-1">
+                                <span className="text-[11px] font-black uppercase tracking-wider text-amber-300 block">{sig.season || 'Annual'}</span>
+                                <h4 className="font-display text-base sm:text-xl font-bold text-white group-hover:text-amber-200 transition-colors flex items-start justify-between gap-2">
+                                  <span className="line-clamp-2">{sig.title}</span>
+                                  <ArrowUpRight className="w-4 h-4 text-amber-300 shrink-0 mt-0.5" />
+                                </h4>
+                                <p className="text-xs text-purple-100 leading-relaxed line-clamp-3">{sig.description}</p>
+                              </div>
+                              <span className="text-[11px] font-bold text-amber-300/80 mt-1 block">{sig.schedule || sig.date || ''}</span>
+                            </Link>
+                          );
+                        })}
                       </div>
-                      <span className="text-[11px] font-bold text-amber-300/80 mt-1 block">{sig.schedule || sig.date || ''}</span>
-                    </Link>
-                  );
-                });
-              })()}
-            </MobileCarousel>
+                    ))}
+                  </div>
+
+                  {sigPages.length > 1 && (
+                    <div className="flex items-center justify-center gap-3 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => goToSigPage(sigPageIdx - 1)}
+                        disabled={sigPageIdx === 0}
+                        aria-label="Previous signature events"
+                        className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-35 text-white border border-white/20 cursor-pointer disabled:cursor-not-allowed transition-colors"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+
+                      <div className="flex items-center gap-2">
+                        {sigPages.map((_, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => goToSigPage(idx)}
+                            aria-label={`Signature events page ${idx + 1}`}
+                            className={`h-2 rounded-full transition-all cursor-pointer ${
+                              idx === sigPageIdx
+                                ? 'w-7 bg-amber-300'
+                                : 'w-2 bg-white/40 hover:bg-white/60'
+                            }`}
+                          />
+                        ))}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => goToSigPage(sigPageIdx + 1)}
+                        disabled={sigPageIdx >= sigPages.length - 1}
+                        aria-label="Next signature events"
+                        className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-35 text-white border border-white/20 cursor-pointer disabled:cursor-not-allowed transition-colors"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         </div>
       </section>

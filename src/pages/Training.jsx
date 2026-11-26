@@ -398,10 +398,20 @@ export default function Training() {
                     </span>
                   </div>
 
-                  {course.isBusinessAccreditation && (
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-50 border border-emerald-200">
-                      <Award className="w-3 h-3 text-emerald-600" />
-                      <span>DCVC Approved Accreditation Track</span>
+                  {(course.isFlagship || course.isBusinessAccreditation) && (
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {course.isFlagship && (
+                        <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider text-amber-900 bg-amber-100 border border-amber-300">
+                          <Sparkles className="w-3 h-3 text-amber-600" />
+                          <span>Flagship</span>
+                        </div>
+                      )}
+                      {course.isBusinessAccreditation && (
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-50 border border-emerald-200">
+                          <Award className="w-3 h-3 text-emerald-600" />
+                          <span>DCVC Approved Accreditation Track</span>
+                        </div>
+                      )}
                     </div>
                   )}
 

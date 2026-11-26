@@ -56,6 +56,12 @@ export default function TrainingDetail() {
           
           <div className="lg:col-span-8 space-y-6">
             <div className="flex flex-wrap items-center gap-2.5">
+              {course.isFlagship && (
+                <span className="inline-flex items-center gap-1 text-xs font-black uppercase tracking-wider text-amber-900 bg-amber-100 px-3 py-1 rounded-full border border-amber-300">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Flagship</span>
+                </span>
+              )}
               <span className="text-xs font-black uppercase tracking-wider text-[#5A1E65] bg-purple-50 px-3 py-1 rounded-full border border-purple-200">
                 {course.badge}
               </span>
