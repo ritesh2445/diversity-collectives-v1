@@ -1772,8 +1772,10 @@ export default {
           }, 200, cors);
         }
 
+        try { await db.execute('ALTER TABLE businesses ADD COLUMN gallery_images TEXT'); } catch (_) {}
+
         let query = `
-          SELECT id, slug, name, category, description, address, city, zip, phone, email, website, instagram, hours, logo_url, cover_url, is_featured, is_verified, created_at
+          SELECT id, slug, name, category, description, address, city, zip, phone, email, website, instagram, hours, logo_url, cover_url, gallery_images, is_featured, is_verified, created_at
           FROM businesses
           WHERE status = 'approved' 
             AND (website NOT LIKE '%example.com%' AND website NOT LIKE '%.example%')
@@ -5786,11 +5788,12 @@ export default {
           const db = getDb(env);
 
           if (db) {
+            try { await db.execute('ALTER TABLE businesses ADD COLUMN gallery_images TEXT'); } catch (_) {}
             await db.execute({
               sql: `INSERT INTO businesses (
-                id, slug, name, category, description, address, city, zip, phone, email, website, cover_url,
+                id, slug, name, category, description, address, city, zip, phone, email, website, cover_url, gallery_images,
                 is_featured, is_verified, status, affirming_pledge_signed_at, owner_name, owner_email, admin_notes
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), ?, ?, ?)`,
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), ?, ?, ?)`,
               args: [
                 id,
                 slug,
@@ -5804,6 +5807,7 @@ export default {
                 body.email || body.contactEmail || '',
                 body.website || '',
                 body.cover_url || body.image || null,
+                Array.isArray(body.images) ? JSON.stringify(body.images.filter(Boolean)) : null,
                 body.isFeatured ? 1 : 0,
                 1,
                 body.status || 'approved',
@@ -5882,6 +5886,7 @@ export default {
           const db = getDb(env);
 
           if (db) {
+            try { await db.execute('ALTER TABLE businesses ADD COLUMN gallery_images TEXT'); } catch (_) {}
             await db.execute({
               sql: `UPDATE businesses SET 
                     name = coalesce(?, name),
@@ -5893,6 +5898,7 @@ export default {
                     email = coalesce(?, email),
                     website = coalesce(?, website),
                     cover_url = CASE WHEN ? = 1 THEN ? ELSE cover_url END,
+                    gallery_images = CASE WHEN ? = 1 THEN ? ELSE gallery_images END,
                     is_featured = coalesce(?, is_featured),
                     is_verified = coalesce(?, is_verified),
                     updated_at = datetime('now')
@@ -5908,6 +5914,8 @@ export default {
                 body.website || null,
                 (body.cover_url !== undefined || body.image !== undefined) ? 1 : 0,
                 (body.cover_url || body.image || '').trim() || null,
+                Array.isArray(body.images) ? 1 : 0,
+                Array.isArray(body.images) ? JSON.stringify(body.images.filter(Boolean)) : null,
                 body.isFeatured !== undefined ? (body.isFeatured ? 1 : 0) : (body.is_featured !== undefined ? (body.is_featured ? 1 : 0) : null),
                 body.isVerified !== undefined ? (body.isVerified ? 1 : 0) : (body.is_verified !== undefined ? (body.is_verified ? 1 : 0) : null),
                 bizId

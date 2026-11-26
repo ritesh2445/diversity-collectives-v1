@@ -138,11 +138,35 @@ export default function DirectoryProfile() {
   const amenities = directoryService.getAmenities(business);
   const directionsUrl = directoryService.getDirectionsUrl(business);
 
-  const galleryPhotos = [
-    business.image || business.cover_url || '/images/community-gathering.jpg',
-    '/images/hero-community.jpg',
-    '/images/crc-building.jpg'
-  ];
+  const parsedGalleryImages = (() => {
+    if (Array.isArray(business.images)) return business.images.filter(Boolean);
+    if (typeof business.gallery_images === 'string' && business.gallery_images.trim()) {
+      try {
+        const arr = JSON.parse(business.gallery_images);
+        if (Array.isArray(arr)) return arr.filter(Boolean);
+      } catch (_) {}
+    }
+    return [];
+  })();
+  const getWebsiteBrandLogoUrl = (website) => {
+    if (!website || typeof website !== 'string') return '';
+    try {
+      const normalized = /^https?:\/\//i.test(website.trim()) ? website.trim() : `https://${website.trim()}`;
+      const hostname = new URL(normalized).hostname.replace(/^www\./i, '');
+      if (!hostname) return '';
+      return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(hostname)}&sz=256`;
+    } catch (_) {
+      return '';
+    }
+  };
+
+  const primaryCover = business.image || business.cover_url || parsedGalleryImages[0] || '';
+  const websiteBrandLogo = !primaryCover ? getWebsiteBrandLogoUrl(business.website) : '';
+  const heroDisplaySrc = primaryCover || websiteBrandLogo || '/images/community-gathering.jpg';
+  const isBrandLogoFallback = Boolean(!primaryCover && websiteBrandLogo);
+  const galleryPhotos = parsedGalleryImages.length > 0
+    ? parsedGalleryImages
+    : (primaryCover ? [primaryCover] : []);
 
   const handleTriggerHype = async () => {
     if (stats.isHyped) return;
@@ -274,7 +298,9 @@ export default function DirectoryProfile() {
             </div>
 
             {/* Profile Hero Photo Showcase with AirDrop soft ambient light wave overlay */}
-            <div className="rounded-3xl overflow-hidden aspect-[16/9] shadow-xl border-2 border-slate-200 relative">
+            <div className={`rounded-3xl overflow-hidden aspect-[16/9] shadow-xl border-2 border-slate-200 relative ${
+              isBrandLogoFallback ? 'bg-gradient-to-br from-purple-50 via-white to-amber-50/70' : ''
+            }`}>
               <AirDropPulseWaves 
                 active={hypeWaveActive} 
                 bizId={business.id || business.slug}
@@ -282,37 +308,53 @@ export default function DirectoryProfile() {
                 seed={hypeRandomSeed}
               />
               <img
-                src={business.image || business.cover_url || "/images/community-gathering.jpg"}
+                src={heroDisplaySrc}
                 alt={business.name}
-                className="w-full h-full object-cover"
-                onError={(e) => { e.target.src = "/images/community-gathering.jpg"; }}
+                className={isBrandLogoFallback ? 'w-full h-full object-contain p-10 sm:p-14' : 'w-full h-full object-cover'}
+                onLoad={(e) => {
+                  if (isBrandLogoFallback && e.currentTarget.naturalWidth > 0 && e.currentTarget.naturalWidth <= 16 && e.currentTarget.dataset.fallbackApplied !== 'true') {
+                    e.currentTarget.dataset.fallbackApplied = 'true';
+                    e.currentTarget.className = 'w-full h-full object-cover';
+                    e.currentTarget.src = '/images/community-gathering.jpg';
+                  }
+                }}
+                onError={(e) => {
+                  if (e.currentTarget.dataset.fallbackApplied === 'true') return;
+                  e.currentTarget.dataset.fallbackApplied = 'true';
+                  e.currentTarget.className = 'w-full h-full object-cover';
+                  e.currentTarget.src = '/images/community-gathering.jpg';
+                }}
               />
             </div>
 
             {/* Multi-Photo Gallery Showcase (Yelp Standard) */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-black uppercase tracking-wider text-slate-500">
-                  Photo Showcase & Atmosphere
-                </span>
-                <span className="text-xs text-slate-400">3 Verified Photos</span>
+            {galleryPhotos.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black uppercase tracking-wider text-slate-500">
+                    Photo Showcase &amp; Atmosphere
+                  </span>
+                  <span className="text-xs text-slate-400">
+                    {galleryPhotos.length} Verified {galleryPhotos.length === 1 ? 'Photo' : 'Photos'}
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  {galleryPhotos.map((photo, idx) => (
+                    <button
+                      key={`${photo}-${idx}`}
+                      type="button"
+                      onClick={() => setSelectedPhoto(photo)}
+                      className="h-28 rounded-2xl overflow-hidden border border-slate-200 shadow-xs hover:border-purple-400 hover:scale-102 transition-all cursor-pointer relative group"
+                    >
+                      <img src={photo} alt="" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-slate-950/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold">
+                        View
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="grid grid-cols-3 gap-3">
-                {galleryPhotos.map((photo, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => setSelectedPhoto(photo)}
-                    className="h-28 rounded-2xl overflow-hidden border border-slate-200 shadow-xs hover:border-purple-400 hover:scale-102 transition-all cursor-pointer relative group"
-                  >
-                    <img src={photo} alt="" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-slate-950/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold">
-                      View
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
+            )}
 
             {/* Business Description */}
             <div className="space-y-4 text-base text-slate-600 leading-relaxed font-medium">
