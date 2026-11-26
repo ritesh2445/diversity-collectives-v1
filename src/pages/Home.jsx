@@ -892,7 +892,7 @@ export default function Home() {
                   schedule: e.date || (e.month && e.day ? `${e.month} ${e.day}, ${e.year || ''}` : 'Signature Event'),
                   description: e.description,
                   images: Array.isArray(e.images) && e.images.length > 0 ? e.images : [e.image || '/images/community-gathering.jpg'],
-                  link: e.slug ? `/events/${e.slug}` : '/events'
+                  link: e.signatureLink || (e.slug ? `/events/${e.slug}` : '/events')
                 }));
 
               const seenTitles = new Set(cmsSignatureEvents.map((s) => (s.title || '').toLowerCase().trim()));

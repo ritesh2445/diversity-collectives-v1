@@ -1514,7 +1514,7 @@ export const annualSignatureEvents = [
     location: "Downtown Ventura (The Palomino & Partner Venues)",
     image: "/images/youth-umbrella.jpg",
     description: "Free, safe, and inclusive annual prom hosted by Rainbow Umbrella for LGBTQ+ youth and allies ages 13–23—where everyone can dress authentically, dance freely, and celebrate without fear.",
-    link: "/news/pride-prom-2026"
+    link: "/programs/rainbow-umbrella"
   },
   {
     id: "ventura-county-pride",
@@ -1524,7 +1524,7 @@ export const annualSignatureEvents = [
     location: "Plaza Park, Downtown Ventura, CA",
     image: "/images/community-gathering.jpg",
     description: "Our signature annual Ventura County Pride festival featuring main stage entertainment, local artists, vendors, food, and a community resource village uniting LGBTQ+ residents and allies across all 10 county cities.",
-    link: "/news/ventura-county-pride-2026-announcement"
+    link: "/events"
   },
   {
     id: "diversity-gala",

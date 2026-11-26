@@ -695,7 +695,7 @@ export default function Events() {
                   season: e.category || 'Signature Event',
                   description: e.description,
                   schedule: e.date || (e.month && e.day ? `${e.month} ${e.day}, ${e.year || ''}` : 'Signature Event'),
-                  link: e.slug ? `/events/${e.slug}` : '/events'
+                  link: e.signatureLink || (e.slug ? `/events/${e.slug}` : '/events')
                 }));
 
               const seenTitles = new Set(cmsSignatureEvents.map((s) => (s.title || '').toLowerCase().trim()));
@@ -737,13 +737,11 @@ export default function Events() {
                         className="w-full shrink-0 snap-center grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 items-stretch"
                       >
                         {pageItems.map((sig) => {
-                          const targetLink = sig.link && !sig.link.startsWith('http') ? sig.link : '/events';
-                          return (
-                            <Link
-                              key={sig.id || sig.title}
-                              to={targetLink}
-                              className="p-4 sm:p-6 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 hover:border-amber-300 transition-all hover:scale-[1.01] flex flex-col justify-between group cursor-pointer h-full gap-3"
-                            >
+                          const targetLink = sig.link || '/events';
+                          const isExternal = targetLink.startsWith('http://') || targetLink.startsWith('https://');
+                          const cardClass = "p-4 sm:p-6 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 hover:border-amber-300 transition-all hover:scale-[1.01] flex flex-col justify-between group cursor-pointer h-full gap-3";
+                          const inner = (
+                            <>
                               <div className="space-y-1.5 flex-1">
                                 <span className="text-[11px] font-black uppercase tracking-wider text-amber-300 block">{sig.season || 'Annual'}</span>
                                 <h4 className="font-display text-base sm:text-xl font-bold text-white group-hover:text-amber-200 transition-colors flex items-start justify-between gap-2">
@@ -753,6 +751,25 @@ export default function Events() {
                                 <p className="text-xs text-purple-100 leading-relaxed line-clamp-3">{sig.description}</p>
                               </div>
                               <span className="text-[11px] font-bold text-amber-300/80 mt-1 block">{sig.schedule || sig.date || ''}</span>
+                            </>
+                          );
+                          return isExternal ? (
+                            <a
+                              key={sig.id || sig.title}
+                              href={targetLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={cardClass}
+                            >
+                              {inner}
+                            </a>
+                          ) : (
+                            <Link
+                              key={sig.id || sig.title}
+                              to={targetLink}
+                              className={cardClass}
+                            >
+                              {inner}
                             </Link>
                           );
                         })}

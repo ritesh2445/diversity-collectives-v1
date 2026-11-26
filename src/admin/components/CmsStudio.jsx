@@ -5566,25 +5566,82 @@ export default function CmsStudio({ currentUser: propUser = null } = {}) {
                     label="Event Title Typography"
                   />
 
-                  <div className="flex items-center gap-4">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={formData.featured || false}
-                        onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
-                        className="accent-[#5A1E65]"
-                      />
-                      <span className="text-xs font-bold text-slate-700">Signature Event</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={formData.isCancelled || false}
-                        onChange={(e) => setFormData({ ...formData, isCancelled: e.target.checked })}
-                        className="accent-rose-600"
-                      />
-                      <span className="text-xs font-bold text-rose-700">Mark Cancelled</span>
-                    </label>
+                  <div className="space-y-3 p-3.5 rounded-2xl bg-purple-50/50 border border-purple-100">
+                    <div className="flex items-center gap-4 flex-wrap">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.featured || false}
+                          onChange={(e) => setFormData((prev) => ({ ...prev, featured: e.target.checked }))}
+                          className="accent-[#5A1E65]"
+                        />
+                        <span className="text-xs font-bold text-slate-700">Signature Event (Shows in Signature Spotlight)</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.isCancelled || false}
+                          onChange={(e) => setFormData((prev) => ({ ...prev, isCancelled: e.target.checked }))}
+                          className="accent-rose-600"
+                        />
+                        <span className="text-xs font-bold text-rose-700">Mark Cancelled</span>
+                      </label>
+                    </div>
+
+                    {formData.featured && (
+                      <div className="pt-2 border-t border-purple-200/70 space-y-2">
+                        <label className="block text-xs font-bold text-[#5A1E65]">
+                          Signature Card CTA Destination
+                        </label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <select
+                            value={[
+                              '',
+                              '/events',
+                              '/programs',
+                              '/programs/diversity-shines',
+                              '/programs/rainbow-umbrella',
+                              '/sponsorships',
+                              '/donate',
+                              '/volunteer',
+                              '/news'
+                            ].includes(formData.signatureLink || '')
+                              ? (formData.signatureLink || '')
+                              : '__custom__'}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === '__custom__') {
+                                setFormData((prev) => ({ ...prev, signatureLink: prev.signatureLink || '/' }));
+                              } else {
+                                setFormData((prev) => ({ ...prev, signatureLink: val }));
+                              }
+                            }}
+                            className="w-full px-3 py-2 border border-purple-200 rounded-xl text-xs bg-white font-semibold text-slate-900"
+                          >
+                            <option value="">Default: Event Detail Page (/events/slug)</option>
+                            <option value="/events">Events &amp; Calendar (/events)</option>
+                            <option value="/programs">Programs Overview (/programs)</option>
+                            <option value="/programs/diversity-shines">Diversity SHINES (/programs/diversity-shines)</option>
+                            <option value="/programs/rainbow-umbrella">Rainbow Umbrella (/programs/rainbow-umbrella)</option>
+                            <option value="/sponsorships">Sponsorships (/sponsorships)</option>
+                            <option value="/donate">Donate (/donate)</option>
+                            <option value="/volunteer">Volunteer (/volunteer)</option>
+                            <option value="/news">News &amp; Stories (/news)</option>
+                            <option value="__custom__">Custom Path or External URL...</option>
+                          </select>
+                          <input
+                            type="text"
+                            value={formData.signatureLink || ''}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, signatureLink: e.target.value }))}
+                            placeholder="/events/slug or https://..."
+                            className="w-full px-3 py-2 border border-purple-200 rounded-xl text-xs bg-white font-mono text-slate-900"
+                          />
+                        </div>
+                        <p className="text-[11px] text-slate-500">
+                          Leave blank to link directly to this event&apos;s detail &amp; RSVP page.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </>
               )}

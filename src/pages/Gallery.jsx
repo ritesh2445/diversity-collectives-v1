@@ -47,11 +47,12 @@ export default function Gallery() {
   });
 
   const [photos, setPhotos] = useState(() => cmsStore.getGallery());
+  const liveGalleryLoadedRef = useRef(false);
   
   useEffect(() => {
     const unsubscribe = cmsStore.subscribe((data) => {
-      if (data?.gallery) setPhotos(data.gallery);
-          });
+      if (!liveGalleryLoadedRef.current && data?.gallery) setPhotos(data.gallery);
+    });
     return unsubscribe;
   }, []);
 
@@ -66,14 +67,9 @@ export default function Gallery() {
         const res = await fetch(`${apiBase}/gallery`);
         if (res.ok) {
           const data = await res.json();
-          if (isMounted && data.success && Array.isArray(data.photos) && data.photos.length > 0) {
-            const storePhotos = cmsStore.getGallery() || [];
-            const storeById = new Map(storePhotos.map((sp) => [sp.id, sp]));
+          if (isMounted && data.success && Array.isArray(data.photos)) {
             const liveMapped = data.photos.map((p) => {
-              const localMatch = storeById.get(p.id);
-              const localUrl = (p.image_url && p.image_url.startsWith('/'))
-                ? p.image_url
-                : (localMatch?.image && localMatch.image.startsWith('/') ? localMatch.image : null);
+              const localUrl = p.image_url && p.image_url.startsWith('/') ? p.image_url : null;
               const primaryUrl = localUrl || p.cdn_url || p.image_url || p.image || '/images/community-gathering.jpg';
               return {
                 ...p,
@@ -81,9 +77,8 @@ export default function Gallery() {
                 fallbackImage: localUrl || '/images/community-gathering.jpg'
               };
             });
-            const seenIds = new Set(liveMapped.map((p) => p.id));
-            const remainingStore = storePhotos.filter((sp) => !seenIds.has(sp.id));
-            setPhotos([...liveMapped, ...remainingStore]);
+            liveGalleryLoadedRef.current = true;
+            setPhotos(liveMapped);
           }
         }
       } catch (err) {
