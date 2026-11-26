@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -8,10 +8,14 @@ import {
   Store, 
   ShieldCheck, 
   MapPin, 
-  Globe 
+  Globe,
+  Upload,
+  Image as ImageIcon,
+  Trash2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { submitBusiness } from '../services/api';
+import { optimizeImageFile } from '../admin/services/imageService';
 import TurnstileWidget from '../components/TurnstileWidget';
 import DynamicSchemaFields, {
   useLiveFormSchema,
@@ -45,6 +49,9 @@ export default function DirectorySubmit() {
   const schema = useLiveFormSchema('directory_submit');
   const [status, setStatus] = useState('idle'); // 'idle' | 'loading' | 'success' | 'error'
   const [statusMsg, setStatusMsg] = useState('');
+  const [uploadedImages, setUploadedImages] = useState([]);
+  const [imageUploading, setImageUploading] = useState(false);
+  const fileInputRef = useRef(null);
   const [formData, setFormData] = useState(() => ({
     ...buildInitialValues(schema.fields, {
       category: 'Dining & Coffee',
@@ -97,7 +104,10 @@ export default function DirectorySubmit() {
     const res = await submitBusiness({
       ...formData,
       email: formData.email || formData.ownerEmail || '',
-      description: composedDesc
+      description: composedDesc,
+      cover_url: uploadedImages[0] || '',
+      image: uploadedImages[0] || '',
+      images: uploadedImages
     });
 
     if (res.success) {
@@ -186,6 +196,77 @@ export default function DirectorySubmit() {
                 onChange={handleFieldChange}
                 onToggleOption={handleOptionToggle}
               />
+
+              {/* Business Photos / Logo Upload (Optional, up to 4) */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <label className="text-xs font-black uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
+                      <ImageIcon className="w-3.5 h-3.5 text-[#5A1E65]" />
+                      <span>Business Photos &amp; Storefront Logo (Optional)</span>
+                    </label>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Upload up to 4 photos (first image is used as your primary cover). If skipped, your website logo is shown automatically.
+                    </p>
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={async (e) => {
+                      const files = Array.from(e.target.files || []).slice(0, Math.max(0, 4 - uploadedImages.length));
+                      if (files.length === 0) return;
+                      setImageUploading(true);
+                      try {
+                        const compressed = await Promise.all(
+                          files.map((f) => optimizeImageFile(f, { maxWidth: 900, quality: 0.72 }))
+                        );
+                        setUploadedImages((prev) => [...prev, ...compressed].slice(0, 4));
+                      } catch (_) {
+                        setStatus('error');
+                        setStatusMsg('Could not process one of the selected images. Please try a JPG or PNG.');
+                      } finally {
+                        setImageUploading(false);
+                        if (fileInputRef.current) fileInputRef.current.value = '';
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    disabled={imageUploading || uploadedImages.length >= 4}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="px-3.5 py-2 rounded-xl bg-white hover:bg-purple-50 text-[#5A1E65] border border-purple-200 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-45"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>{imageUploading ? 'Optimizing...' : `Upload Photos (${uploadedImages.length}/4)`}</span>
+                  </button>
+                </div>
+
+                {uploadedImages.length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+                    {uploadedImages.map((src, idx) => (
+                      <div key={idx} className="relative aspect-[4/3] rounded-xl overflow-hidden border border-slate-200 bg-white group">
+                        <img src={src} alt={`Business upload ${idx + 1}`} className="w-full h-full object-cover" />
+                        {idx === 0 && (
+                          <span className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded-full bg-[#5A1E65] text-white text-[9px] font-black uppercase">
+                            Cover
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setUploadedImages((prev) => prev.filter((_, i) => i !== idx))}
+                          className="absolute top-1.5 right-1.5 p-1 rounded-lg bg-rose-600 text-white opacity-90 hover:opacity-100 cursor-pointer"
+                          title="Remove photo"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               {/* Affirming Pledge Consent */}
               <div className="flex items-start gap-3 p-4 bg-purple-50/60 rounded-xl border border-purple-200">

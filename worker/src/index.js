@@ -1923,10 +1923,13 @@ export default {
         const db = getDb(env);
 
         if (db) {
+          try { await db.execute('ALTER TABLE businesses ADD COLUMN gallery_images TEXT'); } catch (_) {}
+          const submittedImages = Array.isArray(body.images) ? body.images.filter(Boolean).slice(0, 4) : [];
+          const submittedCover = (body.cover_url || body.image || submittedImages[0] || '').trim() || null;
           await db.execute({
             sql: `INSERT INTO businesses 
-                  (id, slug, name, category, description, address, city, zip, phone, email, website, instagram, hours, owner_name, owner_email, status, affirming_pledge_signed_at)
-                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'))`,
+                  (id, slug, name, category, description, address, city, zip, phone, email, website, instagram, hours, cover_url, gallery_images, owner_name, owner_email, status, affirming_pledge_signed_at)
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'))`,
             args: [
               id,
               slug,
@@ -1941,6 +1944,8 @@ export default {
               body.website || '',
               body.instagram || '',
               body.hours || '',
+              submittedCover,
+              submittedImages.length > 0 ? JSON.stringify(submittedImages) : null,
               body.ownerName || 'Business Representative',
               ownerEmail
             ]

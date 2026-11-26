@@ -252,9 +252,11 @@ export async function submitVolunteer(data) {
  * Submit Business for LGBTQ+ Affirming Directory
  */
 export async function submitBusiness(data) {
-  const { businessName, name, category, city, address, website, email, phone, description, ownerName, ownerEmail, isLGBTQOwned, termsConsent, affirmingPledge, turnstileToken } = data;
+  const { businessName, name, category, city, address, website, email, phone, description, ownerName, ownerEmail, isLGBTQOwned, termsConsent, affirmingPledge, turnstileToken, cover_url, image, images } = data;
   const resolvedName = (businessName || name || '').trim();
   const resolvedPledge = Boolean(termsConsent || affirmingPledge);
+  const cleanImages = Array.isArray(images) ? images.filter(Boolean).slice(0, 4) : [];
+  const primaryCover = cover_url || image || cleanImages[0] || '';
 
   if (!resolvedName) return { success: false, message: 'Business name is required.', errors: { businessName: 'Required' } };
   if (!category?.trim()) return { success: false, message: 'Category is required.', errors: { category: 'Required' } };
@@ -281,6 +283,9 @@ export async function submitBusiness(data) {
         affirmingPledge: resolvedPledge,
         termsConsent: resolvedPledge,
         turnstileToken,
+        cover_url: primaryCover,
+        image: primaryCover,
+        images: cleanImages,
         status: 'pending',
         timestamp: new Date().toISOString()
       })
