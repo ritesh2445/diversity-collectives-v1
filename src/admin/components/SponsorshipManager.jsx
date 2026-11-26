@@ -232,7 +232,16 @@ export default function SponsorshipManager() {
   const handleSavePageContent = (e) => {
     e.preventDefault();
     setIsSavingContent(true);
-    saveCmsSponsorshipPageContent(contentForm);
+    const cleanedForm = {
+      ...contentForm,
+      tiers: (contentForm.tiers || []).map((t) => ({
+        ...t,
+        benefits: Array.isArray(t.benefits)
+          ? t.benefits.map((b) => String(b).trim()).filter(Boolean)
+          : []
+      }))
+    };
+    saveCmsSponsorshipPageContent(cleanedForm);
     refresh();
     setIsSavingContent(false);
     showToast('Sponsorship page content updated and published live!');
@@ -546,6 +555,496 @@ export default function SponsorshipManager() {
             />
           </div>
 
+          {/* Hero Badges, CTAs & 4 Pillars */}
+          <div className="space-y-4 pt-4 border-t border-slate-100">
+            <h4 className="font-display text-sm font-bold text-slate-900">Hero Badges, Quick CTAs &amp; 4 Core Pillars</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">Campaign Badge</label>
+                <input
+                  type="text"
+                  value={contentForm.campaignBadge || ''}
+                  onChange={(e) => setContentForm({ ...contentForm, campaignBadge: e.target.value })}
+                  className="w-full text-xs p-2 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">Library Badge</label>
+                <input
+                  type="text"
+                  value={contentForm.docLibraryBadge || ''}
+                  onChange={(e) => setContentForm({ ...contentForm, docLibraryBadge: e.target.value })}
+                  className="w-full text-xs p-2 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">Primary CTA Label</label>
+                <input
+                  type="text"
+                  value={contentForm.primaryCtaText || ''}
+                  onChange={(e) => setContentForm({ ...contentForm, primaryCtaText: e.target.value })}
+                  className="w-full text-xs p-2 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">Secondary CTA Label</label>
+                <input
+                  type="text"
+                  value={contentForm.secondaryCtaText || ''}
+                  onChange={(e) => setContentForm({ ...contentForm, secondaryCtaText: e.target.value })}
+                  className="w-full text-xs p-2 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {(contentForm.pillars || []).map((p, idx) => (
+                <div key={idx} className="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                  <input
+                    type="text"
+                    value={p.pillar || ''}
+                    onChange={(e) => {
+                      const next = [...(contentForm.pillars || [])];
+                      next[idx] = { ...next[idx], pillar: e.target.value };
+                      setContentForm({ ...contentForm, pillars: next });
+                    }}
+                    placeholder="Pillar Label"
+                    className="w-full text-[11px] font-bold p-1.5 rounded-lg border border-slate-200 bg-white"
+                  />
+                  <input
+                    type="text"
+                    value={p.title || ''}
+                    onChange={(e) => {
+                      const next = [...(contentForm.pillars || [])];
+                      next[idx] = { ...next[idx], title: e.target.value };
+                      setContentForm({ ...contentForm, pillars: next });
+                    }}
+                    placeholder="Title"
+                    className="w-full text-xs font-bold p-1.5 rounded-lg border border-slate-200 bg-white"
+                  />
+                  <input
+                    type="text"
+                    value={p.desc || ''}
+                    onChange={(e) => {
+                      const next = [...(contentForm.pillars || [])];
+                      next[idx] = { ...next[idx], desc: e.target.value };
+                      setContentForm({ ...contentForm, pillars: next });
+                    }}
+                    placeholder="Short description"
+                    className="w-full text-[11px] p-1.5 rounded-lg border border-slate-200 bg-white"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 2027 Sponsorship Tiers Editor */}
+          <div className="space-y-4 pt-4 border-t border-slate-100">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h4 className="font-display text-sm font-bold text-slate-900">
+                2027 Sponsorship Tiers ({(contentForm.tiers || []).length})
+              </h4>
+              <button
+                type="button"
+                onClick={() => {
+                  const nextIdx = (contentForm.tiers || []).length + 1;
+                  setContentForm({
+                    ...contentForm,
+                    tiers: [
+                      ...(contentForm.tiers || []),
+                      {
+                        id: `tier-${Date.now()}`,
+                        number: String(nextIdx).padStart(2, '0'),
+                        name: 'New Sponsorship Tier',
+                        price: '$2,500',
+                        cadence: 'Annual Partner',
+                        badge: 'Partner',
+                        featured: false,
+                        summary: 'Describe the sponsorship alignment and recognition.',
+                        benefits: ['Partner recognition & directory listing']
+                      }
+                    ]
+                  });
+                }}
+                className="px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-[#5A1E65] text-[#5A1E65] hover:text-white border border-purple-200 text-xs font-bold inline-flex items-center gap-1 cursor-pointer transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Tier</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">Tiers Eyebrow</label>
+                <input
+                  type="text"
+                  value={contentForm.tiersEyebrow || ''}
+                  onChange={(e) => setContentForm({ ...contentForm, tiersEyebrow: e.target.value })}
+                  className="w-full text-xs p-2 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">Tiers Heading</label>
+                <input
+                  type="text"
+                  value={contentForm.tiersHeading || ''}
+                  onChange={(e) => setContentForm({ ...contentForm, tiersHeading: e.target.value })}
+                  className="w-full text-xs p-2 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">Tiers Subtitle</label>
+                <input
+                  type="text"
+                  value={contentForm.tiersSubtitle || ''}
+                  onChange={(e) => setContentForm({ ...contentForm, tiersSubtitle: e.target.value })}
+                  className="w-full text-xs p-2 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {(contentForm.tiers || []).map((tier, idx) => (
+                <div key={tier.id || idx} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-xs font-black text-[#5A1E65]">
+                      Tier #{idx + 1}: {tier.name || 'Untitled'}
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <label className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700 mr-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(tier.featured)}
+                          onChange={(e) => {
+                            const next = [...(contentForm.tiers || [])];
+                            next[idx] = { ...next[idx], featured: e.target.checked };
+                            setContentForm({ ...contentForm, tiers: next });
+                          }}
+                          className="accent-[#5A1E65]"
+                        />
+                        <span>Flagship / Featured</span>
+                      </label>
+                      <button
+                        type="button"
+                        disabled={idx === 0}
+                        onClick={() => {
+                          const next = [...(contentForm.tiers || [])];
+                          [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+                          setContentForm({ ...contentForm, tiers: next });
+                        }}
+                        className="p-1 rounded-lg bg-white border border-slate-200 disabled:opacity-40 cursor-pointer"
+                        title="Move up"
+                      >
+                        <ArrowUp className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={idx === (contentForm.tiers || []).length - 1}
+                        onClick={() => {
+                          const next = [...(contentForm.tiers || [])];
+                          [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+                          setContentForm({ ...contentForm, tiers: next });
+                        }}
+                        className="p-1 rounded-lg bg-white border border-slate-200 disabled:opacity-40 cursor-pointer"
+                        title="Move down"
+                      >
+                        <ArrowDown className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!window.confirm(`Delete tier "${tier.name}"?`)) return;
+                          setContentForm({
+                            ...contentForm,
+                            tiers: (contentForm.tiers || []).filter((_, i) => i !== idx)
+                          });
+                        }}
+                        className="p-1 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 cursor-pointer"
+                        title="Delete tier"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                    <input
+                      type="text"
+                      value={tier.name || ''}
+                      onChange={(e) => {
+                        const next = [...(contentForm.tiers || [])];
+                        next[idx] = { ...next[idx], name: e.target.value };
+                        setContentForm({ ...contentForm, tiers: next });
+                      }}
+                      placeholder="Tier Name"
+                      className="text-xs font-bold p-2 rounded-xl border border-slate-200 bg-white"
+                    />
+                    <input
+                      type="text"
+                      value={tier.price || ''}
+                      onChange={(e) => {
+                        const next = [...(contentForm.tiers || [])];
+                        next[idx] = { ...next[idx], price: e.target.value };
+                        setContentForm({ ...contentForm, tiers: next });
+                      }}
+                      placeholder="Price (e.g. $25,000+)"
+                      className="text-xs font-bold p-2 rounded-xl border border-slate-200 bg-white"
+                    />
+                    <input
+                      type="text"
+                      value={tier.cadence || ''}
+                      onChange={(e) => {
+                        const next = [...(contentForm.tiers || [])];
+                        next[idx] = { ...next[idx], cadence: e.target.value };
+                        setContentForm({ ...contentForm, tiers: next });
+                      }}
+                      placeholder="Subtitle / Cadence"
+                      className="text-xs p-2 rounded-xl border border-slate-200 bg-white"
+                    />
+                    <input
+                      type="text"
+                      value={tier.badge || ''}
+                      onChange={(e) => {
+                        const next = [...(contentForm.tiers || [])];
+                        next[idx] = { ...next[idx], badge: e.target.value };
+                        setContentForm({ ...contentForm, tiers: next });
+                      }}
+                      placeholder="Badge (e.g. Flagship Tier)"
+                      className="text-xs p-2 rounded-xl border border-slate-200 bg-white"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                    <textarea
+                      rows={3}
+                      value={tier.summary || ''}
+                      onChange={(e) => {
+                        const next = [...(contentForm.tiers || [])];
+                        next[idx] = { ...next[idx], summary: e.target.value };
+                        setContentForm({ ...contentForm, tiers: next });
+                      }}
+                      placeholder="Tier summary..."
+                      className="text-xs p-2 rounded-xl border border-slate-200 bg-white"
+                    />
+                    <textarea
+                      rows={3}
+                      value={Array.isArray(tier.benefits) ? tier.benefits.join('\n') : ''}
+                      onChange={(e) => {
+                        const next = [...(contentForm.tiers || [])];
+                        next[idx] = {
+                          ...next[idx],
+                          benefits: e.target.value.split('\n')
+                        };
+                        setContentForm({ ...contentForm, tiers: next });
+                      }}
+                      placeholder="Benefits (one per line)..."
+                      className="text-xs p-2 rounded-xl border border-slate-200 bg-white"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Comparison Table Editor */}
+          <div className="space-y-4 pt-4 border-t border-slate-100">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h4 className="font-display text-sm font-bold text-slate-900">
+                Comparison Matrix ({(contentForm.comparisonRows || []).length} Rows)
+              </h4>
+              <button
+                type="button"
+                onClick={() => {
+                  setContentForm({
+                    ...contentForm,
+                    comparisonRows: [
+                      ...(contentForm.comparisonRows || []),
+                      { feature: 'New Benefit Row', values: ['Included', 'Included', '', ''] }
+                    ]
+                  });
+                }}
+                className="px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-[#5A1E65] text-[#5A1E65] hover:text-white border border-purple-200 text-xs font-bold inline-flex items-center gap-1 cursor-pointer transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Comparison Row</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">Comparison Heading</label>
+                <input
+                  type="text"
+                  value={contentForm.comparisonHeading || ''}
+                  onChange={(e) => setContentForm({ ...contentForm, comparisonHeading: e.target.value })}
+                  className="w-full text-xs p-2 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">Comparison Subtitle</label>
+                <input
+                  type="text"
+                  value={contentForm.comparisonSubtitle || ''}
+                  onChange={(e) => setContentForm({ ...contentForm, comparisonSubtitle: e.target.value })}
+                  className="w-full text-xs p-2 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">Matrix Banner Title</label>
+                <input
+                  type="text"
+                  value={contentForm.comparisonMatrixTitle || ''}
+                  onChange={(e) => setContentForm({ ...contentForm, comparisonMatrixTitle: e.target.value })}
+                  className="w-full text-xs p-2 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              {(contentForm.comparisonRows || []).map((row, rIdx) => (
+                <div key={rIdx} className="p-3 rounded-2xl bg-slate-50 border border-slate-200 grid grid-cols-1 lg:grid-cols-12 gap-2 items-center">
+                  <input
+                    type="text"
+                    value={row.feature || ''}
+                    onChange={(e) => {
+                      const next = [...(contentForm.comparisonRows || [])];
+                      next[rIdx] = { ...next[rIdx], feature: e.target.value };
+                      setContentForm({ ...contentForm, comparisonRows: next });
+                    }}
+                    placeholder="Benefit Label"
+                    className="lg:col-span-3 text-xs font-bold p-2 rounded-xl border border-slate-200 bg-white"
+                  />
+                  {[0, 1, 2, 3].map((colIdx) => (
+                    <input
+                      key={colIdx}
+                      type="text"
+                      value={row.values?.[colIdx] === false ? '' : (row.values?.[colIdx] || '')}
+                      onChange={(e) => {
+                        const next = [...(contentForm.comparisonRows || [])];
+                        const vals = [...(next[rIdx].values || ['', '', '', ''])];
+                        vals[colIdx] = e.target.value;
+                        next[rIdx] = { ...next[rIdx], values: vals };
+                        setContentForm({ ...contentForm, comparisonRows: next });
+                      }}
+                      placeholder={`Tier ${colIdx + 1} (blank = —)`}
+                      className="lg:col-span-2 text-xs p-2 rounded-xl border border-slate-200 bg-white"
+                    />
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setContentForm({
+                        ...contentForm,
+                        comparisonRows: (contentForm.comparisonRows || []).filter((_, i) => i !== rIdx)
+                      });
+                    }}
+                    className="lg:col-span-1 p-2 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 flex items-center justify-center cursor-pointer"
+                    title="Delete row"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Regional Impact & Activation Pathways */}
+          <div className="space-y-4 pt-4 border-t border-slate-100">
+            <h4 className="font-display text-sm font-bold text-slate-900">Regional Impact Metrics &amp; Activation Pathways</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <input
+                type="text"
+                value={contentForm.impactEyebrow || ''}
+                onChange={(e) => setContentForm({ ...contentForm, impactEyebrow: e.target.value })}
+                placeholder="Impact Eyebrow"
+                className="text-xs p-2 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white"
+              />
+              <input
+                type="text"
+                value={contentForm.impactHeading || ''}
+                onChange={(e) => setContentForm({ ...contentForm, impactHeading: e.target.value })}
+                placeholder="Impact Heading"
+                className="text-xs p-2 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white"
+              />
+              <input
+                type="text"
+                value={contentForm.impactSubtitle || ''}
+                onChange={(e) => setContentForm({ ...contentForm, impactSubtitle: e.target.value })}
+                placeholder="Impact Subtitle"
+                className="text-xs p-2 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {(contentForm.impactMetrics || []).map((m, idx) => (
+                <div key={idx} className="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                  <input
+                    type="text"
+                    value={m.value || ''}
+                    onChange={(e) => {
+                      const next = [...(contentForm.impactMetrics || [])];
+                      next[idx] = { ...next[idx], value: e.target.value };
+                      setContentForm({ ...contentForm, impactMetrics: next });
+                    }}
+                    placeholder="Stat (e.g. 20,000+)"
+                    className="w-full text-xs font-black p-1.5 rounded-lg border border-slate-200 bg-white"
+                  />
+                  <input
+                    type="text"
+                    value={m.label || ''}
+                    onChange={(e) => {
+                      const next = [...(contentForm.impactMetrics || [])];
+                      next[idx] = { ...next[idx], label: e.target.value };
+                      setContentForm({ ...contentForm, impactMetrics: next });
+                    }}
+                    placeholder="Label"
+                    className="w-full text-[11px] font-bold p-1.5 rounded-lg border border-slate-200 bg-white"
+                  />
+                  <textarea
+                    rows={2}
+                    value={m.detail || ''}
+                    onChange={(e) => {
+                      const next = [...(contentForm.impactMetrics || [])];
+                      next[idx] = { ...next[idx], detail: e.target.value };
+                      setContentForm({ ...contentForm, impactMetrics: next });
+                    }}
+                    placeholder="Detail"
+                    className="w-full text-[11px] p-1.5 rounded-lg border border-slate-200 bg-white"
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {(contentForm.activationPathways || []).map((p, idx) => (
+                <div key={idx} className="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                  <input
+                    type="text"
+                    value={p.title || ''}
+                    onChange={(e) => {
+                      const next = [...(contentForm.activationPathways || [])];
+                      next[idx] = { ...next[idx], title: e.target.value };
+                      setContentForm({ ...contentForm, activationPathways: next });
+                    }}
+                    placeholder="Pathway Title"
+                    className="w-full text-xs font-bold p-1.5 rounded-lg border border-slate-200 bg-white"
+                  />
+                  <textarea
+                    rows={2}
+                    value={p.desc || ''}
+                    onChange={(e) => {
+                      const next = [...(contentForm.activationPathways || [])];
+                      next[idx] = { ...next[idx], desc: e.target.value };
+                      setContentForm({ ...contentForm, activationPathways: next });
+                    }}
+                    placeholder="Description"
+                    className="w-full text-[11px] p-1.5 rounded-lg border border-slate-200 bg-white"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-100">
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">Documents Section Title</label>
@@ -599,6 +1098,16 @@ export default function SponsorshipManager() {
                 rows={2}
                 value={contentForm.contactSubtitle || ''}
                 onChange={(e) => setContentForm({ ...contentForm, contactSubtitle: e.target.value })}
+                className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-[#5A1E65]/20 focus:border-[#5A1E65]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">GEM Membership Distinction Note</label>
+              <textarea
+                rows={2}
+                value={contentForm.gemNote || ''}
+                onChange={(e) => setContentForm({ ...contentForm, gemNote: e.target.value })}
                 className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-[#5A1E65]/20 focus:border-[#5A1E65]"
               />
             </div>

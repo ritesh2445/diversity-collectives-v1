@@ -67,10 +67,23 @@ export default function Gallery() {
         if (res.ok) {
           const data = await res.json();
           if (isMounted && data.success && Array.isArray(data.photos) && data.photos.length > 0) {
-            setPhotos(data.photos.map(p => ({
-              ...p,
-              image: p.cdn_url || p.image_url || p.image
-            })));
+            const storePhotos = cmsStore.getGallery() || [];
+            const storeById = new Map(storePhotos.map((sp) => [sp.id, sp]));
+            const liveMapped = data.photos.map((p) => {
+              const localMatch = storeById.get(p.id);
+              const localUrl = (p.image_url && p.image_url.startsWith('/'))
+                ? p.image_url
+                : (localMatch?.image && localMatch.image.startsWith('/') ? localMatch.image : null);
+              const primaryUrl = localUrl || p.cdn_url || p.image_url || p.image || '/images/community-gathering.jpg';
+              return {
+                ...p,
+                image: primaryUrl,
+                fallbackImage: localUrl || '/images/community-gathering.jpg'
+              };
+            });
+            const seenIds = new Set(liveMapped.map((p) => p.id));
+            const remainingStore = storePhotos.filter((sp) => !seenIds.has(sp.id));
+            setPhotos([...liveMapped, ...remainingStore]);
           }
         }
       } catch (err) {
@@ -80,6 +93,13 @@ export default function Gallery() {
     fetchLiveGallery();
     return () => { isMounted = false; };
   }, []);
+
+  const handleGalleryImgError = (e, photo) => {
+    const img = e.currentTarget;
+    if (img.dataset.fallbackApplied === 'true') return;
+    img.dataset.fallbackApplied = 'true';
+    img.src = photo?.fallbackImage || '/images/community-gathering.jpg';
+  };
 
   // Search Params & Social Deep Link Handling (?photo=<id>)
   const [searchParams, setSearchParams] = useSearchParams();
@@ -378,6 +398,7 @@ export default function Gallery() {
                     alt={photo.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                     loading="lazy"
+                    onError={(e) => handleGalleryImgError(e, photo)}
                   />
 
                   {/* Category & Year Tag */}
@@ -493,6 +514,7 @@ export default function Gallery() {
                   src={getOptimizedImageUrl(expandedPhoto.image, { width: 1200 })}
                   alt={expandedPhoto.title}
                   className="w-full h-full object-contain relative z-10 max-h-[38vh] md:max-h-[50vh] rounded-2xl shadow-2xl drop-shadow-lg"
+                  onError={(e) => handleGalleryImgError(e, expandedPhoto)}
                 />
                 <span className="absolute bottom-3 left-3 px-3 py-1 rounded-full bg-slate-950/80 backdrop-blur-md text-white text-[10px] font-bold z-20 shadow-md">
                   📍 Ventura County, CA
@@ -711,6 +733,7 @@ export default function Gallery() {
                     src={getOptimizedImageUrl(photo.image, { width: 640 })}
                     alt={photo.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    onError={(e) => handleGalleryImgError(e, photo)}
                   />
                   <span className="absolute bottom-3 right-3 p-2 rounded-xl bg-slate-950/70 text-white backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity">
                     <Maximize2 className="w-4 h-4" />
@@ -744,6 +767,7 @@ export default function Gallery() {
                     alt={photo.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     loading="lazy"
+                    onError={(e) => handleGalleryImgError(e, photo)}
                   />
                   <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full bg-slate-950/75 backdrop-blur-md text-white text-[10px] font-bold">
                     {photo.category}
@@ -806,6 +830,7 @@ export default function Gallery() {
                 src={getOptimizedImageUrl(activeLightboxPhoto.image, { width: 1200 })}
                 alt={activeLightboxPhoto.title}
                 className="max-h-[60vh] sm:max-h-[65vh] w-auto max-w-full object-contain"
+                onError={(e) => handleGalleryImgError(e, activeLightboxPhoto)}
               />
             </div>
 

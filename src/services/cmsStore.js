@@ -531,13 +531,131 @@ export const DEFAULT_TRAINING_PAGE_CONTENT = {
 
 export const DEFAULT_SPONSORSHIP_PAGE_CONTENT = {
   heroEyebrow: "PARTNER WITH DIVERSITY COLLECTIVE",
+  campaignBadge: "2027 Sponsorship Campaign",
+  docLibraryBadge: "Official Document Library",
   headline: "Corporate Partnerships & Sponsorship Opportunities",
   subtitle: "Investing in LGBTQ+ Advocacy, Community Health, and Youth Sanctuaries Across Ventura County",
   introduction: "Diversity Collective Ventura County welcomes corporate sponsors, civic foundations, regional employers, and community partners committed to making a lasting impact. Your partnership directly champions our four foundational pillars: Community Advocacy, Cultural Visibility, Safe Peer Sanctuaries, and Equitable Public Health Access across all ten cities of Ventura County.",
+  primaryCtaText: "Explore 2027 Tiers",
+  secondaryCtaText: "2027 Packets & PDFs",
+  pillars: [
+    { pillar: "Pillar I", title: "Advocacy", desc: "Civic representation & policy" },
+    { pillar: "Pillar II", title: "Visibility", desc: "Pride & community culture" },
+    { pillar: "Pillar III", title: "Safety", desc: "Affirming youth peer centers" },
+    { pillar: "Pillar IV", title: "Wellness", desc: "Free confidential clinical care" }
+  ],
+  tiersEyebrow: "2027 SPONSORSHIP OPPORTUNITIES",
+  tiersHeading: "2027 Sponsorship Tiers & Partner Benefits",
+  tiersSubtitle: "Structured investment levels designed for meaningful brand alignment, premier recognition at major regional events, and direct community impact.",
+  tiers: [
+    {
+      id: "premier-corporate",
+      number: "01",
+      name: "Premier Corporate Partner",
+      price: "$25,000+",
+      cadence: "Annual Title Partnership",
+      badge: "Flagship Tier",
+      featured: true,
+      summary: "Top-tier title alignment across Ventura County Pride, Health & Wellness Fairs, and year-round Community Resource Center recognition.",
+      benefits: [
+        "Title alignment at Ventura County Pride & Health & Wellness Fairs",
+        "Year-round Community Resource Center naming recognition",
+        "VIP executive gala passes & prime banner placement",
+        "Dedicated social spotlights to 25,000+ followers"
+      ]
+    },
+    {
+      id: "major-community",
+      number: "02",
+      name: "Major Community Sponsor",
+      price: "$10,000 – $24,999",
+      cadence: "Program Track Sponsor",
+      badge: "High Impact",
+      featured: false,
+      summary: "Official sponsor of key program tracks—Youth Safe Sanctuaries or Diversity SHINES clinical suites—with prominent stage presence.",
+      benefits: [
+        "Sponsor of Youth Safe Sanctuaries or Diversity SHINES suites",
+        "Prominent stage recognition at signature DCVC events",
+        "Premium festival exhibition booth placement",
+        "Feature spotlight in quarterly DCVC newsletters"
+      ]
+    },
+    {
+      id: "specialty-event",
+      number: "03",
+      name: "Specialty & Event Partner",
+      price: "$5,000 – $9,999",
+      cadence: "Signature Program Activation",
+      badge: "Event Focus",
+      featured: false,
+      summary: "Targeted activation sponsorship for signature DCVC programs such as Pride Prom, AIDS Walk Ventura, or Diversity Toastmasters.",
+      benefits: [
+        "Targeted sponsorship of Pride Prom, AIDS Walk, or Toastmasters",
+        "Co-branded event signage across activation zones",
+        "Employee volunteer engagement packages"
+      ]
+    },
+    {
+      id: "community-ally",
+      number: "04",
+      name: "Community Ally",
+      price: "$1,500 – $4,999",
+      cadence: "Local Business & Storefront",
+      badge: "Local Ally",
+      featured: false,
+      summary: "Storefront and local business sponsorship connecting neighborhood allies with Ventura County’s LGBTQ+ community.",
+      benefits: [
+        "Official DCVC Approved badge accreditation",
+        "Community partner directory listing",
+        "Recognition in official event digital guides"
+      ]
+    },
+    {
+      id: "in-kind",
+      number: "05",
+      name: "In-Kind Partnership",
+      price: "Valued Gift-in-Kind",
+      cadence: "Goods, Tech & Pro-Bono",
+      badge: "Operational Support",
+      featured: false,
+      summary: "Essential hardware, clinic supplies, event hospitality, and professional services that directly power DCVC operations.",
+      benefits: [
+        "Hardware, technology workstations & clinic supplies",
+        "Event catering & hospitality support",
+        "Professional pro-bono services & media production"
+      ]
+    }
+  ],
+  comparisonHeading: "2027 Tier Benefits Comparison",
+  comparisonSubtitle: "Side-by-side overview of monetary sponsorship tiers. Looking for goods or pro-bono services? See our In-Kind Partnership tier above.",
+  comparisonMatrixTitle: "DCVC 2027 Corporate Sponsorship Matrix",
+  comparisonRows: [
+    { feature: "2027 Investment Level", values: ["$25,000+", "$10,000 – $24,999", "$5,000 – $9,999", "$1,500 – $4,999"] },
+    { feature: "Title & Program Track Alignment", values: ["Pride & Wellness Fairs Title", "Youth or SHINES Track", "Signature Event Activation", "Storefront & Ally"] },
+    { feature: "Resource Center & Stage Recognition", values: ["Year-Round Center Naming", "Prominent Stage Billing", "Event Zone Signage", ""] },
+    { feature: "Festival Booth & Exhibition", values: ["Prime Placement & Banners", "Premium Exhibition Booth", "Program Activation Booth", ""] },
+    { feature: "Digital, Newsletter & Social Reach", values: ["Spotlights (25,000+ Reach)", "Quarterly Newsletter Feature", "Event Digital Recognition", "Directory & Digital Guide"] },
+    { feature: "VIP Passes & Team Engagement", values: ["VIP Executive Gala Passes", "VIP Event Access", "Employee Volunteer Package", "DCVC Approved Badge"] }
+  ],
+  impactEyebrow: "REGIONAL IMPACT & ACTIVATIONS",
+  impactHeading: "Measurable Community Impact Across Ventura County",
+  impactSubtitle: "Your 2027 sponsorship directly funds free confidential HIV/STI screenings, Rainbow Umbrella youth drop-in sanctuaries, transgender support circles, and countywide Pride programming.",
+  impactMetrics: [
+    { value: "20,000+", label: "Annual Community Reach", detail: "Individuals engaged across Ventura, Oxnard, Camarillo, Thousand Oaks, Simi Valley, Ojai & Moorpark." },
+    { value: "25,000+", label: "Digital Audience", detail: "Followers and regional subscribers reached through partner spotlights and campaign storytelling." },
+    { value: "10 Cities", label: "Countywide Footprint", detail: "Sole 501(c)(3) operating a physical LGBTQ+ Community Resource Center across Ventura County." },
+    { value: "501(c)(3)", label: "EIN 46-5312131", detail: "100% local tax-deductible investment powering free HIV/STI screenings and Rainbow Umbrella youth spaces." }
+  ],
+  activationPathways: [
+    { title: "Employee DEI & Volunteering", desc: "Engage your workforce with tailored DEI workshops, corporate volunteer days, and Pride mobilization." },
+    { title: "Signature Program Underwriting", desc: "Align directly with Rainbow Umbrella youth mentorship, Diversity SHINES clinical care, or Pride Prom." },
+    { title: "Multi-Year Strategic Alliances", desc: "Co-create custom multi-year agreements aligned with your CSR goals, foundation guidelines, and regional footprint." }
+  ],
   sectionTitle: "Official Sponsorship Documents & Packets",
   sectionSubtitle: "Explore our official 2027 corporate partnership opportunities, investment tier breakdowns, and strategic community impact blueprints. View online or download official PDFs.",
   contactHeading: "Ready to Discuss a Corporate Partnership?",
   contactSubtitle: "Our leadership and community development team works directly with corporate sponsors to create tailored engagement packages, employee volunteer days, and premier brand recognition.",
+  gemNote: "Corporate sponsorship packages are distinct from our individual GEM Membership recurring donor program. Corporate packages include event branding, volunteer activations, and marketing alignments.",
   contactCtaText: "Contact Partnership Team",
   contactEmail: "info@diversitycollective.org",
   contactPhone: "(805) 644-LGBT (5428)",
@@ -2457,9 +2575,15 @@ class CmsStoreEngine {
   }
 
   getSponsorshipPageContent() {
+    const saved = this.data?.sponsorshipPageContent || {};
     return {
       ...DEFAULT_SPONSORSHIP_PAGE_CONTENT,
-      ...(this.data?.sponsorshipPageContent || {})
+      ...saved,
+      pillars: Array.isArray(saved.pillars) ? saved.pillars : DEFAULT_SPONSORSHIP_PAGE_CONTENT.pillars,
+      tiers: Array.isArray(saved.tiers) ? saved.tiers : DEFAULT_SPONSORSHIP_PAGE_CONTENT.tiers,
+      comparisonRows: Array.isArray(saved.comparisonRows) ? saved.comparisonRows : DEFAULT_SPONSORSHIP_PAGE_CONTENT.comparisonRows,
+      impactMetrics: Array.isArray(saved.impactMetrics) ? saved.impactMetrics : DEFAULT_SPONSORSHIP_PAGE_CONTENT.impactMetrics,
+      activationPathways: Array.isArray(saved.activationPathways) ? saved.activationPathways : DEFAULT_SPONSORSHIP_PAGE_CONTENT.activationPathways
     };
   }
 
