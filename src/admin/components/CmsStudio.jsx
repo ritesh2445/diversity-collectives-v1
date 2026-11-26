@@ -5262,8 +5262,8 @@ export default function CmsStudio({ currentUser: propUser = null } = {}) {
                   <MultiImagePicker
                     images={formData.images || (formData.heroImage ? [formData.heroImage] : [])}
                     primaryImage={formData.heroImage || ''}
-                    onChange={(newImages) => setFormData({ ...formData, images: newImages, heroImage: newImages[0] || '' })}
-                    onPrimaryChange={(url) => setFormData({ ...formData, heroImage: url })}
+                    onChange={(newImages) => setFormData((prev) => ({ ...prev, images: newImages, heroImage: newImages[0] || '' }))}
+                    onPrimaryChange={(url) => setFormData((prev) => ({ ...prev, heroImage: url }))}
                     label="Program Pictures & Slideshow"
                     helpText="Upload or choose multiple photos for this program. They will automatically slide on website cards and detail pages."
                     aspectRatio="aspect-[16/9]"

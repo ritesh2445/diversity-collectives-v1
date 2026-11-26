@@ -1596,6 +1596,29 @@ class CmsStoreEngine {
       existing.unshift(normalizedProgram);
     }
 
+    // Propagate updated program images/framing to any matching duplicate/recurring program entries
+    const matchTitle = (normalizedProgram.title || '').trim().toLowerCase();
+    const updatedHero = normalizedProgram.heroImage;
+    const updatedImages = Array.isArray(normalizedProgram.images) && normalizedProgram.images.length > 0
+      ? normalizedProgram.images
+      : (updatedHero ? [updatedHero] : []);
+    const updatedFit = normalizedProgram.imageFit;
+    for (let i = 0; i < existing.length; i++) {
+      const p = existing[i];
+      if (!p) continue;
+      const sameTitle = matchTitle && p.title && p.title.trim().toLowerCase() === matchTitle;
+      const sameSlug = progSlug && p.slug && String(p.slug) === progSlug;
+      if (sameTitle || sameSlug) {
+        existing[i] = {
+          ...p,
+          heroImage: updatedHero,
+          image: updatedHero,
+          images: updatedImages,
+          ...(updatedFit ? { imageFit: updatedFit } : {})
+        };
+      }
+    }
+
     const deleted = (this.data.deletedPrograms || []).filter(s => s !== normalizedProgram.slug && s !== normalizedProgram.id && s !== targetSlug && s !== targetId);
     this.saveData({ ...this.data, programs: existing, deletedPrograms: deleted });
     return existing;
@@ -1684,16 +1707,39 @@ class CmsStoreEngine {
     const existing = this.getEvents();
     const cleanTitle = (event.title || '').trim().toLowerCase();
     const index = existing.findIndex(e => (event.id && e.id === event.id) || (event.slug && e.slug === event.slug) || (cleanTitle && e.title && e.title.toLowerCase().trim() === cleanTitle));
+    let savedEvent;
     if (index >= 0) {
-      existing[index] = normalizeCmsEvent({ ...existing[index], ...event });
+      savedEvent = normalizeCmsEvent({ ...existing[index], ...event });
+      existing[index] = savedEvent;
     } else {
-      const newEvent = normalizeCmsEvent({
+      savedEvent = normalizeCmsEvent({
         ...event,
         id: event.id || `evt-${Date.now()}`,
         slug: event.slug || (event.title || 'event').toLowerCase().replace(/[^a-z0-9]+/g, '-')
       });
-      existing.unshift(newEvent);
+      existing.unshift(savedEvent);
     }
+
+    // Propagate updated image / slideshow to all recurring occurrences with the same event title
+    const targetTitle = (savedEvent.title || cleanTitle || '').trim().toLowerCase();
+    const hasCustomImage = Boolean(event.image || (Array.isArray(event.images) && event.images.length > 0));
+    if (targetTitle && hasCustomImage) {
+      const sharedImage = savedEvent.image || (Array.isArray(savedEvent.images) ? savedEvent.images[0] : '');
+      const sharedImages = Array.isArray(savedEvent.images) && savedEvent.images.length > 0
+        ? savedEvent.images
+        : (sharedImage ? [sharedImage] : []);
+      for (let i = 0; i < existing.length; i++) {
+        const occ = existing[i];
+        if (occ && occ.title && occ.title.trim().toLowerCase() === targetTitle) {
+          existing[i] = normalizeCmsEvent({
+            ...occ,
+            image: sharedImage,
+            images: sharedImages
+          });
+        }
+      }
+    }
+
     this.saveData({ ...this.data, events: existing });
     return existing;
   }

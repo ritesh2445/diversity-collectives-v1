@@ -640,12 +640,44 @@ export default function Directory() {
 
                   <div className="space-y-4">
                     {/* Photo Thumbnail */}
-                    <div className="h-44 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200/80 relative shadow-inner">
+                    {(() => {
+                      const uploadedCover = biz.image || biz.cover_url || (Array.isArray(biz.images) ? biz.images[0] : '') || '';
+                      let brandLogo = '';
+                      if (!uploadedCover && biz.website) {
+                        try {
+                          const normalized = /^https?:\/\//i.test(biz.website.trim()) ? biz.website.trim() : `https://${biz.website.trim()}`;
+                          const hostname = new URL(normalized).hostname.replace(/^www\./i, '');
+                          if (hostname) brandLogo = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(hostname)}&sz=256`;
+                        } catch (_) {}
+                      }
+                      const isLogoFallback = Boolean(!uploadedCover && brandLogo);
+                      const thumbSrc = uploadedCover || brandLogo || '/images/community-gathering.jpg';
+
+                      return (
+                    <div className={`h-44 rounded-2xl overflow-hidden border border-slate-200/80 relative shadow-inner ${
+                      isLogoFallback ? 'bg-gradient-to-br from-purple-50 via-white to-amber-50/70' : 'bg-slate-100'
+                    }`}>
                       <img
-                        src={biz.image || biz.cover_url || "/images/community-gathering.jpg"}
+                        src={thumbSrc}
                         alt={biz.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        onError={(e) => { e.target.src = "/images/community-gathering.jpg"; }}
+                        className={
+                          isLogoFallback
+                            ? 'w-full h-full object-contain p-7 group-hover:scale-105 transition-transform duration-300'
+                            : 'w-full h-full object-cover group-hover:scale-105 transition-transform duration-300'
+                        }
+                        onLoad={(e) => {
+                          if (isLogoFallback && e.currentTarget.naturalWidth > 0 && e.currentTarget.naturalWidth <= 16 && e.currentTarget.dataset.fallbackApplied !== 'true') {
+                            e.currentTarget.dataset.fallbackApplied = 'true';
+                            e.currentTarget.className = 'w-full h-full object-cover group-hover:scale-105 transition-transform duration-300';
+                            e.currentTarget.src = '/images/community-gathering.jpg';
+                          }
+                        }}
+                        onError={(e) => {
+                          if (e.currentTarget.dataset.fallbackApplied === 'true') return;
+                          e.currentTarget.dataset.fallbackApplied = 'true';
+                          e.currentTarget.className = 'w-full h-full object-cover group-hover:scale-105 transition-transform duration-300';
+                          e.currentTarget.src = '/images/community-gathering.jpg';
+                        }}
                       />
 
                       {/* Top-Left: DCVC Approved Flipping Badge with Glow */}
@@ -673,6 +705,8 @@ export default function Directory() {
                         </button>
                       </div>
                     </div>
+                      );
+                    })()}
 
                     <div className="flex flex-col flex-1">
                       {/* Category, Price & City Bar */}
