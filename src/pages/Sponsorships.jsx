@@ -432,8 +432,8 @@ export default function Sponsorships() {
                   href={`mailto:${contactEmail}?subject=${encodeURIComponent(`DCVC 2027 ${tier.name} (${tier.price}) Sponsorship Inquiry`)}`}
                   className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors ${
                     tier.featured
-                      ? 'bg-[#5A1E65] hover:bg-purple-900 text-white shadow-sm'
-                      : 'bg-purple-50 hover:bg-[#5A1E65] text-[#5A1E65] hover:text-white border border-purple-200'
+                      ? 'bg-[#5A1E65] hover:bg-purple-900 !text-white shadow-sm'
+                      : 'bg-purple-50 hover:bg-[#5A1E65] !text-[#5A1E65] hover:!text-white border border-purple-200'
                   }`}
                 >
                   <span>Inquire for {tier.name}</span>
