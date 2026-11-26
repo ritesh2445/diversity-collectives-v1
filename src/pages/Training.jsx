@@ -381,6 +381,7 @@ export default function Training() {
                     ? 'border-purple-400 ring-2 ring-purple-200/60 shadow-xl' 
                     : 'border-slate-200 hover:border-purple-300 shadow-md'
                 } flex flex-col justify-between gap-6 h-full transition-all`}
+                contentClassName="flex flex-col justify-between gap-6 h-full"
                 tilt={true}
                 maxTilt={3}
                 glare={true}

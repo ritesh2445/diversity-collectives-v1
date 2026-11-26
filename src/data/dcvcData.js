@@ -1504,7 +1504,7 @@ export const annualSignatureEvents = [
     location: "Ventura, CA",
     image: "/images/botanical-flyer.jpg",
     description: "Annual awareness, remembrance, and fundraising walk supporting HIV/AIDS education, prevention, and Diversity SHINES free rapid testing and navigation across Ventura County.",
-    link: "/events?search=AIDS+Walk"
+    link: "/events/mini-aids-walk-ventura-2026"
   },
   {
     id: "pride-prom",
@@ -1534,7 +1534,7 @@ export const annualSignatureEvents = [
     location: "Ventura County, CA",
     image: "/images/volunteers.jpg",
     description: "Our annual benefit evening honoring community advocates, corporate allies, and volunteers whose contributions transform lives in Ventura County.",
-    link: "/events?search=Gala"
+    link: "/sponsorships"
   },
   {
     id: "transgender-day-of-remembrance",
@@ -1544,7 +1544,7 @@ export const annualSignatureEvents = [
     location: "Ventura College Guthrie Hall & Partner Community Venues",
     image: "/images/community-gathering.jpg",
     description: "Observed annually on November 20 to remember transgender and gender-expansive individuals who have been victims of violence and hate, while honoring the strength and resilience of our local community with a candlelight vigil, community speakers, and mutual aid support.",
-    link: "/news/transgender-day-of-remembrance-tdor"
+    link: "/events/transgender-day-of-remembrance-2026"
   },
   {
     id: "world-aids-day",
@@ -1554,7 +1554,7 @@ export const annualSignatureEvents = [
     location: "Community Resource Center, Ventura",
     image: "/images/shines-screening.jpg",
     description: "Observed on December 1st with candlelight vigils, remembrance quilts, and community education in collaboration with Ventura County Public Health and Diversity SHINES.",
-    link: "/events?search=World+AIDS+Day"
+    link: "/programs/diversity-shines"
   }
 ];
 

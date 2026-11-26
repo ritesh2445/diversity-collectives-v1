@@ -543,11 +543,12 @@ export default function Events() {
                     
                     {/* Event Photography Header */}
                     <div className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden bg-slate-100 shadow-xs border border-purple-200/60 shrink-0">
-                      <img
-                        src={evt.image || '/images/community-gathering.jpg'}
+                      <AutoSlideImage
+                        images={Array.isArray(evt.images) && evt.images.length > 0 ? evt.images : [evt.image || '/images/community-gathering.jpg']}
                         alt={evt.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        onError={(e) => { e.target.src = '/images/community-gathering.jpg'; }}
+                        className="w-full h-full"
+                        imageFit="cover"
+                        fallbackSrc="/images/community-gathering.jpg"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent pointer-events-none" />
                       
@@ -689,23 +690,45 @@ export default function Events() {
               className="pt-2 sm:pt-4 items-stretch"
               cardClassName="h-full flex flex-col"
             >
-              {annualSignatureEvents.map((sig) => (
-                <Link
-                  key={sig.title}
-                  to={sig.link.startsWith('http') ? '/events' : sig.link}
-                  className="p-4 sm:p-6 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 hover:border-amber-300 transition-all hover:scale-102 flex flex-col justify-between group cursor-pointer flex-1 h-full gap-3"
-                >
-                  <div className="space-y-1.5 flex-1">
-                    <span className="text-[11px] font-black uppercase tracking-wider text-amber-300 block">{sig.season || 'Annual'}</span>
-                    <h4 className="font-display text-base sm:text-xl font-bold text-white group-hover:text-amber-200 transition-colors flex items-start justify-between gap-2">
-                      <span className="line-clamp-2">{sig.title}</span>
-                      <ArrowUpRight className="w-4 h-4 text-amber-300 shrink-0 mt-0.5" />
-                    </h4>
-                    <p className="text-xs text-purple-100 leading-relaxed line-clamp-3">{sig.description}</p>
-                  </div>
-                  <span className="text-[11px] font-bold text-amber-300/80 mt-1 block">{sig.schedule || sig.date || ''}</span>
-                </Link>
-              ))}
+              {(() => {
+                const cmsSignatureEvents = (events || [])
+                  .filter((e) => e.featured === true || e.category === 'Signature Event')
+                  .map((e) => ({
+                    id: e.id || e.slug,
+                    title: e.title,
+                    season: e.category || 'Signature Event',
+                    description: e.description,
+                    schedule: e.date || (e.month && e.day ? `${e.month} ${e.day}, ${e.year || ''}` : 'Signature Event'),
+                    link: e.slug ? `/events/${e.slug}` : '/events'
+                  }));
+
+                const seenTitles = new Set(cmsSignatureEvents.map((s) => (s.title || '').toLowerCase().trim()));
+                const mergedSignatureEvents = [
+                  ...cmsSignatureEvents,
+                  ...annualSignatureEvents.filter((sig) => !seenTitles.has((sig.title || '').toLowerCase().trim()))
+                ];
+
+                return mergedSignatureEvents.map((sig) => {
+                  const targetLink = sig.link && !sig.link.startsWith('http') ? sig.link : '/events';
+                  return (
+                    <Link
+                      key={sig.id || sig.title}
+                      to={targetLink}
+                      className="p-4 sm:p-6 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 hover:border-amber-300 transition-all hover:scale-102 flex flex-col justify-between group cursor-pointer flex-1 h-full gap-3"
+                    >
+                      <div className="space-y-1.5 flex-1">
+                        <span className="text-[11px] font-black uppercase tracking-wider text-amber-300 block">{sig.season || 'Annual'}</span>
+                        <h4 className="font-display text-base sm:text-xl font-bold text-white group-hover:text-amber-200 transition-colors flex items-start justify-between gap-2">
+                          <span className="line-clamp-2">{sig.title}</span>
+                          <ArrowUpRight className="w-4 h-4 text-amber-300 shrink-0 mt-0.5" />
+                        </h4>
+                        <p className="text-xs text-purple-100 leading-relaxed line-clamp-3">{sig.description}</p>
+                      </div>
+                      <span className="text-[11px] font-bold text-amber-300/80 mt-1 block">{sig.schedule || sig.date || ''}</span>
+                    </Link>
+                  );
+                });
+              })()}
             </MobileCarousel>
           </div>
         </div>

@@ -881,7 +881,29 @@ export default function Home() {
           </div>
 
           <MobileCarousel cols={3} autoScrollMs={5000} className="items-stretch" cardClassName="h-full flex flex-col">
-            {annualSignatureEvents.map((sigEvt, idx) => (
+            {(() => {
+              const cmsSignatureEvents = (cmsEvents || [])
+                .filter((e) => e.featured === true || e.category === 'Signature Event')
+                .map((e) => ({
+                  id: e.id || e.slug,
+                  slug: e.slug,
+                  title: e.title,
+                  tagline: e.location || e.category || 'Signature Event',
+                  schedule: e.date || (e.month && e.day ? `${e.month} ${e.day}, ${e.year || ''}` : 'Signature Event'),
+                  description: e.description,
+                  images: Array.isArray(e.images) && e.images.length > 0 ? e.images : [e.image || '/images/community-gathering.jpg'],
+                  link: e.slug ? `/events/${e.slug}` : '/events'
+                }));
+
+              const seenTitles = new Set(cmsSignatureEvents.map((s) => (s.title || '').toLowerCase().trim()));
+              const fallbackSignatureEvents = annualSignatureEvents
+                .filter((sig) => !seenTitles.has((sig.title || '').toLowerCase().trim()))
+                .map((sig) => ({
+                  ...sig,
+                  images: [sig.image || '/images/community-gathering.jpg']
+                }));
+
+              return [...cmsSignatureEvents, ...fallbackSignatureEvents].map((sigEvt, idx) => (
               <CardSpotlight
                 key={sigEvt.id || sigEvt.title}
                 className={`${['card-vibrant-rose', 'card-vibrant-purple', 'card-vibrant-amber', 'card-vibrant-teal', 'card-vibrant-indigo'][idx % 5]} overflow-hidden flex flex-col flex-1 h-full shadow-md hover:shadow-xl`}
@@ -892,16 +914,17 @@ export default function Home() {
                 glare={false}
               >
                 <div className="aspect-[16/10] overflow-hidden bg-slate-100 relative shrink-0">
-                  <img
-                    src={sigEvt.image || '/images/community-gathering.jpg'}
+                  <AutoSlideImage
+                    images={sigEvt.images}
                     alt={sigEvt.title}
-                    className="w-full h-full object-cover"
-                    onError={(e) => { e.target.src = '/images/community-gathering.jpg'; }}
+                    className="w-full h-full"
+                    imageFit="cover"
+                    fallbackSrc="/images/community-gathering.jpg"
                   />
                 </div>
                 <div className="p-5 sm:p-6 space-y-2 flex-1 flex flex-col">
                   <span className="inline-block w-fit text-[11px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-purple-100 text-[#5A1E65] border border-purple-200 shrink-0">
-                    0{idx + 1} · {sigEvt.schedule || 'Signature Event'}
+                    {String(idx + 1).padStart(2, '0')} · {sigEvt.schedule || 'Signature Event'}
                   </span>
                   <h3 className="font-display text-lg sm:text-xl font-black text-slate-950 shrink-0 line-clamp-2 min-h-[3.25rem]">{sigEvt.title}</h3>
                   <p className="text-sm italic font-serif text-[#5A1E65] font-bold shrink-0 line-clamp-2 min-h-[2.5rem]">"{sigEvt.tagline}"</p>
@@ -914,7 +937,8 @@ export default function Home() {
                   </Link>
                 </div>
               </CardSpotlight>
-            ))}
+              ));
+            })()}
           </MobileCarousel>
         </div>
       </section>
@@ -1471,11 +1495,12 @@ export default function Home() {
                     
                     {/* Event Photography Header */}
                     <div className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden bg-slate-100 shadow-xs border border-purple-200/60">
-                      <img
-                        src={evt.image || '/images/community-gathering.jpg'}
+                      <AutoSlideImage
+                        images={Array.isArray(evt.images) && evt.images.length > 0 ? evt.images : [evt.image || '/images/community-gathering.jpg']}
                         alt={evt.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        onError={(e) => { e.target.src = '/images/community-gathering.jpg'; }}
+                        className="w-full h-full"
+                        imageFit="cover"
+                        fallbackSrc="/images/community-gathering.jpg"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
                       

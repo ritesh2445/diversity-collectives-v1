@@ -787,7 +787,7 @@ export default function CmsStudio({ currentUser: propUser = null } = {}) {
       saveCmsProgram(payload);
       showToast(`Program "${formData.title}" published live.`);
     } else if (modalType === 'event') {
-      const eventImg = formData.images?.[0] || formData.image || '/images/community-gathering.jpg';
+      const eventImg = formData.image || formData.images?.[0] || '/images/community-gathering.jpg';
       const eventPayload = {
         ...formData,
         image: eventImg,
@@ -5551,8 +5551,8 @@ export default function CmsStudio({ currentUser: propUser = null } = {}) {
                   <MultiImagePicker
                     images={formData.images || (formData.image ? [formData.image] : [])}
                     primaryImage={formData.image || ''}
-                    onChange={(newImages) => setFormData({ ...formData, images: newImages, image: newImages[0] || '' })}
-                    onPrimaryChange={(url) => setFormData({ ...formData, image: url })}
+                    onChange={(newImages) => setFormData((prev) => ({ ...prev, images: newImages, image: newImages[0] || '' }))}
+                    onPrimaryChange={(url) => setFormData((prev) => ({ ...prev, image: url }))}
                     label="Event Photos & Rotating Flyers"
                     helpText="Upload or choose multiple flyers or event photos. They will automatically slide on event cards and calendar views."
                     aspectRatio="aspect-[16/9]"

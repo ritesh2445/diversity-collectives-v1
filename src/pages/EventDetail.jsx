@@ -31,7 +31,7 @@ import { isPastEvent } from '../utils/eventDates';
 export default function EventDetail() {
   const liveOrg = useLiveOrgInfo();
   const { slug } = useParams();
-  const event = liveEvents.find(e => e.slug === slug) || cmsStore.getEvents().find(e => e.slug === slug || e.id === slug);
+  const event = cmsStore.getEvents().find(e => e.slug === slug || e.id === slug) || liveEvents.find(e => e.slug === slug);
   const isExpired = event ? isPastEvent(event) : false;
   const [copied, setCopied] = useState(false);
   const [rsvpForm, setRsvpForm] = useState({
