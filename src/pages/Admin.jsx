@@ -69,6 +69,7 @@ import AdminQuickSearch from '../admin/components/AdminQuickSearch.jsx';
 import SiteStatusManager from '../admin/components/SiteStatusManager.jsx';
 import DonationSettingsStudio from '../admin/components/DonationSettingsStudio.jsx';
 import SponsorshipManager from '../admin/components/SponsorshipManager.jsx';
+import ImagePicker from '../admin/components/ImagePicker.jsx';
 import VoicemailItemRow from '../components/VoicemailItemRow.jsx';
 import { getSiteStateMeta, SYNC_EVENTS, fetchAndApplyLiveSiteState, applySiteStatePayload } from '../services/liveSync.js';
 import { cmsStore } from '../services/cmsStore.js';
@@ -2949,6 +2950,8 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
       phone: '',
       email: '',
       website: '',
+      cover_url: '',
+      image: '',
       description: '',
       owner_name: '',
       owner_email: '',
@@ -2969,6 +2972,8 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
       phone: biz.phone || '',
       email: biz.email || '',
       website: biz.website || '',
+      cover_url: biz.cover_url || biz.image || '',
+      image: biz.image || biz.cover_url || '',
       description: biz.description || '',
       owner_name: biz.owner_name || biz.ownerName || '',
       owner_email: biz.owner_email || biz.ownerEmail || '',
@@ -5134,6 +5139,14 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                         />
                       </div>
                     </div>
+
+                    <ImagePicker
+                      value={bizFormData.cover_url || bizFormData.image || ''}
+                      onChange={(url) => setBizFormData((prev) => ({ ...prev, cover_url: url, image: url }))}
+                      label="Business Cover Photo / Logo"
+                      aspectRatio="aspect-[16/9]"
+                      helpText="Upload a storefront photo, atmosphere image, or business logo."
+                    />
 
                     {/* Description */}
                     <div>
