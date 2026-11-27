@@ -263,8 +263,8 @@ export async function optimizeImageFile(file, options = {}) {
 export async function uploadAndStoreImage(file, category = 'media') {
   const isPortrait = category === 'avatar' || category === 'staff' || category === 'board';
   const options = isPortrait
-    ? { maxWidth: 480, maxHeight: 480, quality: 0.80 }
-    : { maxWidth: 960, maxHeight: 720, quality: 0.82 };
+    ? { maxWidth: 480, maxHeight: 480, quality: 0.85 }
+    : { maxWidth: 1600, maxHeight: 1200, quality: 0.90 };
   const optimized = await optimizeImageFile(file, options);
 
   // If already a remote HTTP(S) or static /images/ URL, return directly

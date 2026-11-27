@@ -11,11 +11,13 @@ import {
   Globe,
   Upload,
   Image as ImageIcon,
-  Trash2
+  Trash2,
+  Crop
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { submitBusiness } from '../services/api';
 import { optimizeImageFile } from '../admin/services/imageService';
+import ImageCropperModal from '../admin/components/ImageCropperModal.jsx';
 import TurnstileWidget from '../components/TurnstileWidget';
 import DynamicSchemaFields, {
   useLiveFormSchema,
@@ -51,6 +53,7 @@ export default function DirectorySubmit() {
   const [statusMsg, setStatusMsg] = useState('');
   const [uploadedImages, setUploadedImages] = useState([]);
   const [imageUploading, setImageUploading] = useState(false);
+  const [cropIndex, setCropIndex] = useState(null);
   const fileInputRef = useRef(null);
   const [formData, setFormData] = useState(() => ({
     ...buildInitialValues(schema.fields, {
@@ -206,7 +209,7 @@ export default function DirectorySubmit() {
                       <span>Business Photos &amp; Storefront Logo (Optional)</span>
                     </label>
                     <p className="text-[11px] text-slate-500 mt-0.5">
-                      Upload up to 4 photos (first image is used as your primary cover). If skipped, your website logo is shown automatically.
+                      Recommended banner size: <strong>1200 × 675 px (16:9 widescreen)</strong>. Upload up to 4 photos (first image is your cover banner; use the Crop button to fit it cleanly).
                     </p>
                   </div>
                   <input
@@ -221,9 +224,13 @@ export default function DirectorySubmit() {
                       setImageUploading(true);
                       try {
                         const compressed = await Promise.all(
-                          files.map((f) => optimizeImageFile(f, { maxWidth: 900, quality: 0.72 }))
+                          files.map(async (f) => {
+                            const res = await optimizeImageFile(f, { maxWidth: 1200, maxHeight: 675, quality: 0.90 });
+                            return typeof res === 'string' ? res : (res?.dataUrl || res?.url || '');
+                          })
                         );
-                        setUploadedImages((prev) => [...prev, ...compressed].slice(0, 4));
+                        const validUrls = compressed.filter(Boolean);
+                        setUploadedImages((prev) => [...prev, ...validUrls].slice(0, 4));
                       } catch (_) {
                         setStatus('error');
                         setStatusMsg('Could not process one of the selected images. Please try a JPG or PNG.');
@@ -247,24 +254,57 @@ export default function DirectorySubmit() {
                 {uploadedImages.length > 0 && (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
                     {uploadedImages.map((src, idx) => (
-                      <div key={idx} className="relative aspect-[4/3] rounded-xl overflow-hidden border border-slate-200 bg-white group">
+                      <div key={idx} className="relative aspect-[16/9] rounded-xl overflow-hidden border border-slate-200 bg-white group">
                         <img src={src} alt={`Business upload ${idx + 1}`} className="w-full h-full object-cover" />
                         {idx === 0 && (
                           <span className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded-full bg-[#5A1E65] text-white text-[9px] font-black uppercase">
                             Cover
                           </span>
                         )}
-                        <button
-                          type="button"
-                          onClick={() => setUploadedImages((prev) => prev.filter((_, i) => i !== idx))}
-                          className="absolute top-1.5 right-1.5 p-1 rounded-lg bg-rose-600 text-white opacity-90 hover:opacity-100 cursor-pointer"
-                          title="Remove photo"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
+                        <div className="absolute top-1.5 right-1.5 flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => setCropIndex(idx)}
+                            className="p-1 rounded-lg bg-slate-900/85 text-white hover:bg-[#5A1E65] cursor-pointer"
+                            title="Crop to fit 16:9 card banner"
+                          >
+                            <Crop className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setUploadedImages((prev) => prev.filter((_, i) => i !== idx))}
+                            className="p-1 rounded-lg bg-rose-600 text-white opacity-90 hover:opacity-100 cursor-pointer"
+                            title="Remove photo"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
+                )}
+
+                {cropIndex !== null && uploadedImages[cropIndex] && (
+                  <ImageCropperModal
+                    imageSrc={uploadedImages[cropIndex]}
+                    initialAspect="16:9"
+                    onApply={async (croppedFile, previewUrl) => {
+                      const targetIdx = cropIndex;
+                      setCropIndex(null);
+                      try {
+                        const res = await optimizeImageFile(croppedFile || previewUrl, { maxWidth: 1200, maxHeight: 675, quality: 0.90 });
+                        const nextUrl = typeof res === 'string' ? res : (res?.dataUrl || res?.url || previewUrl);
+                        if (nextUrl) {
+                          setUploadedImages((prev) => prev.map((item, i) => (i === targetIdx ? nextUrl : item)));
+                        }
+                      } catch {
+                        if (previewUrl) {
+                          setUploadedImages((prev) => prev.map((item, i) => (i === targetIdx ? previewUrl : item)));
+                        }
+                      }
+                    }}
+                    onCancel={() => setCropIndex(null)}
+                  />
                 )}
               </div>
 

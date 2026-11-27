@@ -5165,7 +5165,7 @@ function AdminPortal({ auth0 = FALLBACK_AUTH0 }) {
                       onPrimaryChange={(url) => setBizFormData((prev) => ({ ...prev, cover_url: url, image: url }))}
                       label="Business Cover & Showcase Photos"
                       aspectRatio="aspect-[16/9]"
-                      helpText="Add, remove, or reorder photos shown on the Directory card and Photo Showcase."
+                      helpText="Recommended banner size: 1200 × 675 px (16:9 widescreen). Click the Crop icon on any photo to fit it cleanly inside the Directory card banner."
                     />
 
                     {/* Description */}
