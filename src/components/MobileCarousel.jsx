@@ -20,11 +20,34 @@ export default function MobileCarousel({
 }) {
   const scrollRef = useRef(null);
   const [activeIdx, setActiveIdx] = useState(0);
+  const [pageCount, setPageCount] = useState(1);
   const [userInteracted, setUserInteracted] = useState(false);
   const userInteractedRef = useRef(false);
 
   const validChildren = Children.toArray(children).filter(Boolean);
   const childCount = validChildren.length;
+
+  const measurePages = useCallback(() => {
+    const container = scrollRef.current;
+    if (!container || !container.clientWidth) {
+      setPageCount(1);
+      return;
+    }
+    const overflow = container.scrollWidth - container.clientWidth;
+    if (overflow <= 4) {
+      setPageCount(1);
+      setActiveIdx(0);
+      return;
+    }
+    const pages = Math.max(2, Math.ceil((container.scrollWidth - 4) / container.clientWidth));
+    setPageCount(pages);
+    const maxScroll = Math.max(1, overflow);
+    if (container.scrollLeft >= maxScroll - 4) {
+      setActiveIdx(pages - 1);
+    } else {
+      setActiveIdx(Math.max(0, Math.min(Math.round(container.scrollLeft / container.clientWidth), pages - 1)));
+    }
+  }, []);
 
   // Stops auto-swiping when user interacts on mobile screens (< 1024px)
   const stopAutoScrollOnMobile = useCallback(() => {
@@ -87,21 +110,29 @@ export default function MobileCarousel({
     };
   }, [stopAutoScrollOnMobile]);
 
-  // Track active dot
+  // Track page count and active dot accurately across resizes and scrolls
   useEffect(() => {
     const container = scrollRef.current;
     if (!container) return;
-    const onScroll = () => {
-      const cards = container.querySelectorAll(':scope > *');
-      if (!cards.length) return;
-      const cardW = cards[0].offsetWidth;
-      if (!cardW) return;
-      const idx = Math.round(container.scrollLeft / cardW);
-      setActiveIdx(Math.max(0, Math.min(idx, childCount - 1)));
+
+    measurePages();
+    const rafId = typeof requestAnimationFrame !== 'undefined' ? requestAnimationFrame(measurePages) : null;
+
+    let ro;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(measurePages);
+      ro.observe(container);
+    }
+    window.addEventListener('resize', measurePages);
+    container.addEventListener('scroll', measurePages, { passive: true });
+
+    return () => {
+      if (rafId !== null && typeof cancelAnimationFrame !== 'undefined') cancelAnimationFrame(rafId);
+      if (ro) ro.disconnect();
+      window.removeEventListener('resize', measurePages);
+      container.removeEventListener('scroll', measurePages);
     };
-    container.addEventListener('scroll', onScroll, { passive: true });
-    return () => container.removeEventListener('scroll', onScroll);
-  }, [childCount]);
+  }, [childCount, measurePages]);
 
   // Mouse drag-to-scroll support for tablet device preview & emulators
   useEffect(() => {
@@ -169,9 +200,9 @@ export default function MobileCarousel({
           </div>
         ))}
       </div>
-      {showDots && childCount > 1 && (
-        <div className="carousel-dots lg:hidden">
-          {Array.from({ length: childCount }).map((_, i) => (
+      {showDots && pageCount > 1 && (
+        <div className="carousel-dots flex lg:hidden">
+          {Array.from({ length: pageCount }).map((_, i) => (
             <button
               key={i}
               type="button"
@@ -179,11 +210,15 @@ export default function MobileCarousel({
               onClick={() => {
                 stopAutoScrollOnMobile();
                 const container = scrollRef.current;
-                const cards = container?.querySelectorAll(':scope > *');
-                if (!cards?.[i]) return;
-                cards[i].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                if (!container) return;
+                const maxScroll = Math.max(0, container.scrollWidth - container.clientWidth);
+                const targetLeft = i >= pageCount - 1
+                  ? maxScroll
+                  : Math.min(maxScroll, i * container.clientWidth);
+                setActiveIdx(i);
+                container.scrollTo({ left: targetLeft, behavior: 'smooth' });
               }}
-              aria-label={`Go to slide ${i + 1}`}
+              aria-label={`Go to page ${i + 1}`}
             />
           ))}
         </div>

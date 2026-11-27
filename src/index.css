@@ -2236,7 +2236,6 @@ main p.font-serif.italic.text-xs:not(:is(footer, .admin-workspace) *) {
 
 /* Carousel dots indicator */
 .carousel-dots {
-  display: flex;
   justify-content: center;
   gap: 6px;
   margin-top: 12px;
