@@ -1043,7 +1043,7 @@ export default {
                 donorDisplayName,
                 emailHash,
                 donorEmail || null,
-                isAnonymous ? 1 : 0,
+                isEffectiveAnon ? 1 : 0,
                 tierInfo.impact,
                 frequency
               ]
@@ -1095,7 +1095,7 @@ export default {
         let emailDeliveryError = null;
 
         if (donorEmail && donorEmail.includes('@')) {
-          const formattedAmount = `${amountInDollars.toFixed(amountInDollars % 1 === 0 ? 0 : 2)}`;
+          const formattedAmount = `$${amountInDollars.toFixed(amountInDollars % 1 === 0 ? 0 : 2)}`;
 
           // Load custom template if configured
           let customTemplate = null;

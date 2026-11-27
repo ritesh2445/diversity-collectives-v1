@@ -42,7 +42,7 @@ async function dispatchZeffySyncEmail(env, sendEmailFn, emailPayload) {
   if (!res.ok) {
     const errText = await res.text();
     if (res.status === 403 && (errText.includes('domain') || errText.includes('verified') || from.includes('@diversitycollective'))) {
-      await fetch('https://api.resend.com/emails', {
+      res = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${env.RESEND_API_KEY}`,
@@ -55,9 +55,17 @@ async function dispatchZeffySyncEmail(env, sendEmailFn, emailPayload) {
           html: emailPayload.html,
           text: emailPayload.text
         })
-      }).catch(() => { });
+      });
+      if (!res.ok) {
+        const fallbackErr = await res.text().catch(() => '');
+        throw new Error(`Resend API error ${res.status}: ${fallbackErr}`);
+      }
+    } else {
+      throw new Error(`Resend API error ${res.status}: ${errText}`);
     }
   }
+
+  return await res.json().catch(() => ({}));
 }
 
 /**
@@ -185,7 +193,7 @@ export async function executeZeffySync(env, db, ctx, sendEmailFn = null) {
  */
 async function processSingleZeffyPayment(payment, env, db, ctx, sendEmailFn = null) {
   const paymentId = payment.id;
-  const amountCents = Number(payment.amount || 0);
+  const amountCents = Number(payment.donation_amount ?? payment.amount ?? payment.total_amount ?? payment.totalAmount ?? 0);
   const donorEmail = (
     payment.buyer?.email ||
     payment.contact?.email ||
@@ -245,7 +253,7 @@ async function processSingleZeffyPayment(payment, env, db, ctx, sendEmailFn = nu
     const candidateIntents = await db.execute({
       sql: `SELECT id, intent_token, donor_name, donor_email, amount_cents, frequency, is_anonymous, status, created_at
             FROM donation_intents
-            WHERE donor_email = ? AND status = 'pending'
+            WHERE lower(donor_email) = lower(?) AND status = 'pending'
             ORDER BY created_at DESC
             LIMIT 5`,
       args: [donorEmail]
@@ -271,7 +279,7 @@ async function processSingleZeffyPayment(payment, env, db, ctx, sendEmailFn = nu
   const tokenHashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(cardToken));
   const tokenHash = Array.from(new Uint8Array(tokenHashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
 
-  const isAnon = matchedIntent ? Boolean(matchedIntent.is_anonymous) : Boolean(payment.is_anonymous);
+  const isAnon = matchedIntent ? Boolean(matchedIntent.is_anonymous) : Boolean(payment.is_anonymous || payment.isAnonymous || payment.anonymous);
   const displayName = isAnon ? 'Affirming Friend of DCVC' : (matchedIntent?.donor_name || donorName);
   const frequency = matchedIntent?.frequency ||
     payment.frequency ||
@@ -281,13 +289,19 @@ async function processSingleZeffyPayment(payment, env, db, ctx, sendEmailFn = nu
     payment.subscription?.interval ||
     ((payment.is_recurring || payment.isMonthly || payment.subscription_id) ? 'monthly' : 'one-time');
 
+  const cardId = crypto.randomUUID();
+  const emailHash = donorEmail
+    ? Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(donorEmail))))
+      .map(b => b.toString(16).padStart(2, '0')).join('')
+    : null;
+
   // Issue card ONLY after Zeffy confirms payment succeeded (reached here after refund/dispute check)
   await db.execute({
     sql: `INSERT INTO donation_appreciation_cards 
-          (id, card_token, token_hash, payment_reference, tier, tier_name, amount_cents, donor_display_name, recipient_email, is_anonymous, impact_message, frequency, status)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')`,
+          (id, card_token, token_hash, payment_reference, tier, tier_name, amount_cents, donor_display_name, recipient_email, is_anonymous, impact_message, frequency, donor_email_hash, status)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')`,
     args: [
-      crypto.randomUUID(),
+      cardId,
       cardToken,
       tokenHash,
       paymentId,
@@ -298,7 +312,8 @@ async function processSingleZeffyPayment(payment, env, db, ctx, sendEmailFn = nu
       donorEmail || null,
       isAnon ? 1 : 0,
       tierInfo.impact,
-      frequency
+      frequency,
+      emailHash
     ]
   });
 
@@ -346,21 +361,46 @@ async function processSingleZeffyPayment(payment, env, db, ctx, sendEmailFn = nu
       customTemplate
     });
 
-    await dispatchZeffySyncEmail(env, sendEmailFn, {
-      to: donorEmail,
-      subject: tpl.subject,
-      html: tpl.html,
-      text: tpl.text
-    }).catch((mailErr) => {
+    let emailDeliveryStatus = env?.RESEND_API_KEY ? 'sent' : 'api_key_missing';
+    let emailDeliveryId = null;
+    let emailDeliveryError = null;
+    try {
+      const mailRes = await dispatchZeffySyncEmail(env, sendEmailFn, {
+        to: donorEmail,
+        subject: tpl.subject,
+        html: tpl.html,
+        text: tpl.text
+      });
+      if (mailRes?.id) {
+        emailDeliveryStatus = 'delivered';
+        emailDeliveryId = mailRes.id;
+      }
+    } catch (mailErr) {
+      emailDeliveryStatus = 'failed';
+      emailDeliveryError = mailErr.message;
       console.error(`[Zeffy Sync] Appreciation email failed for ${paymentId}:`, mailErr);
-    });
+    }
+
+    await db.execute({
+      sql: `UPDATE donation_appreciation_cards SET admin_notes = ? WHERE id = ?`,
+      args: [
+        JSON.stringify({
+          emailDeliveryStatus,
+          emailDeliveryId,
+          emailDeliveryError,
+          dispatchedAt: new Date().toISOString(),
+          source: 'zeffy_sync'
+        }),
+        cardId
+      ]
+    }).catch(() => {});
   }
 
   if (matchedIntent) {
-    // Complete intent
+    // Complete intent with matched payment reference and card token
     await db.execute({
-      sql: `UPDATE donation_intents SET status = 'completed', completed_at = datetime('now') WHERE id = ?`,
-      args: [matchedIntent.id]
+      sql: `UPDATE donation_intents SET status = 'matched', matched_payment_reference = ?, card_token = ?, completed_at = datetime('now') WHERE id = ?`,
+      args: [paymentId, cardToken, matchedIntent.id]
     });
   } else {
     // Unmatched donor or direct checkout: create reconciliation record for audit trail
