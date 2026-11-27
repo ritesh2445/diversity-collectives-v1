@@ -940,11 +940,11 @@ export default function AppreciationCard() {
       {/* Full-Screen Top Navigation Strip */}
       <div className="max-w-5xl mx-auto mb-5 flex flex-wrap items-center justify-between gap-3 print:hidden">
         <Link
-          to="/"
+          to="/donate"
           className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/95 hover:bg-white border border-purple-200 text-xs font-bold text-slate-800 hover:text-[#5A1E65] shadow-xs transition-all"
         >
           <ArrowRight className="w-3.5 h-3.5 rotate-180 text-[#5A1E65]" />
-          <span>Back to Diversity Collective</span>
+          <span>Back to Donate Page</span>
         </Link>
         <Link
           to="/donate"
