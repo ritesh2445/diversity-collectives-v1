@@ -78,6 +78,35 @@ export default function Donate() {
   const [isSubmittingIntent, setIsSubmittingIntent] = useState(false);
   const [checkoutReady, setCheckoutReady] = useState(false);
   const [registeredIntent, setRegisteredIntent] = useState(null);
+  const [checkingVerify, setCheckingVerify] = useState(false);
+  const [verifyStatusMsg, setVerifyStatusMsg] = useState(null);
+  const [verifiedCardUrl, setVerifiedCardUrl] = useState('');
+
+  const handleCheckKeepsakeStatus = async () => {
+    if (!registeredIntent?.intentToken) return;
+    setCheckingVerify(true);
+    setVerifyStatusMsg(null);
+    try {
+      const apiBase = (typeof import.meta !== 'undefined' && (import.meta.env?.VITE_API_URL || import.meta.env?.VITE_API_BASE_URL)) || '/api';
+      const cleanApiBase = apiBase.replace(/\/+$/, '');
+      const res = await fetch(`${cleanApiBase}/donations/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ intentToken: registeredIntent.intentToken })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.status === 'verified' && data.cardUrl) {
+        setVerifiedCardUrl(data.cardUrl);
+        setVerifyStatusMsg('Your gift is verified and your Keepsake Card is ready! We also sent it to your email.');
+      } else {
+        setVerifyStatusMsg(data.message || 'Verification in progress. Once Zeffy finishes confirming your gift, your personalized Keepsake Card is emailed automatically.');
+      }
+    } catch {
+      setVerifyStatusMsg('Unable to check status right now. Your Keepsake Card will be delivered to your email automatically once Zeffy confirms payment.');
+    } finally {
+      setCheckingVerify(false);
+    }
+  };
 
   const handleProceedToZeffy = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
@@ -161,10 +190,27 @@ export default function Donate() {
     [gemRawUrl]
   );
 
-  const activeEmbedUrl = activeTab === 'gem' ? gemEmbedUrl : generalEmbedUrl;
-  const activeDirectUrl = activeTab === 'gem' 
-    ? toZeffyDirectUrl(gemRawUrl, 'https://www.zeffy.com/en-US/donation-form/gem') 
+  const activeEmbedUrlBase = activeTab === 'gem' ? gemEmbedUrl : generalEmbedUrl;
+  const activeDirectUrlBase = activeTab === 'gem'
+    ? toZeffyDirectUrl(gemRawUrl, 'https://www.zeffy.com/en-US/donation-form/gem')
     : toZeffyDirectUrl(generalRawUrl, 'https://www.zeffy.com/en-US/donation-form/donate-to-change-lives-30236');
+
+  const appendZeffyPrefill = (baseUrl) => {
+    if (!registeredIntent) return baseUrl;
+    try {
+      const u = new URL(baseUrl);
+      if (registeredIntent.donorEmail) u.searchParams.set('email', registeredIntent.donorEmail);
+      const nameParts = (registeredIntent.donorName || '').trim().split(/\s+/).filter(Boolean);
+      if (nameParts[0] && !isAnonymous) u.searchParams.set('firstName', nameParts[0]);
+      if (nameParts.length > 1 && !isAnonymous) u.searchParams.set('lastName', nameParts.slice(1).join(' '));
+      return u.toString();
+    } catch {
+      return baseUrl;
+    }
+  };
+
+  const activeEmbedUrl = appendZeffyPrefill(activeEmbedUrlBase);
+  const activeDirectUrl = appendZeffyPrefill(activeDirectUrlBase);
 
   return (
     <div className="w-full max-w-full overflow-x-clip pt-6 md:pt-12 pb-16 bg-transparent text-slate-800">
@@ -424,6 +470,41 @@ export default function Donate() {
                     allowTransparency="true"
                   />
                 </div>
+
+                {/* Post-Checkout Keepsake Verification Bar */}
+                {registeredIntent && (
+                  <div className="p-4 rounded-2xl bg-purple-50/90 border border-purple-200 space-y-2.5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="text-xs text-slate-700">
+                        <strong className="text-[#5A1E65] block">Already finished Zeffy checkout?</strong>
+                        <span>Your keepsake card will arrive in your email automatically, or check its live status here.</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleCheckKeepsakeStatus}
+                        disabled={checkingVerify}
+                        className="px-4 py-2 rounded-xl bg-[#5A1E65] hover:bg-purple-900 text-white text-xs font-bold inline-flex items-center justify-center gap-1.5 shrink-0 cursor-pointer disabled:opacity-50"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 ${checkingVerify ? 'animate-spin' : ''}`} />
+                        <span>{checkingVerify ? 'Checking...' : 'Check My Keepsake Card'}</span>
+                      </button>
+                    </div>
+                    {verifyStatusMsg && (
+                      <div className="p-2.5 rounded-xl bg-white border border-purple-200 text-xs text-slate-800 flex flex-wrap items-center justify-between gap-2">
+                        <span>{verifyStatusMsg}</span>
+                        {verifiedCardUrl && (
+                          <Link
+                            to={verifiedCardUrl}
+                            className="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs inline-flex items-center gap-1"
+                          >
+                            <span>Open Keepsake Card</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </Link>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* External Direct Fallback */}
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 pt-2 text-xs text-slate-500 border-t border-slate-100">

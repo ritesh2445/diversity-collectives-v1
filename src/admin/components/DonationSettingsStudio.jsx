@@ -35,6 +35,8 @@ import {
   deleteDonation,
   deleteAllDonations,
   recordManualDonation,
+  issueCardFromDonationIntent,
+  deleteDonationIntent,
   exportDataCsv
 } from '../services/adminClient';
 
@@ -116,6 +118,10 @@ export default function DonationSettingsStudio({ currentUser }) {
   });
 
   const [donations, setDonations] = useState([]);
+  const [intents, setIntents] = useState([]);
+  const [intentAmounts, setIntentAmounts] = useState({});
+  const [issuingIntentId, setIssuingIntentId] = useState(null);
+  const [deletingIntentId, setDeletingIntentId] = useState(null);
   const [resendingId, setResendingId] = useState(null);
   const [resendStatus, setResendStatus] = useState({});
   const [deletingId, setDeletingId] = useState(null);
@@ -145,6 +151,9 @@ export default function DonationSettingsStudio({ currentUser }) {
       }
       if (donRes?.donations) {
         setDonations(donRes.donations);
+      }
+      if (Array.isArray(donRes?.intents)) {
+        setIntents(donRes.intents);
       }
     } catch (err) {
       console.warn('Error loading donation studio data:', err);
@@ -369,6 +378,54 @@ export default function DonationSettingsStudio({ currentUser }) {
       setDonationActionMsg({ success: false, message: err.message });
     } finally {
       setDeletingId(null);
+      setTimeout(() => setDonationActionMsg(null), 4000);
+    }
+  };
+
+  const handleIssueIntentCard = async (intent) => {
+    const rawAmt = intentAmounts[intent.id] ?? (intent.amount_cents ? String(intent.amount_cents / 100) : '50');
+    const amount = Number(rawAmt);
+    if (isNaN(amount) || amount < 1) {
+      alert('Please enter a valid confirmed gift amount ($1.00 or more) before issuing the keepsake card.');
+      return;
+    }
+    setIssuingIntentId(intent.id);
+    setDonationActionMsg(null);
+    try {
+      const res = await issueCardFromDonationIntent(intent.id, { amount, sendEmail: true });
+      if (res.success) {
+        setDonationActionMsg({
+          success: true,
+          message: res.message || `Keepsake card issued and emailed to ${intent.donor_email}.`
+        });
+        loadData();
+      } else {
+        setDonationActionMsg({ success: false, message: res.error || 'Failed to issue keepsake card.' });
+      }
+    } catch (err) {
+      setDonationActionMsg({ success: false, message: err.message });
+    } finally {
+      setIssuingIntentId(null);
+      setTimeout(() => setDonationActionMsg(null), 5000);
+    }
+  };
+
+  const handleDeleteIntent = async (intent) => {
+    if (!window.confirm(`Remove pre-checkout donor record for "${intent.donor_name || intent.donor_email}"?`)) return;
+    setDeletingIntentId(intent.id);
+    setDonationActionMsg(null);
+    try {
+      const res = await deleteDonationIntent(intent.id);
+      if (res.success) {
+        setIntents((prev) => prev.filter((item) => item.id !== intent.id));
+        setDonationActionMsg({ success: true, message: 'Pending donor record removed.' });
+      } else {
+        setDonationActionMsg({ success: false, message: res.error || 'Failed to delete donor record.' });
+      }
+    } catch (err) {
+      setDonationActionMsg({ success: false, message: err.message });
+    } finally {
+      setDeletingIntentId(null);
       setTimeout(() => setDonationActionMsg(null), 4000);
     }
   };
@@ -1211,6 +1268,130 @@ export default function DonationSettingsStudio({ currentUser }) {
                 <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
               )}
               <span>{donationActionMsg.message}</span>
+            </div>
+          )}
+
+          {/* Pre-Checkout Donation Form Intents (Step 1 Form Submissions on /donate) */}
+          {intents.length > 0 && (
+            <div className="p-5 rounded-2xl bg-purple-50/60 border border-purple-200/80 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <h4 className="text-sm font-black text-purple-950 flex items-center gap-1.5">
+                    <Clock className="w-4 h-4 text-[#5A1E65]" />
+                    <span>Pre-Checkout Donor Form Submissions ({intents.filter(i => i.status === 'pending').length} Pending / {intents.length} Total)</span>
+                  </h4>
+                  <p className="text-[11px] text-slate-600">
+                    Donors who filled out Step 1 on /donate before Zeffy checkout. If a gift was completed on Zeffy but not auto-matched (e.g. different email), enter the amount and click &ldquo;Confirm &amp; Send Card&rdquo;.
+                  </p>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-purple-200/80 text-purple-900/70 uppercase tracking-wider font-bold text-[10px]">
+                      <th className="pb-2 pl-2">Donor</th>
+                      <th className="pb-2">Frequency</th>
+                      <th className="pb-2">Status</th>
+                      <th className="pb-2">Submitted</th>
+                      <th className="pb-2 pr-2 text-right">Confirm &amp; Email Keepsake</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-purple-100 text-slate-700">
+                    {intents
+                      .filter((i) => {
+                        if (!donorSearch) return true;
+                        const q = donorSearch.toLowerCase();
+                        return (
+                          (i.donor_name || '').toLowerCase().includes(q) ||
+                          (i.donor_email || '').toLowerCase().includes(q) ||
+                          (i.status || '').toLowerCase().includes(q)
+                        );
+                      })
+                      .map((intent) => {
+                        const isPending = intent.status === 'pending';
+                        const isMonthly = (intent.frequency || '').toLowerCase().includes('month');
+                        const amtVal = intentAmounts[intent.id] ?? (intent.amount_cents ? String(intent.amount_cents / 100) : '50');
+                        return (
+                          <tr key={intent.id} className="hover:bg-white/60 transition-colors">
+                            <td className="py-2.5 pl-2">
+                              <span className="font-bold text-slate-900 block">
+                                {intent.is_anonymous ? `${intent.donor_name || 'Anonymous'} (Anon)` : (intent.donor_name || 'Affirming Supporter')}
+                              </span>
+                              <span className="text-[11px] text-slate-500">{intent.donor_email}</span>
+                            </td>
+                            <td className="py-2.5">
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                isMonthly ? 'bg-purple-100 text-purple-900' : 'bg-white text-slate-700 border border-slate-200'
+                              }`}>
+                                {isMonthly ? 'Monthly' : 'One-Time'}
+                              </span>
+                            </td>
+                            <td className="py-2.5">
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                                isPending
+                                  ? 'bg-amber-100 text-amber-900'
+                                  : 'bg-emerald-100 text-emerald-800'
+                              }`}>
+                                {intent.status || 'pending'}
+                              </span>
+                            </td>
+                            <td className="py-2.5 text-[11px] text-slate-500 whitespace-nowrap">
+                              {intent.created_at ? new Date(intent.created_at).toLocaleString() : 'Recent'}
+                            </td>
+                            <td className="py-2.5 pr-2 text-right">
+                              <div className="inline-flex items-center justify-end gap-1.5">
+                                {isPending ? (
+                                  <>
+                                    <div className="relative w-20">
+                                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-400">$</span>
+                                      <input
+                                        type="number"
+                                        min="1"
+                                        step="1"
+                                        value={amtVal}
+                                        onChange={(e) => setIntentAmounts((prev) => ({ ...prev, [intent.id]: e.target.value }))}
+                                        className="w-full pl-5 pr-1.5 py-1 rounded-lg border border-purple-200 bg-white text-[11px] font-bold text-slate-900"
+                                        aria-label="Confirmed gift amount"
+                                      />
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleIssueIntentCard(intent)}
+                                      disabled={issuingIntentId === intent.id}
+                                      className="px-2.5 py-1 rounded-lg bg-[#5A1E65] hover:bg-purple-900 text-white text-[11px] font-bold cursor-pointer disabled:opacity-50 whitespace-nowrap"
+                                    >
+                                      {issuingIntentId === intent.id ? 'Sending...' : 'Confirm & Send Card'}
+                                    </button>
+                                  </>
+                                ) : intent.card_token ? (
+                                  <a
+                                    href={`/appreciation-card/${intent.card_token}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-bold inline-flex items-center gap-1"
+                                  >
+                                    <span>View Card</span>
+                                    <ExternalLink className="w-3 h-3" />
+                                  </a>
+                                ) : null}
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteIntent(intent)}
+                                  disabled={deletingIntentId === intent.id}
+                                  className="p-1.5 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 cursor-pointer disabled:opacity-50"
+                                  title="Delete pending donor record"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
 

@@ -565,6 +565,47 @@ function getDb(env) {
   });
 }
 
+let donationSchemaEnsured = false;
+async function ensureDonationSchema(db) {
+  if (!db || donationSchemaEnsured) return;
+  donationSchemaEnsured = true;
+  const statements = [
+    `CREATE TABLE IF NOT EXISTS donation_intents (
+      id TEXT PRIMARY KEY,
+      intent_token TEXT NOT NULL UNIQUE,
+      token_hash TEXT,
+      donor_name TEXT,
+      donor_email TEXT NOT NULL,
+      donor_email_hash TEXT,
+      expected_amount_cents INTEGER DEFAULT 0,
+      amount_cents INTEGER DEFAULT 0,
+      tier TEXT DEFAULT 'community_ally',
+      frequency TEXT DEFAULT 'one-time',
+      campaign TEXT DEFAULT 'diversity-collective-general-fund',
+      is_anonymous INTEGER DEFAULT 0,
+      status TEXT DEFAULT 'pending',
+      matched_payment_reference TEXT UNIQUE,
+      card_token TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      expires_at TEXT,
+      completed_at TEXT
+    )`,
+    `ALTER TABLE donation_intents ADD COLUMN token_hash TEXT`,
+    `ALTER TABLE donation_intents ADD COLUMN amount_cents INTEGER DEFAULT 0`,
+    `ALTER TABLE donation_intents ADD COLUMN expected_amount_cents INTEGER DEFAULT 0`,
+    `ALTER TABLE donation_intents ADD COLUMN tier TEXT DEFAULT 'community_ally'`,
+    `ALTER TABLE donation_intents ADD COLUMN is_anonymous INTEGER DEFAULT 0`,
+    `ALTER TABLE donation_intents ADD COLUMN matched_payment_reference TEXT`,
+    `ALTER TABLE donation_intents ADD COLUMN card_token TEXT`,
+    `ALTER TABLE donation_intents ADD COLUMN completed_at TEXT`,
+    `ALTER TABLE donation_appreciation_cards ADD COLUMN token_hash TEXT`,
+    `ALTER TABLE donation_appreciation_cards ADD COLUMN donor_email_hash TEXT`
+  ];
+  for (const sql of statements) {
+    try { await db.execute({ sql, args: [] }); } catch {}
+  }
+}
+
 // Yelp Directory Live Hype & Rating In-Memory Edge Cache
 const directoryHypeIpSet = new Set();
 const directoryMetricsMap = new Map();
@@ -952,7 +993,7 @@ export default {
         }
 
         // 8. Robust Donor Details Extraction across varied Zeffy schemas
-        const donorObj = data.contact || data.donor || data.buyer || {};
+        const donorObj = data.contact || data.donor || data.buyer || data.customer || data.payer || data.supporter || {};
         const isAnonymous = Boolean(
           data.is_anonymous || data.isAnonymous || data.anonymous ||
           donorObj.isAnonymous || donorObj.is_anonymous || data.hide_name
@@ -962,7 +1003,13 @@ export default {
         const lastName = (donorObj.last_name || donorObj.lastName || data.last_name || data.lastName || '').trim();
         const rawFullName = (donorObj.name || donorObj.fullName || data.donor_name || data.name || `${firstName} ${lastName}`).trim();
 
-        const donorEmail = (donorObj.email || data.donor_email || data.email || '').trim().toLowerCase();
+        const donorEmail = (
+          donorObj.email ||
+          data.donor_email ||
+          data.receipt_email ||
+          data.email ||
+          ''
+        ).trim().toLowerCase();
         const frequency = data.frequency ||
           data.recurring_interval ||
           ((data.is_recurring || data.isRecurring || data.isMonthly || data.subscription_id) ? 'monthly' : 'one-time');
@@ -971,6 +1018,7 @@ export default {
         let matchedIntent = null;
         if (donorEmail && db) {
           try {
+            await ensureDonationSchema(db);
             const candidateIntents = await db.execute({
               sql: `SELECT id, intent_token, donor_name, donor_email, amount_cents, frequency, is_anonymous, campaign, status, created_at
                     FROM donation_intents
@@ -983,24 +1031,12 @@ export default {
             if (candidates.length === 1) {
               matchedIntent = candidates[0];
             } else if (candidates.length > 1) {
-              const matchingAmount = candidates.filter(i => Number(i.amount_cents) === amountCents);
+              const matchingAmount = candidates.filter(i => Number(i.amount_cents) > 0 && Number(i.amount_cents) === amountCents);
               if (matchingAmount.length === 1) {
                 matchedIntent = matchingAmount[0];
               } else {
-                console.warn(`[Zeffy Webhook] Ambiguous donor intent match for email: ${donorEmail} (${candidates.length} candidates)`);
-                await db.execute({
-                  sql: `INSERT OR IGNORE INTO donation_reconciliations 
-                        (id, payment_reference, donor_name, donor_email, amount_cents, payment_status, reconciliation_type, status, admin_notes)
-                        VALUES (?, ?, ?, ?, ?, 'succeeded', 'ambiguous_match', 'pending', ?)`,
-                  args: [
-                    crypto.randomUUID(),
-                    paymentReference,
-                    rawFullName || 'Unknown',
-                    donorEmail,
-                    amountCents,
-                    `Ambiguous match: found ${candidates.length} pending intents for this email.`
-                  ]
-                }).catch(() => {});
+                // Pre-checkout Step 1 does not require an amount (amount_cents = 0); pick most recent pending intent
+                matchedIntent = candidates[0];
               }
             }
           } catch (intentErr) {
@@ -1102,11 +1138,11 @@ export default {
           if (db) {
             try {
               const tRes = await db.execute({
-                sql: `SELECT state FROM site_state WHERE id = 'donation_email_template' LIMIT 1`,
+                sql: `SELECT payload_json FROM site_state WHERE state_key = 'donation_email_template' LIMIT 1`,
                 args: []
               });
-              if (tRes.rows?.length > 0 && tRes.rows[0].state) {
-                customTemplate = JSON.parse(tRes.rows[0].state);
+              if (tRes.rows?.length > 0 && tRes.rows[0].payload_json) {
+                customTemplate = JSON.parse(tRes.rows[0].payload_json);
               }
             } catch {}
           }
@@ -1409,23 +1445,55 @@ export default {
         const db = getDb(env);
 
         if (db) {
-          await db.execute({
-            sql: `INSERT INTO donation_intents 
-                  (id, intent_token, token_hash, donor_name, donor_email, donor_email_hash, amount_cents, frequency, campaign, is_anonymous, status, expires_at)
-                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now', '+48 hours'))`,
-            args: [
-              intentId,
-              intentToken,
-              tokenHash,
-              donorName || 'Affirming Supporter',
-              donorEmail,
-              emailHash,
-              Math.round(amount * 100),
-              frequency,
-              campaign,
-              isAnonymous ? 1 : 0
-            ]
-          }).catch(err => console.warn('Intent DB insert skipped:', err.message));
+          await ensureDonationSchema(db);
+          const amountCents = Math.max(0, Math.round(amount * 100));
+          const expectedCents = amountCents > 0 ? amountCents : 2500;
+          const resolvedTier = resolveAppreciationTier(amount > 0 ? amount : 25, env).tier;
+          const finalDonorName = isAnonymous ? 'Affirming Friend of DCVC' : (donorName || 'Affirming Supporter');
+          try {
+            await db.execute({
+              sql: `INSERT INTO donation_intents 
+                    (id, intent_token, token_hash, donor_name, donor_email, donor_email_hash, expected_amount_cents, amount_cents, tier, frequency, campaign, is_anonymous, status, expires_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now', '+48 hours'))`,
+              args: [
+                intentId,
+                intentToken,
+                tokenHash,
+                finalDonorName,
+                donorEmail,
+                emailHash,
+                expectedCents,
+                amountCents,
+                resolvedTier,
+                frequency,
+                campaign,
+                isAnonymous ? 1 : 0
+              ]
+            });
+          } catch (insertErr) {
+            console.warn('Primary intent DB insert note, retrying minimal schema:', insertErr.message);
+            try {
+              await db.execute({
+                sql: `INSERT INTO donation_intents 
+                      (id, intent_token, donor_name, donor_email, donor_email_hash, expected_amount_cents, tier, frequency, campaign, status, expires_at)
+                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now', '+48 hours'))`,
+                args: [
+                  intentId,
+                  intentToken,
+                  finalDonorName,
+                  donorEmail,
+                  emailHash,
+                  expectedCents,
+                  resolvedTier,
+                  frequency,
+                  campaign
+                ]
+              });
+            } catch (fallbackErr) {
+              console.error('Intent DB insert failed completely:', fallbackErr.message);
+              return errorResponse('Failed to save donation session to database', 500, fallbackErr.message, cors);
+            }
+          }
         }
 
         return jsonResponse({
@@ -1454,15 +1522,17 @@ export default {
         if (intentToken) {
           // Check if intent was matched and Zeffy-verified card was issued for this donor
           const intentRes = await db.execute({
-            sql: `SELECT di.id, di.status, di.donor_email, di.amount_cents, dac.card_token, dac.status as card_status
+            sql: `SELECT di.id, di.status, di.donor_email, di.amount_cents, COALESCE(NULLIF(di.card_token, ''), dac.card_token) as card_token, dac.status as card_status
                   FROM donation_intents di
                   LEFT JOIN donation_appreciation_cards dac ON (
                     dac.status = 'active' AND (
-                      (dac.recipient_email IS NOT NULL AND lower(dac.recipient_email) = lower(di.donor_email))
-                      OR (lower(dac.donor_display_name) = lower(di.donor_name) AND dac.amount_cents = di.amount_cents)
+                      (di.card_token IS NOT NULL AND dac.card_token = di.card_token)
+                      OR (dac.recipient_email IS NOT NULL AND lower(dac.recipient_email) = lower(di.donor_email))
                     )
                   )
-                  WHERE di.intent_token = ? AND di.status = 'completed' LIMIT 1`,
+                  WHERE di.intent_token = ? AND di.status IN ('matched', 'completed')
+                  ORDER BY dac.created_at DESC
+                  LIMIT 1`,
             args: [intentToken]
           });
 
@@ -7428,11 +7498,11 @@ export default {
           if (db) {
             try {
               const res = await db.execute({
-                sql: `SELECT state, updated_at, updated_by FROM site_state WHERE id = 'donation_email_template' LIMIT 1`,
+                sql: `SELECT payload_json, updated_at, updated_by FROM site_state WHERE state_key = 'donation_email_template' LIMIT 1`,
                 args: []
               });
-              if (res.rows.length > 0 && res.rows[0].state) {
-                template = JSON.parse(res.rows[0].state);
+              if (res.rows.length > 0 && res.rows[0].payload_json) {
+                template = JSON.parse(res.rows[0].payload_json);
                 updatedAt = res.rows[0].updated_at;
                 updatedBy = res.rows[0].updated_by;
               }
@@ -7500,9 +7570,9 @@ export default {
           };
 
           await db.execute({
-            sql: `INSERT INTO site_state (id, state, version, updated_at, updated_by)
+            sql: `INSERT INTO site_state (state_key, payload_json, version, updated_at, updated_by)
                   VALUES ('donation_email_template', ?, 1, datetime('now'), ?)
-                  ON CONFLICT(id) DO UPDATE SET state = excluded.state, version = version + 1, updated_at = excluded.updated_at, updated_by = excluded.updated_by`,
+                  ON CONFLICT(state_key) DO UPDATE SET payload_json = excluded.payload_json, version = version + 1, updated_at = excluded.updated_at, updated_by = excluded.updated_by`,
             args: [JSON.stringify(templateData), authUser.email]
           });
 
@@ -7580,13 +7650,15 @@ export default {
           }, 200, adminCors);
         }
 
-        // 15.19 List Recent Donations (GET /api/admin/donations)
+        // 15.19 List Recent Donations & Pre-Checkout Intents (GET /api/admin/donations)
         if (pathname === '/api/admin/donations' && request.method === 'GET') {
           if (!requireSectionAccess(authUser, 'donations', ['admin', 'approver', 'editor', 'read_only'], { write: false })) {
             return errorResponse('Forbidden: Donations access required.', 403, null, adminCors);
           }
           const db = getDb(env);
-          if (!db) return jsonResponse({ success: true, donations: [] }, 200, adminCors);
+          if (!db) return jsonResponse({ success: true, donations: [], intents: [] }, 200, adminCors);
+
+          await ensureDonationSchema(db);
 
           const res = await db.execute({
             sql: `SELECT id, card_token, payment_reference, tier, tier_name, amount_cents, donor_display_name, recipient_email, is_anonymous, frequency, status, is_opened, opened_at, admin_notes, created_at
@@ -7596,10 +7668,158 @@ export default {
             args: []
           });
 
+          const intentsRes = await db.execute({
+            sql: `SELECT id, intent_token, donor_name, donor_email, amount_cents, expected_amount_cents, frequency, campaign, is_anonymous, status, card_token, matched_payment_reference, created_at
+                  FROM donation_intents
+                  ORDER BY created_at DESC
+                  LIMIT 100`,
+            args: []
+          }).catch(() => ({ rows: [] }));
+
           return jsonResponse({
             success: true,
-            donations: res.rows || []
+            donations: res.rows || [],
+            intents: intentsRes.rows || []
           }, 200, adminCors);
+        }
+
+        // 15.19A Issue Keepsake Card & Send Email from Pre-Checkout Intent (POST /api/admin/donations/intents/:id/issue-card)
+        if (
+          pathname.startsWith('/api/admin/donations/intents/') &&
+          pathname.endsWith('/issue-card') &&
+          request.method === 'POST'
+        ) {
+          if (!requireSectionAccess(authUser, 'donations', ['admin', 'approver', 'editor'])) {
+            return errorResponse('Forbidden: Donations access required.', 403, null, adminCors);
+          }
+          const intentId = decodeURIComponent(
+            pathname.replace('/api/admin/donations/intents/', '').replace('/issue-card', '')
+          ).trim();
+          const body = await request.json().catch(() => ({}));
+          const rawAmount = Number(body.amount || 50);
+          const sendReceiptEmail = body.sendEmail !== false;
+          if (!intentId || isNaN(rawAmount) || rawAmount < 1) {
+            return errorResponse('Valid intent ID and amount ($1.00+) are required.', 400, null, adminCors);
+          }
+
+          const db = getDb(env);
+          if (!db) return errorResponse('Database not available', 503, null, adminCors);
+          await ensureDonationSchema(db);
+
+          const intentLookup = await db.execute({
+            sql: `SELECT * FROM donation_intents WHERE id = ? LIMIT 1`,
+            args: [intentId]
+          });
+          if (intentLookup.rows.length === 0) {
+            return errorResponse('Pre-checkout donor intent not found.', 404, null, adminCors);
+          }
+          const intentRow = intentLookup.rows[0];
+          const donorEmail = (intentRow.donor_email || '').trim().toLowerCase();
+          const isAnon = Boolean(intentRow.is_anonymous);
+          const displayName = isAnon ? 'Affirming Friend of DCVC' : (intentRow.donor_name || 'Affirming Supporter').trim();
+          const frequency = (intentRow.frequency || 'one-time').toLowerCase();
+          const amountCents = Math.round(rawAmount * 100);
+          const formattedAmount = `$${rawAmount.toFixed(2)}`;
+          const paymentRef = `DCVC-INTENT-${Date.now().toString(36).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+          const tierInfo = resolveAppreciationTier(rawAmount, env);
+
+          const randomBytes = new Uint8Array(24);
+          crypto.getRandomValues(randomBytes);
+          const cardToken = Array.from(randomBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+          const hashBuf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(cardToken));
+          const tokenHash = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
+          const emailHashBuf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(donorEmail || 'anonymous'));
+          const donorEmailHash = Array.from(new Uint8Array(emailHashBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+          const cardId = crypto.randomUUID();
+          await db.execute({
+            sql: `INSERT INTO donation_appreciation_cards
+                  (id, card_token, token_hash, payment_reference, tier, tier_name, amount_cents, donor_display_name, donor_email_hash, recipient_email, is_anonymous, impact_message, frequency, status, admin_notes)
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)`,
+            args: [
+              cardId, cardToken, tokenHash, paymentRef, tierInfo.tier, tierInfo.tierName,
+              amountCents, displayName, donorEmailHash, donorEmail || null, isAnon ? 1 : 0,
+              tierInfo.impact, frequency, JSON.stringify({ confirmedFromIntentId: intentId, confirmedBy: authUser.email })
+            ]
+          });
+
+          await db.execute({
+            sql: `UPDATE donation_intents SET status = 'matched', matched_payment_reference = ?, card_token = ?, amount_cents = ?, completed_at = datetime('now') WHERE id = ?`,
+            args: [paymentRef, cardToken, amountCents, intentId]
+          }).catch(() => {});
+
+          const frontendBase = env.FRONTEND_BASE_URL || 'https://diversitycollective.org';
+          const cardUrl = `${frontendBase}/appreciation-card/${cardToken}`;
+          let emailDispatched = false;
+          let emailError = null;
+
+          if (sendReceiptEmail && donorEmail && donorEmail.includes('@') && env?.RESEND_API_KEY) {
+            let customTemplate = null;
+            try {
+              const tRes = await db.execute({
+                sql: `SELECT payload_json FROM site_state WHERE state_key = 'donation_email_template' LIMIT 1`,
+                args: []
+              });
+              if (tRes.rows?.length > 0 && tRes.rows[0].payload_json) {
+                customTemplate = JSON.parse(tRes.rows[0].payload_json);
+              }
+            } catch {}
+            const emailTpl = templateDonorAppreciationEmail({
+              donorDisplayName: displayName,
+              formattedAmount,
+              tierName: tierInfo.tierName,
+              badge: tierInfo.badge,
+              tagline: tierInfo.tagline,
+              impact: tierInfo.impact,
+              cardUrl,
+              frequency,
+              designation: 'General Fund',
+              date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+              reference: paymentRef,
+              customTemplate
+            });
+            try {
+              await sendEmail({
+                apiKey: env.RESEND_API_KEY,
+                from: env.RESEND_FROM_EMAIL || 'Diversity Collective <noreply@diversitycollective.org>',
+                to: donorEmail,
+                replyTo: 'donations@diversitycollective.org',
+                subject: emailTpl.subject,
+                html: emailTpl.html,
+                text: emailTpl.text
+              });
+              emailDispatched = true;
+            } catch (err) {
+              emailError = err.message;
+              console.error('Intent card email error:', err.message);
+            }
+          }
+
+          return jsonResponse({
+            success: true,
+            cardId,
+            cardToken,
+            cardUrl,
+            emailDispatched,
+            emailError,
+            message: `Keepsake card issued for ${displayName}${emailDispatched ? ` and emailed to ${donorEmail}` : ''}.`
+          }, 201, adminCors);
+        }
+
+        // 15.19A2 Delete Single Pre-Checkout Intent (DELETE /api/admin/donations/intents/:id)
+        if (pathname.startsWith('/api/admin/donations/intents/') && request.method === 'DELETE') {
+          if (!requireSectionAccess(authUser, 'donations', ['admin', 'approver', 'editor'])) {
+            return errorResponse('Forbidden: Donations access required.', 403, null, adminCors);
+          }
+          const intentId = decodeURIComponent(pathname.replace('/api/admin/donations/intents/', '')).trim();
+          const db = getDb(env);
+          if (db && intentId) {
+            await db.execute({
+              sql: `DELETE FROM donation_intents WHERE id = ?`,
+              args: [intentId]
+            });
+          }
+          return jsonResponse({ success: true, deletedId: intentId }, 200, adminCors);
         }
 
         // 15.19B Delete All Contribution Records (DELETE /api/admin/donations)
@@ -7639,6 +7859,7 @@ export default {
         // 15.19C Delete Single Contribution Record (DELETE /api/admin/donations/:id)
         if (
           pathname.startsWith('/api/admin/donations/') &&
+          !pathname.startsWith('/api/admin/donations/intents/') &&
           !pathname.endsWith('/resend-email') &&
           request.method === 'DELETE'
         ) {
@@ -7699,11 +7920,11 @@ export default {
           let customTemplate = null;
           try {
             const tRes = await db.execute({
-              sql: `SELECT state FROM site_state WHERE id = 'donation_email_template' LIMIT 1`,
+              sql: `SELECT payload_json FROM site_state WHERE state_key = 'donation_email_template' LIMIT 1`,
               args: []
             });
-            if (tRes.rows?.length > 0 && tRes.rows[0].state) {
-              customTemplate = JSON.parse(tRes.rows[0].state);
+            if (tRes.rows?.length > 0 && tRes.rows[0].payload_json) {
+              customTemplate = JSON.parse(tRes.rows[0].payload_json);
             }
           } catch (e) {}
 
@@ -7734,7 +7955,7 @@ export default {
             try {
               await sendEmail({
                 apiKey: env.RESEND_API_KEY,
-                from: env.RESEND_FROM_EMAIL || 'Diversity Collective <donations@diversitycollective.org>',
+                from: env.RESEND_FROM_EMAIL || 'Diversity Collective <noreply@diversitycollective.org>',
                 to: recipient,
                 replyTo: 'donations@diversitycollective.org',
                 subject: emailPayload.subject,
@@ -7812,11 +8033,11 @@ export default {
             if (db) {
               try {
                 const tRes = await db.execute({
-                  sql: `SELECT state FROM site_state WHERE id = 'donation_email_template' LIMIT 1`,
+                  sql: `SELECT payload_json FROM site_state WHERE state_key = 'donation_email_template' LIMIT 1`,
                   args: []
                 });
-                if (tRes.rows?.length > 0 && tRes.rows[0].state) {
-                  customTemplate = JSON.parse(tRes.rows[0].state);
+                if (tRes.rows?.length > 0 && tRes.rows[0].payload_json) {
+                  customTemplate = JSON.parse(tRes.rows[0].payload_json);
                 }
               } catch {}
             }

@@ -198,6 +198,10 @@ async function processSingleZeffyPayment(payment, env, db, ctx, sendEmailFn = nu
     payment.buyer?.email ||
     payment.contact?.email ||
     payment.donor?.email ||
+    payment.customer?.email ||
+    payment.payer?.email ||
+    payment.supporter?.email ||
+    payment.receipt_email ||
     payment.email ||
     ''
   ).toLowerCase().trim();
@@ -206,7 +210,11 @@ async function processSingleZeffyPayment(payment, env, db, ctx, sendEmailFn = nu
     payment.buyer?.name ||
     payment.contact?.name ||
     payment.donor?.name ||
+    payment.customer?.name ||
+    payment.payer?.name ||
+    payment.supporter?.name ||
     payment.name ||
+    `${payment.buyer?.first_name || payment.contact?.first_name || ''} ${payment.buyer?.last_name || payment.contact?.last_name || ''}`.trim() ||
     'Affirming Supporter'
   ).trim();
 
@@ -262,8 +270,10 @@ async function processSingleZeffyPayment(payment, env, db, ctx, sendEmailFn = nu
     if (candidateIntents.rows.length === 1) {
       matchedIntent = candidateIntents.rows[0];
     } else if (candidateIntents.rows.length > 1) {
-      // Find closest amount match
-      matchedIntent = candidateIntents.rows.find(i => Number(i.amount_cents) === amountCents) || null;
+      // Find exact amount match; if pre-checkout form did not specify an amount (0), use most recent intent
+      matchedIntent =
+        candidateIntents.rows.find(i => Number(i.amount_cents) > 0 && Number(i.amount_cents) === amountCents) ||
+        candidateIntents.rows[0];
     }
   }
 
@@ -339,11 +349,11 @@ async function processSingleZeffyPayment(payment, env, db, ctx, sendEmailFn = nu
     let customTemplate = null;
     try {
       const tRes = await db.execute({
-        sql: `SELECT state FROM site_state WHERE id = 'donation_email_template' LIMIT 1`,
+        sql: `SELECT payload_json FROM site_state WHERE state_key = 'donation_email_template' LIMIT 1`,
         args: []
       });
-      if (tRes.rows?.length > 0 && tRes.rows[0].state) {
-        customTemplate = JSON.parse(tRes.rows[0].state);
+      if (tRes.rows?.length > 0 && tRes.rows[0].payload_json) {
+        customTemplate = JSON.parse(tRes.rows[0].payload_json);
       }
     } catch {}
 

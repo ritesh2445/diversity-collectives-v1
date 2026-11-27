@@ -1576,6 +1576,29 @@ export async function recordManualDonation(payload) {
   }
 }
 
+export async function issueCardFromDonationIntent(intentId, payload = {}) {
+  try {
+    const res = await fetchWithAuth(`/admin/donations/intents/${encodeURIComponent(intentId)}/issue-card`, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function deleteDonationIntent(intentId) {
+  try {
+    const res = await fetchWithAuth(`/admin/donations/intents/${encodeURIComponent(intentId)}`, {
+      method: 'DELETE'
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
 export async function exportDataCsv(exportType) {
   try {
     const token = getStoredToken();

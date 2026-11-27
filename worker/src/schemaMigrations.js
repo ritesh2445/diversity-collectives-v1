@@ -603,12 +603,22 @@ export async function runAllMigrations(db) {
     }
   }
 
-  // Idempotent column upgrades for existing admin_users tables
+  // Idempotent column upgrades for existing admin_users and donation_intents tables
   const alterStatements = [
     `ALTER TABLE admin_users ADD COLUMN token_version INTEGER DEFAULT 1`,
     `ALTER TABLE admin_users ADD COLUMN must_change_password INTEGER DEFAULT 0`,
     `ALTER TABLE admin_users ADD COLUMN password_updated_at TEXT`,
-    `ALTER TABLE admin_users ADD COLUMN last_totp_step INTEGER DEFAULT 0`
+    `ALTER TABLE admin_users ADD COLUMN last_totp_step INTEGER DEFAULT 0`,
+    `ALTER TABLE donation_intents ADD COLUMN token_hash TEXT`,
+    `ALTER TABLE donation_intents ADD COLUMN amount_cents INTEGER DEFAULT 0`,
+    `ALTER TABLE donation_intents ADD COLUMN expected_amount_cents INTEGER DEFAULT 0`,
+    `ALTER TABLE donation_intents ADD COLUMN tier TEXT DEFAULT 'community_ally'`,
+    `ALTER TABLE donation_intents ADD COLUMN is_anonymous INTEGER DEFAULT 0`,
+    `ALTER TABLE donation_intents ADD COLUMN matched_payment_reference TEXT`,
+    `ALTER TABLE donation_intents ADD COLUMN card_token TEXT`,
+    `ALTER TABLE donation_intents ADD COLUMN completed_at TEXT`,
+    `ALTER TABLE donation_appreciation_cards ADD COLUMN token_hash TEXT`,
+    `ALTER TABLE donation_appreciation_cards ADD COLUMN donor_email_hash TEXT`
   ];
   for (const sql of alterStatements) {
     try {
