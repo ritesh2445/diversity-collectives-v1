@@ -14,7 +14,9 @@ import {
   Sparkles,
   Upload,
   FolderOpen,
-  AlertTriangle
+  AlertTriangle,
+  ZoomIn,
+  ZoomOut
 } from 'lucide-react';
 
 const ASPECT_PRESETS = [
@@ -180,19 +182,29 @@ export default function ImageCropperModal({
 
   const [selectedPreset, setSelectedPreset] = useState(initialAspect);
   const [rotation, setRotation] = useState(0); // 0, 90, 180, 270
+  const [zoom, setZoom] = useState(1); // 0.4x (zoom out) to 3.0x (zoom in)
   const [bgColor, setBgColor] = useState('#FFFFFF');
   const [isProcessing, setIsProcessing] = useState(false);
   const [imageMeta, setImageMeta] = useState({ width: 0, height: 0, naturalRatio: 1 });
 
-  // Normalized crop rectangle: values from 0.0 to 1.0 relative to displayed image
+  // Normalized crop rectangle: values from 0.0 to 1.0 relative to stage
   const [crop, setCrop] = useState({ x: 0, y: 0, width: 1, height: 1 });
   
   // Dragging state
   const [activeDrag, setActiveDrag] = useState(null); // 'move' | 'nw' | 'ne' | 'se' | 'sw' | 'n' | 's' | 'e' | 'w'
   const dragStartRef = useRef({ mouseX: 0, mouseY: 0, crop: { x: 0, y: 0, width: 1, height: 1 } });
+  const hasInitializedPresetRef = useRef(false);
 
   const imageRef = useRef(null);
+  const stageRef = useRef(null);
   const containerRef = useRef(null);
+
+  useEffect(() => {
+    hasInitializedPresetRef.current = false;
+    setZoom(1);
+    setRotation(0);
+    setSelectedPreset(initialAspect || 'original');
+  }, [imageSrc, imageSource, src, initialAspect]);
 
   const handleModalFileSelect = (e) => {
     const file = e.target.files?.[0];
@@ -286,9 +298,10 @@ export default function ImageCropperModal({
     });
   }, [imageMeta]);
 
-  // Synchronize when image loads or preset changes
+  // Initialize crop preset once when image first loads (never overwrite user-chosen preset)
   useEffect(() => {
-    if (imageMeta.width > 0) {
+    if (imageMeta.width > 0 && !hasInitializedPresetRef.current) {
+      hasInitializedPresetRef.current = true;
       applyPreset(initialAspect || 'original');
     }
   }, [imageMeta.width, imageMeta.height]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -297,6 +310,9 @@ export default function ImageCropperModal({
   const handlePointerDown = (e, handleType) => {
     e.preventDefault();
     e.stopPropagation();
+    if (handleType !== 'move' && selectedPreset === 'original') {
+      setSelectedPreset('free');
+    }
     setActiveDrag(handleType);
     const clientX = e.clientX || e.touches?.[0]?.clientX || 0;
     const clientY = e.clientY || e.touches?.[0]?.clientY || 0;
@@ -308,11 +324,12 @@ export default function ImageCropperModal({
   };
 
   const handlePointerMove = useCallback((e) => {
-    if (!activeDrag || !imageRef.current) return;
+    const targetStage = stageRef.current || imageRef.current;
+    if (!activeDrag || !targetStage) return;
     const clientX = e.clientX || e.touches?.[0]?.clientX || 0;
     const clientY = e.clientY || e.touches?.[0]?.clientY || 0;
 
-    const imgRect = imageRef.current.getBoundingClientRect();
+    const imgRect = targetStage.getBoundingClientRect();
     if (!imgRect.width || !imgRect.height) return;
 
     const dx = (clientX - dragStartRef.current.mouseX) / imgRect.width;
@@ -360,13 +377,32 @@ export default function ImageCropperModal({
     if (preset && preset.ratio && imageMeta.naturalRatio) {
       const targetRatio = preset.ratio;
       const naturalRatio = imageMeta.naturalRatio;
-      
-      const constrainedH = (newW * naturalRatio) / targetRatio;
-      if (newY + constrainedH <= 1) {
-        newH = constrainedH;
+      const rightEdge = start.x + start.width;
+      const bottomEdge = start.y + start.height;
+
+      let constrainedH = (newW * naturalRatio) / targetRatio;
+      if (activeDrag.includes('n')) {
+        if (bottomEdge - constrainedH >= 0) {
+          newH = constrainedH;
+          newY = bottomEdge - newH;
+        } else {
+          newH = bottomEdge;
+          newY = 0;
+          newW = (newH * targetRatio) / naturalRatio;
+          if (activeDrag.includes('w')) {
+            newX = Math.max(0, rightEdge - newW);
+          }
+        }
       } else {
-        newH = 1 - newY;
-        newW = (newH * targetRatio) / naturalRatio;
+        if (newY + constrainedH <= 1) {
+          newH = constrainedH;
+        } else {
+          newH = 1 - newY;
+          newW = (newH * targetRatio) / naturalRatio;
+          if (activeDrag.includes('w')) {
+            newX = Math.max(0, rightEdge - newW);
+          }
+        }
       }
     }
 
@@ -402,6 +438,7 @@ export default function ImageCropperModal({
     setSelectedPreset('original');
     setCrop({ x: 0, y: 0, width: 1, height: 1 });
     setRotation(0);
+    setZoom(1);
   };
 
   // Perform Crop & Render on Canvas
@@ -441,7 +478,9 @@ export default function ImageCropperModal({
       const ctx = canvas.getContext('2d');
 
       // 1. FULL ORIGINAL MODE (Zero Cropping - 100% Untouched)
-      if (selectedPreset === 'original' && rotation === 0) {
+      const isFullUntouchedBox = crop.x <= 0.001 && crop.y <= 0.001 && crop.width >= 0.999 && crop.height >= 0.999;
+      const isZoomed = Math.abs((zoom || 1) - 1) > 0.01;
+      if (selectedPreset === 'original' && rotation === 0 && isFullUntouchedBox && !isZoomed) {
         let outW = natW;
         let outH = natH;
         const maxDim = 1600;
@@ -492,17 +531,17 @@ export default function ImageCropperModal({
         ctx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH);
         ctx.restore();
       }
-      // 3. FREE CROP OR PRESET RATIO CROP
+      // 3. FREE CROP, ZOOMED, OR PRESET RATIO CROP
       else {
-        // Calculate exact pixel source coordinates from normalized crop box
-        const sourceX = Math.max(0, Math.round(crop.x * natW));
-        const sourceY = Math.max(0, Math.round(crop.y * natH));
-        const sourceW = Math.min(natW - sourceX, Math.max(10, Math.round(crop.width * natW)));
-        const sourceH = Math.min(natH - sourceY, Math.max(10, Math.round(crop.height * natH)));
+        const safeZoom = Math.max(0.25, zoom || 1);
+        const imgLeft = 0.5 + (crop.x - 0.5) / safeZoom;
+        const imgTop = 0.5 + (crop.y - 0.5) / safeZoom;
+        const imgW = crop.width / safeZoom;
+        const imgH = crop.height / safeZoom;
 
         // Determine output resolution (max 1600px dimension)
-        let outW = sourceW;
-        let outH = sourceH;
+        let outW = Math.max(10, Math.round(imgW * natW));
+        let outH = Math.max(10, Math.round(imgH * natH));
         const maxDim = 1600;
         if (outW > maxDim || outH > maxDim) {
           if (outW > outH) {
@@ -519,10 +558,34 @@ export default function ImageCropperModal({
         canvas.width = isPerpendicular ? outH : outW;
         canvas.height = isPerpendicular ? outW : outH;
 
+        // If zoomed out beyond image bounds, draw soft ambient backdrop so edges look clean
+        const hasOutOfBounds = imgLeft < 0 || imgTop < 0 || (imgLeft + imgW) > 1 || (imgTop + imgH) > 1;
+        if (hasOutOfBounds) {
+          ctx.save();
+          ctx.filter = 'blur(18px)';
+          ctx.drawImage(img, -20, -20, canvas.width + 40, canvas.height + 40);
+          ctx.filter = 'none';
+          ctx.fillStyle = 'rgba(15, 23, 42, 0.52)';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.restore();
+        }
+
+        const sx = Math.max(0, imgLeft * natW);
+        const sy = Math.max(0, imgTop * natH);
+        const ex = Math.min(natW, (imgLeft + imgW) * natW);
+        const ey = Math.min(natH, (imgTop + imgH) * natH);
+        const sw = Math.max(1, ex - sx);
+        const sh = Math.max(1, ey - sy);
+
+        const dx = ((sx / natW - imgLeft) / imgW) * outW - outW / 2;
+        const dy = ((sy / natH - imgTop) / imgH) * outH - outH / 2;
+        const dw = ((sw / natW) / imgW) * outW;
+        const dh = ((sh / natH) / imgH) * outH;
+
         ctx.save();
         ctx.translate(canvas.width / 2, canvas.height / 2);
         ctx.rotate((rotation * Math.PI) / 180);
-        ctx.drawImage(img, sourceX, sourceY, sourceW, sourceH, -outW / 2, -outH / 2, outW, outH);
+        ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
         ctx.restore();
       }
 
@@ -723,8 +786,18 @@ export default function ImageCropperModal({
           />
 
           {currentSource && !loadError ? (
-            <div className="relative inline-block max-w-full max-h-full select-none">
+            <div ref={stageRef} className="relative inline-block max-w-full max-h-full select-none overflow-hidden rounded-lg bg-slate-900">
               
+              {/* Ambient backdrop visible when zoomed out (< 1x) */}
+              {zoom < 0.99 && (
+                <img
+                  src={currentSource}
+                  alt=""
+                  aria-hidden="true"
+                  className="absolute inset-0 w-full h-full object-cover blur-xl opacity-45 scale-125 pointer-events-none select-none"
+                />
+              )}
+
               {/* Underlying Image */}
               <img
                 ref={imageRef}
@@ -734,10 +807,11 @@ export default function ImageCropperModal({
                 onError={() => {
                   setLoadError(true);
                 }}
-                className="max-h-[50vh] max-w-[85vw] sm:max-w-[700px] object-contain rounded-lg block pointer-events-none select-none"
+                className="max-h-[50vh] max-w-[85vw] sm:max-w-[700px] object-contain rounded-lg block pointer-events-none select-none relative z-0"
                 style={{
-                  transform: `rotate(${rotation}deg)`,
-                  transition: 'transform 0.15s ease'
+                  transform: `scale(${zoom}) rotate(${rotation}deg)`,
+                  transformOrigin: 'center center',
+                  transition: 'transform 0.12s ease'
                 }}
               />
 
@@ -887,25 +961,74 @@ export default function ImageCropperModal({
           
           <div className="flex flex-wrap items-center justify-between gap-3">
             
-            {/* Rotation Controls */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-slate-700">Rotate:</span>
-              <button
-                type="button"
-                onClick={() => setRotation(r => (r - 90 + 360) % 360)}
-                className="py-1 px-2.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-xs font-bold text-slate-700 flex items-center gap-1 transition-colors cursor-pointer"
-              >
-                <RotateCcw className="w-3.5 h-3.5 text-purple-700" />
-                <span>-90°</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setRotation(r => (r + 90) % 360)}
-                className="py-1 px-2.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-xs font-bold text-slate-700 flex items-center gap-1 transition-colors cursor-pointer"
-              >
-                <RotateCw className="w-3.5 h-3.5 text-purple-700" />
-                <span>+90°</span>
-              </button>
+            {/* Rotation & Zoom Controls */}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-slate-700">Rotate:</span>
+                <button
+                  type="button"
+                  onClick={() => setRotation(r => (r - 90 + 360) % 360)}
+                  className="py-1 px-2.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-xs font-bold text-slate-700 flex items-center gap-1 transition-colors cursor-pointer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-purple-700" />
+                  <span>-90°</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRotation(r => (r + 90) % 360)}
+                  className="py-1 px-2.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-xs font-bold text-slate-700 flex items-center gap-1 transition-colors cursor-pointer"
+                >
+                  <RotateCw className="w-3.5 h-3.5 text-purple-700" />
+                  <span>+90°</span>
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-200">
+                <span className="text-xs font-bold text-slate-700">Zoom:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (selectedPreset === 'original') setSelectedPreset('free');
+                    setZoom(z => Math.max(0.4, Number((z - 0.1).toFixed(2))));
+                  }}
+                  title="Zoom Out (fit more of image inside frame)"
+                  className="p-1 rounded-lg bg-white border border-slate-200 hover:bg-purple-50 text-purple-800 cursor-pointer"
+                >
+                  <ZoomOut className="w-3.5 h-3.5" />
+                </button>
+                <input
+                  type="range"
+                  min="0.4"
+                  max="3.0"
+                  step="0.05"
+                  value={zoom}
+                  onChange={(e) => {
+                    if (selectedPreset === 'original') setSelectedPreset('free');
+                    setZoom(parseFloat(e.target.value));
+                  }}
+                  aria-label="Zoom level"
+                  className="w-24 sm:w-28 accent-[#5A1E65] cursor-pointer"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (selectedPreset === 'original') setSelectedPreset('free');
+                    setZoom(z => Math.min(3.0, Number((z + 0.1).toFixed(2))));
+                  }}
+                  title="Zoom In"
+                  className="p-1 rounded-lg bg-white border border-slate-200 hover:bg-purple-50 text-purple-800 cursor-pointer"
+                >
+                  <ZoomIn className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setZoom(1)}
+                  title="Reset Zoom to 100%"
+                  className="text-[11px] font-mono font-bold text-slate-700 hover:text-[#5A1E65] px-1.5 py-0.5 rounded bg-white border border-slate-200 cursor-pointer"
+                >
+                  {Math.round(zoom * 100)}%
+                </button>
+              </div>
             </div>
 
             {/* Live Dimension & Mode Indicator */}

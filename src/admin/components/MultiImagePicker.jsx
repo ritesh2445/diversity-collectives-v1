@@ -301,8 +301,14 @@ export default function MultiImagePicker({
               <div className={`relative ${aspectRatio || 'aspect-[16/10]'} bg-slate-900 overflow-hidden`}>
                 <img
                   src={url}
+                  alt=""
+                  aria-hidden="true"
+                  className="absolute inset-0 w-full h-full object-cover blur-xl opacity-40 scale-125 pointer-events-none"
+                />
+                <img
+                  src={url}
                   alt={`Slide ${idx + 1}`}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  className="w-full h-full object-contain relative z-10 transition-transform duration-300"
                   onError={(e) => {
                     e.currentTarget.src = '/images/community-gathering.jpg';
                   }}
@@ -524,7 +530,7 @@ export default function MultiImagePicker({
       {showCropper && (
         <ImageCropperModal
           imageSrc={cropperSource || null}
-          initialAspect={defaultCropAspect}
+          initialAspect={editingIndex !== null ? 'free' : 'original'}
           onApply={handleCropperApply}
           onCancel={() => {
             setShowCropper(false);

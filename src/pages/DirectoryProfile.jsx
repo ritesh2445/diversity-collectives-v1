@@ -296,8 +296,16 @@ export default function DirectoryProfile() {
 
             {/* Profile Hero Photo Showcase with AirDrop soft ambient light wave overlay */}
             <div className={`rounded-3xl overflow-hidden aspect-[16/9] shadow-xl border-2 border-slate-200 relative ${
-              isBrandLogoFallback ? 'bg-gradient-to-br from-purple-50 via-white to-amber-50/70' : ''
+              isBrandLogoFallback ? 'bg-gradient-to-br from-purple-50 via-white to-amber-50/70' : 'bg-slate-900'
             }`}>
+              {!isBrandLogoFallback && (
+                <img
+                  src={heroDisplaySrc}
+                  alt=""
+                  aria-hidden="true"
+                  className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-45 scale-125 pointer-events-none"
+                />
+              )}
               <AirDropPulseWaves 
                 active={hypeWaveActive} 
                 bizId={business.id || business.slug}
@@ -307,7 +315,7 @@ export default function DirectoryProfile() {
               <img
                 src={heroDisplaySrc}
                 alt={business.name}
-                className={isBrandLogoFallback ? 'w-full h-full object-contain p-10 sm:p-14' : 'w-full h-full object-cover'}
+                className={isBrandLogoFallback ? 'w-full h-full object-contain p-10 sm:p-14 relative z-10' : 'w-full h-full object-contain relative z-10'}
                 onLoad={(e) => {
                   if (isBrandLogoFallback && e.currentTarget.naturalWidth > 0 && e.currentTarget.naturalWidth <= 16 && e.currentTarget.dataset.fallbackApplied !== 'true') {
                     e.currentTarget.dataset.fallbackApplied = 'true';

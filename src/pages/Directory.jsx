@@ -655,15 +655,23 @@ export default function Directory() {
 
                       return (
                     <div className={`w-full aspect-[16/9] rounded-2xl overflow-hidden border border-slate-200/80 relative shadow-inner ${
-                      isLogoFallback ? 'bg-gradient-to-br from-purple-50 via-white to-amber-50/70' : 'bg-slate-100'
+                      isLogoFallback ? 'bg-gradient-to-br from-purple-50 via-white to-amber-50/70' : 'bg-slate-900'
                     }`}>
+                      {!isLogoFallback && (
+                        <img
+                          src={thumbSrc}
+                          alt=""
+                          aria-hidden="true"
+                          className="absolute inset-0 w-full h-full object-cover blur-xl opacity-45 scale-125 pointer-events-none"
+                        />
+                      )}
                       <img
                         src={thumbSrc}
                         alt={biz.name}
                         className={
                           isLogoFallback
-                            ? 'w-full h-full object-contain p-7 group-hover:scale-105 transition-transform duration-300'
-                            : 'w-full h-full object-cover group-hover:scale-105 transition-transform duration-300'
+                            ? 'w-full h-full object-contain p-7 relative z-10 group-hover:scale-105 transition-transform duration-300'
+                            : 'w-full h-full object-contain relative z-10 group-hover:scale-[1.03] transition-transform duration-300'
                         }
                         onLoad={(e) => {
                           if (isLogoFallback && e.currentTarget.naturalWidth > 0 && e.currentTarget.naturalWidth <= 16 && e.currentTarget.dataset.fallbackApplied !== 'true') {

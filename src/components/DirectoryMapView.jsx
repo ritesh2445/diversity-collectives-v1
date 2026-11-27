@@ -218,11 +218,17 @@ export default function DirectoryMapView({ businesses = [], onHype, activeHypeId
       // Rich Interactive Popup
       const popupHtml = `
         <div style="font-family: inherit; width: 220px; padding: 12px; background: #ffffff;">
-          <div style="position: relative; height: 95px; width: 100%; border-radius: 10px; overflow: hidden; background: #f1f5f9; margin-bottom: 8px;">
+          <div style="position: relative; height: 95px; width: 100%; border-radius: 10px; overflow: hidden; background: #0f172a; margin-bottom: 8px;">
+            <img 
+              src="${biz.image || biz.cover_url || '/images/community-gathering.jpg'}" 
+              alt="" 
+              aria-hidden="true"
+              style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: blur(12px); opacity: 0.45; transform: scale(1.2);"
+            />
             <img 
               src="${biz.image || biz.cover_url || '/images/community-gathering.jpg'}" 
               alt="${biz.name}" 
-              style="width: 100%; height: 100%; object-fit: cover;"
+              style="position: relative; z-index: 1; width: 100%; height: 100%; object-fit: contain;"
               onerror="this.src='/images/community-gathering.jpg'"
             />
             ${isApproved ? '<span style="position: absolute; top: 6px; left: 6px; padding: 2px 7px; border-radius: 9999px; font-size: 8px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; background: #10B981; color: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">✓ DCVC Approved</span>' : ''}
@@ -499,11 +505,17 @@ export default function DirectoryMapView({ businesses = [], onHype, activeHypeId
 
                 <div className="space-y-4">
                   {/* Photo Header with Badges */}
-                  <div className="w-full aspect-[16/9] rounded-2xl overflow-hidden bg-slate-100 relative border border-slate-200 shadow-inner">
+                  <div className="w-full aspect-[16/9] rounded-2xl overflow-hidden bg-slate-900 relative border border-slate-200 shadow-inner">
+                    <img
+                      src={selectedBiz.image || selectedBiz.cover_url || '/images/community-gathering.jpg'}
+                      alt=""
+                      aria-hidden="true"
+                      className="absolute inset-0 w-full h-full object-cover blur-xl opacity-45 scale-125 pointer-events-none"
+                    />
                     <img
                       src={selectedBiz.image || selectedBiz.cover_url || '/images/community-gathering.jpg'}
                       alt={selectedBiz.name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain relative z-10"
                       onError={(e) => { e.target.src = '/images/community-gathering.jpg'; }}
                     />
                     <div className="absolute top-2.5 left-2.5 z-10">
