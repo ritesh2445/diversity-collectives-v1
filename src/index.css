@@ -2202,7 +2202,7 @@ main p.font-serif.italic.text-xs:not(:is(footer, .admin-workspace) *) {
   border-color: #5A1E65;
 }
 
-.dcvc-admin-cool label:not(.dcvc-preview-stage *) {
+.dcvc-admin-cool label:not(.dcvc-preview-stage *):not([class*="text-white"]):not([class*="text-purple-"]):not([class*="text-amber-"]):not([class*="text-emerald-"]):not([class*="text-rose-"]):not([class*="bg-purple-"]):not([class*="bg-slate-9"]):not([class*="bg-[#"]) {
   color: #1E293B;
 }
 

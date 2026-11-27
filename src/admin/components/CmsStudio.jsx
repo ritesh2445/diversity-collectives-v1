@@ -1472,9 +1472,9 @@ export default function CmsStudio({ currentUser: propUser = null } = {}) {
                 <span>Export JSON</span>
               </button>
 
-              <label className="px-4 py-2.5 rounded-xl bg-purple-900/60 hover:bg-purple-800 text-purple-100 text-xs font-bold flex items-center gap-1.5 transition-colors border border-purple-700 cursor-pointer">
-                <Upload className="w-4 h-4" />
-                <span>Import JSON</span>
+              <label className="px-4 py-2.5 rounded-xl bg-purple-900/60 hover:bg-purple-800 !text-purple-100 text-xs font-bold flex items-center gap-1.5 transition-colors border border-purple-700 cursor-pointer">
+                <Upload className="w-4 h-4 text-purple-100" />
+                <span className="text-purple-100">Import JSON</span>
                 <input type="file" accept=".json" onChange={handleImportJson} className="hidden" />
               </label>
 
