@@ -226,7 +226,6 @@ export default function DirectoryMapView({ businesses = [], onHype, activeHypeId
               onerror="this.src='/images/community-gathering.jpg'"
             />
             ${isApproved ? '<span style="position: absolute; top: 6px; left: 6px; padding: 2px 7px; border-radius: 9999px; font-size: 8px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; background: #10B981; color: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">✓ DCVC Approved</span>' : ''}
-            <span style="position: absolute; top: 6px; right: 6px; padding: 2px 6px; border-radius: 6px; font-size: 9px; font-weight: 900; background: rgba(255,255,255,0.95); color: #0f172a; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">${stats.price}</span>
           </div>
 
           <div style="margin-bottom: 6px;">
@@ -509,11 +508,6 @@ export default function DirectoryMapView({ businesses = [], onHype, activeHypeId
                     />
                     <div className="absolute top-2.5 left-2.5 z-10">
                       {isApproved && <DcvcApprovedBadge />}
-                    </div>
-                    <div className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1">
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-white/95 text-slate-800 shadow-xs border border-slate-200">
-                        {stats.price}
-                      </span>
                     </div>
                   </div>
 

@@ -722,9 +722,6 @@ export default function Directory() {
                           >
                             {biz.category}
                           </span>
-                          <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-white text-slate-700 border border-slate-200 shadow-2xs shrink-0">
-                            {stats.price}
-                          </span>
                         </div>
                         <span className="text-slate-600 font-bold whitespace-nowrap shrink-0">{biz.city}, CA</span>
                       </div>

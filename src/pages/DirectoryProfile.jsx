@@ -232,9 +232,6 @@ export default function DirectoryProfile() {
                 <span className="text-xs font-black uppercase tracking-wider px-3 py-1 rounded-full bg-purple-50 text-[#5A1E65] border border-purple-200">
                   {business.category}
                 </span>
-                <span className="text-xs font-black px-2.5 py-1 rounded-full bg-slate-100 text-slate-800 border border-slate-200">
-                  {stats.price}
-                </span>
                 <span className="text-xs font-bold text-slate-500 flex items-center gap-1">
                   <MapPin className="w-3.5 h-3.5 text-amber-500" />
                   <span>{business.city}, CA</span>
