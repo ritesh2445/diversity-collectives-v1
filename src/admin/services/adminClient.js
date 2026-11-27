@@ -1599,6 +1599,17 @@ export async function deleteDonationIntent(intentId) {
   }
 }
 
+export async function reconcileZeffyPayments() {
+  try {
+    const res = await fetchWithAuth('/webhooks/zeffy/reconcile', {
+      method: 'POST'
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
 export async function exportDataCsv(exportType) {
   try {
     const token = getStoredToken();

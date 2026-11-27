@@ -382,14 +382,91 @@ function parseZeffySignatureHeader(header) {
   return { timestamp, signatures };
 }
 
+function decodeWhsecKeyBytes(secretKey) {
+  if (!secretKey || typeof secretKey !== 'string') return null;
+  if (!secretKey.startsWith('whsec_')) return null;
+  try {
+    const b64 = secretKey.slice(6).trim();
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) {
+      bytes[i] = bin.charCodeAt(i);
+    }
+    return bytes;
+  } catch {
+    return null;
+  }
+}
+
+async function computeHmacBytes(keyBytes, message) {
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    keyBytes,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const sigBuf = await crypto.subtle.sign('HMAC', key, encoder.encode(message));
+  return new Uint8Array(sigBuf);
+}
+
+function bytesToHex(bytes) {
+  return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('').toLowerCase();
+}
+
+function bytesToBase64(bytes) {
+  let bin = '';
+  for (let i = 0; i < bytes.length; i++) {
+    bin += String.fromCharCode(bytes[i]);
+  }
+  return btoa(bin);
+}
+
+async function verifyStandardWebhookSignature(rawBody, webhookId, timestampHeader, signatureHeader, secretKey, options = {}) {
+  if (!secretKey) return { valid: false, error: 'ZEFFY_WEBHOOK_SECRET is not configured' };
+  if (!webhookId || !timestampHeader || !signatureHeader) {
+    return { valid: false, error: 'Missing Standard Webhooks headers' };
+  }
+  const trimmedTs = String(timestampHeader).trim();
+  if (!/^\d{9,12}$/.test(trimmedTs)) {
+    return { valid: false, error: 'Malformed webhook-timestamp' };
+  }
+  const eventTimestamp = Number(trimmedTs);
+  const toleranceSeconds = options.toleranceSeconds ?? 300;
+  const currentTimestamp = options.currentTimestamp ?? Math.floor(Date.now() / 1000);
+  if (Math.abs(currentTimestamp - eventTimestamp) > toleranceSeconds) {
+    return { valid: false, error: `Webhook timestamp outside tolerance window (${Math.abs(currentTimestamp - eventTimestamp)}s > ${toleranceSeconds}s)` };
+  }
+
+  const candidateSigs = [];
+  for (const part of String(signatureHeader).trim().split(/\s+/)) {
+    if (part.startsWith('v1,')) candidateSigs.push(part.slice(3));
+    else if (part.startsWith('v1=')) candidateSigs.push(part.slice(3));
+  }
+  if (candidateSigs.length === 0) {
+    return { valid: false, error: 'Invalid webhook-signature format (expected v1,<base64>)' };
+  }
+
+  const signedPayload = `${webhookId}.${trimmedTs}.${rawBody}`;
+  const keyCandidates = [new TextEncoder().encode(secretKey)];
+  const decoded = decodeWhsecKeyBytes(secretKey);
+  if (decoded) keyCandidates.unshift(decoded);
+
+  for (const keyBytes of keyCandidates) {
+    const digest = await computeHmacBytes(keyBytes, signedPayload);
+    const computedB64 = bytesToBase64(digest);
+    const computedHex = bytesToHex(digest);
+    if (candidateSigs.some(sig => constantTimeEqual(computedB64, sig) || constantTimeEqual(computedHex, sig.toLowerCase()))) {
+      return { valid: true, timestamp: eventTimestamp, error: null };
+    }
+  }
+  return { valid: false, error: 'Standard Webhook HMAC signature mismatch' };
+}
+
 // Helper: Verify Official Zeffy HMAC-SHA256 Webhook Signature with constant-time comparison
-// Conforms strictly to official Zeffy protocol:
-// - Header: Zeffy-Signature (format: t=timestamp,v1=signature)
-// - HMAC-SHA256 input: {timestamp}.{rawBody}
-// - Secret prefix: whsec_... (or configured signing secret)
-// - Freshness: 5-minute (300s) tolerance window to prevent replay attacks
-// - Comparison: Constant-time signature comparison
-// - Fail-closed: Missing secretKey ALWAYS fails closed; never returns valid or bypassed
+// Supports both Zeffy-Signature (t=timestamp,v1=hex|base64) and Standard Webhooks / Svix
+// (webhook-id, webhook-timestamp, webhook-signature: v1,<base64>) with fail-closed verification.
 async function verifyZeffySignature(rawBody, signatureHeader, secretKey, options = {}) {
   if (!secretKey) {
     return { valid: false, error: 'ZEFFY_WEBHOOK_SECRET is not configured' };
@@ -427,27 +504,27 @@ async function verifyZeffySignature(rawBody, signatureHeader, secretKey, options
 
   try {
     const signedPayload = `${trimmedTs}.${rawBody}`;
-    const encoder = new TextEncoder();
-    const key = await crypto.subtle.importKey(
-      'raw',
-      encoder.encode(secretKey),
-      { name: 'HMAC', hash: 'SHA-256' },
-      false,
-      ['sign']
-    );
+    const keyCandidates = [new TextEncoder().encode(secretKey)];
+    const decoded = decodeWhsecKeyBytes(secretKey);
+    if (decoded) keyCandidates.push(decoded);
 
-    const signatureBuffer = await crypto.subtle.sign('HMAC', key, encoder.encode(signedPayload));
-    const computedSignature = Array.from(new Uint8Array(signatureBuffer))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('')
-      .toLowerCase();
+    for (const keyBytes of keyCandidates) {
+      const digest = await computeHmacBytes(keyBytes, signedPayload);
+      const computedHex = bytesToHex(digest);
+      const computedB64 = bytesToBase64(digest).toLowerCase();
+      if (parsed.signatures.some(sig => constantTimeEqual(computedHex, sig) || constantTimeEqual(computedB64, sig))) {
+        return {
+          valid: true,
+          timestamp: eventTimestamp,
+          error: null
+        };
+      }
+    }
 
-    // Constant-time comparison against all supplied v1 signatures
-    const valid = parsed.signatures.some(sig => constantTimeEqual(computedSignature, sig));
     return {
-      valid,
+      valid: false,
       timestamp: eventTimestamp,
-      error: valid ? null : 'HMAC signature mismatch'
+      error: 'HMAC signature mismatch'
     };
   } catch (err) {
     console.error('Zeffy signature calculation failed:', err);
@@ -456,38 +533,48 @@ async function verifyZeffySignature(rawBody, signatureHeader, secretKey, options
 }
 
 // Multi-Tier Zeffy Webhook Verification: Strict Signature Verification Only
-// Strictly rejects unverified requests, query-parameter tokens, non-conforming signatures,
-// and API keys used as signing secret substitutes. Fail-closed in all configurations.
+// Supports official Zeffy-Signature and Standard Webhooks (webhook-id / svix-id) headers.
+// Strictly rejects unverified requests, query-parameter tokens, and API key substitution.
 async function verifyZeffyWebhookRequest(request, rawBody, env, payload) {
   const secretKey = env?.ZEFFY_WEBHOOK_SECRET;
 
   // 1. Missing Secret Handling (Fail-closed)
   if (!secretKey) {
-    // Isolated non-production test bypass ONLY when explicitly enabled via configuration
     const isExplicitNonProdTest = env?.ENVIRONMENT === 'test' && env?.ALLOW_INSECURE_DEV_BYPASS === 'true';
     if (isExplicitNonProdTest) {
       console.warn('⚠️ Non-production test bypass flag active. Marking verification as bypassed.');
-      return { 
-        valid: false, 
-        bypassed: true, 
-        error: 'Webhook signature verification bypassed in non-production test mode' 
+      return {
+        valid: false,
+        bypassed: true,
+        error: 'Webhook signature verification bypassed in non-production test mode'
       };
     }
 
-    return { 
-      valid: false, 
-      bypassed: false, 
-      error: 'ZEFFY_WEBHOOK_SECRET is not configured on this environment' 
+    return {
+      valid: false,
+      bypassed: false,
+      error: 'ZEFFY_WEBHOOK_SECRET is not configured on this environment'
     };
   }
 
-  // 2. Enforce official Zeffy-Signature header (case-insensitive retrieval via fetch headers)
-  const signatureHeader = request.headers.get('zeffy-signature') || '';
+  // 2. Check Standard Webhooks / Svix headers (webhook-id, webhook-timestamp, webhook-signature)
+  const stdId = request.headers.get('webhook-id') || request.headers.get('svix-id') || '';
+  const stdTs = request.headers.get('webhook-timestamp') || request.headers.get('svix-timestamp') || '';
+  const stdSig = request.headers.get('webhook-signature') || request.headers.get('svix-signature') || '';
+  if (stdId && stdTs && stdSig) {
+    const stdRes = await verifyStandardWebhookSignature(rawBody, stdId, stdTs, stdSig, secretKey);
+    if (stdRes.valid) {
+      return { valid: true, bypassed: false, method: 'standard_webhooks_hmac', timestamp: stdRes.timestamp };
+    }
+    return { valid: false, bypassed: false, error: stdRes.error || 'Standard Webhooks verification failed' };
+  }
+
+  // 3. Check Zeffy-Signature / X-Zeffy-Signature header
+  const signatureHeader = request.headers.get('zeffy-signature') || request.headers.get('x-zeffy-signature') || '';
   if (!signatureHeader) {
     return { valid: false, bypassed: false, error: 'Missing Zeffy-Signature header' };
   }
 
-  // 3. Verify HMAC signature
   const hmacRes = await verifyZeffySignature(rawBody, signatureHeader, secretKey);
   if (hmacRes.valid) {
     return { valid: true, bypassed: false, method: 'hmac_sha256', timestamp: hmacRes.timestamp };
@@ -912,7 +999,8 @@ export default {
           'donation.created', 'donation.updated',
           'order.created', 'order.updated',
           'payment.completed', 'donation.completed', 'order.completed',
-          'payment.succeeded', 'donation.succeeded'
+          'payment.succeeded', 'donation.succeeded',
+          'checkout.completed', 'payment.paid', 'donation.paid'
         ];
         if (!validDonationEvents.includes(eventType)) {
           if (db) {

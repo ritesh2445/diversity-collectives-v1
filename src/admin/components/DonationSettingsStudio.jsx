@@ -37,6 +37,7 @@ import {
   recordManualDonation,
   issueCardFromDonationIntent,
   deleteDonationIntent,
+  reconcileZeffyPayments,
   exportDataCsv
 } from '../services/adminClient';
 
@@ -122,6 +123,7 @@ export default function DonationSettingsStudio({ currentUser }) {
   const [intentAmounts, setIntentAmounts] = useState({});
   const [issuingIntentId, setIssuingIntentId] = useState(null);
   const [deletingIntentId, setDeletingIntentId] = useState(null);
+  const [syncingZeffy, setSyncingZeffy] = useState(false);
   const [resendingId, setResendingId] = useState(null);
   const [resendStatus, setResendStatus] = useState({});
   const [deletingId, setDeletingId] = useState(null);
@@ -1243,6 +1245,42 @@ export default function DonationSettingsStudio({ currentUser }) {
                   <span>{deletingAll ? 'Deleting...' : `Delete All (${donations.length})`}</span>
                 </button>
               )}
+
+              {/* Sync Zeffy Now */}
+              <button
+                type="button"
+                onClick={async () => {
+                  setSyncingZeffy(true);
+                  setDonationActionMsg(null);
+                  try {
+                    const res = await reconcileZeffyPayments();
+                    if (res.success && res.result?.success !== false) {
+                      const count = res.result?.processed ?? 0;
+                      setDonationActionMsg({
+                        success: true,
+                        message: `Zeffy sync complete (${count} payment${count === 1 ? '' : 's'} checked).`
+                      });
+                      loadData();
+                    } else {
+                      setDonationActionMsg({
+                        success: false,
+                        message: res.result?.error || res.error || 'Zeffy sync failed.'
+                      });
+                    }
+                  } catch (err) {
+                    setDonationActionMsg({ success: false, message: err.message });
+                  } finally {
+                    setSyncingZeffy(false);
+                    setTimeout(() => setDonationActionMsg(null), 6000);
+                  }
+                }}
+                disabled={syncingZeffy}
+                className="py-2 px-3 rounded-xl bg-purple-50 hover:bg-purple-100 border border-purple-200 text-[#5A1E65] text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                title="Poll Zeffy API for recent payments right now"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${syncingZeffy ? 'animate-spin' : ''}`} />
+                <span>{syncingZeffy ? 'Syncing Zeffy...' : 'Sync Zeffy Now'}</span>
+              </button>
 
               {/* Refresh */}
               <button

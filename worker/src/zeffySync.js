@@ -131,19 +131,40 @@ export async function executeZeffySync(env, db, ctx, sendEmailFn = null) {
           'Accept': 'application/json'
         }
       });
+      if (res.status === 400) {
+        const fallbackUrl = new URL(`${ZEFFY_API_BASE}/payments`);
+        fallbackUrl.searchParams.set('limit', '50');
+        if (startingAfter) fallbackUrl.searchParams.set('starting_after', startingAfter);
+        res = await fetch(fallbackUrl.toString(), {
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Accept': 'application/json'
+          }
+        });
+      }
     } catch (netErr) {
       console.error('Network failure connecting to Zeffy API:', netErr);
-      break;
+      return { success: false, processed: totalProcessed, error: netErr.message };
     }
 
     if (!res.ok) {
       const errText = await res.text();
       console.error(`Zeffy API returned HTTP ${res.status}:`, errText);
-      break;
+      await db.execute({
+        sql: `UPDATE reconciliation_sync_state SET last_error = ?, updated_at = datetime('now') WHERE id = 'zeffy_poller'`,
+        args: [`HTTP ${res.status}: ${errText.slice(0, 300)}`]
+      }).catch(() => {});
+      return { success: false, processed: totalProcessed, error: `Zeffy API HTTP ${res.status}: ${errText}` };
     }
 
     const payload = await res.json().catch(() => ({}));
-    const payments = Array.isArray(payload.data) ? payload.data : [];
+    const payments = Array.isArray(payload.data)
+      ? payload.data
+      : Array.isArray(payload.payments)
+      ? payload.payments
+      : Array.isArray(payload)
+      ? payload
+      : [];
 
     if (payments.length === 0) {
       hasMore = false;
