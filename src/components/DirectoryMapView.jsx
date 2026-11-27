@@ -499,7 +499,7 @@ export default function DirectoryMapView({ businesses = [], onHype, activeHypeId
 
                 <div className="space-y-4">
                   {/* Photo Header with Badges */}
-                  <div className="h-44 rounded-2xl overflow-hidden bg-slate-100 relative border border-slate-200 shadow-inner">
+                  <div className="w-full aspect-[16/9] rounded-2xl overflow-hidden bg-slate-100 relative border border-slate-200 shadow-inner">
                     <img
                       src={selectedBiz.image || selectedBiz.cover_url || '/images/community-gathering.jpg'}
                       alt={selectedBiz.name}

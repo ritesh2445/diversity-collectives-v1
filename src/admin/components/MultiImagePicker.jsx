@@ -298,7 +298,7 @@ export default function MultiImagePicker({
                 isCover ? 'border-[#5A1E65] ring-2 ring-purple-300 shadow-sm' : 'border-slate-200 hover:border-purple-300'
               }`}
             >
-              <div className="relative aspect-[16/10] bg-slate-900 overflow-hidden">
+              <div className={`relative ${aspectRatio || 'aspect-[16/10]'} bg-slate-900 overflow-hidden`}>
                 <img
                   src={url}
                   alt={`Slide ${idx + 1}`}

@@ -654,7 +654,7 @@ export default function Directory() {
                       const thumbSrc = uploadedCover || brandLogo || '/images/community-gathering.jpg';
 
                       return (
-                    <div className={`h-44 rounded-2xl overflow-hidden border border-slate-200/80 relative shadow-inner ${
+                    <div className={`w-full aspect-[16/9] rounded-2xl overflow-hidden border border-slate-200/80 relative shadow-inner ${
                       isLogoFallback ? 'bg-gradient-to-br from-purple-50 via-white to-amber-50/70' : 'bg-slate-100'
                     }`}>
                       <img
