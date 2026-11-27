@@ -579,6 +579,7 @@ export default function CmsStudio({ currentUser: propUser = null } = {}) {
         category: 'Festivals & Pride',
         year: '2026',
         image: '/images/community-gathering.jpg',
+        images: ['/images/community-gathering.jpg'],
         description: '',
         quote: ''
       });
@@ -719,6 +720,15 @@ export default function CmsStudio({ currentUser: propUser = null } = {}) {
         content: item.content || item.body || '',
         status: item.status || (item.isDraft ? 'draft' : 'published'),
         tags: Array.isArray(item.tags) ? item.tags.join(', ') : (item.tags || '')
+      });
+    } else if (type === 'gallery') {
+      const galleryImages = Array.isArray(item.images) && item.images.length > 0
+        ? item.images
+        : (item.image ? [item.image] : []);
+      setFormData({
+        ...item,
+        images: galleryImages,
+        image: item.image || galleryImages[0] || ''
       });
     } else if (type === 'milestone') {
       setFormData({
@@ -882,7 +892,12 @@ export default function CmsStudio({ currentUser: propUser = null } = {}) {
       });
       showToast(`${formData.category === 'board' ? 'Board Member' : 'Staff Member'} "${formData.name}" saved & synced.`);
     } else if (modalType === 'gallery') {
-      saveCmsGalleryPhoto(formData);
+      const galleryImg = formData.image || formData.images?.[0] || '/images/community-gathering.jpg';
+      saveCmsGalleryPhoto({
+        ...formData,
+        image: galleryImg,
+        images: Array.isArray(formData.images) && formData.images.length > 0 ? formData.images : [galleryImg]
+      });
       showToast(`Gallery photo "${formData.title}" saved.`);
     } else if (modalType === 'milestone') {
       saveCmsMilestone(formData);
@@ -6207,8 +6222,8 @@ export default function CmsStudio({ currentUser: propUser = null } = {}) {
                   <MultiImagePicker
                     images={formData.images || (formData.image ? [formData.image] : [])}
                     primaryImage={formData.image || ''}
-                    onChange={(newImages) => setFormData({ ...formData, images: newImages, image: newImages[0] || '' })}
-                    onPrimaryChange={(url) => setFormData({ ...formData, image: url })}
+                    onChange={(newImages) => setFormData((prev) => ({ ...prev, images: newImages, image: newImages[0] || '' }))}
+                    onPrimaryChange={(url) => setFormData((prev) => ({ ...prev, image: url }))}
                     label="3D Carousel Spotlight Pictures"
                     helpText="Upload or choose multiple images for this spotlight. They will automatically slide on cards."
                     aspectRatio="aspect-[16/9]"
