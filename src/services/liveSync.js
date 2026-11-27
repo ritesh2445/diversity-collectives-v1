@@ -348,6 +348,12 @@ export function applySiteStatePayload(state, { broadcast = false } = {}) {
     ]));
     const deletedCommunityGroupsSet = new Set(deletedCommunityGroupsList.map(x => String(x).toLowerCase().trim()));
 
+    const deletedEventsList = Array.from(new Set([
+      ...(existing.deletedEvents || []),
+      ...(Array.isArray(state.cmsData.deletedEvents) ? state.cmsData.deletedEvents : [])
+    ]));
+    const deletedEventsSet = new Set(deletedEventsList.map(x => String(x).toLowerCase().trim()));
+
     const mergedCms = {
       ...existing,
       ...state.cmsData,
@@ -383,12 +389,20 @@ export function applySiteStatePayload(state, { broadcast = false } = {}) {
         return (!id || !deletedCommunityGroupsSet.has(id)) && (!slug || !deletedCommunityGroupsSet.has(slug));
       }),
       deletedCommunityGroups: deletedCommunityGroupsList,
+      deletedEvents: deletedEventsList,
       businesses: Array.isArray(state.cmsData.businesses) ? state.cmsData.businesses : (existing.businesses || []),
       weeklySchedule: Array.isArray(state.cmsData.weeklySchedule) ? state.cmsData.weeklySchedule : (existing.weeklySchedule || []),
       settings: { ...(existing.settings || {}), ...(state.cmsData.settings || {}) }
     };
     if (Array.isArray(mergedCms.events)) {
-      mergedCms.events = normalizeCmsEventList(mergedCms.events);
+      const filteredEvents = mergedCms.events.filter(evt => {
+        if (!evt || typeof evt !== 'object') return false;
+        const id = evt.id ? String(evt.id).toLowerCase().trim() : '';
+        const slug = evt.slug ? String(evt.slug).toLowerCase().trim() : '';
+        const title = evt.title ? String(evt.title).toLowerCase().trim() : '';
+        return (!id || !deletedEventsSet.has(id)) && (!slug || !deletedEventsSet.has(slug)) && (!title || !deletedEventsSet.has(title));
+      });
+      mergedCms.events = normalizeCmsEventList(filteredEvents);
     }
     if (typeof localStorage !== 'undefined') {
       try {

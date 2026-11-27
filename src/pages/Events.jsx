@@ -687,22 +687,10 @@ export default function Events() {
             </p>
 
             {(() => {
-              const cmsSignatureEvents = (events || [])
-                .filter((e) => e.featured === true || e.category === 'Signature Event')
-                .map((e) => ({
-                  id: e.id || e.slug,
-                  title: e.title,
-                  season: e.category || 'Signature Event',
-                  description: e.description,
-                  schedule: e.date || (e.month && e.day ? `${e.month} ${e.day}, ${e.year || ''}` : 'Signature Event'),
-                  link: e.signatureLink || (e.slug ? `/events/${e.slug}` : '/events')
-                }));
-
-              const seenTitles = new Set(cmsSignatureEvents.map((s) => (s.title || '').toLowerCase().trim()));
-              const mergedSignatureEvents = [
-                ...cmsSignatureEvents,
-                ...annualSignatureEvents.filter((sig) => !seenTitles.has((sig.title || '').toLowerCase().trim()))
-              ];
+              const mergedSignatureEvents = cmsStore.getSignatureEvents().map((e) => ({
+                ...e,
+                season: e.season || e.category || 'Signature Event'
+              }));
 
               const pageSize = 6;
               const sigPages = [];

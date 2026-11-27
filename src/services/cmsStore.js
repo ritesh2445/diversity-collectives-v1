@@ -256,10 +256,16 @@ export function mergeStaffWithDefaults(savedStaff = [], defaultStaff = null, del
 
 export function mergeEventsWithDefaults(savedEvents = [], defaultEvents = null, deletedIds = []) {
   const seed = Array.isArray(defaultEvents) && defaultEvents.length > 0 ? defaultEvents : (liveEvents || []);
-  const deletedSet = new Set(Array.isArray(deletedIds) ? deletedIds : []);
+  const deletedSet = new Set(Array.isArray(deletedIds) ? deletedIds.map(d => String(d).trim().toLowerCase()) : []);
+  const isDeleted = (e) => {
+    const id = e?.id ? String(e.id).trim().toLowerCase() : '';
+    const slug = e?.slug ? String(e.slug).trim().toLowerCase() : '';
+    const title = e?.title ? String(e.title).trim().toLowerCase() : '';
+    return (id && deletedSet.has(id)) || (slug && deletedSet.has(slug)) || (title && deletedSet.has(title));
+  };
 
   if (!Array.isArray(savedEvents) || savedEvents.length === 0) {
-    return normalizeCmsEventList(seed.filter(e => !deletedSet.has(e.id) && !deletedSet.has(e.slug)));
+    return normalizeCmsEventList(seed.filter(e => !isDeleted(e)));
   }
 
   const result = [];
@@ -273,7 +279,7 @@ export function mergeEventsWithDefaults(savedEvents = [], defaultEvents = null, 
     const cleanTitle = (evt.title || '').trim().toLowerCase();
     const key = cleanId || cleanSlug || cleanTitle;
 
-    if (key && !deletedSet.has(key) && !deletedSet.has(cleanId) && !deletedSet.has(cleanSlug) && !seenKeys.has(key)) {
+    if (key && !isDeleted(evt) && !seenKeys.has(key)) {
       seenKeys.add(key);
       if (cleanId) seenKeys.add(cleanId);
       if (cleanSlug) seenKeys.add(cleanSlug);
@@ -297,7 +303,7 @@ export function mergeEventsWithDefaults(savedEvents = [], defaultEvents = null, 
     const cleanTitle = (s.title || '').trim().toLowerCase();
     const key = cleanId || cleanSlug || cleanTitle;
 
-    if (key && !deletedSet.has(key) && !deletedSet.has(cleanId) && !deletedSet.has(cleanSlug) && !seenKeys.has(key) && !seenKeys.has(cleanId) && !seenKeys.has(cleanSlug)) {
+    if (key && !isDeleted(s) && !seenKeys.has(key) && !seenKeys.has(cleanId) && !seenKeys.has(cleanSlug)) {
       seenKeys.add(key);
       if (cleanId) seenKeys.add(cleanId);
       if (cleanSlug) seenKeys.add(cleanSlug);
@@ -374,6 +380,7 @@ import {
   orgInfo,
   programsList,
   liveEvents,
+  annualSignatureEvents,
   resourcesDirectory,
   boardMembers,
   staffMembers,
@@ -842,7 +849,8 @@ class CmsStoreEngine {
             this.data = {
               ...INITIAL_CMS_DATA,
               ...parsed,
-              events: normalizeCmsEventList(parsed.events || INITIAL_CMS_DATA.events)
+              deletedEvents: parsed.deletedEvents || [],
+              events: mergeEventsWithDefaults(parsed.events, INITIAL_CMS_DATA.events, parsed.deletedEvents || [])
             };
             this.notify();
           } catch (err) {
@@ -1437,10 +1445,14 @@ class CmsStoreEngine {
   }
 
   saveData(data, { broadcast = true } = {}) {
+    const mergedDeletedEvents = Array.isArray(data.deletedEvents)
+      ? Array.from(new Set(data.deletedEvents))
+      : Array.from(new Set(this.data?.deletedEvents || []));
     const cleanData = {
       ...data,
       programs: mergeProgramsWithDefaults(data.programs || this.data?.programs, INITIAL_CMS_DATA.programs, data.deletedPrograms || this.data?.deletedPrograms || []),
-      events: mergeEventsWithDefaults(data.events || this.data?.events, INITIAL_CMS_DATA.events, data.deletedEvents || this.data?.deletedEvents || []),
+      events: mergeEventsWithDefaults(data.events || this.data?.events, INITIAL_CMS_DATA.events, mergedDeletedEvents),
+      deletedEvents: mergedDeletedEvents,
       staff: mergeStaffWithDefaults(data.staff || this.data?.staff, INITIAL_CMS_DATA.staff, data.deletedStaff || this.data?.deletedStaff || []),
       sponsorshipDocuments: mergeSponsorshipDocumentsWithDefaults(data.sponsorshipDocuments || this.data?.sponsorshipDocuments, INITIAL_CMS_DATA.sponsorshipDocuments, data.deletedSponsorshipDocuments || this.data?.deletedSponsorshipDocuments || []),
       podcasts: mergePodcastsWithDefaults(data.podcasts !== undefined ? data.podcasts : this.data?.podcasts, INITIAL_CMS_DATA.podcasts, data.deletedPodcasts || this.data?.deletedPodcasts || []),
@@ -1740,7 +1752,16 @@ class CmsStoreEngine {
       }
     }
 
-    this.saveData({ ...this.data, events: existing });
+    const savedKeys = new Set(
+      [savedEvent.id, savedEvent.slug, cleanTitle]
+        .filter(Boolean)
+        .map(x => String(x).trim().toLowerCase())
+    );
+    const nextDeletedEvents = (this.data?.deletedEvents || []).filter(
+      d => !savedKeys.has(String(d).trim().toLowerCase())
+    );
+
+    this.saveData({ ...this.data, events: existing, deletedEvents: nextDeletedEvents });
     return existing;
   }
 
@@ -1763,14 +1784,87 @@ class CmsStoreEngine {
       }
       return evt;
     });
-    this.saveData({ ...this.data, events: existing });
+    const savedKeys = new Set(
+      [savedEvent.id, savedEvent.slug, cleanTitle]
+        .filter(Boolean)
+        .map(x => String(x).trim().toLowerCase())
+    );
+    const nextDeletedEvents = (this.data?.deletedEvents || []).filter(
+      d => !savedKeys.has(String(d).trim().toLowerCase())
+    );
+
+    this.saveData({ ...this.data, events: existing, deletedEvents: nextDeletedEvents });
     return existing;
   }
 
-  deleteEvent(eventId) {
+  getDeletedEvents() {
+    return Array.isArray(this.data?.deletedEvents) ? this.data.deletedEvents : [];
+  }
+
+  getSignatureEvents() {
+    const deletedSet = new Set(this.getDeletedEvents().map(d => String(d).trim().toLowerCase()));
+    const allCmsEvents = this.getEvents() || [];
+    const cmsIds = new Set(allCmsEvents.map(e => (e.id || '').toLowerCase().trim()).filter(Boolean));
+    const cmsSlugs = new Set(allCmsEvents.map(e => (e.slug || '').toLowerCase().trim()).filter(Boolean));
+    const cmsTitles = new Set(allCmsEvents.map(e => (e.title || '').toLowerCase().trim()).filter(Boolean));
+
+    const cmsSignatureEvents = allCmsEvents
+      .filter((e) => e.featured === true || e.category === 'Signature Event')
+      .map((e) => ({
+        ...e,
+        id: e.id || e.slug,
+        slug: e.slug,
+        title: e.title,
+        tagline: e.location || e.category || 'Signature Event',
+        schedule: e.date || (e.month && e.day ? `${e.month} ${e.day}, ${e.year || ''}` : 'Signature Event'),
+        description: e.description,
+        image: e.image || (Array.isArray(e.images) && e.images[0]) || '/images/community-gathering.jpg',
+        images: Array.isArray(e.images) && e.images.length > 0 ? e.images : [e.image || '/images/community-gathering.jpg'],
+        link: e.signatureLink || (e.slug ? `/events/${e.slug}` : '/events'),
+        isFallbackSignature: false
+      }));
+
+    const fallbackSignatureEvents = (annualSignatureEvents || [])
+      .filter((sig) => {
+        const title = (sig.title || '').toLowerCase().trim();
+        const id = (sig.id || '').toLowerCase().trim();
+        const slug = (sig.slug || '').toLowerCase().trim();
+        if ((id && cmsIds.has(id)) || (slug && cmsSlugs.has(slug)) || (title && cmsTitles.has(title))) return false;
+        if ((id && deletedSet.has(id)) || (slug && deletedSet.has(slug)) || (title && deletedSet.has(title))) return false;
+        return true;
+      })
+      .map((sig) => ({
+        ...sig,
+        category: 'Signature Event',
+        featured: true,
+        date: sig.schedule || 'Signature Event',
+        images: Array.isArray(sig.images) && sig.images.length > 0 ? sig.images : [sig.image || '/images/community-gathering.jpg'],
+        isFallbackSignature: true
+      }));
+
+    return [...cmsSignatureEvents, ...fallbackSignatureEvents];
+  }
+
+  deleteEvent(eventId, extraIdentifiers = []) {
     if (!eventId) return this.getEvents();
-    const existing = this.getEvents().filter(e => e.id !== eventId && e.slug !== eventId);
-    const deleted = Array.from(new Set([...(this.data.deletedEvents || []), eventId]));
+    const targetLower = String(eventId).trim().toLowerCase();
+    const current = this.getEvents();
+    const matched = current.filter(e =>
+      e.id === eventId ||
+      e.slug === eventId ||
+      (e.title && e.title.trim().toLowerCase() === targetLower)
+    );
+    const existing = current.filter(e =>
+      e.id !== eventId &&
+      e.slug !== eventId &&
+      (!e.title || e.title.trim().toLowerCase() !== targetLower)
+    );
+    const newDeleted = [
+      eventId,
+      ...extraIdentifiers,
+      ...matched.flatMap(m => [m.id, m.slug, m.title ? m.title.trim().toLowerCase() : null])
+    ].filter(Boolean);
+    const deleted = Array.from(new Set([...(this.data.deletedEvents || []), ...newDeleted]));
     this.saveData({ ...this.data, events: existing, deletedEvents: deleted });
     return existing;
   }

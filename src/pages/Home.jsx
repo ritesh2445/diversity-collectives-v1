@@ -882,28 +882,7 @@ export default function Home() {
 
           <MobileCarousel cols={3} autoScrollMs={5000} className="items-stretch" cardClassName="h-full flex flex-col">
             {(() => {
-              const cmsSignatureEvents = (cmsEvents || [])
-                .filter((e) => e.featured === true || e.category === 'Signature Event')
-                .map((e) => ({
-                  id: e.id || e.slug,
-                  slug: e.slug,
-                  title: e.title,
-                  tagline: e.location || e.category || 'Signature Event',
-                  schedule: e.date || (e.month && e.day ? `${e.month} ${e.day}, ${e.year || ''}` : 'Signature Event'),
-                  description: e.description,
-                  images: Array.isArray(e.images) && e.images.length > 0 ? e.images : [e.image || '/images/community-gathering.jpg'],
-                  link: e.signatureLink || (e.slug ? `/events/${e.slug}` : '/events')
-                }));
-
-              const seenTitles = new Set(cmsSignatureEvents.map((s) => (s.title || '').toLowerCase().trim()));
-              const fallbackSignatureEvents = annualSignatureEvents
-                .filter((sig) => !seenTitles.has((sig.title || '').toLowerCase().trim()))
-                .map((sig) => ({
-                  ...sig,
-                  images: [sig.image || '/images/community-gathering.jpg']
-                }));
-
-              return [...cmsSignatureEvents, ...fallbackSignatureEvents].map((sigEvt, idx) => (
+              return cmsStore.getSignatureEvents().map((sigEvt, idx) => (
               <CardSpotlight
                 key={sigEvt.id || sigEvt.title}
                 className={`${['card-vibrant-rose', 'card-vibrant-purple', 'card-vibrant-amber', 'card-vibrant-teal', 'card-vibrant-indigo'][idx % 5]} overflow-hidden flex flex-col flex-1 h-full shadow-md hover:shadow-xl`}

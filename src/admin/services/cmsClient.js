@@ -62,8 +62,8 @@ export function saveCmsEvent(event) {
   return list;
 }
 
-export function deleteCmsEvent(id) {
-  const list = cmsStore.deleteEvent(id);
+export function deleteCmsEvent(id, extraIdentifiers = []) {
+  const list = cmsStore.deleteEvent(id, extraIdentifiers);
   publishAdminSitePatch({ cmsData: cmsStore.getData() }).catch(() => {});
   return list;
 }
