@@ -213,6 +213,16 @@ export default function MultiImagePicker({
     updateImages(updated);
   };
 
+  const defaultCropAspect = aspectRatio.includes('16/10')
+    ? '16:10'
+    : aspectRatio.includes('16/9')
+    ? '16:9'
+    : aspectRatio.includes('4/3')
+    ? '4:3'
+    : aspectRatio.includes('square') || aspectRatio.includes('1/1')
+    ? '1:1'
+    : 'original';
+
   return (
     <div className="space-y-3 p-4 rounded-2xl bg-purple-50/40 border border-purple-200/80">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -514,7 +524,7 @@ export default function MultiImagePicker({
       {showCropper && (
         <ImageCropperModal
           imageSrc={cropperSource || null}
-          initialAspect="original"
+          initialAspect={defaultCropAspect}
           onApply={handleCropperApply}
           onCancel={() => {
             setShowCropper(false);

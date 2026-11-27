@@ -5756,7 +5756,7 @@ export default function CmsStudio({ currentUser: propUser = null } = {}) {
                     onPrimaryChange={(url) => setFormData((prev) => ({ ...prev, image: url }))}
                     label="Event Photos & Rotating Flyers"
                     helpText="Upload or choose multiple flyers or event photos. They will automatically slide on event cards and calendar views."
-                    aspectRatio="aspect-[16/9]"
+                    aspectRatio={formData.featured ? 'aspect-[16/10]' : 'aspect-[16/9]'}
                   />
 
                   <StyleCustomizer

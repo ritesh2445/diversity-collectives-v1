@@ -297,6 +297,9 @@ export default function ImageCropperModal({
   const handlePointerDown = (e, handleType) => {
     e.preventDefault();
     e.stopPropagation();
+    if (handleType !== 'move' && selectedPreset === 'original') {
+      setSelectedPreset('free');
+    }
     setActiveDrag(handleType);
     const clientX = e.clientX || e.touches?.[0]?.clientX || 0;
     const clientY = e.clientY || e.touches?.[0]?.clientY || 0;
@@ -360,13 +363,32 @@ export default function ImageCropperModal({
     if (preset && preset.ratio && imageMeta.naturalRatio) {
       const targetRatio = preset.ratio;
       const naturalRatio = imageMeta.naturalRatio;
-      
-      const constrainedH = (newW * naturalRatio) / targetRatio;
-      if (newY + constrainedH <= 1) {
-        newH = constrainedH;
+      const rightEdge = start.x + start.width;
+      const bottomEdge = start.y + start.height;
+
+      let constrainedH = (newW * naturalRatio) / targetRatio;
+      if (activeDrag.includes('n')) {
+        if (bottomEdge - constrainedH >= 0) {
+          newH = constrainedH;
+          newY = bottomEdge - newH;
+        } else {
+          newH = bottomEdge;
+          newY = 0;
+          newW = (newH * targetRatio) / naturalRatio;
+          if (activeDrag.includes('w')) {
+            newX = Math.max(0, rightEdge - newW);
+          }
+        }
       } else {
-        newH = 1 - newY;
-        newW = (newH * targetRatio) / naturalRatio;
+        if (newY + constrainedH <= 1) {
+          newH = constrainedH;
+        } else {
+          newH = 1 - newY;
+          newW = (newH * targetRatio) / naturalRatio;
+          if (activeDrag.includes('w')) {
+            newX = Math.max(0, rightEdge - newW);
+          }
+        }
       }
     }
 
@@ -441,7 +463,8 @@ export default function ImageCropperModal({
       const ctx = canvas.getContext('2d');
 
       // 1. FULL ORIGINAL MODE (Zero Cropping - 100% Untouched)
-      if (selectedPreset === 'original' && rotation === 0) {
+      const isFullUntouchedBox = crop.x <= 0.001 && crop.y <= 0.001 && crop.width >= 0.999 && crop.height >= 0.999;
+      if (selectedPreset === 'original' && rotation === 0 && isFullUntouchedBox) {
         let outW = natW;
         let outH = natH;
         const maxDim = 1600;
