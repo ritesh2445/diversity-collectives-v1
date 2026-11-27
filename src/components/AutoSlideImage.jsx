@@ -150,6 +150,8 @@ export default function AutoSlideImage({
                 src={displaySrc}
                 alt={`${alt} ${idx + 1}`}
                 loading={idx === 0 ? 'eager' : 'lazy'}
+                decoding="async"
+                fetchPriority={idx === 0 ? 'high' : 'low'}
                 onError={() => handleImageError(idx)}
                 className={`w-full h-full ${
                   imageFit === 'contain'
@@ -164,6 +166,7 @@ export default function AutoSlideImage({
         <img
           src={currentSrc}
           alt={alt}
+          decoding="async"
           onError={() => handleImageError(0)}
           className={`w-full h-full ${
             imageFit === 'contain'

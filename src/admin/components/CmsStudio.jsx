@@ -732,6 +732,8 @@ export default function CmsStudio({ currentUser: propUser = null } = {}) {
         : (item.image ? [item.image] : ['/images/community-gathering.jpg']);
       setFormData({
         ...item,
+        originalId: item.id || item.slug,
+        originalSlug: item.slug,
         images: eventImages,
         image: item.image || eventImages[0],
         isoDate: parsed?.isoDate || item.isoDate || '',
@@ -968,7 +970,7 @@ export default function CmsStudio({ currentUser: propUser = null } = {}) {
     if (!sig) return;
     if (!window.confirm(`Delete "${sig.title}" from Signature Annual Events & Calendar? This immediately updates the public website.`)) return;
     const primaryId = sig.id || sig.slug || sig.title;
-    const extras = [sig.id, sig.slug, sig.title ? sig.title.trim().toLowerCase() : null].filter(Boolean);
+    const extras = [sig.id, sig.slug].filter(Boolean);
     deleteCmsEvent(primaryId, extras);
     refreshData();
     showToast(`Signature event "${sig.title}" deleted & synced live.`);
@@ -1373,6 +1375,7 @@ export default function CmsStudio({ currentUser: propUser = null } = {}) {
     { id: 'programs', label: 'Programs & Clinical Care', count: cmsData.programs?.length || 0, icon: Sparkles },
     { id: 'community', label: 'Community Groups', count: cmsData.communityGroups?.length ?? 0, icon: Users },
     { id: 'events', label: 'Events & Calendar', count: cmsData.events?.length || 0, icon: Calendar },
+    { id: 'signatureEvents', label: 'Signature Annual Events', count: signatureEventsList.length, icon: Sparkles },
     { id: 'weeklySchedule', label: 'Weekly Schedule', count: cmsData.weeklySchedule?.length ?? 0, icon: Clock },
     { id: 'trainings', label: 'P.R.I.D.E. Trainings', count: cmsData.trainings?.length ?? 0, icon: Award },
     { id: 'sponsors', label: 'Sponsors & Partners', count: cmsData.sponsors?.length ?? 0, icon: Heart },
@@ -2650,10 +2653,9 @@ export default function CmsStudio({ currentUser: propUser = null } = {}) {
       {/* ======================================================================
           SUB-TAB 2: EVENTS & CALENDAR (WITH CANCELLATION TOGGLE)
           ====================================================================== */}
-      {activeSubTab === 'events' && (
-        <div className="space-y-8">
-          {/* Signature Annual Events ("Events That Unite Ventura County") */}
-          <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-purple-50 via-white to-amber-50/50 border-2 border-purple-200/80 space-y-4 shadow-xs">
+      {activeSubTab === 'signatureEvents' && (
+        <div className="space-y-6">
+          <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-purple-50 via-white to-amber-50/50 border-2 border-purple-200/80 space-y-5 shadow-xs">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2">
@@ -2661,11 +2663,11 @@ export default function CmsStudio({ currentUser: propUser = null } = {}) {
                     ★ Homepage &amp; Events Spotlight
                   </span>
                 </div>
-                <h3 className="font-display text-lg sm:text-xl font-bold text-slate-950 mt-1">
+                <h3 className="font-display text-xl font-bold text-slate-950 mt-1">
                   Signature Annual Events ({signatureEventsList.length})
                 </h3>
                 <p className="text-xs text-slate-600 mt-0.5">
-                  Edit, add photos, or delete the cards shown in &ldquo;Events That Unite Ventura County.&rdquo; on the Home &amp; Events pages.
+                  Pre-populated with the exact cards shown in &ldquo;Events That Unite Ventura County.&rdquo; on the Home &amp; Events pages. Editing or deleting one card only affects that card.
                 </p>
               </div>
               <button
@@ -2679,7 +2681,7 @@ export default function CmsStudio({ currentUser: propUser = null } = {}) {
             </div>
 
             {signatureEventsList.length === 0 ? (
-              <div className="p-6 rounded-2xl bg-white/80 border border-dashed border-purple-200 text-center text-xs text-slate-500">
+              <div className="p-8 rounded-2xl bg-white/80 border border-dashed border-purple-200 text-center text-xs text-slate-500">
                 No Signature Annual Events active. Click &ldquo;Add Signature Event&rdquo; or mark any calendar event as a Signature Event.
               </div>
             ) : (
@@ -2694,6 +2696,7 @@ export default function CmsStudio({ currentUser: propUser = null } = {}) {
                         <img
                           src={sig.image || sig.images?.[0] || '/images/community-gathering.jpg'}
                           alt={sig.title}
+                          decoding="async"
                           className="w-full h-full object-cover"
                         />
                         <span className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-white/95 text-[#5A1E65] font-black text-[10px] uppercase shadow-xs">
@@ -2718,6 +2721,8 @@ export default function CmsStudio({ currentUser: propUser = null } = {}) {
                         type="button"
                         onClick={() => openEditModal('event', {
                           ...sig,
+                          originalId: sig.id,
+                          originalSlug: sig.slug,
                           featured: true,
                           category: sig.category || 'Signature Event',
                           date: sig.date || sig.schedule || 'Signature Event',
@@ -2756,6 +2761,23 @@ export default function CmsStudio({ currentUser: propUser = null } = {}) {
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {activeSubTab === 'events' && (
+        <div className="space-y-6">
+          <div className="p-4 rounded-2xl bg-purple-50/70 border border-purple-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="text-xs text-slate-700">
+              <strong className="text-[#5A1E65]">Looking for Homepage Signature Annual Events?</strong> Manage &ldquo;Events That Unite Ventura County.&rdquo; cards in their dedicated section.
+            </div>
+            <button
+              type="button"
+              onClick={() => setActiveSubTab('signatureEvents')}
+              className="px-3.5 py-2 rounded-xl bg-white hover:bg-purple-100 text-[#5A1E65] border border-purple-200 font-bold text-xs shrink-0 transition-colors cursor-pointer"
+            >
+              Open Signature Annual Events ({signatureEventsList.length}) →
+            </button>
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

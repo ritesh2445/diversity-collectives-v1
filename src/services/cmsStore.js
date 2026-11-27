@@ -1717,43 +1717,36 @@ class CmsStoreEngine {
   saveEvent(event) {
     if (!event || typeof event !== 'object') return this.getEvents();
     const existing = this.getEvents();
+    const targetId = event.originalId || event.id;
+    const targetSlug = event.originalSlug || event.slug;
     const cleanTitle = (event.title || '').trim().toLowerCase();
-    const index = existing.findIndex(e => (event.id && e.id === event.id) || (event.slug && e.slug === event.slug) || (cleanTitle && e.title && e.title.toLowerCase().trim() === cleanTitle));
+    let index = -1;
+    if (targetId) {
+      index = existing.findIndex(e => e.id === targetId);
+    }
+    if (index < 0 && targetSlug) {
+      index = existing.findIndex(e => e.slug === targetSlug);
+    }
+    if (index < 0 && !targetId && !targetSlug && cleanTitle) {
+      index = existing.findIndex(e => e.title && e.title.toLowerCase().trim() === cleanTitle);
+    }
     let savedEvent;
     if (index >= 0) {
-      savedEvent = normalizeCmsEvent({ ...existing[index], ...event });
+      const { originalId, originalSlug, ...cleanEvent } = event;
+      savedEvent = normalizeCmsEvent({ ...existing[index], ...cleanEvent });
       existing[index] = savedEvent;
     } else {
+      const { originalId, originalSlug, ...cleanEvent } = event;
       savedEvent = normalizeCmsEvent({
-        ...event,
-        id: event.id || `evt-${Date.now()}`,
-        slug: event.slug || (event.title || 'event').toLowerCase().replace(/[^a-z0-9]+/g, '-')
+        ...cleanEvent,
+        id: cleanEvent.id || `evt-${Date.now()}`,
+        slug: cleanEvent.slug || (cleanEvent.title || 'event').toLowerCase().replace(/[^a-z0-9]+/g, '-')
       });
       existing.unshift(savedEvent);
     }
 
-    // Propagate updated image / slideshow to all recurring occurrences with the same event title
-    const targetTitle = (savedEvent.title || cleanTitle || '').trim().toLowerCase();
-    const hasCustomImage = Boolean(event.image || (Array.isArray(event.images) && event.images.length > 0));
-    if (targetTitle && hasCustomImage) {
-      const sharedImage = savedEvent.image || (Array.isArray(savedEvent.images) ? savedEvent.images[0] : '');
-      const sharedImages = Array.isArray(savedEvent.images) && savedEvent.images.length > 0
-        ? savedEvent.images
-        : (sharedImage ? [sharedImage] : []);
-      for (let i = 0; i < existing.length; i++) {
-        const occ = existing[i];
-        if (occ && occ.title && occ.title.trim().toLowerCase() === targetTitle) {
-          existing[i] = normalizeCmsEvent({
-            ...occ,
-            image: sharedImage,
-            images: sharedImages
-          });
-        }
-      }
-    }
-
     const savedKeys = new Set(
-      [savedEvent.id, savedEvent.slug, cleanTitle]
+      [savedEvent.id, savedEvent.slug]
         .filter(Boolean)
         .map(x => String(x).trim().toLowerCase())
     );
@@ -1847,22 +1840,13 @@ class CmsStoreEngine {
 
   deleteEvent(eventId, extraIdentifiers = []) {
     if (!eventId) return this.getEvents();
-    const targetLower = String(eventId).trim().toLowerCase();
     const current = this.getEvents();
-    const matched = current.filter(e =>
-      e.id === eventId ||
-      e.slug === eventId ||
-      (e.title && e.title.trim().toLowerCase() === targetLower)
-    );
-    const existing = current.filter(e =>
-      e.id !== eventId &&
-      e.slug !== eventId &&
-      (!e.title || e.title.trim().toLowerCase() !== targetLower)
-    );
+    const matched = current.filter(e => e.id === eventId || e.slug === eventId);
+    const existing = current.filter(e => e.id !== eventId && e.slug !== eventId);
     const newDeleted = [
       eventId,
       ...extraIdentifiers,
-      ...matched.flatMap(m => [m.id, m.slug, m.title ? m.title.trim().toLowerCase() : null])
+      ...matched.flatMap(m => [m.id, m.slug])
     ].filter(Boolean);
     const deleted = Array.from(new Set([...(this.data.deletedEvents || []), ...newDeleted]));
     this.saveData({ ...this.data, events: existing, deletedEvents: deleted });

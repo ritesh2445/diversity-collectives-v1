@@ -80,9 +80,9 @@ export function saveGitHubStorageConfig(config) {
  * Prevents multi-MB raw uploads from slowing down the site or exceeding browser storage.
  */
 export async function optimizeImageFile(file, options = {}) {
-  const maxWidth = options.maxWidth || 1280;
-  const maxHeight = options.maxHeight || 960;
-  const quality = options.quality || 0.82;
+  const maxWidth = options.maxWidth || 1920;
+  const maxHeight = options.maxHeight || 1440;
+  const quality = options.quality || 0.92;
 
   // 1. Direct pass-through if string URL that isn't a base64 data URL
   if (typeof file === 'string') {

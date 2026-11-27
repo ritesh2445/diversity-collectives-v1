@@ -32,6 +32,7 @@ export const CMS_SUBTAB_TO_SECTION = {
   programs: 'programs',
   community: 'community',
   events: 'events',
+  signatureEvents: 'events',
   weeklySchedule: 'events',
   trainings: 'trainings',
   sponsors: 'sponsors',
