@@ -349,10 +349,11 @@ export default function DirectoryProfile() {
                       key={`${photo}-${idx}`}
                       type="button"
                       onClick={() => setSelectedPhoto(photo)}
-                      className="h-28 rounded-2xl overflow-hidden border border-slate-200 shadow-xs hover:border-purple-400 hover:scale-102 transition-all cursor-pointer relative group"
+                      className="h-28 rounded-2xl overflow-hidden bg-slate-900 border border-slate-200 shadow-xs hover:border-purple-400 transition-all cursor-pointer relative group"
                     >
-                      <img src={photo} alt="" className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 bg-slate-950/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold">
+                      <img src={photo} alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover blur-md opacity-45 scale-125 pointer-events-none" />
+                      <img src={photo} alt="" className="w-full h-full object-contain relative z-10" />
+                      <div className="absolute inset-0 z-20 bg-slate-950/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold">
                         View
                       </div>
                     </button>

@@ -439,10 +439,12 @@ a {
   transition: all 0.2s ease;
 }
 
-img {
-  max-width: 100%;
-  height: auto;
-  display: block;
+@layer base {
+  img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
 }
 
 /* Layout Containers */

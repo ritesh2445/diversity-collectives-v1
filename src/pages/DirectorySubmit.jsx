@@ -254,8 +254,9 @@ export default function DirectorySubmit() {
                 {uploadedImages.length > 0 && (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
                     {uploadedImages.map((src, idx) => (
-                      <div key={idx} className="relative aspect-[16/9] rounded-xl overflow-hidden border border-slate-200 bg-white group">
-                        <img src={src} alt={`Business upload ${idx + 1}`} className="w-full h-full object-cover" />
+                      <div key={idx} className="relative aspect-[16/9] rounded-xl overflow-hidden border border-slate-200 bg-slate-900 group">
+                        <img src={src} alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover blur-md opacity-45 scale-125 pointer-events-none" />
+                        <img src={src} alt={`Business upload ${idx + 1}`} className="w-full h-full object-contain relative z-10" />
                         {idx === 0 && (
                           <span className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded-full bg-[#5A1E65] text-white text-[9px] font-black uppercase">
                             Cover
@@ -287,7 +288,7 @@ export default function DirectorySubmit() {
                 {cropIndex !== null && uploadedImages[cropIndex] && (
                   <ImageCropperModal
                     imageSrc={uploadedImages[cropIndex]}
-                    initialAspect="16:9"
+                    initialAspect="original"
                     onApply={async (croppedFile, previewUrl) => {
                       const targetIdx = cropIndex;
                       setCropIndex(null);
